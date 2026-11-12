@@ -13,13 +13,18 @@ import (
 	"slices"
 	"syscall"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/certs"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/ldapauth"
+	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/logging"
 	"github.com/joernott/dcdash/internal/server"
+	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/vault"
 	"github.com/joernott/dcdash/internal/version"
@@ -118,6 +123,15 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 				opts.Checks = append(opts.Checks, server.Check{Name: "certificate", Check: mgr.Check})
 				g.Go(func() error { return mgr.Run(gctx) })
 			}
+
+			authSvc, sessions, err := newAuthService(cfg, st, log)
+			if err != nil {
+				return err
+			}
+			opts.Routes = append(slices.Clone(opts.Routes), authSvc.Register)
+			opts.Middleware = append(slices.Clone(opts.Middleware), sessions.Middleware, session.CSRFExcept(auth.LoginPath))
+			g.Go(func() error { return sessions.Run(gctx) })
+
 			g.Go(func() error { return server.New(cfg, log, opts).Run(gctx) })
 			return g.Wait()
 		},
@@ -203,4 +217,36 @@ func newKeyring(ctx context.Context, cfg *config.Config, st *store.Store) (*vaul
 		return nil, err
 	}
 	return kr, nil
+}
+
+// newAuthService creates the session manager and the authentication service.
+func newAuthService(cfg *config.Config, st *store.Store, log zerolog.Logger) (*auth.Service, *session.Manager, error) {
+	a := cfg.Auth
+	sessions := session.NewManager(st.DB(), a.Session.Lifetime.D(), a.Session.IdleTimeout.D(), log)
+	proxies, err := cfg.Server.TrustedProxyPrefixes()
+	if err != nil {
+		return nil, nil, err
+	}
+	opts := auth.Options{
+		Sessions:       sessions,
+		UserLockout:    lockoutPolicy(a.Lockout.User),
+		IPLockout:      lockoutPolicy(a.Lockout.IP),
+		TrustedProxies: proxies,
+		Log:            log,
+	}
+	if a.LDAP.URL != "" {
+		client, err := ldapauth.New(a.LDAP, log)
+		if err != nil {
+			return nil, nil, err
+		}
+		opts.LDAP = client
+		log.Info().Str("url", a.LDAP.URL).Str("mode", a.LDAP.Mode).Msg("LDAP authentication enabled")
+	} else {
+		log.Warn().Msg("auth.ldap.url is not set: LDAP login is disabled")
+	}
+	return auth.New(opts), sessions, nil
+}
+
+func lockoutPolicy(p config.LockoutPolicy) lockout.Policy {
+	return lockout.Policy{MaxFailures: p.MaxFailures, Window: p.Window.D(), Duration: p.Duration.D()}
 }

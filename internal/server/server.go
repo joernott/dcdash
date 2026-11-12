@@ -30,6 +30,12 @@ type Options struct {
 	Checks []Check
 	// TLSConfig enables HTTPS. If nil, the server speaks plain HTTP.
 	TLSConfig *tls.Config
+	// Routes register additional handlers, e.g. the authentication API.
+	Routes []func(mux *http.ServeMux)
+	// Middleware wraps the router inside the standard middleware chain (after
+	// logging, recovery and security headers), in the given order (outermost
+	// first), e.g. session loading and CSRF protection.
+	Middleware []func(http.Handler) http.Handler
 }
 
 // Server is the dcdash HTTP(S) server.
@@ -63,7 +69,14 @@ func (s *Server) routes() http.Handler {
 	if s.opts.UI != nil {
 		mux.Handle("/", s.opts.UI)
 	}
-	return chain(mux, s.log, hstsValue(s.cfg.Server.HSTSMaxAge))
+	for _, register := range s.opts.Routes {
+		register(mux)
+	}
+	var h http.Handler = mux
+	for i := len(s.opts.Middleware) - 1; i >= 0; i-- {
+		h = s.opts.Middleware[i](h)
+	}
+	return chain(h, s.log, hstsValue(s.cfg.Server.HSTSMaxAge))
 }
 
 func hstsValue(maxAge config.Duration) string {

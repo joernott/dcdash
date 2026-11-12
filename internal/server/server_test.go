@@ -154,3 +154,28 @@ func TestServeTLSAndShutdown(t *testing.T) {
 		t.Fatal("server did not shut down")
 	}
 }
+
+func TestRoutesAndMiddleware(t *testing.T) {
+	var order []string
+	mw := func(name string) func(http.Handler) http.Handler {
+		return func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				order = append(order, name)
+				next.ServeHTTP(w, r)
+			})
+		}
+	}
+	opts := Options{
+		Routes: []func(*http.ServeMux){func(mux *http.ServeMux) {
+			mux.HandleFunc("GET /api/v1/extra", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusAccepted) })
+		}},
+		Middleware: []func(http.Handler) http.Handler{mw("outer"), mw("inner")},
+	}
+	rec := do(t, New(testConfig(), zerolog.Nop(), opts).Handler(), http.MethodGet, "/api/v1/extra")
+	if rec.Code != http.StatusAccepted {
+		t.Errorf("extra route: %d", rec.Code)
+	}
+	if strings.Join(order, ",") != "outer,inner" {
+		t.Errorf("middleware order %v", order)
+	}
+}

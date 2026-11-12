@@ -120,7 +120,7 @@ These apply to every task:
   - [x] **3.7.1** Client IP behind reverse proxies: `server.trusted_proxies`; `X-Forwarded-For`
     is only used when the request comes from a trusted proxy (otherwise all clients would
     share the proxy address and the per-IP lockout would lock everyone out)
-- [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
+- [x] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
 - [ ] **3.9** LDAP integration tests:
   - AD mode against the existing Samba AD server in the network, with connection data and
     test accounts from environment variables. The tests are skipped when these aren't set

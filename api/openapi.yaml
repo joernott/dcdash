@@ -12,6 +12,8 @@ info:
 tags:
   - name: system
     description: Health and build information
+  - name: auth
+    description: Login, logout and session information
 
 paths:
   /healthz:
@@ -58,7 +60,91 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Log in with user name and password
+      description: |
+        Verifies the credentials against the directory and starts a session. The session
+        token is set as an HttpOnly cookie; the returned csrfToken must be sent in the
+        X-CSRF-Token header of all state-changing requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Logged in.
+          headers:
+            Set-Cookie:
+              description: Session cookie (__Host-dcdash_session).
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionInfo" }
+        "401":
+          description: "Invalid credentials (code: invalid_credentials)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          description: "Too many failed attempts (code: too_many_attempts)."
+          headers:
+            Retry-After:
+              description: Seconds until the next attempt is allowed.
+              schema: { type: integer }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "503":
+          description: "The directory is unavailable (code: directory_unavailable)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: End the current session
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "204":
+          description: Logged out (also when there was no session).
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Current session
+      responses:
+        "200":
+          description: The current session.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionInfo" }
+        "401":
+          description: "Not logged in (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+
 components:
+  parameters:
+    CSRFToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: The csrfToken of the session.
+      schema: { type: string }
+
   responses:
     Error:
       description: Error response.
@@ -67,6 +153,44 @@ components:
           schema: { $ref: "#/components/schemas/ErrorBody" }
 
   schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      additionalProperties: false
+      properties:
+        username: { type: string, maxLength: 256 }
+        password: { type: string, format: password }
+
+    SessionInfo:
+      type: object
+      required: [user, stage, csrfToken, expiresAt]
+      properties:
+        user: { $ref: "#/components/schemas/UserInfo" }
+        stage:
+          type: string
+          enum: [authenticated, totp]
+          description: "authenticated: fully logged in; totp: the TOTP code is still required."
+        csrfToken: { type: string }
+        expiresAt: { type: string, format: date-time, description: Absolute end of the session. }
+
+    UserInfo:
+      type: object
+      required: [username, displayName, source, groups]
+      properties:
+        username: { type: string }
+        displayName: { type: string }
+        source: { type: string, enum: [ldap, local] }
+        groups:
+          type: array
+          items: { $ref: "#/components/schemas/GroupInfo" }
+
+    GroupInfo:
+      type: object
+      required: [dn, name]
+      properties:
+        dn: { type: string }
+        name: { type: string }
+
     HealthStatus:
       type: object
       required: [status]

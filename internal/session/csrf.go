@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/joernott/dcdash/internal/httpx"
@@ -24,7 +25,16 @@ const CSRFHeader = "X-CSRF-Token"
 //
 // The session cookie is additionally SameSite=Strict. CSRF must run after
 // Middleware, which puts the session into the request context.
-func CSRF(next http.Handler) http.Handler {
+func CSRF(next http.Handler) http.Handler { return CSRFExcept()(next) }
+
+// CSRFExcept is CSRF with paths that skip the token check (3.); the Origin and
+// JSON checks still apply. It is meant for the login endpoint: it replaces any
+// existing session, and the login page does not know that session's token.
+func CSRFExcept(paths ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler { return csrf(next, paths) }
+}
+
+func csrf(next http.Handler, exempt []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
@@ -39,7 +49,7 @@ func CSRF(next http.Handler) http.Handler {
 			httpx.WriteError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "request body must be application/json")
 			return
 		}
-		if s := FromContext(r.Context()); s != nil {
+		if s := FromContext(r.Context()); s != nil && !slices.Contains(exempt, r.URL.Path) {
 			got := r.Header.Get(CSRFHeader)
 			if got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(s.CSRFToken)) != 1 {
 				httpx.WriteError(w, http.StatusForbidden, "csrf_failed", "missing or invalid CSRF token")

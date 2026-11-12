@@ -58,10 +58,96 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/auth/login': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Log in with user name and password
+     * @description Verifies the credentials against the directory and starts a session. The session
+     *     token is set as an HttpOnly cookie; the returned csrfToken must be sent in the
+     *     X-CSRF-Token header of all state-changing requests.
+     */
+    post: operations['login']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** End the current session */
+    post: operations['logout']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Current session */
+    get: operations['getMe']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    LoginRequest: {
+      username: string
+      /** Format: password */
+      password: string
+    }
+    SessionInfo: {
+      user: components['schemas']['UserInfo']
+      /**
+       * @description authenticated: fully logged in; totp: the TOTP code is still required.
+       * @enum {string}
+       */
+      stage: 'authenticated' | 'totp'
+      csrfToken: string
+      /**
+       * Format: date-time
+       * @description Absolute end of the session.
+       */
+      expiresAt: string
+    }
+    UserInfo: {
+      username: string
+      displayName: string
+      /** @enum {string} */
+      source: 'ldap' | 'local'
+      groups: components['schemas']['GroupInfo'][]
+    }
+    GroupInfo: {
+      dn: string
+      name: string
+    }
     HealthStatus: {
       /** @enum {string} */
       status: 'ok' | 'unavailable'
@@ -102,7 +188,10 @@ export interface components {
       }
     }
   }
-  parameters: never
+  parameters: {
+    /** @description The csrfToken of the session. */
+    CSRFToken: string
+  }
   requestBodies: never
   headers: never
   pathItems: never
@@ -177,6 +266,113 @@ export interface operations {
         }
       }
       default: components['responses']['Error']
+    }
+  }
+  login: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginRequest']
+      }
+    }
+    responses: {
+      /** @description Logged in. */
+      200: {
+        headers: {
+          /** @description Session cookie (__Host-dcdash_session). */
+          'Set-Cookie'?: string
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SessionInfo']
+        }
+      }
+      /** @description Invalid credentials (code: invalid_credentials). */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description Too many failed attempts (code: too_many_attempts). */
+      429: {
+        headers: {
+          /** @description Seconds until the next attempt is allowed. */
+          'Retry-After'?: number
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description The directory is unavailable (code: directory_unavailable). */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  logout: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Logged out (also when there was no session). */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getMe: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The current session. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SessionInfo']
+        }
+      }
+      /** @description Not logged in (code: not_authenticated). */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
 }

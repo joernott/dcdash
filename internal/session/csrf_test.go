@@ -55,3 +55,28 @@ func TestCSRF(t *testing.T) {
 		}
 	}
 }
+
+func TestCSRFExcept(t *testing.T) {
+	s := &Session{Username: "alice", Stage: StageAuthenticated, CSRFToken: "csrf-token"}
+	h := CSRFExcept("/api/v1/auth/login")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }))
+	send := func(path, origin string) int {
+		r := httptest.NewRequest(http.MethodPost, "https://dcdash.example.com"+path, strings.NewReader("{}"))
+		r.Header.Set("Content-Type", "application/json")
+		if origin != "" {
+			r.Header.Set("Origin", origin)
+		}
+		r = r.WithContext(WithSession(r.Context(), s))
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		return rec.Code
+	}
+	if got := send("/api/v1/auth/login", ""); got != http.StatusNoContent {
+		t.Errorf("exempt path without token: %d", got)
+	}
+	if got := send("/api/v1/auth/login", "https://evil.example"); got != http.StatusForbidden {
+		t.Errorf("exempt path still needs same origin: %d", got)
+	}
+	if got := send("/api/v1/other", ""); got != http.StatusForbidden {
+		t.Errorf("other path without token: %d", got)
+	}
+}
