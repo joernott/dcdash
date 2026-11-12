@@ -118,8 +118,11 @@ These apply to every task:
 - [ ] **3.6** CSRF protection for state-changing requests
 - [ ] **3.7** Login rate limiting and temporary lockout per user and per source IP
 - [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
-- [ ] **3.9** Development environment: docker compose with a Samba AD DC, seeded users and
-  groups; integration tests
+- [ ] **3.9** LDAP integration tests:
+  - AD mode against the existing Samba AD server in the network, with connection data and
+    test accounts from environment variables. The tests are skipped when these aren't set
+    (for example in GitHub Actions, which can't reach the internal network).
+  - Generic LDAP mode against an OpenLDAP container, which also runs in CI.
 - [ ] **3.10** Break-glass local account: disabled by default, password hash in the config,
   always holds `root` and always requires TOTP, every use is audited and logged as a warning
 
