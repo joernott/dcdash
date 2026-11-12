@@ -10,17 +10,55 @@
 server:
   # Address and port to listen on.
   listen: ":8443"
+  # Optional plain HTTP listener that redirects to HTTPS, e.g. ":80". Empty disables it.
+  redirect_listen: ""
+  # max-age of the Strict-Transport-Security header (0 disables it).
+  hsts_max_age: 4320h
+  read_header_timeout: 10s
+  shutdown_timeout: 15s
+
+  # See docs/certificates.md for all options and examples.
   tls:
-    # files: certificate and key from PEM files.
+    # acme:  request and renew the certificate from an ACME CA (Let's Encrypt, step-ca, ...).
+    # files: certificate and key from PEM files, reloaded when they change.
     # none:  plain HTTP; only for development or behind a TLS-terminating proxy.
     mode: files
     cert_file: /etc/dcdash/tls/cert.pem
     key_file: /etc/dcdash/tls/key.pem
-    # How often the files are checked for changes; a changed certificate is
-    # used without restart. 0 disables reloading.
+    # How often the files are checked for changes; 0 disables reloading.
     reload_interval: 1m
-  read_header_timeout: 10s
-  shutdown_timeout: 15s
+
+    # Used with mode: acme.
+    acme:
+      directory_url: https://acme-v02.api.letsencrypt.org/directory
+      email: ""
+      # Must be true: accepts the terms of service of the CA.
+      accept_tos: false
+      domains: []
+      key_type: EC256
+      # Additional trusted root for the ACME server (e.g. the step-ca root).
+      ca_file: ""
+      renew_before: 720h
+      # External account binding, if the CA requires it.
+      eab:
+        key_id: ""
+        hmac_key: ""
+      dns:
+        # cloudflare or rfc2136
+        provider: cloudflare
+        cloudflare:
+          # e.g. "file:/etc/dcdash/cloudflare-acme.token" or "env:CLOUDFLARE_ACME_TOKEN"
+          api_token: ""
+        rfc2136:
+          nameserver: ""
+          tsig_key: ""
+          tsig_secret: ""
+          tsig_algorithm: hmac-sha256
+        # Resolvers for zone lookup and propagation checks (default: system resolvers).
+        resolvers: []
+        # 0: provider default.
+        propagation_timeout: 0s
+        disable_authoritative_check: false
 
 log:
   # trace, debug, info, warn, error
