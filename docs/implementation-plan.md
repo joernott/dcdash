@@ -33,7 +33,7 @@ These apply to every task:
 |---|---|---|---|---|
 | 0 | `sprint/00-planning` | Concept review, plan, conventions | – | done |
 | 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | done |
-| 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | in progress |
+| 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | open |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
