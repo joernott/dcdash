@@ -1,8 +1,8 @@
 # Build output
 /bin/
 /dist/
-/web/dist/*
-!/web/dist/.gitkeep
+/internal/ui/dist/*
+!/internal/ui/dist/.gitkeep
 
 # Frontend
 node_modules/

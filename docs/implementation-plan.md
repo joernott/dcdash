@@ -80,7 +80,7 @@ These apply to every task:
   headers), graceful shutdown, `/healthz`, `/readyz`, `/api/v1/version`
 - [x] **1.7** Frontend scaffold: Vue 3, TypeScript, Vite, Tailwind CSS v4 (class-based dark
   variant), Pinia, Vue Router, vue-i18n (en and de), ESLint and Prettier, Vitest
-- [ ] **1.8** Embed the frontend build with `go:embed`, SPA fallback routing, dev proxy setup
+- [x] **1.8** Embed the frontend build with `go:embed`, SPA fallback routing, dev proxy setup
   (Vite → Go backend)
 - [ ] **1.9** OpenAPI 3 spec skeleton (`api/openapi.yaml`) and a TypeScript client
   generated from it
