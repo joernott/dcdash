@@ -76,7 +76,7 @@ These apply to every task:
   `config.example.yaml`
 - [x] **1.5** Logging with `rs/zerolog`: JSON or console output, configurable level, request
   ID in log context
-- [ ] **1.6** HTTP server: router, middleware (request ID, logging, panic recovery, security
+- [x] **1.6** HTTP server: router, middleware (request ID, logging, panic recovery, security
   headers), graceful shutdown, `/healthz`, `/readyz`, `/api/v1/version`
 - [ ] **1.7** Frontend scaffold: Vue 3, TypeScript, Vite, Tailwind CSS v4 (class-based dark
   variant), Pinia, Vue Router, vue-i18n (en and de), ESLint and Prettier, Vitest
