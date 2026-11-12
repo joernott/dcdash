@@ -86,7 +86,7 @@ These apply to every task:
   generated from it
 - [x] **1.10** CI with GitHub Actions: Go lint and test, frontend lint, test and build,
   translation key completeness check, combined binary build
-- [ ] **1.11** Developer documentation: `docs/development.md`
+- [x] **1.11** Developer documentation: `docs/development.md`
 
 ## Sprint 2 — TLS and Certificates
 
