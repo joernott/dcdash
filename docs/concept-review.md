@@ -222,7 +222,7 @@ roles:
 | CLI | `dcdash serve`, `dcdash config validate`, `dcdash version`, `dcdash totp reset <user>`. |
 | Packaging | goreleaser: static Linux binaries, `.deb`/`.rpm` with a systemd unit, a container image. |
 | CI | GitHub Actions: lint (golangci-lint, eslint), unit tests, integration tests, build. |
-| Testing | Integration tests against containers: Samba AD DC, bind9, Kea, Pebble (ACME test server). Proxmox and Cloudflare use HTTP mocks. |
+| Testing | Integration tests against containers: OpenLDAP (generic LDAP), bind9, Kea, Pebble (ACME test server). **(decided)** AD mode is tested against the existing Samba AD server in the network, from the dev VM only. Proxmox and Cloudflare use HTTP mocks. |
 | License | Add the `LICENSE` file (GPLv3) and SPDX headers. All proposed dependencies (MIT, BSD, Apache-2.0, MPL-2.0) are GPLv3-compatible. |
 | Concurrency | Several admins can edit the same DNS zone or Kea config. Use optimistic checks where the backend allows it (SOA serial, Cloudflare record IDs) and avoid read-modify-write of the whole Kea config. |
 | HA of dcdash itself | Out of scope for v0.1.0: one instance, local SQLite. |

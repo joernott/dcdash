@@ -32,7 +32,7 @@ These apply to every task:
 | Sprint | Branch | Goal | Release | Status |
 |---|---|---|---|---|
 | 0 | `sprint/00-planning` | Concept review, plan, conventions | – | done |
-| 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | open |
+| 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | done |
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | open |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | open |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
@@ -62,27 +62,31 @@ These apply to every task:
 
 ## Sprint 1 — Foundation
 
-- [ ] **1.1** Repository layout: Go module, `cmd/dcdash`, `internal/...`, `web/`, `docs/`,
+- [x] **1.1** Repository layout: Go module, `cmd/dcdash`, `internal/...`, `web/`, `docs/`,
   `LICENSE` (GPLv3), SPDX headers, `.editorconfig`, `.gitignore`
-- [ ] **1.2** Build tooling: Makefile or Taskfile (build, test, lint, dev), pinned Go and
+- [x] **1.2** Build tooling: Makefile or Taskfile (build, test, lint, dev), pinned Go and
   Node versions
-- [ ] **1.3** CLI skeleton: `serve`, `version`, `config validate`
-- [ ] **1.4** Configuration: YAML schema and loader with defaults and validation, secret
-  indirection (`*_file`, `env:`), permission warning for world-readable files, example
+  - [x] **1.2.1** Development VM: pinned toolchain versions (`.go-version`,
+    `.node-version`, `.golangci-lint-version`) and the provisioning script
+    `scripts/setup-dev-vm.sh` for Debian 13 (Go, Node.js, golangci-lint, Docker). Needed
+    because the Windows workstation can't run the toolchain
+- [x] **1.3** CLI skeleton: `serve`, `version`, `config validate`
+- [x] **1.4** Configuration: YAML schema and loader with defaults and validation, secret
+  references (`env:NAME`, `file:/path`), permission warning for world-readable files, example
   `config.example.yaml`
-- [ ] **1.5** Logging with `rs/zerolog`: JSON or console output, configurable level, request
+- [x] **1.5** Logging with `rs/zerolog`: JSON or console output, configurable level, request
   ID in log context
-- [ ] **1.6** HTTP server: router, middleware (request ID, logging, panic recovery, security
+- [x] **1.6** HTTP server: router, middleware (request ID, logging, panic recovery, security
   headers), graceful shutdown, `/healthz`, `/readyz`, `/api/v1/version`
-- [ ] **1.7** Frontend scaffold: Vue 3, TypeScript, Vite, Tailwind CSS v4 (class-based dark
+- [x] **1.7** Frontend scaffold: Vue 3, TypeScript, Vite, Tailwind CSS v4 (class-based dark
   variant), Pinia, Vue Router, vue-i18n (en and de), ESLint and Prettier, Vitest
-- [ ] **1.8** Embed the frontend build with `go:embed`, SPA fallback routing, dev proxy setup
+- [x] **1.8** Embed the frontend build with `go:embed`, SPA fallback routing, dev proxy setup
   (Vite → Go backend)
-- [ ] **1.9** OpenAPI 3 spec skeleton (`api/openapi.yaml`) and a TypeScript client
+- [x] **1.9** OpenAPI 3 spec skeleton (`api/openapi.yaml`) and a TypeScript client
   generated from it
-- [ ] **1.10** CI with GitHub Actions: Go lint and test, frontend lint, test and build,
+- [x] **1.10** CI with GitHub Actions: Go lint and test, frontend lint, test and build,
   translation key completeness check, combined binary build
-- [ ] **1.11** Developer documentation: `docs/development.md`
+- [x] **1.11** Developer documentation: `docs/development.md`
 
 ## Sprint 2 — TLS and Certificates
 
@@ -114,8 +118,11 @@ These apply to every task:
 - [ ] **3.6** CSRF protection for state-changing requests
 - [ ] **3.7** Login rate limiting and temporary lockout per user and per source IP
 - [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
-- [ ] **3.9** Development environment: docker compose with a Samba AD DC, seeded users and
-  groups; integration tests
+- [ ] **3.9** LDAP integration tests:
+  - AD mode against the existing Samba AD server in the network, with connection data and
+    test accounts from environment variables. The tests are skipped when these aren't set
+    (for example in GitHub Actions, which can't reach the internal network).
+  - Generic LDAP mode against an OpenLDAP container, which also runs in CI.
 - [ ] **3.10** Break-glass local account: disabled by default, password hash in the config,
   always holds `root` and always requires TOTP, every use is audited and logged as a warning
 

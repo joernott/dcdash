@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info:
+  title: dcdash API
+  description: |
+    REST API of dcdash. All endpoints below `/api/v1` return JSON.
+    Errors use the `ErrorBody` schema; `error.code` is stable and translated by the frontend.
+  version: 0.1.0
+  license:
+    name: GPL-3.0-or-later
+    identifier: GPL-3.0-or-later
+
+tags:
+  - name: system
+    description: Health and build information
+
+paths:
+  /healthz:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Liveness probe
+      responses:
+        "200":
+          description: The process is up and serving HTTP.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /readyz:
+    get:
+      tags: [system]
+      operationId: getReady
+      summary: Readiness probe
+      description: Evaluates all registered readiness checks.
+      responses:
+        "200":
+          description: All checks pass.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+        "503":
+          description: At least one check fails.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /api/v1/version:
+    get:
+      tags: [system]
+      operationId: getVersion
+      summary: Build information
+      responses:
+        "200":
+          description: Version of the running server.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VersionInfo" }
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
+        checks:
+          type: object
+          description: Result per check, "ok" or the error message.
+          additionalProperties: { type: string }
+
+    VersionInfo:
+      type: object
+      required: [version, commit, date, goVersion]
+      properties:
+        version: { type: string, examples: ["v0.1.0"] }
+        commit: { type: string }
+        date: { type: string, description: Build date (RFC 3339) or "unknown" }
+        goVersion: { type: string, examples: ["go1.27.4"] }
+
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Stable, machine-readable error code.
+              examples: [not_found]
+            message:
+              type: string
+              description: English fallback message.

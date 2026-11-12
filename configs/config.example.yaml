@@ -1,0 +1,29 @@
+# dcdash example configuration.
+# Default location: /etc/dcdash/config.yaml (override with --config or DCDASH_CONFIG).
+# Keep this file readable for the dcdash user only (chmod 0640).
+#
+# Secret values (passwords, tokens, keys) can be given as
+#   "env:NAME"    -> value of the environment variable NAME
+#   "file:/path"  -> content of the file
+# or literally.
+
+server:
+  # Address and port to listen on.
+  listen: ":8443"
+  tls:
+    # files: certificate and key from PEM files.
+    # none:  plain HTTP; only for development or behind a TLS-terminating proxy.
+    mode: files
+    cert_file: /etc/dcdash/tls/cert.pem
+    key_file: /etc/dcdash/tls/key.pem
+  read_header_timeout: 10s
+  shutdown_timeout: 15s
+
+log:
+  # trace, debug, info, warn, error
+  level: info
+  # json or console
+  format: json
+
+# Directory for persistent state (database, ACME account and certificates).
+data_dir: /var/lib/dcdash
