@@ -63,6 +63,9 @@ type ACMEManager struct {
 
 	// newProvider creates the DNS-01 provider; replaceable in tests.
 	newProvider func(config.ACMEDNS) (challenge.Provider, error)
+	// obtainFn and sleep drive the renewal loop; replaceable in tests.
+	obtainFn func(context.Context) error
+	sleep    func(context.Context, time.Duration) bool
 
 	mu     sync.Mutex
 	client *lego.Client
@@ -91,7 +94,8 @@ func NewACMEManager(cfg config.ACME, dataDir string, log zerolog.Logger) (*ACMEM
 	}
 	configureResolvers(cfg.DNS)
 
-	m := &ACMEManager{cfg: cfg, dir: dir, log: log, now: time.Now, newProvider: newDNSProvider}
+	m := &ACMEManager{cfg: cfg, dir: dir, log: log, now: time.Now, newProvider: newDNSProvider, sleep: sleepCtx}
+	m.obtainFn = m.obtain
 	if err := m.loadStored(); err != nil {
 		m.log.Warn().Err(err).Msg("ignoring stored certificate")
 	}
@@ -373,17 +377,5 @@ func (m *ACMEManager) obtain(ctx context.Context) error {
 		return err
 	}
 	m.log.Info().Strs("domains", c.Leaf.DNSNames).Time("not_after", c.Leaf.NotAfter).Msg("certificate obtained")
-	return nil
-}
-
-// Run obtains a certificate if none is available and then waits until ctx is
-// canceled. Scheduled renewal is added in task 2.5.
-func (m *ACMEManager) Run(ctx context.Context) error {
-	if m.current() == nil {
-		if err := m.obtain(ctx); err != nil {
-			m.log.Error().Err(err).Msg("cannot obtain certificate")
-		}
-	}
-	<-ctx.Done()
 	return nil
 }
