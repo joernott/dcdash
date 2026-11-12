@@ -52,3 +52,9 @@ I set up a dedicated development vm for you: dev.vm.test.sf.thse.net where you h
 ## 2026-11-12 — Sprint 1 (Foundation)
 
 GPL-3.0-or-later is fine with me. There will be no need to install samba as we have a samba server available in the network. I also can scale up the VM as needed.
+
+---
+
+## 2026-11-12 — Sprint 1 (Foundation)
+
+Please squas-merge sprint 1 into main, push theit and start with sprint 2
