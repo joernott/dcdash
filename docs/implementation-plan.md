@@ -111,7 +111,7 @@ These apply to every task:
   key rotation concept documented
 - [x] **3.3** LDAP client: LDAPS and StartTLS, custom CA, service bind, user search and
   bind, connection timeouts
-- [ ] **3.4** Group resolution: AD nested groups (matching rule in chain) and generic LDAP
+- [x] **3.4** Group resolution: AD nested groups (matching rule in chain) and generic LDAP
   (`memberOf` or group search), groups given as CN or DN
 - [ ] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
   timeout from the config, logout, cleanup job

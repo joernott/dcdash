@@ -78,3 +78,23 @@ func TestADWrongFingerprintIsRejected(t *testing.T) {
 		t.Errorf("wrong fingerprint: %v", err)
 	}
 }
+
+func TestADNestedGroups(t *testing.T) {
+	c := adClient(t, adConfig(t))
+	u, err := c.LookupUser(context.Background(), "Administrator")
+	if err != nil {
+		t.Fatalf("LookupUser: %v", err)
+	}
+	// By AD default, Administrator is a direct member of "Domain Admins", which
+	// in turn is a member of "Denied RODC Password Replication Group": that group
+	// is only found through LDAP_MATCHING_RULE_IN_CHAIN.
+	if !u.MemberOf("Domain Admins") {
+		t.Errorf("direct group missing: %v", u.Groups)
+	}
+	if !u.MemberOf("Denied RODC Password Replication Group") {
+		t.Errorf("nested group missing: %v", u.Groups)
+	}
+	if _, err := c.LookupUser(context.Background(), "dcdash-no-such-user-4711"); !errors.Is(err, ldapauth.ErrInvalidCredentials) {
+		t.Errorf("unknown user: %v", err)
+	}
+}

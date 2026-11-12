@@ -107,3 +107,41 @@ func TestAccountDisabled(t *testing.T) {
 		t.Error("512 detected as disabled")
 	}
 }
+
+func TestGroupFilter(t *testing.T) {
+	ad := testClient(t, config.LDAPModeAD)
+	f := ad.groupFilter(`CN=Doe\, John (x),OU=Users,DC=example,DC=com`, "jdoe")
+	if !strings.Contains(f, "member:1.2.840.113556.1.4.1941:=") || !strings.HasPrefix(f, "(&(objectClass=group)") {
+		t.Errorf("AD filter: %s", f)
+	}
+	if strings.Contains(f, "(x)") {
+		t.Errorf("AD filter not escaped: %s", f)
+	}
+
+	gen := testClient(t, config.LDAPModeGeneric)
+	f = gen.groupFilter("uid=j*,ou=people,dc=example,dc=com", "j*")
+	if !strings.Contains(f, `member=uid=j\2a,ou=people`) || !strings.Contains(f, `memberUid=j\2a`) {
+		t.Errorf("generic filter: %s", f)
+	}
+}
+
+func TestMemberOf(t *testing.T) {
+	u := &User{Groups: []Group{
+		{DN: "CN=dashroot,OU=Groups,DC=example,DC=com", Name: "dashroot"},
+		{DN: "CN=DNS Admins,CN=Users,DC=example,DC=com", Name: "DNS Admins"},
+	}}
+	for group, want := range map[string]bool{
+		"dashroot":     true,
+		"DASHROOT":     true,
+		" dns admins ": true,
+		"dcdash-vm":    false,
+		"cn=dashroot,ou=groups,dc=example,dc=com":    true,
+		"CN=dashroot, OU=Groups, DC=example, DC=com": true,
+		"CN=dashroot,OU=Other,DC=example,DC=com":     false,
+		"CN=broken,=":                                false,
+	} {
+		if got := u.MemberOf(group); got != want {
+			t.Errorf("MemberOf(%q) = %v, want %v", group, got, want)
+		}
+	}
+}

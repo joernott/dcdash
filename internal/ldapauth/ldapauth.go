@@ -193,17 +193,7 @@ func (c *Client) Authenticate(ctx context.Context, username, password string) (*
 		return nil, err
 	}
 
-	a := c.cfg.Attributes
-	user := &User{
-		DN:          entry.DN,
-		Username:    entry.GetAttributeValue(a.Username),
-		DisplayName: entry.GetAttributeValue(a.DisplayName),
-		Email:       entry.GetAttributeValue(a.Email),
-	}
-	if user.Username == "" {
-		user.Username = username
-	}
-	return user, nil
+	return c.userWithGroups(conn, entry, username)
 }
 
 // verifyPassword binds as the user on a separate connection.
@@ -222,4 +212,49 @@ func (c *Client) verifyPassword(dn, password string) error {
 	default:
 		return fmt.Errorf("%w: user bind: %w", ErrUnavailable, err)
 	}
+}
+
+// LookupUser returns a user with its groups without verifying a password, e.g.
+// to refresh the roles of a logged-in user. Unknown or disabled users result in
+// ErrInvalidCredentials.
+func (c *Client) LookupUser(ctx context.Context, username string) (*User, error) {
+	username = strings.TrimSpace(username)
+	if username == "" || len(username) > maxUsernameLength {
+		return nil, ErrInvalidCredentials
+	}
+	conn, err := c.serviceConn()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	entry, err := c.findUser(conn, username)
+	if err != nil {
+		return nil, err
+	}
+	if c.cfg.Mode == config.LDAPModeAD && accountDisabled(entry) {
+		return nil, ErrInvalidCredentials
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return c.userWithGroups(conn, entry, username)
+}
+
+func (c *Client) userWithGroups(conn *ldap.Conn, entry *ldap.Entry, username string) (*User, error) {
+	a := c.cfg.Attributes
+	user := &User{
+		DN:          entry.DN,
+		Username:    entry.GetAttributeValue(a.Username),
+		DisplayName: entry.GetAttributeValue(a.DisplayName),
+		Email:       entry.GetAttributeValue(a.Email),
+	}
+	if user.Username == "" {
+		user.Username = username
+	}
+	groups, err := c.groups(conn, entry.DN, user.Username)
+	if err != nil {
+		return nil, err
+	}
+	user.Groups = groups
+	return user, nil
 }
