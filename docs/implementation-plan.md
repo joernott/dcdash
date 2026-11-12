@@ -96,7 +96,7 @@ These apply to every task:
   the files change
 - [ ] **2.3** ACME provider (lego): account registration and storage, configurable
   directory URL, additional trusted root CA (for step-ca)
-- [ ] **2.4** DNS-01 solvers: Cloudflare (API token) and RFC 2136 (bind9 with TSIG)
+- [x] **2.4** DNS-01 solvers: Cloudflare (API token) and RFC 2136 (bind9 with TSIG)
 - [ ] **2.5** Renewal loop: renew before expiry, retry with backoff, log events, expose
   certificate expiry in `/readyz` and the metrics
 - [ ] **2.6** HTTP→HTTPS redirect listener, TLS 1.2 minimum, secure cipher defaults, HSTS

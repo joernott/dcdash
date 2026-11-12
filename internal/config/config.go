@@ -48,6 +48,8 @@ type TLS struct {
 	KeyFile  string `yaml:"key_file"`
 	// ReloadInterval is how often cert_file and key_file are checked for changes (0 disables).
 	ReloadInterval Duration `yaml:"reload_interval"`
+	// ACME is used in mode "acme".
+	ACME ACME `yaml:"acme"`
 }
 
 // Log configures logging.
@@ -61,7 +63,7 @@ func Default() Config {
 	return Config{
 		Server: Server{
 			Listen:            ":8443",
-			TLS:               TLS{Mode: TLSModeFiles, ReloadInterval: Duration(time.Minute)},
+			TLS:               TLS{Mode: TLSModeFiles, ReloadInterval: Duration(time.Minute), ACME: defaultACME()},
 			ReadHeaderTimeout: Duration(10 * time.Second),
 			ShutdownTimeout:   Duration(15 * time.Second),
 		},
@@ -132,9 +134,11 @@ func (c *Config) Validate() error {
 		if c.Server.TLS.ReloadInterval < 0 {
 			add("server.tls.reload_interval: must not be negative")
 		}
+	case TLSModeACME:
+		c.Server.TLS.ACME.validate(add)
 	case TLSModeNone:
 	default:
-		add("server.tls.mode %q: must be one of %q, %q", c.Server.TLS.Mode, TLSModeFiles, TLSModeNone)
+		add("server.tls.mode %q: must be one of %q, %q, %q", c.Server.TLS.Mode, TLSModeFiles, TLSModeACME, TLSModeNone)
 	}
 	if c.Server.ReadHeaderTimeout <= 0 {
 		add("server.read_header_timeout: must be positive")
