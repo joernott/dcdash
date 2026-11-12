@@ -70,3 +70,17 @@ func TestLDAPValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestSessionConfig(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Auth.Session.Lifetime.D().Hours() != 8 || cfg.Auth.Session.IdleTimeout.D().Minutes() != 30 {
+		t.Errorf("session defaults: %+v", cfg.Auth.Session)
+	}
+	_, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nauth:\n  session: {lifetime: 1h, idle_timeout: 2h}\n"))
+	if err == nil || !strings.Contains(err.Error(), "idle_timeout") {
+		t.Errorf("idle > lifetime: %v", err)
+	}
+}

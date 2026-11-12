@@ -113,7 +113,7 @@ These apply to every task:
   bind, connection timeouts
 - [x] **3.4** Group resolution: AD nested groups (matching rule in chain) and generic LDAP
   (`memberOf` or group search), groups given as CN or DN
-- [ ] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
+- [x] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
   timeout from the config, logout, cleanup job
 - [ ] **3.6** CSRF protection for state-changing requests
 - [ ] **3.7** Login rate limiting and temporary lockout per user and per source IP
@@ -162,6 +162,8 @@ These apply to every task:
   formats
 - [ ] **5.4** API client layer: error handling (localized messages), CSRF header,
   session-expiry handling
+  - [ ] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
+    always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
 - [ ] **5.5** Login page with the TOTP step
 - [ ] **5.6** TOTP enrollment page: QR code, confirmation, recovery code display
 - [ ] **5.7** App layout: navigation that only shows modules the user may use, user menu

@@ -17,7 +17,29 @@ const (
 
 // Auth configures authentication.
 type Auth struct {
-	LDAP LDAP `yaml:"ldap"`
+	LDAP    LDAP    `yaml:"ldap"`
+	Session Session `yaml:"session"`
+}
+
+// Session configures login sessions.
+type Session struct {
+	// Lifetime is the maximum duration of a session, regardless of activity.
+	Lifetime Duration `yaml:"lifetime"`
+	// IdleTimeout ends a session after this duration without requests.
+	IdleTimeout Duration `yaml:"idle_timeout"`
+}
+
+func defaultSession() Session {
+	return Session{Lifetime: Duration(8 * time.Hour), IdleTimeout: Duration(30 * time.Minute)}
+}
+
+func (s Session) validate(add func(string, ...any)) {
+	if s.Lifetime <= 0 {
+		add("auth.session.lifetime: must be positive")
+	}
+	if s.IdleTimeout <= 0 || s.IdleTimeout > s.Lifetime {
+		add("auth.session.idle_timeout: must be positive and not longer than lifetime")
+	}
 }
 
 // TLSClient configures how dcdash verifies a server it connects to.
