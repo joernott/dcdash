@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/version"
 )
 
@@ -54,10 +55,10 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /readyz", s.handleReady)
 	mux.HandleFunc("GET /api/v1/version", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, version.Get())
+		httpx.WriteJSON(w, http.StatusOK, version.Get())
 	})
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
-		writeError(w, http.StatusNotFound, "not_found", "no such API endpoint")
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "no such API endpoint")
 	})
 	if s.opts.UI != nil {
 		mux.Handle("/", s.opts.UI)

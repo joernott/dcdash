@@ -115,7 +115,7 @@ These apply to every task:
   (`memberOf` or group search), groups given as CN or DN
 - [x] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
   timeout from the config, logout, cleanup job
-- [ ] **3.6** CSRF protection for state-changing requests
+- [x] **3.6** CSRF protection for state-changing requests
 - [ ] **3.7** Login rate limiting and temporary lockout per user and per source IP
 - [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
 - [ ] **3.9** LDAP integration tests:

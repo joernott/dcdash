@@ -18,6 +18,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/testutil"
 )
 
@@ -83,7 +84,7 @@ func TestVersion(t *testing.T) {
 
 func TestUnknownAPIIsJSON404(t *testing.T) {
 	rec := do(t, New(testConfig(), zerolog.Nop(), Options{}).Handler(), http.MethodGet, "/api/v1/nope")
-	var body ErrorBody
+	var body httpx.ErrorBody
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || rec.Code != http.StatusNotFound || body.Error.Code != "not_found" {
 		t.Fatalf("got %d %s", rec.Code, rec.Body)
 	}
