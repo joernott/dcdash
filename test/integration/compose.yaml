@@ -16,8 +16,8 @@ services:
       - /bin/sh
       - -c
       - >-
-        cp /config/db.dcdash.test /var/lib/bind/ &&
-        chown bind:bind /var/lib/bind/db.dcdash.test &&
+        cp /config/dcdash.test.zone /var/lib/bind/ &&
+        chown bind:bind /var/lib/bind/dcdash.test.zone &&
         exec /usr/sbin/named -u bind -g -c /config/named.conf
     volumes:
       - ./bind:/config:ro
