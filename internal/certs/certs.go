@@ -41,6 +41,8 @@ func New(cfg *config.Config, log zerolog.Logger) (Manager, error) {
 		return nil, nil
 	case config.TLSModeFiles:
 		return NewFileManager(t.CertFile, t.KeyFile, t.ReloadInterval.D(), log)
+	case config.TLSModeACME:
+		return NewACMEManager(t.ACME, cfg.DataDir, log)
 	default:
 		return nil, fmt.Errorf("unsupported TLS mode %q", t.Mode)
 	}
