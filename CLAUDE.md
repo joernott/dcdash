@@ -26,3 +26,13 @@ It has a Go backend and a Vue 3 + Tailwind CSS frontend, and is licensed under G
    branch into `main` with the commit message `Sprint N: <topic>`. Keep the sprint branch
    (never delete it), then fork the next sprint branch from `main`. Merges and pushes
    need the user's confirmation.
+
+## Definition of done
+
+Every task meets the "Definition of done" in the implementation plan:
+- English and German UI texts.
+- Light and dark mode support.
+- Permission checks and audit logging for state changes.
+- Tests, and an updated OpenAPI spec.
+
+Logging uses `rs/zerolog`.

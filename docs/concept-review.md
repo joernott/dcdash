@@ -70,12 +70,16 @@ These points need defining:
   (unambiguous). **(proposed)** Accept both. A value containing `=` is treated as a DN.
 - `dashroot`: the concept hard-wires it. **(proposed)** Keep it as the default, and let the
   config override the group name but never remove the root role.
-- **Break-glass access:** if LDAP is down, nobody can log in. **(proposed, optional)** A local
-  emergency account, disabled by default, configured with a password hash in YAML and still
-  requiring TOTP.
+- **Break-glass access:** if LDAP is down, nobody can log in. **(decided, Q1)** A local
+  emergency account, disabled by default, configured with a password hash in YAML. It holds
+  the `root` role and always requires TOTP.
 
 ### 2.4 TOTP 2FA (gap, medium)
 
+- **(decided, Q2)** TOTP is configurable per role with `require_totp` (default `true`).
+  A user must use TOTP if **any** of their roles requires it, so the strictest role wins.
+  `root` and the break-glass account always require TOTP and can't be configured otherwise.
+  Users who don't need TOTP may still enroll voluntarily, and then it's enforced for them.
 - Enrollment flow: on first successful LDAP login without TOTP, show a QR code
   (`otpauth://` URI), confirm one code, and then issue recovery codes.
 - Reset: root can reset a user's TOTP. The reset is audited.
@@ -99,6 +103,7 @@ The concept says roles have permissions but doesn't define them. **(proposed)**
 roles:
   - name: dns-operator
     groups: ["dcdash-dns"]            # LDAP groups (CN or DN)
+    require_totp: true                # default; see 2.4
     permissions:
       - "dns:cloudflare-prod:*:write" # module:instance:resource:action
       - "dns:bind-internal:*:read"
@@ -110,8 +115,9 @@ roles:
 ```
 
 - Modules: `proxmox`, `dns`, `dhcp`, `system` (audit log, sessions, users' TOTP).
-- Actions form a hierarchy: `read` < `operate` (for example power actions) < `write`
-  (create, change, delete) < `admin`.
+- Actions form a hierarchy: `read` < `operate` (for example power actions) < `console`
+  (interactive console or shell access, see 2.7) < `write` (create, change, delete) <
+  `admin`.
 - Wildcards (`*`) are allowed per segment. Permissions only grant, there is no deny.
 - `root` holds `*:*:*:admin` implicitly.
 - The backend enforces every check. The frontend only hides what the user can't use.
@@ -122,12 +128,20 @@ roles:
   per cluster, not user passwords.
 - Each cluster should accept several API endpoints for failover, and a custom CA or
   certificate fingerprint pinning (Proxmox often runs with self-signed certificates).
-- Scope for v0.1.0 isn't defined. **(proposed)**
-  - Read: cluster status, nodes (CPU, memory, storage), VMs and containers with their status.
-  - Operate: start, shutdown, stop, reboot, suspend and resume, plus the task log and task
-    status.
-  - **Out of scope for v0.1.0:** VM creation, console (noVNC/xterm.js), migration, backups,
-    snapshots.
+- Scope **(decided)**:
+  - **v0.1.0**
+    - Read: cluster status, nodes (CPU, memory, storage), VMs and containers with their
+      status.
+    - Operate: start, shutdown, stop, reboot, suspend and resume, plus the task log and task
+      status.
+    - **Console (Q3):** noVNC for VMs, and xterm.js for containers and node shells. The
+      backend proxies the Proxmox `vncproxy`/`termproxy` websocket, so Proxmox credentials
+      never reach the browser. This needs the `console` permission. Risk: check early whether
+      the Proxmox websocket accepts API-token authentication. If it doesn't, the console
+      needs a dedicated Proxmox user with a ticket (task 6.6).
+  - **v0.1.1:** creating VMs and containers (from templates or clones, ISO, cloud-init) and
+    deleting them.
+  - **Later:** migration, backups, snapshots.
 
 ### 2.8 DNS: Cloudflare and bind9 (correction, high)
 
@@ -142,8 +156,18 @@ roles:
     with a configured key file. Alternatively the rndc protocol can be implemented later.
   - This requires `allow-update`/`update-policy` and `allow-transfer` for the dcdash TSIG
     key in `named.conf`. It belongs in the admin documentation.
-- Cloudflare: use the official `cloudflare/cloudflare-go` SDK (Apache-2.0). The scope is zone
-  list and record CRUD, including the `proxied` flag and TTL.
+- Cloudflare: use the official `cloudflare/cloudflare-go` SDK (Apache-2.0). The scope is
+  zones (list, create, delete) and record CRUD, including the `proxied` flag and TTL. Creating
+  zones needs the account ID and a token with zone-edit permission.
+- **Zone creation and deletion (decided, Q4)** for bind9:
+  - `rndc addzone`/`delzone` requires `allow-new-zones yes;` on the primary.
+  - The zone file must exist on the primary before `addzone`. dcdash can't write files on a
+    remote server through rndc, so it needs a way to provision them: a shared or local
+    zone directory, or SFTP with a dedicated key. The zone is created from an SOA/NS
+    template in the config.
+  - Secondaries learn about new zones through a **catalog zone** (RFC 9432). dcdash updates
+    the catalog with RFC 2136 as well.
+  - Task 7.6 selects the mechanism before it is implemented.
 - **(proposed)** A common `dns.Provider` interface (list zones, list records, create, update,
   delete), so the frontend has one DNS UI for both backends. Provider-specific fields such as
   Cloudflare's `proxied` are optional attributes.
@@ -161,6 +185,9 @@ roles:
     `config-set`/`config-write` round trip are available.
   - Kea 3.0 also changed hook licensing. Task 8.1 verifies which hooks are available on
     the target Kea version.
+  - **(decided, Q5)** `lease_cmds`, `host_cmds` with a host database, and `stat_cmds` are
+    available, and more hooks can be installed if needed. The admin guide documents them as
+    prerequisites.
 - **(proposed)** v0.1.0 scope:
   - Read: server status and version, subnets and pools with utilisation, leases (search by
     IP, MAC or hostname).
@@ -178,8 +205,11 @@ roles:
 | Audit log | Every state-changing action and every login or failed login: who, when, what, target, result. Stored in SQLite, shown in the UI, optionally also written to syslog or a file. |
 | Secrets in YAML | Every secret field also accepts `*_file` (path) or `env:VAR`, so the YAML can be committed without secrets. Warn on world-readable config. |
 | API | REST/JSON under `/api/v1`, documented in an OpenAPI 3 spec that is kept in the repo. |
-| Frontend stack | Vue 3 + TypeScript + Vite + Tailwind CSS v4 + Pinia + Vue Router, embedded in the binary with `go:embed`. |
-| Observability | Structured logging (`log/slog`), `/healthz` and `/readyz`, optional Prometheus `/metrics`. |
+| Frontend stack | Vue 3 + TypeScript + Vite + Tailwind CSS v4 + Pinia + Vue Router + vue-i18n, embedded in the binary with `go:embed`. |
+| Languages (Q7) | **(decided)** English and German. All UI strings are in translation files from the start; CI fails when keys are missing. The language comes from the browser, can be changed in the UI and is stored per user. Documentation stays in English. |
+| Dark mode | **(decided)** Light, dark and "system" (follows `prefers-color-scheme`). Uses Tailwind's class-based dark variant, so every component, including the noVNC/xterm.js consoles and charts, is designed for both themes. The choice is stored per user on the server, with a local copy to avoid a flash of the wrong theme on load. |
+| User preferences | Stored server-side per user (language, theme, later table settings). |
+| Observability | **(decided)** Structured logging with `rs/zerolog` (MIT), JSON or console output; `/healthz` and `/readyz`; optional Prometheus `/metrics`. |
 | Backend health | Show per-backend connectivity status on the dashboard home page. |
 | CLI | `dcdash serve`, `dcdash config validate`, `dcdash version`, `dcdash totp reset <user>`. |
 | Packaging | goreleaser: static Linux binaries, `.deb`/`.rpm` with a systemd unit, a container image. |
@@ -189,17 +219,23 @@ roles:
 | Concurrency | Several admins can edit the same DNS zone or Kea config. Use optimistic checks where the backend allows it (SOA serial, Cloudflare record IDs) and avoid read-modify-write of the whole Kea config. |
 | HA of dcdash itself | Out of scope for v0.1.0: one instance, local SQLite. |
 
-## 3. Open questions
+## 3. Questions and decisions
 
-Each question has a default, and the plan proceeds with that default unless you say otherwise.
+Answered on 2026-11-12.
 
-| # | Question | Default |
+| # | Question | Decision |
 |---|---|---|
-| Q1 | Is a local break-glass account wanted? | Yes, optional, disabled by default |
-| Q2 | Is TOTP mandatory for every user, or configurable per role? | Mandatory for everyone |
-| Q3 | Proxmox scope: is a console (noVNC) needed in v0.1.0? | No |
-| Q4 | DNS scope: should zone creation and deletion be included? | No, record management only |
-| Q5 | Kea: is `host_cmds` with a host database available in your environment? | Assumed; the UI degrades without it |
-| Q6 | Target platforms: Linux amd64/arm64 only? | Yes |
-| Q7 | Are UI languages other than English needed? | English only; i18n prepared in the frontend |
-| Q8 | Should the module order in the plan (Proxmox → DNS → DHCP) reflect your priorities? | Yes |
+| Q1 | Is a local break-glass account wanted? | **Yes.** Disabled by default, always requires TOTP (2.3) |
+| Q2 | Is TOTP mandatory for every user, or configurable per role? | **Configurable per role** (2.4) |
+| Q3 | Proxmox scope: is a console (noVNC) needed in v0.1.0? | **Yes** (2.7) |
+| Q4 | DNS scope: should zone creation and deletion be included? | **Yes** (2.8) |
+| Q5 | Kea: is `host_cmds` with a host database available in your environment? | **Yes.** More hooks can be installed (2.9) |
+| Q6 | Target platforms: Linux amd64/arm64 only? | **Yes** |
+| Q7 | Are UI languages other than English needed? | **English and German** (2.10) |
+| Q8 | Should the module order in the plan (Proxmox → DNS → DHCP) reflect your priorities? | **Yes** |
+
+Other feedback:
+
+- Creating VMs and containers is part of **v0.1.1** (2.7).
+- Logging uses **zerolog** (2.10).
+- **Dark mode** is a v0.1.0 feature (2.10).
