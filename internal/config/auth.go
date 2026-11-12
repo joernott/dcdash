@@ -19,6 +19,33 @@ const (
 type Auth struct {
 	LDAP    LDAP    `yaml:"ldap"`
 	Session Session `yaml:"session"`
+	Lockout Lockout `yaml:"lockout"`
+}
+
+// Lockout limits failed login attempts per user name and per client IP address.
+type Lockout struct {
+	User LockoutPolicy `yaml:"user"`
+	IP   LockoutPolicy `yaml:"ip"`
+}
+
+// LockoutPolicy locks a key for Duration after MaxFailures failures within Window.
+type LockoutPolicy struct {
+	MaxFailures int      `yaml:"max_failures"`
+	Window      Duration `yaml:"window"`
+	Duration    Duration `yaml:"duration"`
+}
+
+func defaultLockout() Lockout {
+	return Lockout{
+		User: LockoutPolicy{MaxFailures: 5, Window: Duration(15 * time.Minute), Duration: Duration(15 * time.Minute)},
+		IP:   LockoutPolicy{MaxFailures: 20, Window: Duration(15 * time.Minute), Duration: Duration(15 * time.Minute)},
+	}
+}
+
+func (p LockoutPolicy) validate(prefix string, add func(string, ...any)) {
+	if p.MaxFailures < 1 || p.Window <= 0 || p.Duration <= 0 {
+		add("%s: max_failures, window and duration must be positive", prefix)
+	}
 }
 
 // Session configures login sessions.

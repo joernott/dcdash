@@ -84,3 +84,17 @@ func TestSessionConfig(t *testing.T) {
 		t.Errorf("idle > lifetime: %v", err)
 	}
 }
+
+func TestLockoutConfig(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Auth.Lockout.User.MaxFailures != 5 || cfg.Auth.Lockout.IP.MaxFailures != 20 {
+		t.Errorf("lockout defaults: %+v", cfg.Auth.Lockout)
+	}
+	_, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nauth:\n  lockout:\n    ip: {max_failures: 0}\n"))
+	if err == nil || !strings.Contains(err.Error(), "auth.lockout.ip") {
+		t.Errorf("invalid lockout: %v", err)
+	}
+}

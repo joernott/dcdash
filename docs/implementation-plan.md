@@ -116,7 +116,7 @@ These apply to every task:
 - [x] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
   timeout from the config, logout, cleanup job
 - [x] **3.6** CSRF protection for state-changing requests
-- [ ] **3.7** Login rate limiting and temporary lockout per user and per source IP
+- [x] **3.7** Login rate limiting and temporary lockout per user and per source IP
 - [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
 - [ ] **3.9** LDAP integration tests:
   - AD mode against the existing Samba AD server in the network, with connection data and

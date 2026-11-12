@@ -87,7 +87,7 @@ func Default() Config {
 			ReadHeaderTimeout: Duration(10 * time.Second),
 			ShutdownTimeout:   Duration(15 * time.Second),
 		},
-		Auth:    Auth{LDAP: defaultLDAP(), Session: defaultSession()},
+		Auth:    Auth{LDAP: defaultLDAP(), Session: defaultSession(), Lockout: defaultLockout()},
 		Log:     Log{Level: "info", Format: "json"},
 		DataDir: "/var/lib/dcdash",
 	}
@@ -192,6 +192,8 @@ func (c *Config) Validate() error {
 		c.Auth.LDAP.validate(add)
 	}
 	c.Auth.Session.validate(add)
+	c.Auth.Lockout.User.validate("auth.lockout.user", add)
+	c.Auth.Lockout.IP.validate("auth.lockout.ip", add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {
