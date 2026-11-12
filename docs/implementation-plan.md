@@ -74,7 +74,7 @@ These apply to every task:
 - [x] **1.4** Configuration: YAML schema and loader with defaults and validation, secret
   references (`env:NAME`, `file:/path`), permission warning for world-readable files, example
   `config.example.yaml`
-- [ ] **1.5** Logging with `rs/zerolog`: JSON or console output, configurable level, request
+- [x] **1.5** Logging with `rs/zerolog`: JSON or console output, configurable level, request
   ID in log context
 - [ ] **1.6** HTTP server: router, middleware (request ID, logging, panic recovery, security
   headers), graceful shutdown, `/healthz`, `/readyz`, `/api/v1/version`
