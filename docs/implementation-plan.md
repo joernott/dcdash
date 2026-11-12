@@ -39,7 +39,7 @@ Based on [concept.md](concept.md) and the decisions in [concept-review.md](conce
 - [x] **0.1** Create the prompt log `docs/zz_prompts.md`
 - [x] **0.2** Review the concept (`docs/concept-review.md`)
 - [x] **0.3** Create the implementation plan (this document)
-- [ ] **0.4** Add `CLAUDE.md` with the project conventions and workflow rules
+- [x] **0.4** Add `CLAUDE.md` with the project conventions and workflow rules
 - [ ] **0.5** Resolve the open questions Q1–Q8 from the concept review and amend the plan
   if needed
 
