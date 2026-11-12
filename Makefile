@@ -50,6 +50,10 @@ test: test-go test-web ## Run all unit tests
 test-go: ## Run Go tests with the race detector
 	go test -race ./...
 
+.PHONY: test-integration
+test-integration: ## Run integration tests against containers (needs Docker; KEEP=1 keeps them)
+	scripts/integration-test.sh
+
 .PHONY: test-web
 test-web: web/node_modules ## Run frontend unit tests
 	cd web && npm test
