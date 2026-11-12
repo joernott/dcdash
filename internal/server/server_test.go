@@ -153,5 +153,3 @@ func TestServeTLSAndShutdown(t *testing.T) {
 		t.Fatal("server did not shut down")
 	}
 }
-
-
