@@ -70,7 +70,7 @@ These apply to every task:
     `.node-version`, `.golangci-lint-version`) and the provisioning script
     `scripts/setup-dev-vm.sh` for Debian 13 (Go, Node.js, golangci-lint, Docker). Needed
     because the Windows workstation can't run the toolchain
-- [ ] **1.3** CLI skeleton: `serve`, `version`, `config validate`
+- [x] **1.3** CLI skeleton: `serve`, `version`, `config validate`
 - [x] **1.4** Configuration: YAML schema and loader with defaults and validation, secret
   references (`env:NAME`, `file:/path`), permission warning for world-readable files, example
   `config.example.yaml`

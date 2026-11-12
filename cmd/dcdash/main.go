@@ -4,11 +4,11 @@
 package main
 
 import (
-	"fmt"
+	"os"
 
-	"github.com/joernott/dcdash/internal/version"
+	"github.com/joernott/dcdash/internal/cli"
 )
 
 func main() {
-	fmt.Println("dcdash", version.Get().Version)
+	os.Exit(cli.Execute(cli.Deps{Stdout: os.Stdout, Stderr: os.Stderr}))
 }
