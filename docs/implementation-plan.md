@@ -101,7 +101,7 @@ These apply to every task:
   certificate expiry in `/readyz` (the metric follows with the metrics endpoint in 9.2)
 - [x] **2.6** HTTP→HTTPS redirect listener, TLS 1.2 minimum, secure cipher defaults, HSTS
 - [x] **2.7** Integration tests against Pebble, and against step-ca where possible
-- [ ] **2.8** Documentation: certificate configuration for all three modes
+- [x] **2.8** Documentation: certificate configuration for all three modes
 
 ## Sprint 3 — State Store and Authentication
 
