@@ -103,7 +103,7 @@ func TestUIHandlerServesNonAPI(t *testing.T) {
 func TestRecovererAndAccessLog(t *testing.T) {
 	var buf bytes.Buffer
 	log := zerolog.New(&buf)
-	h := chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }), log)
+	h := chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }), log, "")
 	rec := do(t, h, http.MethodGet, "/x")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("got %d", rec.Code)

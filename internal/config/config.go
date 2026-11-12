@@ -35,7 +35,13 @@ type Config struct {
 
 // Server configures the HTTP(S) listener.
 type Server struct {
-	Listen            string   `yaml:"listen"`
+	Listen string `yaml:"listen"`
+	// RedirectListen is an optional plain HTTP listener (e.g. ":80") that
+	// redirects every request to HTTPS. Empty disables it.
+	RedirectListen string `yaml:"redirect_listen"`
+	// HSTSMaxAge is the max-age of the Strict-Transport-Security header sent
+	// over HTTPS (0 disables the header).
+	HSTSMaxAge        Duration `yaml:"hsts_max_age"`
 	TLS               TLS      `yaml:"tls"`
 	ReadHeaderTimeout Duration `yaml:"read_header_timeout"`
 	ShutdownTimeout   Duration `yaml:"shutdown_timeout"`
@@ -63,6 +69,7 @@ func Default() Config {
 	return Config{
 		Server: Server{
 			Listen:            ":8443",
+			HSTSMaxAge:        Duration(180 * 24 * time.Hour),
 			TLS:               TLS{Mode: TLSModeFiles, ReloadInterval: Duration(time.Minute), ACME: defaultACME()},
 			ReadHeaderTimeout: Duration(10 * time.Second),
 			ShutdownTimeout:   Duration(15 * time.Second),
@@ -122,6 +129,17 @@ func (c *Config) Validate() error {
 
 	if _, _, err := net.SplitHostPort(c.Server.Listen); err != nil {
 		add("server.listen %q: must be host:port", c.Server.Listen)
+	}
+	if c.Server.RedirectListen != "" {
+		if _, _, err := net.SplitHostPort(c.Server.RedirectListen); err != nil {
+			add("server.redirect_listen %q: must be host:port", c.Server.RedirectListen)
+		}
+		if c.Server.TLS.Mode == TLSModeNone {
+			add("server.redirect_listen: requires TLS (server.tls.mode is %q)", TLSModeNone)
+		}
+	}
+	if c.Server.HSTSMaxAge < 0 {
+		add("server.hsts_max_age: must not be negative")
 	}
 	switch c.Server.TLS.Mode {
 	case TLSModeFiles:

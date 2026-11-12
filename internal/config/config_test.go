@@ -175,3 +175,20 @@ func TestSecretIsMasked(t *testing.T) {
 		t.Errorf("secret leaked via marshal: %s / %s", j, y)
 	}
 }
+
+func TestRedirectAndHSTSValidation(t *testing.T) {
+	_, err := Parse(strings.NewReader(`
+server:
+  redirect_listen: "nonsense"
+  hsts_max_age: -1h
+  tls: {mode: none}
+`))
+	if err == nil {
+		t.Fatal("expected errors")
+	}
+	for _, want := range []string{"redirect_listen \"nonsense\"", "requires TLS", "hsts_max_age"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error does not mention %s: %v", want, err)
+		}
+	}
+}
