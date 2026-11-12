@@ -1,0 +1,57 @@
+# Test data for dcdash integration tests (generic LDAP mode). Test-only passwords.
+dn: dc=dcdash,dc=test
+objectClass: dcObject
+objectClass: organization
+dc: dcdash
+o: dcdash test
+
+dn: ou=people,dc=dcdash,dc=test
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=dcdash,dc=test
+objectClass: organizationalUnit
+ou: groups
+
+dn: ou=services,dc=dcdash,dc=test
+objectClass: organizationalUnit
+ou: services
+
+dn: cn=dcdash-svc,ou=services,dc=dcdash,dc=test
+objectClass: person
+objectClass: simpleSecurityObject
+cn: dcdash-svc
+sn: service
+userPassword: svc-test-only
+
+dn: uid=alice,ou=people,dc=dcdash,dc=test
+objectClass: inetOrgPerson
+uid: alice
+cn: Alice Admin
+sn: Admin
+mail: alice@dcdash.test
+userPassword: alice-test-only
+
+dn: uid=bob,ou=people,dc=dcdash,dc=test
+objectClass: inetOrgPerson
+uid: bob
+cn: Bob Operator
+sn: Operator
+userPassword: bob-test-only
+
+dn: cn=dashroot,ou=groups,dc=dcdash,dc=test
+objectClass: groupOfNames
+cn: dashroot
+member: uid=alice,ou=people,dc=dcdash,dc=test
+
+dn: cn=dcdash-vm,ou=groups,dc=dcdash,dc=test
+objectClass: groupOfUniqueNames
+cn: dcdash-vm
+uniqueMember: uid=bob,ou=people,dc=dcdash,dc=test
+uniqueMember: uid=alice,ou=people,dc=dcdash,dc=test
+
+dn: cn=ops,ou=groups,dc=dcdash,dc=test
+objectClass: posixGroup
+cn: ops
+gidNumber: 5000
+memberUid: alice
