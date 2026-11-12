@@ -82,7 +82,7 @@ These apply to every task:
   variant), Pinia, Vue Router, vue-i18n (en and de), ESLint and Prettier, Vitest
 - [x] **1.8** Embed the frontend build with `go:embed`, SPA fallback routing, dev proxy setup
   (Vite → Go backend)
-- [ ] **1.9** OpenAPI 3 spec skeleton (`api/openapi.yaml`) and a TypeScript client
+- [x] **1.9** OpenAPI 3 spec skeleton (`api/openapi.yaml`) and a TypeScript client
   generated from it
 - [ ] **1.10** CI with GitHub Actions: Go lint and test, frontend lint, test and build,
   translation key completeness check, combined binary build

@@ -65,6 +65,10 @@ lint-go: ## Run golangci-lint
 lint-web: web/node_modules ## Lint, format-check and type-check the frontend
 	cd web && npm run check && npm run type-check
 
+.PHONY: gen-api
+gen-api: web/node_modules ## Regenerate web/src/api/schema.d.ts from api/openapi.yaml
+	cd web && npm run gen:api
+
 .PHONY: fmt
 fmt: web/node_modules ## Format Go and frontend sources
 	golangci-lint fmt

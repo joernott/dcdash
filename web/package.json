@@ -16,12 +16,14 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
+    "gen:api": "openapi-typescript ../api/openapi.yaml -o src/api/schema.d.ts && prettier --write --log-level warn src/api/schema.d.ts",
     "check": "run-s check:*",
     "check:oxlint": "oxlint . --deny-warnings",
     "check:eslint": "eslint . --max-warnings 0",
     "check:format": "prettier --check --experimental-cli src/"
   },
   "dependencies": {
+    "openapi-fetch": "^0.17.0",
     "pinia": "^4.0.3",
     "vue": "^3.5.42",
     "vue-i18n": "^11.4.19",
@@ -53,6 +55,11 @@
     "vitest": "^4.1.11",
     "vue-eslint-parser": "^10.4.1",
     "vue-tsc": "^3.3.11"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"
