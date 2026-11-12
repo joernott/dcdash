@@ -34,3 +34,9 @@ One additional feature I almost missed, that is always requested by users is the
 ## 2026-11-12 — Sprint 0 (Planning)
 
 DCDash will copy zone files to the primary DNS server via SFTP. We can't guarantee its installation on the primary BIND server
+
+---
+
+## 2026-11-12 — Sprint 0 (Planning)
+
+yes, please go ahead

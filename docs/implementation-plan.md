@@ -31,7 +31,7 @@ These apply to every task:
 
 | Sprint | Branch | Goal | Release | Status |
 |---|---|---|---|---|
-| 0 | `sprint/00-planning` | Concept review, plan, conventions | – | in progress |
+| 0 | `sprint/00-planning` | Concept review, plan, conventions | – | done |
 | 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | open |
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | open |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | open |
