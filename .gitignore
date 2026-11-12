@@ -1,0 +1,27 @@
+# Build output
+/bin/
+/dist/
+/web/dist/*
+!/web/dist/.gitkeep
+
+# Frontend
+node_modules/
+/web/coverage/
+/web/test-results/
+/web/playwright-report/
+
+# Local development state (certificates, data, local configs)
+/.dev/
+
+# Go
+*.test
+*.out
+coverage.*
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db
