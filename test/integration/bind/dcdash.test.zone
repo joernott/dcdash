@@ -1,0 +1,5 @@
+$TTL 60
+@       IN SOA  ns.dcdash.test. hostmaster.dcdash.test. ( 1 60 60 3600 60 )
+@       IN NS   ns.dcdash.test.
+ns      IN A    10.77.0.53
+test1   IN A    10.77.0.1

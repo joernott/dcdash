@@ -27,12 +27,15 @@ make tools-check                       # verifies the installed versions
 | Path | Content |
 |---|---|
 | `cmd/dcdash/` | Entry point of the binary |
+| `internal/certs/` | TLS certificates: files with hot reload, ACME (lego) with DNS-01 and renewal |
 | `internal/cli/` | Command line interface (cobra): `serve`, `version`, `config validate` |
 | `internal/config/` | YAML configuration: schema, defaults, validation, secrets |
 | `internal/logging/` | zerolog setup |
 | `internal/server/` | HTTP(S) server, middleware, health endpoints |
 | `internal/ui/` | Embedded frontend build (`dist/`) and SPA handler |
 | `internal/version/` | Build information (set via `-ldflags`) |
+| `internal/testutil/` | Helpers shared by tests |
+| `test/integration/` | Integration tests (build tag `integration`) and their container environment |
 | `api/openapi.yaml` | API specification; source of the TypeScript client types |
 | `web/` | Frontend: Vue 3, TypeScript, Vite, Tailwind CSS v4, Pinia, vue-i18n |
 | `configs/` | Example and development configuration |
@@ -51,6 +54,7 @@ Run `make` to list all targets. The most important ones:
 | `make build` | Build the frontend, then `bin/dcdash` with the frontend embedded |
 | `make build-go` | Build only the binary, with the frontend currently in `internal/ui/dist` |
 | `make test` | Go tests (with race detector) and frontend unit tests |
+| `make test-integration` | Integration tests against containers (bind9, Pebble, step-ca); needs Docker. `KEEP=1` keeps the containers running |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
 | `make fmt` | Format and auto-fix Go and frontend sources |
 | `make gen-api` | Regenerate `web/src/api/schema.d.ts` from `api/openapi.yaml` |
@@ -117,7 +121,8 @@ are rejected, so typos are caught early.
 `.github/workflows/ci.yml` runs on pushes to `main` and `sprint/**` and on pull requests:
 
 1. **Go:** golangci-lint and `go test -race ./...`
-2. **Frontend:** lint, format and translation check, type check, unit tests, check that the
+2. **Integration:** `scripts/integration-test.sh` with bind9, Pebble and step-ca containers
+3. **Frontend:** lint, format and translation check, type check, unit tests, check that the
    generated API types are current, build
-3. **Build:** builds the binary with the embedded frontend, runs a smoke test and uploads
+4. **Build:** builds the binary with the embedded frontend, runs a smoke test and uploads
    the binary as an artifact

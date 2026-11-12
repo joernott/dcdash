@@ -9,10 +9,13 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 
+	"github.com/joernott/dcdash/internal/certs"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/logging"
 	"github.com/joernott/dcdash/internal/server"
@@ -88,7 +91,20 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
-			return server.New(cfg, log, deps.Server).Run(ctx)
+
+			opts := deps.Server
+			mgr, err := certs.New(cfg, log)
+			if err != nil {
+				return err
+			}
+			g, gctx := errgroup.WithContext(ctx)
+			if mgr != nil {
+				opts.TLSConfig = certs.TLSConfig(mgr)
+				opts.Checks = append(slices.Clone(opts.Checks), server.Check{Name: "certificate", Check: mgr.Check})
+				g.Go(func() error { return mgr.Run(gctx) })
+			}
+			g.Go(func() error { return server.New(cfg, log, opts).Run(gctx) })
+			return g.Wait()
 		},
 	}
 }

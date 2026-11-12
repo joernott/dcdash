@@ -30,6 +30,17 @@ jobs:
       - name: Test
         run: go test -race ./...
 
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: .go-version
+      - name: Run integration tests
+        run: scripts/integration-test.sh
+
   web:
     name: Frontend lint, test & build
     runs-on: ubuntu-latest
@@ -64,7 +75,7 @@ jobs:
 
   build:
     name: Build binary
-    needs: [go, web]
+    needs: [go, integration, web]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

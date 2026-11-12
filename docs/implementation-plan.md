@@ -33,7 +33,7 @@ These apply to every task:
 |---|---|---|---|---|
 | 0 | `sprint/00-planning` | Concept review, plan, conventions | – | done |
 | 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | done |
-| 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | open |
+| 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | open |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
@@ -90,18 +90,18 @@ These apply to every task:
 
 ## Sprint 2 — TLS and Certificates
 
-- [ ] **2.1** Certificate manager interface with hot reload through
+- [x] **2.1** Certificate manager interface with hot reload through
   `tls.Config.GetCertificate`
-- [ ] **2.2** Provider for static files: load the PEM cert, chain and key, and reload when
+- [x] **2.2** Provider for static files: load the PEM cert, chain and key, and reload when
   the files change
-- [ ] **2.3** ACME provider (lego): account registration and storage, configurable
+- [x] **2.3** ACME provider (lego): account registration and storage, configurable
   directory URL, additional trusted root CA (for step-ca)
-- [ ] **2.4** DNS-01 solvers: Cloudflare (API token) and RFC 2136 (bind9 with TSIG)
-- [ ] **2.5** Renewal loop: renew before expiry, retry with backoff, log events, expose
-  certificate expiry in `/readyz` and the metrics
-- [ ] **2.6** HTTP→HTTPS redirect listener, TLS 1.2 minimum, secure cipher defaults, HSTS
-- [ ] **2.7** Integration tests against Pebble, and against step-ca where possible
-- [ ] **2.8** Documentation: certificate configuration for all three modes
+- [x] **2.4** DNS-01 solvers: Cloudflare (API token) and RFC 2136 (bind9 with TSIG)
+- [x] **2.5** Renewal loop: renew before expiry, retry with backoff, log events, expose
+  certificate expiry in `/readyz` (the metric follows with the metrics endpoint in 9.2)
+- [x] **2.6** HTTP→HTTPS redirect listener, TLS 1.2 minimum, secure cipher defaults, HSTS
+- [x] **2.7** Integration tests against Pebble, and against step-ca where possible
+- [x] **2.8** Documentation: certificate configuration for all three modes
 
 ## Sprint 3 — State Store and Authentication
 
@@ -250,7 +250,7 @@ These apply to every task:
 - [ ] **9.1** Security review: authentication flows, session handling, CSRF, headers,
   websocket proxy, input validation, secret handling, dependency audit (`govulncheck`,
   `npm audit`)
-- [ ] **9.2** Optional Prometheus `/metrics` endpoint
+- [ ] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
 - [ ] **9.3** End-to-end test suite against the full docker compose environment
 - [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
   checked for WCAG AA contrast on all views

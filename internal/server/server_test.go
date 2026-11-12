@@ -5,21 +5,12 @@ package server
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
-	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -27,6 +18,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/testutil"
 )
 
 func testConfig() *config.Config {
@@ -59,18 +51,21 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestReadyz(t *testing.T) {
-	ok := Check{Name: "db", Check: func(context.Context) error { return nil }}
-	bad := Check{Name: "ldap", Check: func(context.Context) error { return errors.New("unreachable") }}
+	ok := Check{Name: "db", Check: func(context.Context) (string, error) { return "", nil }}
+	detail := Check{Name: "certificate", Check: func(context.Context) (string, error) { return "valid until X", nil }}
+	bad := Check{Name: "ldap", Check: func(context.Context) (string, error) { return "", errors.New("unreachable") }}
 
-	rec := do(t, New(testConfig(), zerolog.Nop(), Options{Checks: []Check{ok}}).Handler(), http.MethodGet, "/readyz")
-	if rec.Code != http.StatusOK {
-		t.Errorf("all ok: got %d", rec.Code)
+	rec := do(t, New(testConfig(), zerolog.Nop(), Options{Checks: []Check{ok, detail}}).Handler(), http.MethodGet, "/readyz")
+	var body HealthStatus
+	_ = json.Unmarshal(rec.Body.Bytes(), &body)
+	if rec.Code != http.StatusOK || body.Checks["db"] != "ok" || body.Checks["certificate"] != "valid until X" {
+		t.Errorf("all ok: got %d %+v", rec.Code, body)
 	}
 
 	rec = do(t, New(testConfig(), zerolog.Nop(), Options{Checks: []Check{ok, bad}}).Handler(), http.MethodGet, "/readyz")
-	var body HealthStatus
+	body = HealthStatus{}
 	_ = json.Unmarshal(rec.Body.Bytes(), &body)
-	if rec.Code != http.StatusServiceUnavailable || body.Checks["ldap"] != "unreachable" || body.Checks["db"] != "ok" {
+	if rec.Code != http.StatusServiceUnavailable || body.Checks["ldap"] != "error: unreachable" || body.Checks["db"] != "ok" {
 		t.Errorf("failing check: got %d %+v", rec.Code, body)
 	}
 }
@@ -108,7 +103,7 @@ func TestUIHandlerServesNonAPI(t *testing.T) {
 func TestRecovererAndAccessLog(t *testing.T) {
 	var buf bytes.Buffer
 	log := zerolog.New(&buf)
-	h := chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }), log)
+	h := chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }), log, "")
 	rec := do(t, h, http.MethodGet, "/x")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("got %d", rec.Code)
@@ -120,9 +115,13 @@ func TestRecovererAndAccessLog(t *testing.T) {
 }
 
 func TestServeTLSAndShutdown(t *testing.T) {
-	dir := t.TempDir()
+	certFile, keyFile := testutil.WriteCert(t, t.TempDir(), testutil.CertOptions{})
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg := config.Default()
-	cfg.Server.TLS.CertFile, cfg.Server.TLS.KeyFile = writeSelfSigned(t, dir)
+	opts := Options{TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{cert}}}
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -130,7 +129,7 @@ func TestServeTLSAndShutdown(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- New(&cfg, zerolog.Nop(), Options{}).Serve(ctx, ln) }()
+	go func() { done <- New(&cfg, zerolog.Nop(), opts).Serve(ctx, ln) }()
 
 	client := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // #nosec G402 -- self-signed test certificate
@@ -153,48 +152,4 @@ func TestServeTLSAndShutdown(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("server did not shut down")
 	}
-}
-
-func TestServeFailsWithoutCertificate(t *testing.T) {
-	cfg := config.Default()
-	cfg.Server.TLS.CertFile, cfg.Server.TLS.KeyFile = "/nonexistent/cert.pem", "/nonexistent/key.pem"
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := New(&cfg, zerolog.Nop(), Options{}).Serve(context.Background(), ln); err == nil {
-		t.Fatal("expected error")
-	}
-}
-
-func writeSelfSigned(t *testing.T, dir string) (certFile, keyFile string) {
-	t.Helper()
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tmpl := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject:      pkix.Name{CommonName: "localhost"},
-		DNSNames:     []string{"localhost"},
-		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
-		NotBefore:    time.Now().Add(-time.Hour),
-		NotAfter:     time.Now().Add(time.Hour),
-	}
-	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	keyDER, err := x509.MarshalECPrivateKey(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	certFile, keyFile = filepath.Join(dir, "cert.pem"), filepath.Join(dir, "key.pem")
-	if err := os.WriteFile(certFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	return certFile, keyFile
 }

@@ -16,8 +16,9 @@ import (
 
 // chain wraps h with the standard middleware stack (outermost first):
 // logger in context, request ID, remote address, access log, panic recovery, security headers.
-func chain(h http.Handler, log zerolog.Logger) http.Handler {
-	h = securityHeaders(h)
+// hsts is the Strict-Transport-Security value sent on TLS connections ("" disables it).
+func chain(h http.Handler, log zerolog.Logger, hsts string) http.Handler {
+	h = securityHeaders(h, hsts)
 	h = recoverer(h)
 	h = hlog.AccessHandler(accessLog)(h)
 	h = hlog.RemoteAddrHandler("ip")(h)
@@ -77,9 +78,12 @@ const contentSecurityPolicy = "default-src 'self'; " +
 	"form-action 'self'; " +
 	"frame-ancestors 'none'"
 
-func securityHeaders(next http.Handler) http.Handler {
+func securityHeaders(next http.Handler, hsts string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
+		if hsts != "" && r.TLS != nil {
+			h.Set("Strict-Transport-Security", hsts)
+		}
 		h.Set("Content-Security-Policy", contentSecurityPolicy)
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
