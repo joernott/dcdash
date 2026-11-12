@@ -4,6 +4,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"github.com/joernott/dcdash/internal/logging"
 	"github.com/joernott/dcdash/internal/server"
 	"github.com/joernott/dcdash/internal/store"
+	"github.com/joernott/dcdash/internal/vault"
 	"github.com/joernott/dcdash/internal/version"
 )
 
@@ -49,6 +51,7 @@ func NewRootCommand(deps Deps) *cobra.Command {
 	root.AddCommand(
 		newServeCommand(&configPath, deps),
 		newVersionCommand(),
+		newGenKeyCommand(),
 		newConfigCommand(&configPath),
 	)
 	return root
@@ -99,6 +102,9 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			}
 			defer st.Close()
 			log.Info().Str("path", st.Path()).Msg("database opened")
+			if _, err := newKeyring(ctx, cfg, st); err != nil {
+				return err
+			}
 
 			opts := deps.Server
 			opts.Checks = append(slices.Clone(opts.Checks), server.Check{Name: "database", Check: st.Check})
@@ -160,4 +166,41 @@ func newConfigCommand(configPath *string) *cobra.Command {
 		},
 	})
 	return cmd
+}
+
+func newGenKeyCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "gen-key",
+		Short: "Generate a random encryption key for security.encryption_key",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			_, err := fmt.Fprintln(cmd.OutOrStdout(), vault.GenerateKey())
+			return err
+		},
+	}
+}
+
+// newKeyring builds the key ring from the configuration and verifies that it
+// matches the data in the store.
+func newKeyring(ctx context.Context, cfg *config.Config, st *store.Store) (*vault.Keyring, error) {
+	current, err := vault.ParseKey(cfg.Security.EncryptionKey.Value())
+	if err != nil {
+		return nil, fmt.Errorf("security.encryption_key: %w", err)
+	}
+	var previous [][]byte
+	for _, s := range cfg.Security.PreviousEncryptionKeys {
+		k, err := vault.ParseKey(s.Value())
+		if err != nil {
+			return nil, fmt.Errorf("security.previous_encryption_keys: %w", err)
+		}
+		previous = append(previous, k)
+	}
+	kr, err := vault.New(current, previous...)
+	if err != nil {
+		return nil, err
+	}
+	if err := kr.Verify(ctx, st, store.ErrNotFound); err != nil {
+		return nil, err
+	}
+	return kr, nil
 }

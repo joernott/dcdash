@@ -60,6 +60,15 @@ server:
         propagation_timeout: 0s
         disable_authoritative_check: false
 
+security:
+  # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
+  # Generate one with `dcdash gen-key`. Keep it outside this file, e.g. "file:/etc/dcdash/encryption.key".
+  # Losing the key makes the stored secrets unreadable (users must enroll TOTP again).
+  encryption_key: "file:/etc/dcdash/encryption.key"
+  # After changing the key, list the old one here until all data is re-encrypted
+  # (see docs/security.md).
+  previous_encryption_keys: []
+
 log:
   # trace, debug, info, warn, error
   level: info

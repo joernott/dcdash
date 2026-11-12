@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/joernott/dcdash/internal/vault"
 )
 
 // DefaultPath is used when neither --config nor DCDASH_CONFIG is given.
@@ -28,9 +30,19 @@ const (
 
 // Config is the root of the configuration file.
 type Config struct {
-	Server  Server `yaml:"server"`
-	Log     Log    `yaml:"log"`
-	DataDir string `yaml:"data_dir"`
+	Server   Server   `yaml:"server"`
+	Security Security `yaml:"security"`
+	Log      Log      `yaml:"log"`
+	DataDir  string   `yaml:"data_dir"`
+}
+
+// Security configures the protection of data at rest.
+type Security struct {
+	// EncryptionKey (base64, 32 bytes) encrypts secrets stored in the database,
+	// e.g. TOTP seeds. Generate one with `dcdash gen-key`.
+	EncryptionKey Secret `yaml:"encryption_key"`
+	// PreviousEncryptionKeys are still accepted for decryption after a key rotation.
+	PreviousEncryptionKeys []Secret `yaml:"previous_encryption_keys"`
 }
 
 // Server configures the HTTP(S) listener.
@@ -172,6 +184,16 @@ func (c *Config) Validate() error {
 	}
 	if c.DataDir == "" {
 		add("data_dir: required")
+	}
+	if !c.Security.EncryptionKey.IsSet() {
+		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
+	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {
+		add("security.encryption_key: %v", err)
+	}
+	for i, k := range c.Security.PreviousEncryptionKeys {
+		if _, err := vault.ParseKey(k.Value()); err != nil {
+			add("security.previous_encryption_keys[%d]: %v", i, err)
+		}
 	}
 	return errors.Join(errs...)
 }

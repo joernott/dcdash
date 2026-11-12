@@ -95,11 +95,15 @@ $(DEV_DIR)/tls/cert.pem:
 		-keyout $(DEV_DIR)/tls/key.pem -out $@
 	chmod 600 $(DEV_DIR)/tls/key.pem
 
+$(DEV_DIR)/encryption.key:
+	mkdir -p $(DEV_DIR)
+	umask 077 && go run ./cmd/dcdash gen-key > $@
+
 .PHONY: dev-cert
 dev-cert: $(DEV_DIR)/tls/cert.pem ## Create a self-signed development certificate in .dev/tls
 
 .PHONY: dev-backend
-dev-backend: dev-cert ## Run the backend with configs/dev.yaml (https://localhost:8443)
+dev-backend: dev-cert $(DEV_DIR)/encryption.key ## Run the backend with configs/dev.yaml (https://localhost:8443)
 	go run ./cmd/dcdash --config configs/dev.yaml serve
 
 .PHONY: dev-web

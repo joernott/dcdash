@@ -31,6 +31,8 @@ make tools-check                       # verifies the installed versions
 | `internal/cli/` | Command line interface (cobra): `serve`, `version`, `config validate` |
 | `internal/config/` | YAML configuration: schema, defaults, validation, secrets |
 | `internal/logging/` | zerolog setup |
+| `internal/store/` | SQLite state database and schema migrations |
+| `internal/vault/` | AES-256-GCM encryption of secrets at rest, key ring for rotation |
 | `internal/server/` | HTTP(S) server, middleware, health endpoints |
 | `internal/ui/` | Embedded frontend build (`dist/`) and SPA handler |
 | `internal/version/` | Build information (set via `-ldflags`) |

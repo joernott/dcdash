@@ -23,7 +23,7 @@ server:
 `
 
 func TestParseAppliesDefaults(t *testing.T) {
-	cfg, err := Parse(strings.NewReader(minimal))
+	cfg, err := Parse(strings.NewReader(testKeyYAML + minimal))
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestParseAppliesDefaults(t *testing.T) {
 }
 
 func TestParseOverrides(t *testing.T) {
-	cfg, err := Parse(strings.NewReader(`
+	cfg, err := Parse(strings.NewReader(testKeyYAML + `
 server:
   listen: "127.0.0.1:9000"
   tls: {mode: none}
@@ -57,14 +57,14 @@ data_dir: /tmp/dcdash
 }
 
 func TestParseRejectsUnknownKeys(t *testing.T) {
-	_, err := Parse(strings.NewReader("server:\n  listn: \":1\"\n"))
+	_, err := Parse(strings.NewReader(testKeyYAML + "server:\n  listn: \":1\"\n"))
 	if err == nil || !strings.Contains(err.Error(), "listn") {
 		t.Fatalf("expected unknown field error, got %v", err)
 	}
 }
 
 func TestValidateCollectsAllErrors(t *testing.T) {
-	_, err := Parse(strings.NewReader(`
+	_, err := Parse(strings.NewReader(testKeyYAML + `
 server:
   listen: "nonsense"
   tls: {mode: files}
@@ -82,14 +82,14 @@ data_dir: ""
 }
 
 func TestInvalidDuration(t *testing.T) {
-	_, err := Parse(strings.NewReader(minimal + "  shutdown_timeout: soon\n"))
+	_, err := Parse(strings.NewReader(testKeyYAML + minimal + "  shutdown_timeout: soon\n"))
 	if err == nil || !strings.Contains(err.Error(), "invalid duration") {
 		t.Fatalf("expected duration error, got %v", err)
 	}
 }
 
 func TestEmptyFileFailsValidation(t *testing.T) {
-	if _, err := Parse(strings.NewReader("")); err == nil {
+	if _, err := Parse(strings.NewReader(testKeyYAML + "")); err == nil {
 		t.Fatal("expected error: tls files missing")
 	}
 }
@@ -99,7 +99,7 @@ func TestLoadWarnsOnWorldReadable(t *testing.T) {
 		t.Skip("permission check is not applicable on Windows")
 	}
 	p := filepath.Join(t.TempDir(), "config.yaml")
-	if err := os.WriteFile(p, []byte(minimal), 0o644); err != nil {
+	if err := os.WriteFile(p, []byte(testKeyYAML+minimal), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, warnings, err := Load(p)
@@ -177,7 +177,7 @@ func TestSecretIsMasked(t *testing.T) {
 }
 
 func TestRedirectAndHSTSValidation(t *testing.T) {
-	_, err := Parse(strings.NewReader(`
+	_, err := Parse(strings.NewReader(testKeyYAML + `
 server:
   redirect_listen: "nonsense"
   hsts_max_age: -1h
@@ -190,5 +190,25 @@ server:
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error does not mention %s: %v", want, err)
 		}
+	}
+}
+
+// testKeyYAML provides the required encryption key for test configurations.
+const testKeyYAML = "security:\n  encryption_key: \"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=\"\n"
+
+func TestEncryptionKeyValidation(t *testing.T) {
+	_, err := Parse(strings.NewReader("server:\n  tls: {mode: none}\n"))
+	if err == nil || !strings.Contains(err.Error(), "security.encryption_key: required") {
+		t.Errorf("missing key: %v", err)
+	}
+	_, err = Parse(strings.NewReader(`
+server:
+  tls: {mode: none}
+security:
+  encryption_key: c2hvcnQ=
+  previous_encryption_keys: ["not base64!"]
+`))
+	if err == nil || !strings.Contains(err.Error(), "must be 32 bytes") || !strings.Contains(err.Error(), "previous_encryption_keys[0]") {
+		t.Errorf("invalid keys: %v", err)
 	}
 }

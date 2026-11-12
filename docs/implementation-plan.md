@@ -107,7 +107,7 @@ These apply to every task:
 
 - [x] **3.1** State store: SQLite (`modernc.org/sqlite`), migrations, data directory from
   the config
-- [ ] **3.2** Encryption of secrets at rest: AES-GCM, key from the config or a key file,
+- [x] **3.2** Encryption of secrets at rest: AES-GCM, key from the config or a key file,
   key rotation concept documented
 - [ ] **3.3** LDAP client: LDAPS and StartTLS, custom CA, service bind, user search and
   bind, connection timeouts

@@ -19,6 +19,7 @@ import (
 
 	"github.com/joernott/dcdash/internal/certs"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/vault"
 )
 
 // tsigSecret matches the "dcdash-acme" key in bind/named.conf (test only).
@@ -54,6 +55,7 @@ func acmeConfig(t *testing.T, directory, caFile string, domains ...string) confi
 	cfg.DNS.DisableAuthoritativeCheck = true
 
 	full := config.Default()
+	full.Security.EncryptionKey = config.NewSecret(vault.GenerateKey())
 	full.Server.TLS.Mode = config.TLSModeACME
 	full.Server.TLS.ACME = cfg
 	if err := full.Validate(); err != nil {
