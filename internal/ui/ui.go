@@ -52,7 +52,7 @@ func Handler(fsys fs.FS) http.Handler {
 			} else {
 				w.Header().Set("Cache-Control", "no-cache")
 			}
-			http.ServeFileFS(w, r, fsys, name)
+			http.ServeFileFS(w, r, fsys, name) // #nosec G703 -- name is cleaned and fs.FS cannot escape its root
 			return
 		}
 

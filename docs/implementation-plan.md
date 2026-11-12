@@ -64,7 +64,7 @@ These apply to every task:
 
 - [x] **1.1** Repository layout: Go module, `cmd/dcdash`, `internal/...`, `web/`, `docs/`,
   `LICENSE` (GPLv3), SPDX headers, `.editorconfig`, `.gitignore`
-- [ ] **1.2** Build tooling: Makefile or Taskfile (build, test, lint, dev), pinned Go and
+- [x] **1.2** Build tooling: Makefile or Taskfile (build, test, lint, dev), pinned Go and
   Node versions
   - [x] **1.2.1** Development VM: pinned toolchain versions (`.go-version`,
     `.node-version`, `.golangci-lint-version`) and the provisioning script

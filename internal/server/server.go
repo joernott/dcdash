@@ -60,7 +60,7 @@ func (s *Server) routes() http.Handler {
 	return chain(mux, s.log)
 }
 
-// Run listens on the configured address and serves until ctx is cancelled,
+// Run listens on the configured address and serves until ctx is canceled,
 // then shuts down gracefully.
 func (s *Server) Run(ctx context.Context) error {
 	var lc net.ListenConfig
@@ -71,7 +71,7 @@ func (s *Server) Run(ctx context.Context) error {
 	return s.Serve(ctx, ln)
 }
 
-// Serve serves on ln until ctx is cancelled, then shuts down gracefully.
+// Serve serves on ln until ctx is canceled, then shuts down gracefully.
 func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 	hs := &http.Server{
 		Handler:           s.handler,

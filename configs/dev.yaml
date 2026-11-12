@@ -1,0 +1,12 @@
+# Development configuration, used by `make dev-backend`.
+# The certificate is created by `make dev-cert`; everything lives in .dev/ (git-ignored).
+server:
+  listen: ":8443"
+  tls:
+    mode: files
+    cert_file: .dev/tls/cert.pem
+    key_file: .dev/tls/key.pem
+log:
+  level: debug
+  format: console
+data_dir: .dev/data
