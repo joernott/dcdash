@@ -32,7 +32,7 @@ These apply to every task:
 | Sprint | Branch | Goal | Release | Status |
 |---|---|---|---|---|
 | 0 | `sprint/00-planning` | Concept review, plan, conventions | – | done |
-| 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | open |
+| 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | in progress |
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | open |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | open |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
@@ -66,6 +66,10 @@ These apply to every task:
   `LICENSE` (GPLv3), SPDX headers, `.editorconfig`, `.gitignore`
 - [ ] **1.2** Build tooling: Makefile or Taskfile (build, test, lint, dev), pinned Go and
   Node versions
+  - [x] **1.2.1** Development VM: pinned toolchain versions (`.go-version`,
+    `.node-version`, `.golangci-lint-version`) and the provisioning script
+    `scripts/setup-dev-vm.sh` for Debian 13 (Go, Node.js, golangci-lint, Docker). Needed
+    because the Windows workstation can't run the toolchain
 - [ ] **1.3** CLI skeleton: `serve`, `version`, `config validate`
 - [ ] **1.4** Configuration: YAML schema and loader with defaults and validation, secret
   indirection (`*_file`, `env:`), permission warning for world-readable files, example

@@ -40,3 +40,9 @@ DCDash will copy zone files to the primary DNS server via SFTP. We can't guarant
 ## 2026-11-12 — Sprint 0 (Planning)
 
 yes, please go ahead
+
+---
+
+## 2026-11-12 — Sprint 1 (Foundation)
+
+I set up a dedicated development vm for you: dev.vm.test.sf.thse.net where you have a user "claude" with password "[REDACTED]" and sudo rights, so you can install software as needed. You can use ssh using the ssh key /c/Users/ext-se-jo/.ssh/id_ed25519_claude to connect to it. You can install whatever software you need on that. I've also added that key as a deploy key with write access to github.
