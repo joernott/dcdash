@@ -92,7 +92,7 @@ These apply to every task:
 
 - [x] **2.1** Certificate manager interface with hot reload through
   `tls.Config.GetCertificate`
-- [ ] **2.2** Provider for static files: load the PEM cert, chain and key, and reload when
+- [x] **2.2** Provider for static files: load the PEM cert, chain and key, and reload when
   the files change
 - [ ] **2.3** ACME provider (lego): account registration and storage, configurable
   directory URL, additional trusted root CA (for step-ca)

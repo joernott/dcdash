@@ -16,6 +16,9 @@ server:
     mode: files
     cert_file: /etc/dcdash/tls/cert.pem
     key_file: /etc/dcdash/tls/key.pem
+    # How often the files are checked for changes; a changed certificate is
+    # used without restart. 0 disables reloading.
+    reload_interval: 1m
   read_header_timeout: 10s
   shutdown_timeout: 15s
 

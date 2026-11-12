@@ -46,6 +46,8 @@ type TLS struct {
 	Mode     string `yaml:"mode"`
 	CertFile string `yaml:"cert_file"`
 	KeyFile  string `yaml:"key_file"`
+	// ReloadInterval is how often cert_file and key_file are checked for changes (0 disables).
+	ReloadInterval Duration `yaml:"reload_interval"`
 }
 
 // Log configures logging.
@@ -59,7 +61,7 @@ func Default() Config {
 	return Config{
 		Server: Server{
 			Listen:            ":8443",
-			TLS:               TLS{Mode: TLSModeFiles},
+			TLS:               TLS{Mode: TLSModeFiles, ReloadInterval: Duration(time.Minute)},
 			ReadHeaderTimeout: Duration(10 * time.Second),
 			ShutdownTimeout:   Duration(15 * time.Second),
 		},
@@ -126,6 +128,9 @@ func (c *Config) Validate() error {
 		}
 		if c.Server.TLS.KeyFile == "" {
 			add("server.tls.key_file: required for mode %q", TLSModeFiles)
+		}
+		if c.Server.TLS.ReloadInterval < 0 {
+			add("server.tls.reload_interval: must not be negative")
 		}
 	case TLSModeNone:
 	default:
