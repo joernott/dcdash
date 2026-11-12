@@ -161,13 +161,21 @@ roles:
   zones needs the account ID and a token with zone-edit permission.
 - **Zone creation and deletion (decided, Q4)** for bind9:
   - `rndc addzone`/`delzone` requires `allow-new-zones yes;` on the primary.
-  - The zone file must exist on the primary before `addzone`. dcdash can't write files on a
-    remote server through rndc, so it needs a way to provision them: a shared or local
-    zone directory, or SFTP with a dedicated key. The zone is created from an SOA/NS
-    template in the config.
+  - The zone file must exist on the primary before `addzone`. **(decided)** dcdash copies
+    zone files to the primary over **SFTP**, because dcdash can't be assumed to run on the
+    BIND server. Details:
+    - Libraries: `golang.org/x/crypto/ssh` and `pkg/sftp` (BSD).
+    - Each primary gets its own key pair and is used by a dedicated, chrooted SFTP-only
+      user. Personal keys are never used.
+    - The host key is verified against a pinned key or `known_hosts` in the config, and
+      unknown host keys are rejected.
+    - Uploads are atomic: the file is written to a temporary name and then renamed. The
+      zone directory must be writable for both the SFTP user and `named`, because `named`
+      writes `.jnl` journal files.
+    - Deletion: `rndc delzone`, then the zone file and its `.jnl` are removed over SFTP.
+    - The initial zone file is rendered from an SOA/NS template in the config.
   - Secondaries learn about new zones through a **catalog zone** (RFC 9432). dcdash updates
     the catalog with RFC 2136 as well.
-  - Task 7.6 selects the mechanism before it is implemented.
 - **(proposed)** A common `dns.Provider` interface (list zones, list records, create, update,
   delete), so the frontend has one DNS UI for both backends. Provider-specific fields such as
   Cloudflare's `proxied` are optional attributes.

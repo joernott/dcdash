@@ -57,6 +57,8 @@ These apply to every task:
     v0.1.1 (new Sprint 10), zerolog for logging
   - [x] **0.5.2** Add the new requirements to the plan: German translation, dark mode,
     Proxmox console, DNS zone management, TOTP per role
+  - [x] **0.5.3** Decide how bind9 zone files are provisioned: SFTP, because dcdash can't be
+    assumed to run on the BIND primary
 
 ## Sprint 1 — Foundation
 
@@ -197,18 +199,25 @@ These apply to every task:
   avoid lost updates
 - [ ] **7.5** bind9 server operations through `rndc` (status, reload, `addzone`,
   `delzone`), using a configured key file and binary path
-- [ ] **7.6** bind9 zone provisioning decision (`docs/adr/`): how zone files get onto the
-  primary (local or shared directory, or SFTP), the SOA/NS zone template in the config, and
-  catalog zones (RFC 9432) for the secondaries
+- [ ] **7.6** bind9 zone file provisioning over SFTP (`x/crypto/ssh`, `pkg/sftp`):
+  - Per-primary configuration: host, port, user, private key file, pinned host key or
+    `known_hosts`, remote zone directory
+  - Atomic upload (temporary file, then rename), and removal of the zone file and `.jnl`
+  - Zone file rendering from the SOA/NS template in the config
+  - Connection health check
 - [ ] **7.7** bind9 zone creation and deletion: create the zone file, `rndc addzone`,
   catalog zone update; and the reverse for deletion, with a safety confirmation
 - [ ] **7.8** DNS API for zones and records (per-instance permissions, audited)
 - [ ] **7.9** Frontend: zone list with create and delete, record table with filter, create,
   edit and delete dialogs, provider-specific fields
-- [ ] **7.10** Tests: bind9 containers (primary and secondary with a catalog zone) for
-  integration tests, HTTP mocks for Cloudflare
-- [ ] **7.11** Documentation: required `named.conf` settings (TSIG key, `update-policy`,
-  `allow-transfer`, `allow-new-zones`, catalog zone, rndc) and Cloudflare token permissions
+- [ ] **7.10** Tests: bind9 containers (primary with an SFTP server, and a secondary with a
+  catalog zone) for integration tests, HTTP mocks for Cloudflare
+- [ ] **7.11** Documentation:
+  - Required `named.conf` settings: TSIG key, `update-policy`, `allow-transfer`,
+    `allow-new-zones`, catalog zone, rndc
+  - SFTP user setup on the primary: chrooted, SFTP only, dedicated key, directory
+    permissions shared with `named`
+  - Cloudflare token permissions
 
 ## Sprint 8 — DHCP (Kea v3)
 

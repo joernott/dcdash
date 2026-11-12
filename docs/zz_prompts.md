@@ -28,3 +28,9 @@ Q7: English and German for now
 Q8: Yes
 
 One additional feature I almost missed, that is always requested by users is the support for a dark mode
+
+---
+
+## 2026-11-12 — Sprint 0 (Planning)
+
+DCDash will copy zone files to the primary DNS server via SFTP. We can't guarantee its installation on the primary BIND server
