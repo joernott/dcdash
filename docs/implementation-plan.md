@@ -109,7 +109,7 @@ These apply to every task:
   the config
 - [x] **3.2** Encryption of secrets at rest: AES-GCM, key from the config or a key file,
   key rotation concept documented
-- [ ] **3.3** LDAP client: LDAPS and StartTLS, custom CA, service bind, user search and
+- [x] **3.3** LDAP client: LDAPS and StartTLS, custom CA, service bind, user search and
   bind, connection timeouts
 - [ ] **3.4** Group resolution: AD nested groups (matching rule in chain) and generic LDAP
   (`memberOf` or group search), groups given as CN or DN

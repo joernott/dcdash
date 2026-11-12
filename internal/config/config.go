@@ -31,6 +31,7 @@ const (
 // Config is the root of the configuration file.
 type Config struct {
 	Server   Server   `yaml:"server"`
+	Auth     Auth     `yaml:"auth"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -86,6 +87,7 @@ func Default() Config {
 			ReadHeaderTimeout: Duration(10 * time.Second),
 			ShutdownTimeout:   Duration(15 * time.Second),
 		},
+		Auth:    Auth{LDAP: defaultLDAP()},
 		Log:     Log{Level: "info", Format: "json"},
 		DataDir: "/var/lib/dcdash",
 	}
@@ -128,6 +130,7 @@ func Parse(r io.Reader) (*Config, error) {
 	if err := dec.Decode(&cfg); err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
+	cfg.Auth.LDAP.ApplyDefaults()
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -184,6 +187,9 @@ func (c *Config) Validate() error {
 	}
 	if c.DataDir == "" {
 		add("data_dir: required")
+	}
+	if c.Auth.LDAP.URL != "" {
+		c.Auth.LDAP.validate(add)
 	}
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
