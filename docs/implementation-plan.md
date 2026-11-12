@@ -78,7 +78,7 @@ These apply to every task:
   ID in log context
 - [x] **1.6** HTTP server: router, middleware (request ID, logging, panic recovery, security
   headers), graceful shutdown, `/healthz`, `/readyz`, `/api/v1/version`
-- [ ] **1.7** Frontend scaffold: Vue 3, TypeScript, Vite, Tailwind CSS v4 (class-based dark
+- [x] **1.7** Frontend scaffold: Vue 3, TypeScript, Vite, Tailwind CSS v4 (class-based dark
   variant), Pinia, Vue Router, vue-i18n (en and de), ESLint and Prettier, Vitest
 - [ ] **1.8** Embed the frontend build with `go:embed`, SPA fallback routing, dev proxy setup
   (Vite → Go backend)
