@@ -84,7 +84,7 @@ These apply to every task:
   (Vite → Go backend)
 - [x] **1.9** OpenAPI 3 spec skeleton (`api/openapi.yaml`) and a TypeScript client
   generated from it
-- [ ] **1.10** CI with GitHub Actions: Go lint and test, frontend lint, test and build,
+- [x] **1.10** CI with GitHub Actions: Go lint and test, frontend lint, test and build,
   translation key completeness check, combined binary build
 - [ ] **1.11** Developer documentation: `docs/development.md`
 

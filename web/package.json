@@ -20,7 +20,8 @@
     "check": "run-s check:*",
     "check:oxlint": "oxlint . --deny-warnings",
     "check:eslint": "eslint . --max-warnings 0",
-    "check:format": "prettier --check --experimental-cli src/"
+    "check:format": "prettier --check --experimental-cli src/",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "openapi-fetch": "^0.17.0",
