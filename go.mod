@@ -6,6 +6,7 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/spf13/cobra v1.10.2
 	go.yaml.in/yaml/v3 v3.0.6
+	golang.org/x/sync v0.25.0
 )
 
 require (

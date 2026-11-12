@@ -65,7 +65,7 @@ export interface components {
     HealthStatus: {
       /** @enum {string} */
       status: 'ok' | 'unavailable'
-      /** @description Result per check, "ok" or the error message. */
+      /** @description Result per check: "ok", a detail such as "valid until <time>", or "error: <message>". */
       checks?: {
         [key: string]: string
       }

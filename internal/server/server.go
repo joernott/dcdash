@@ -24,6 +24,8 @@ type Options struct {
 	UI http.Handler
 	// Checks are evaluated by /readyz.
 	Checks []Check
+	// TLSConfig enables HTTPS. If nil, the server speaks plain HTTP.
+	TLSConfig *tls.Config
 }
 
 // Server is the dcdash HTTP(S) server.
@@ -80,14 +82,9 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}
 
-	useTLS := s.cfg.Server.TLS.Mode == config.TLSModeFiles
+	useTLS := s.opts.TLSConfig != nil
 	if useTLS {
-		cert, err := tls.LoadX509KeyPair(s.cfg.Server.TLS.CertFile, s.cfg.Server.TLS.KeyFile)
-		if err != nil {
-			_ = ln.Close()
-			return fmt.Errorf("load TLS certificate: %w", err)
-		}
-		hs.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{cert}}
+		hs.TLSConfig = s.opts.TLSConfig.Clone()
 	}
 
 	errCh := make(chan error, 1)

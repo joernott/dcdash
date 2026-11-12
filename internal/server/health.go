@@ -9,9 +9,11 @@ import (
 )
 
 // Check is a named readiness check, e.g. "database" or "certificate".
+// On success it may return a detail such as "valid until ...", which is
+// reported instead of "ok".
 type Check struct {
 	Name  string
-	Check func(ctx context.Context) error
+	Check func(ctx context.Context) (string, error)
 }
 
 // HealthStatus is the body of /healthz and /readyz.
@@ -35,11 +37,15 @@ func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 	res := HealthStatus{Status: "ok", Checks: map[string]string{}}
 	status := http.StatusOK
 	for _, c := range s.opts.Checks {
-		if err := c.Check(ctx); err != nil {
-			res.Checks[c.Name] = err.Error()
+		detail, err := c.Check(ctx)
+		switch {
+		case err != nil:
+			res.Checks[c.Name] = "error: " + err.Error()
 			res.Status = "unavailable"
 			status = http.StatusServiceUnavailable
-		} else {
+		case detail != "":
+			res.Checks[c.Name] = detail
+		default:
 			res.Checks[c.Name] = "ok"
 		}
 	}
