@@ -10,6 +10,8 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/netip"
+	"strings"
 )
 
 // ErrorBody is the JSON body of every API error response.
@@ -61,4 +63,44 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 func IsJSON(r *http.Request) bool {
 	mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	return err == nil && mt == "application/json"
+}
+
+// ClientIP returns the IP address of the client. If the direct peer is a
+// trusted proxy, the X-Forwarded-For chain is walked from the right and the
+// first address that is not a trusted proxy is returned; forwarded addresses
+// from untrusted peers are ignored, so clients cannot spoof their address.
+func ClientIP(r *http.Request, trusted []netip.Prefix) netip.Addr {
+	peer := parseAddr(r.RemoteAddr)
+	if !isTrusted(peer, trusted) {
+		return peer
+	}
+	hops := strings.Split(strings.Join(r.Header.Values("X-Forwarded-For"), ","), ",")
+	for i := len(hops) - 1; i >= 0; i-- {
+		a := parseAddr(strings.TrimSpace(hops[i]))
+		if !a.IsValid() {
+			break
+		}
+		if !isTrusted(a, trusted) {
+			return a
+		}
+		peer = a
+	}
+	return peer
+}
+
+func parseAddr(s string) netip.Addr {
+	if ap, err := netip.ParseAddrPort(s); err == nil {
+		return ap.Addr().Unmap()
+	}
+	a, _ := netip.ParseAddr(strings.Trim(s, "[]"))
+	return a.Unmap()
+}
+
+func isTrusted(a netip.Addr, trusted []netip.Prefix) bool {
+	for _, p := range trusted {
+		if a.IsValid() && p.Contains(a) {
+			return true
+		}
+	}
+	return false
 }

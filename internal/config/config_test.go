@@ -212,3 +212,18 @@ security:
 		t.Errorf("invalid keys: %v", err)
 	}
 }
+
+func TestTrustedProxies(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\n  trusted_proxies: [10.0.0.0/8, 192.0.2.1, \"::1\"]\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _ := cfg.Server.TrustedProxyPrefixes()
+	if len(p) != 3 || p[1].String() != "192.0.2.1/32" || p[2].String() != "::1/128" {
+		t.Errorf("prefixes: %v", p)
+	}
+	_, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\n  trusted_proxies: [proxy.example]\n"))
+	if err == nil || !strings.Contains(err.Error(), "trusted_proxies") {
+		t.Errorf("invalid proxy: %v", err)
+	}
+}

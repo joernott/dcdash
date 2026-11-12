@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/netip"
 	"os"
 	"runtime"
 	"slices"
@@ -52,6 +53,9 @@ type Server struct {
 	// RedirectListen is an optional plain HTTP listener (e.g. ":80") that
 	// redirects every request to HTTPS. Empty disables it.
 	RedirectListen string `yaml:"redirect_listen"`
+	// TrustedProxies are reverse proxies (IP addresses or CIDR ranges) whose
+	// X-Forwarded-For header is used to determine the client IP address.
+	TrustedProxies []string `yaml:"trusted_proxies"`
 	// HSTSMaxAge is the max-age of the Strict-Transport-Security header sent
 	// over HTTPS (0 disables the header).
 	HSTSMaxAge        Duration `yaml:"hsts_max_age"`
@@ -153,6 +157,9 @@ func (c *Config) Validate() error {
 			add("server.redirect_listen: requires TLS (server.tls.mode is %q)", TLSModeNone)
 		}
 	}
+	if _, err := c.Server.TrustedProxyPrefixes(); err != nil {
+		add("server.trusted_proxies: %v", err)
+	}
 	if c.Server.HSTSMaxAge < 0 {
 		add("server.hsts_max_age: must not be negative")
 	}
@@ -221,4 +228,22 @@ func checkPermissions(f *os.File) string {
 		return fmt.Sprintf("config file %s is accessible by other users (mode %04o); consider chmod 0640", f.Name(), fi.Mode().Perm())
 	}
 	return ""
+}
+
+// TrustedProxyPrefixes parses server.trusted_proxies; single addresses become
+// host prefixes (/32 or /128).
+func (s Server) TrustedProxyPrefixes() ([]netip.Prefix, error) {
+	out := make([]netip.Prefix, 0, len(s.TrustedProxies))
+	for _, p := range s.TrustedProxies {
+		if pfx, err := netip.ParsePrefix(p); err == nil {
+			out = append(out, pfx.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(p)
+		if err != nil {
+			return nil, fmt.Errorf("%q is neither an IP address nor a CIDR range", p)
+		}
+		out = append(out, netip.PrefixFrom(a.Unmap(), a.Unmap().BitLen()))
+	}
+	return out, nil
 }

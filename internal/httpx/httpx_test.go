@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 )
@@ -44,6 +45,32 @@ func TestDecodeJSON(t *testing.T) {
 	} {
 		if err := decode(tc[0], tc[1]); err == nil {
 			t.Errorf("%s: expected error", name)
+		}
+	}
+}
+
+func TestClientIP(t *testing.T) {
+	trusted := []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8"), netip.MustParsePrefix("::1/128")}
+	for _, tc := range []struct {
+		remote, xff, want string
+	}{
+		{"192.0.2.10:5555", "", "192.0.2.10"},
+		{"192.0.2.10:5555", "203.0.113.7", "192.0.2.10"},              // untrusted peer: header ignored
+		{"10.0.0.5:5555", "203.0.113.7", "203.0.113.7"},               // trusted proxy
+		{"10.0.0.5:5555", "198.51.100.1, 203.0.113.7", "203.0.113.7"}, // rightmost untrusted wins
+		{"10.0.0.5:5555", "203.0.113.7, 10.0.0.9", "203.0.113.7"},     // chain of proxies
+		{"10.0.0.5:5555", "garbage, 10.0.0.9", "10.0.0.9"},            // unparsable: stop
+		{"10.0.0.5:5555", "", "10.0.0.5"},                             // proxy without header
+		{"[::1]:443", "2001:db8::7", "2001:db8::7"},                   // IPv6
+		{"[::ffff:192.0.2.10]:1", "", "192.0.2.10"},                   // mapped IPv4
+	} {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.RemoteAddr = tc.remote
+		if tc.xff != "" {
+			r.Header.Set("X-Forwarded-For", tc.xff)
+		}
+		if got := ClientIP(r, trusted); got.String() != tc.want {
+			t.Errorf("%s / %q: got %s, want %s", tc.remote, tc.xff, got, tc.want)
 		}
 	}
 }

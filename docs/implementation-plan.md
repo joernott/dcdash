@@ -117,6 +117,9 @@ These apply to every task:
   timeout from the config, logout, cleanup job
 - [x] **3.6** CSRF protection for state-changing requests
 - [x] **3.7** Login rate limiting and temporary lockout per user and per source IP
+  - [x] **3.7.1** Client IP behind reverse proxies: `server.trusted_proxies`; `X-Forwarded-For`
+    is only used when the request comes from a trusted proxy (otherwise all clients would
+    share the proxy address and the per-IP lockout would lock everyone out)
 - [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
 - [ ] **3.9** LDAP integration tests:
   - AD mode against the existing Samba AD server in the network, with connection data and
