@@ -19,6 +19,7 @@ import (
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/logging"
 	"github.com/joernott/dcdash/internal/server"
+	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/version"
 )
 
@@ -92,7 +93,15 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
+			st, err := store.Open(ctx, cfg.DataDir)
+			if err != nil {
+				return err
+			}
+			defer st.Close()
+			log.Info().Str("path", st.Path()).Msg("database opened")
+
 			opts := deps.Server
+			opts.Checks = append(slices.Clone(opts.Checks), server.Check{Name: "database", Check: st.Check})
 			mgr, err := certs.New(cfg, log)
 			if err != nil {
 				return err
@@ -100,7 +109,7 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			g, gctx := errgroup.WithContext(ctx)
 			if mgr != nil {
 				opts.TLSConfig = certs.TLSConfig(mgr)
-				opts.Checks = append(slices.Clone(opts.Checks), server.Check{Name: "certificate", Check: mgr.Check})
+				opts.Checks = append(opts.Checks, server.Check{Name: "certificate", Check: mgr.Check})
 				g.Go(func() error { return mgr.Run(gctx) })
 			}
 			g.Go(func() error { return server.New(cfg, log, opts).Run(gctx) })
