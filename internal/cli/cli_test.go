@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/vault"
 )
 
@@ -79,5 +80,26 @@ func TestGenKey(t *testing.T) {
 	out2, _, _ := run(t, "gen-key")
 	if out == out2 {
 		t.Error("gen-key returned the same key twice")
+	}
+}
+
+func TestHashPassword(t *testing.T) {
+	var out, errOut bytes.Buffer
+	cmd := NewRootCommand(Deps{Stdout: &out, Stderr: &errOut})
+	cmd.SetIn(strings.NewReader("correct horse battery staple\n"))
+	cmd.SetArgs([]string{"hash-password"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	hash := strings.TrimSpace(out.String())
+	if ok, err := auth.VerifyPassword(hash, "correct horse battery staple"); err != nil || !ok {
+		t.Errorf("hash does not verify: %q, %v", hash, err)
+	}
+
+	cmd = NewRootCommand(Deps{Stdout: &out, Stderr: &errOut})
+	cmd.SetIn(strings.NewReader("short\n"))
+	cmd.SetArgs([]string{"hash-password"})
+	if err := cmd.Execute(); err == nil {
+		t.Error("short password accepted")
 	}
 }

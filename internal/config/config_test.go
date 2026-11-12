@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -102,18 +103,35 @@ func TestLoadWarnsOnWorldReadable(t *testing.T) {
 	if err := os.WriteFile(p, []byte(testKeyYAML+minimal), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	hasPermissionWarning := func(warnings []string) bool {
+		return slices.ContainsFunc(warnings, func(w string) bool { return strings.Contains(w, "other users") })
+	}
 	_, warnings, err := Load(p)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if len(warnings) != 1 || !strings.Contains(warnings[0], "other users") {
+	if !hasPermissionWarning(warnings) {
 		t.Errorf("warnings = %v", warnings)
 	}
 	if err := os.Chmod(p, 0o640); err != nil {
 		t.Fatal(err)
 	}
-	if _, warnings, _ = Load(p); len(warnings) != 0 {
-		t.Errorf("unexpected warnings for 0640: %v", warnings)
+	if _, warnings, _ = Load(p); hasPermissionWarning(warnings) {
+		t.Errorf("unexpected permission warning for 0640: %v", warnings)
+	}
+}
+
+func TestLoadWarnsWithoutLoginMethod(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(p, []byte(testKeyYAML+minimal), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, warnings, err := Load(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.ContainsFunc(warnings, func(w string) bool { return strings.Contains(w, "no login method") }) {
+		t.Errorf("warnings = %v", warnings)
 	}
 }
 

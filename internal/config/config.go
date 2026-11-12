@@ -115,6 +115,9 @@ func Load(path string) (*Config, []string, error) {
 	if err != nil {
 		return nil, warnings, fmt.Errorf("%s: %w", path, err)
 	}
+	if cfg.Auth.LDAP.URL == "" && !cfg.Auth.Local.Enabled {
+		warnings = append(warnings, "no login method configured (auth.ldap.url or auth.local): nobody can log in")
+	}
 	if cfg.Server.TLS.Mode == TLSModeNone {
 		warnings = append(warnings, "server.tls.mode is \"none\": serving plain HTTP, use only for development or behind a TLS-terminating proxy")
 	}
@@ -201,6 +204,7 @@ func (c *Config) Validate() error {
 	c.Auth.Session.validate(add)
 	c.Auth.Lockout.User.validate("auth.lockout.user", add)
 	c.Auth.Lockout.IP.validate("auth.lockout.ip", add)
+	c.Auth.Local.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {

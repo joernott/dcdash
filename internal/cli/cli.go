@@ -4,18 +4,22 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 	"slices"
+	"strings"
 	"syscall"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/term"
 
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/certs"
@@ -57,6 +61,7 @@ func NewRootCommand(deps Deps) *cobra.Command {
 		newServeCommand(&configPath, deps),
 		newVersionCommand(),
 		newGenKeyCommand(),
+		newHashPasswordCommand(),
 		newConfigCommand(&configPath),
 	)
 	return root
@@ -234,6 +239,14 @@ func newAuthService(cfg *config.Config, st *store.Store, log zerolog.Logger) (*a
 		TrustedProxies: proxies,
 		Log:            log,
 	}
+	if a.Local.Enabled {
+		local, err := auth.NewLocalAccount(a.Local.Username, a.Local.PasswordHash.Value())
+		if err != nil {
+			return nil, nil, err
+		}
+		opts.Local = local
+		log.Warn().Str("username", a.Local.Username).Msg("break-glass account enabled (always requires TOTP)")
+	}
 	if a.LDAP.URL != "" {
 		client, err := ldapauth.New(a.LDAP, log)
 		if err != nil {
@@ -249,4 +262,61 @@ func newAuthService(cfg *config.Config, st *store.Store, log zerolog.Logger) (*a
 
 func lockoutPolicy(p config.LockoutPolicy) lockout.Policy {
 	return lockout.Policy{MaxFailures: p.MaxFailures, Window: p.Window.D(), Duration: p.Duration.D()}
+}
+
+func newHashPasswordCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "hash-password",
+		Short: "Create an argon2id hash for auth.local.password_hash",
+		Long: "Reads a password (from the terminal without echo, or the first line of stdin)\n" +
+			"and prints its argon2id hash for the break-glass account.",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			password, err := readPassword(cmd)
+			if err != nil {
+				return err
+			}
+			hash, err := auth.HashPassword(password)
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), hash)
+			return err
+		},
+	}
+}
+
+// minPasswordLength for the break-glass account, which bypasses the directory.
+const minPasswordLength = 16
+
+func readPassword(cmd *cobra.Command) (string, error) {
+	var password string
+	if f, ok := cmd.InOrStdin().(*os.File); ok && term.IsTerminal(int(f.Fd())) { // #nosec G115 -- file descriptors fit into int
+		fmt.Fprint(cmd.ErrOrStderr(), "Password: ")
+		b, err := term.ReadPassword(int(f.Fd())) // #nosec G115 -- file descriptors fit into int
+		fmt.Fprintln(cmd.ErrOrStderr())
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprint(cmd.ErrOrStderr(), "Repeat password: ")
+		again, err := term.ReadPassword(int(f.Fd())) // #nosec G115 -- file descriptors fit into int
+		fmt.Fprintln(cmd.ErrOrStderr())
+		if err != nil {
+			return "", err
+		}
+		if string(b) != string(again) {
+			return "", errors.New("passwords do not match")
+		}
+		password = string(b)
+	} else {
+		line, err := bufio.NewReader(cmd.InOrStdin()).ReadString('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return "", err
+		}
+		password = strings.TrimRight(line, "\r\n")
+	}
+	if len(password) < minPasswordLength {
+		return "", fmt.Errorf("the password must have at least %d characters", minPasswordLength)
+	}
+	return password, nil
 }

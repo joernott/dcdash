@@ -31,6 +31,7 @@ type Authenticator interface {
 // Service provides the authentication endpoints.
 type Service struct {
 	ldap           Authenticator // nil if LDAP is not configured
+	local          *LocalAccount // nil if the break-glass account is disabled
 	sessions       *session.Manager
 	users          *lockout.Limiter
 	ips            *lockout.Limiter
@@ -41,6 +42,7 @@ type Service struct {
 // Options configures the service.
 type Options struct {
 	LDAP           Authenticator
+	Local          *LocalAccount
 	Sessions       *session.Manager
 	UserLockout    lockout.Policy
 	IPLockout      lockout.Policy
@@ -52,6 +54,7 @@ type Options struct {
 func New(o Options) *Service {
 	return &Service{
 		ldap:           o.LDAP,
+		local:          o.Local,
 		sessions:       o.Sessions,
 		users:          lockout.New(o.UserLockout),
 		ips:            lockout.New(o.IPLockout),
@@ -144,7 +147,7 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	user, err := s.authenticate(r.Context(), req.Username, req.Password)
+	user, source, err := s.authenticate(r.Context(), req.Username, req.Password)
 	switch {
 	case errors.Is(err, ldapauth.ErrInvalidCredentials):
 		lockedUser := s.users.Failure(userKey)
@@ -168,8 +171,8 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		groups = append(groups, g.DN)
 	}
 	token, sess, err := s.sessions.Create(r.Context(), session.New{
-		Username: user.Username, DisplayName: user.DisplayName, Source: session.SourceLDAP,
-		Groups: groups, Stage: session.StageAuthenticated,
+		Username: user.Username, DisplayName: user.DisplayName, Source: source,
+		Groups: groups, Stage: initialStage(source),
 		RemoteAddr: ip.String(), UserAgent: r.UserAgent(),
 	})
 	if err != nil {
@@ -178,15 +181,36 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.sessions.SetCookie(w, token, sess.ExpiresAt)
-	log.Info().Str("dn", user.DN).Int("groups", len(groups)).Msg("login successful")
+	if source == session.SourceLocal {
+		log.Warn().Str("stage", sess.Stage).Msg("break-glass account used: password verified")
+	} else {
+		log.Info().Str("dn", user.DN).Int("groups", len(groups)).Msg("login successful")
+	}
 	httpx.WriteJSON(w, http.StatusOK, sessionInfo(sess))
 }
 
-func (s *Service) authenticate(ctx context.Context, username, password string) (*ldapauth.User, error) {
-	if s.ldap == nil {
-		return nil, ldapauth.ErrInvalidCredentials
+// authenticate verifies the credentials against the break-glass account (if
+// the name is reserved for it) or the directory, and returns the session source.
+func (s *Service) authenticate(ctx context.Context, username, password string) (*ldapauth.User, string, error) {
+	if s.local.Matches(username) {
+		u, err := s.local.Authenticate(ctx, username, password)
+		return u, session.SourceLocal, err
 	}
-	return s.ldap.Authenticate(ctx, username, password)
+	if s.ldap == nil {
+		return nil, "", ldapauth.ErrInvalidCredentials
+	}
+	u, err := s.ldap.Authenticate(ctx, username, password)
+	return u, session.SourceLDAP, err
+}
+
+// initialStage returns the session stage after the password step. The
+// break-glass account must always complete the TOTP step (Sprint 4); until
+// that step exists, its sessions cannot be completed.
+func initialStage(source string) string {
+	if source == session.SourceLocal {
+		return session.StageTOTP
+	}
+	return session.StageAuthenticated
 }
 
 func (s *Service) handleLogout(w http.ResponseWriter, r *http.Request) {

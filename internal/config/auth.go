@@ -20,6 +20,29 @@ type Auth struct {
 	LDAP    LDAP    `yaml:"ldap"`
 	Session Session `yaml:"session"`
 	Lockout Lockout `yaml:"lockout"`
+	Local   Local   `yaml:"local"`
+}
+
+// Local is the break-glass account: a local user for when the directory is
+// unavailable. It always requires TOTP and holds the root role.
+type Local struct {
+	Enabled bool `yaml:"enabled"`
+	// Username is reserved: logins with this name are never sent to the directory.
+	Username string `yaml:"username"`
+	// PasswordHash is an argon2id hash created with `dcdash hash-password`.
+	PasswordHash Secret `yaml:"password_hash"`
+}
+
+func (l Local) validate(add func(string, ...any)) {
+	if !l.Enabled {
+		return
+	}
+	if strings.TrimSpace(l.Username) == "" {
+		add("auth.local.username: required when the local account is enabled")
+	}
+	if !strings.HasPrefix(l.PasswordHash.Value(), "$argon2id$") {
+		add("auth.local.password_hash: must be an argon2id hash (create one with `dcdash hash-password`)")
+	}
 }
 
 // Lockout limits failed login attempts per user name and per client IP address.

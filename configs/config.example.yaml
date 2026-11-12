@@ -95,6 +95,12 @@ auth:
     # Failed logins before a user name or client IP address is locked.
     user: {max_failures: 5, window: 15m, duration: 15m}
     ip: {max_failures: 20, window: 15m, duration: 15m}
+  # Break-glass account for when the directory is unavailable. It always requires
+  # TOTP and holds the root role. Create the hash with `dcdash hash-password`.
+  local:
+    enabled: false
+    username: breakglass
+    password_hash: "file:/etc/dcdash/breakglass.hash"
 
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.

@@ -98,3 +98,15 @@ func TestLockoutConfig(t *testing.T) {
 		t.Errorf("invalid lockout: %v", err)
 	}
 }
+
+func TestLocalAccountConfig(t *testing.T) {
+	base := testKeyYAML + "server:\n  tls: {mode: none}\nauth:\n  local:\n    enabled: true\n"
+	_, err := Parse(strings.NewReader(base))
+	if err == nil || !strings.Contains(err.Error(), "auth.local.username") || !strings.Contains(err.Error(), "auth.local.password_hash") {
+		t.Errorf("incomplete local account: %v", err)
+	}
+	cfg, err := Parse(strings.NewReader(base + "    username: breakglass\n    password_hash: \"$argon2id$v=19$m=65536,t=3,p=4$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNoaGFzaA\"\n"))
+	if err != nil || !cfg.Auth.Local.Enabled || cfg.Auth.Local.Username != "breakglass" {
+		t.Errorf("valid local account: %v", err)
+	}
+}
