@@ -114,3 +114,9 @@ I did the requested acl modification and created a container with ID 122 for you
 ## 2026-11-13 — Sprint 6 (Proxmox)
 
 yes, please do so
+
+---
+
+## 2026-11-13 — Sprint 7 (DNS)
+
+ok, go ahead

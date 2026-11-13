@@ -37,6 +37,7 @@ type Config struct {
 	Roles    []Role   `yaml:"roles"`
 	Audit    Audit    `yaml:"audit"`
 	Proxmox  Proxmox  `yaml:"proxmox"`
+	DNS      DNS      `yaml:"dns"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -143,6 +144,7 @@ func Parse(r io.Reader) (*Config, error) {
 		return nil, fmt.Errorf("parse config: %w", err)
 	}
 	cfg.Auth.LDAP.ApplyDefaults()
+	cfg.DNS.applyDefaults()
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -217,6 +219,7 @@ func (c *Config) Validate() error {
 	validateRoles(c.Roles, add)
 	c.Audit.validate(add)
 	c.Proxmox.validate(add)
+	c.DNS.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {
