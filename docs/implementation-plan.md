@@ -37,7 +37,7 @@ These apply to every task:
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | done |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | done |
-| 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | in progress |
+| 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | done |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | open |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | open |
@@ -203,17 +203,25 @@ These apply to every task:
 - [x] **6.4** Operate API: start, shutdown, stop, reboot, suspend, resume, all checked for
   permission and audited
 - [x] **6.5** Task tracking: task status and log, polling the result of an action
-- [ ] **6.6** Console spike: find out whether the Proxmox `vncwebsocket` and `termproxy`
+- [x] **6.6** Console spike: find out whether the Proxmox `vncwebsocket` and `termproxy`
   accept API-token authentication; otherwise use a dedicated Proxmox user with tickets.
   Record the decision in `docs/adr/`
-- [ ] **6.7** Console backend: websocket proxy for `vncproxy` (VMs) and `termproxy`
+- [x] **6.7** Console backend: websocket proxy for `vncproxy` (VMs) and `termproxy`
   (containers, node shell), short-lived one-time console tickets, `console` permission,
   audit of console session start and end
+  - [x] **6.7.1** Terminals (containers, node shells) use the console user, because Proxmox
+    rejects the termproxy login with API tokens (ADR 0001); VNC uses the API token. The
+    cluster list reports `terminals`, the API answers 409 `terminal_unavailable` without a
+    console user
 - [x] **6.8** Frontend inventory: cluster overview, node list, VM and container list with
   filter and search, detail view, action buttons with confirmation
-- [ ] **6.9** Frontend console: noVNC for VMs, xterm.js for containers and node shells,
+- [x] **6.9** Frontend console: noVNC for VMs, xterm.js for containers and node shells,
   full-screen mode and theming for dark mode
-- [ ] **6.10** Tests: HTTP and websocket mocks of the Proxmox API; manual test against a
+  - [x] **6.9.1** Fix: the noVNC canvas had no height. The Proxmox fake speaks a minimal RFB
+    server, so the end-to-end test checks the VNC console
+  - [x] **6.9.2** The guest page shows the live status (`status/current`), because the
+    cluster resource list lags about 10 seconds behind
+- [x] **6.10** Tests: HTTP and websocket mocks of the Proxmox API; manual test against a
   real cluster documented
 
 ## Sprint 7 — DNS (Cloudflare and bind9)

@@ -1,5 +1,3 @@
-| `test/pvefake/` | The Proxmox fake as a program, used by the end-to-end tests |
-| `internal/proxmox/` | Proxmox API client (failover, pinning), inventory, power actions, tasks, console proxy; `pvefake/` is an in-memory fake of the Proxmox API for tests |
 # Development Guide
 
 This guide covers how to build, run and test dcdash locally. The project workflow (sprints,
@@ -38,8 +36,10 @@ make tools-check                       # verifies the installed versions
 | `internal/server/` | HTTP(S) server, middleware, health endpoints |
 | `internal/ui/` | Embedded frontend build (`dist/`) and SPA handler |
 | `internal/version/` | Build information (set via `-ldflags`) |
+| `internal/proxmox/` | Proxmox API client (failover, pinning), inventory, power actions, tasks, console proxy; `pvefake/` is an in-memory fake of the Proxmox API for tests |
 | `internal/testutil/` | Helpers shared by tests |
 | `test/integration/` | Integration tests (build tag `integration`) and their container environment |
+| `test/pvefake/` | The Proxmox fake as a program, used by the end-to-end tests |
 | `api/openapi.yaml` | API specification; source of the TypeScript client types |
 | `web/` | Frontend: Vue 3, TypeScript, Vite, Tailwind CSS v4, Pinia, vue-i18n |
 | `configs/` | Example and development configuration |
@@ -93,6 +93,30 @@ enough:
 ```sh
 ./bin/dcdash --config configs/dev.yaml serve
 ```
+
+## Tests against a real Proxmox cluster
+
+The Proxmox integration tests in `test/integration/proxmox_test.go` run with `make
+test-integration` when the `DCDASH_IT_PVE_*` variables are set (see
+`scripts/integration-test.sh`). Keep them out of the repository, for example in a file with
+mode 0600 that you load with `set -a; . file; set +a`. Use guests that exist only for tests:
+`DCDASH_IT_PVE_POWER_GUEST` guests are started, suspended, resumed and stopped.
+
+Last manual test: 2026-11-13, Proxmox VE 9.0.11, single node, API token with privilege
+separation (`PVEAuditor` on `/`, `PVEVMUser` on two test guests) and a console user.
+
+| Check | Result |
+|---|---|
+| Inventory (`TestProxmoxRead`): node, 35 VMs, 3 containers, storage | passed |
+| Power actions on a VM: start, suspend, resume, stop, with task status and log | passed |
+| Power actions on a container: start, stop | passed |
+| VNC console with the API token and with the console user | passed |
+| Container terminal with the console user | passed |
+| Container terminal with the API token | rejected by Proxmox, as described in ADR 0001 |
+| Browser (Chromium): login, inventory, start and stop from the guest page, VNC console with the guest's screen, container terminal with login prompt | passed |
+
+The browser test used a separate dcdash configuration whose role allowed `console` only on
+the two test guests.
 
 ## Configuration
 

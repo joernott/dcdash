@@ -16,8 +16,9 @@
 # Tests against a real Proxmox VE cluster run when DCDASH_IT_PVE_* are set (see
 # test/integration/proxmox_test.go): _URL, _FINGERPRINT, _TOKEN_ID, _TOKEN_SECRET;
 # optionally _CONSOLE_USER, _CONSOLE_PASSWORD, _CONSOLE_GUESTS (consoles to open,
-# e.g. "qemu/201,lxc/202") and _POWER_GUEST (a running guest that is suspended and
-# resumed). Without _POWER_GUEST, no state is changed.
+# e.g. "qemu/201,lxc/202", running guests) and _POWER_GUEST (e.g. "qemu/110,lxc/122":
+# guests that are started if stopped, get a console, VMs are suspended and resumed,
+# and stopped guests are stopped again). Without _POWER_GUEST, no state is changed.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."

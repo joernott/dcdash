@@ -26,8 +26,10 @@ only those that the user also has. Grant the roles to both the user and the toke
 | dcdash uses | Proxmox role | Privileges |
 |---|---|---|
 | Inventory, details, tasks | `PVEAuditor` on `/` | `Sys.Audit`, `VM.Audit`, `Datastore.Audit` |
-| Power actions, consoles | `PVEVMUser` on `/vms` or a pool | `VM.PowerMgmt`, `VM.Console`, ... |
-| Node shells | `PVESysAdmin` on `/nodes` | `Sys.Console` |
+| Power actions, VNC consoles | `PVEVMUser` on `/vms` or a pool | `VM.PowerMgmt`, `VM.Console`, ... |
+
+Container terminals and node shells don't work with an API token, because Proxmox rejects the
+terminal login with tokens. They need a console user (see [Consoles](#consoles)).
 
 For example, read access everywhere and power actions and consoles on all guests:
 
@@ -96,15 +98,32 @@ Proxmox: virtual machines get a VNC console (noVNC), containers and nodes a term
 on the node for a node shell. dcdash records the start and end of every console session in the
 audit log. It closes the console when the user's dcdash session ends.
 
-Optionally, consoles can use a separate Proxmox user with a password instead of the API token
-(see [ADR 0001](adr/0001-proxmox-console-authentication.md)). The user needs the same console
-privileges as the token:
+VNC consoles use the API token. Container terminals and node shells need a separate Proxmox
+user with a password, because Proxmox doesn't accept API tokens for the terminal login (see
+[ADR 0001](adr/0001-proxmox-console-authentication.md)). Without a console user, dcdash offers
+only VNC consoles and hides the terminal buttons.
+
+Create the console user and grant it the console privileges:
+
+```sh
+pveum user add dcdash-console@pve --comment "dcdash terminals"
+pveum passwd dcdash-console@pve
+pveum acl modify /vms --users dcdash-console@pve --roles PVEVMUser
+# Only if node shells are wanted (root shells on the hypervisors):
+pveum acl modify /nodes --users dcdash-console@pve --roles PVESysAdmin
+```
+
+Store the password on the dcdash host (mode 0600) and configure it:
 
 ```yaml
       console:
         username: "dcdash-console@pve"
         password: "file:/etc/dcdash/pve-lab-console.password"
 ```
+
+Proxmox checks the console user's privileges for terminals, not the token's. dcdash still
+checks its own `console` and `admin` permissions first, so the console user doesn't widen what
+a dcdash user can do.
 
 ## Troubleshooting
 
@@ -114,4 +133,8 @@ privileges as the token:
 | "The backend refused the request" | The API token lacks a Proxmox privilege for the action (see the table above), or the token is wrong or expired. |
 | A cluster shows no or only some guests | The token lacks `VM.Audit` on those guests, or the user lacks `read` on them in dcdash. |
 | Nodes show no usage | The token lacks `Sys.Audit`. |
+| No console button for containers, no "Shell" link on nodes | No console user is configured for the cluster (see [Consoles](#consoles)). |
+| "Terminals are not available for this cluster" | Same: the console user is missing. |
+| The status in the list lags behind after a power action | Proxmox updates the cluster resource list about every 10 seconds. The guest page shows the current status. |
+| A terminal shows `[EOF - dtach terminating]` | Proxmox ended an older console session of the container, for example after a restart. Select "Connect again". |
 | `403 Permission check failed (/vms/…, VM.PowerMgmt)` although the token has `PVEVMUser` | With privilege separation, the user needs the privilege too. Check `pveum user token permissions`, and look for a user ACL that hides a group ACL on the same path (see above). |

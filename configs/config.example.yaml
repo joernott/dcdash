@@ -161,7 +161,8 @@ proxmox:
 #    token_secret: "file:/etc/dcdash/pve-lab.token"
 #    timeout: 15s
 #    # Optional Proxmox user for container and node consoles, which do not
-#    # accept API tokens (see docs/proxmox.md).
+#    # accept API tokens (see docs/proxmox.md). Without it, dcdash offers only
+#    # the VNC consoles of VMs.
 #    console:
 #      username: "dcdash-console@pve"
 #      password: "file:/etc/dcdash/pve-lab-console.password"

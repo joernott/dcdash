@@ -102,3 +102,9 @@ I have created a user "dashroot" with password "[REDACTED]" on the Proxmox serve
 
 I ran the above commands.
 The VM with ID 120 is your dev VM, and ID 110 is a currently unused VM (by default powered off) that can be used for tests when running the application on the dev  VM that are supposed to start/stop/suspend VMs. I have granted you permissions for both of them with "pveum acl modify /vms/<vmid> --tokens 'dashroot@pve!dev' --roles PVEVMUser"
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+I did the requested acl modification and created a container with ID 122 for you to test. It has the user dashroot with password "[REDACTED]" and I've added your SSH key. I granted you the same rights as for the two VMs

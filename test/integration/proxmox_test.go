@@ -6,6 +6,8 @@ package integration
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -24,9 +26,10 @@ import (
 //
 //	DCDASH_IT_PVE_URL, _FINGERPRINT, _TOKEN_ID, _TOKEN_SECRET  API access
 //	DCDASH_IT_PVE_CONSOLE_USER, _CONSOLE_PASSWORD              optional console user
-//	DCDASH_IT_PVE_CONSOLE_GUESTS  e.g. "qemu/201,lxc/202": consoles are opened
+//	DCDASH_IT_PVE_CONSOLE_GUESTS  e.g. "qemu/201,lxc/202": running guests whose
+//	                              consoles are opened with both credentials
 //	                              (handshake only, no input is sent)
-//	DCDASH_IT_PVE_POWER_GUEST     e.g. "qemu/110": a guest that may be started,
+//	DCDASH_IT_PVE_POWER_GUEST     e.g. "qemu/110,lxc/122": guests that may be started,
 //	                              suspended, resumed and stopped. A stopped
 //	                              guest is started and stopped again at the end.
 
@@ -117,6 +120,14 @@ func openConsole(t *testing.T, c *proxmox.Cluster, typ string, vmid int) error {
 		return err
 	}
 	con, err := c.OpenGuestConsole(ctx, res.Node, typ, vmid)
+	if typ == proxmox.TypeLXC && !c.Terminals() {
+		// Proxmox rejects the termproxy login with API tokens (ADR 0001).
+		if errors.Is(err, proxmox.ErrTerminalUnavailable) {
+			t.Logf("%s/%d: terminal unavailable without console user, as expected", typ, vmid)
+			return nil
+		}
+		return fmt.Errorf("want ErrTerminalUnavailable, got %w", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -194,16 +205,25 @@ func TestProxmoxPowerActions(t *testing.T) {
 	if g == "" {
 		t.Skip("DCDASH_IT_PVE_POWER_GUEST not set")
 	}
-	guest := parseGuests(t, g)[0]
-	vmid, _ := strconv.Atoi(guest[1])
-	c := pveCluster(t, false)
-	res, err := c.FindGuest(t.Context(), guest[0], vmid)
+	for _, guest := range parseGuests(t, g) {
+		t.Run(guest[0]+"/"+guest[1], func(t *testing.T) {
+			vmid, _ := strconv.Atoi(guest[1])
+			powerCycle(t, pveCluster(t, false), guest[0], vmid)
+		})
+	}
+}
+
+// powerCycle starts a stopped guest (and stops it again at the end), opens
+// its console in both authentication modes and, for VMs, suspends and resumes
+// it. Containers are not suspended: Proxmox needs CRIU for that.
+func powerCycle(t *testing.T, c *proxmox.Cluster, typ string, vmid int) {
+	res, err := c.FindGuest(t.Context(), typ, vmid)
 	if err != nil {
 		t.Fatal(err)
 	}
 	run := func(action string) {
 		t.Helper()
-		upid, err := c.Action(context.Background(), res.Node, guest[0], vmid, action)
+		upid, err := c.Action(context.Background(), res.Node, typ, vmid, action)
 		if err != nil {
 			t.Fatalf("%s: %v", action, err)
 		}
@@ -223,26 +243,25 @@ func TestProxmoxPowerActions(t *testing.T) {
 		run("start")
 		t.Cleanup(func() { run("stop") })
 	default:
-		t.Skipf("%s is %s", g, res.Status)
+		t.Skipf("%s/%d is %s", typ, vmid, res.Status)
 	}
-	// The console of the power guest is tested here, while it runs.
-	if guest[0] == proxmox.TypeQEMU {
-		for _, m := range []struct {
-			name string
-			user bool
-		}{{"token", false}, {"console user", true}} {
-			if m.user && os.Getenv("DCDASH_IT_PVE_CONSOLE_USER") == "" {
-				continue
-			}
-			err := openConsole(t, pveCluster(t, m.user), guest[0], vmid)
-			t.Logf("console (%s): %s", m.name, errOK(err))
-			if err != nil {
-				t.Errorf("console (%s): %v", m.name, err)
-			}
+	for _, m := range []struct {
+		name string
+		user bool
+	}{{"token", false}, {"console user", true}} {
+		if m.user && os.Getenv("DCDASH_IT_PVE_CONSOLE_USER") == "" {
+			continue
+		}
+		err := openConsole(t, pveCluster(t, m.user), typ, vmid)
+		t.Logf("console (%s): %s", m.name, errOK(err))
+		if err != nil {
+			t.Errorf("console (%s): %v", m.name, err)
 		}
 	}
-	run("suspend")
-	run("resume")
+	if typ == proxmox.TypeQEMU {
+		run("suspend")
+		run("resume")
+	}
 }
 
 func mustUPID(t *testing.T, s string) proxmox.UPID {
