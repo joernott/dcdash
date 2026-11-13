@@ -96,6 +96,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
 	mux.HandleFunc("GET /api/v1/auth/me", s.handleMe)
 	s.registerTOTP(mux)
+	s.registerAdmin(mux)
 }
 
 // LoginRequest is the body of POST /api/v1/auth/login.

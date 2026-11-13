@@ -14,12 +14,9 @@ import (
 
 func testAuthorizer(t *testing.T, auditLog *audit.Log) *Authorizer {
 	t.Helper()
-	perms, err := rbac.ParseSet([]string{"dns:cf:*:write"})
-	if err != nil {
-		t.Fatal(err)
-	}
 	return NewAuthorizer(rbac.NewResolver("", []rbac.Role{
-		{Name: "dns-operator", Groups: []string{"dcdash-dns"}, RequireTOTP: false, Permissions: perms},
+		{Name: "dns-operator", Groups: []string{"dcdash-dns"}, RequireTOTP: false, Permissions: rbac.Set{rbac.MustParse("dns:cf:*:write")}},
+		{Name: "session-viewer", Groups: []string{"dcdash-ops"}, RequireTOTP: false, Permissions: rbac.Set{rbac.PermSessionsRead}},
 	}), auditLog)
 }
 

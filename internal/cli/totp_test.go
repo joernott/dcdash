@@ -126,4 +126,11 @@ func TestTOTPEnrollAndReencrypt(t *testing.T) {
 	if actions["auth.totp.enroll/success"] != 1 || actions["security.reencrypt/success"] != 2 {
 		t.Errorf("audit: %v", actions)
 	}
+
+	if out, err := runWithInput(t, nil, "-c", cfgB, "totp", "reset", "breakglass"); err != nil || !strings.Contains(out, "reset") {
+		t.Errorf("reset: %q, %v", out, err)
+	}
+	if _, err := runWithInput(t, nil, "-c", cfgB, "totp", "reset", "breakglass"); err == nil || !strings.Contains(err.Error(), "not enrolled") {
+		t.Errorf("second reset: %v", err)
+	}
 }

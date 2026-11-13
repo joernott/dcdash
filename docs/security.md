@@ -144,7 +144,29 @@ which are shown only once.
   logged-in user can replace all of them with a current code.
 
 **Lost device:** a user can log in with a recovery code. If those are lost too, root resets
-the user's TOTP, and the user enrolls again at the next login.
+the user's TOTP (see [Administration](#administration)), and the user enrolls again at the
+next login.
+
+### Administration
+
+| Task | API | Permission |
+|---|---|---|
+| List active sessions, optionally of one user | `GET /api/v1/admin/sessions?username=` | `system:core:sessions:read` |
+| Terminate a session | `DELETE /api/v1/admin/sessions/{id}` | `system:core:sessions:write` |
+| Terminate all sessions of a user | `DELETE /api/v1/admin/users/{username}/sessions` | `system:core:sessions:write` |
+| Reset a user's TOTP | `DELETE /api/v1/admin/users/{username}/totp` | `root` |
+
+Session lists never contain tokens; sessions are addressed by a separate, non-secret ID.
+
+On the server, TOTP can also be reset without logging in, for example for the break-glass
+account or when no root user can log in:
+
+```sh
+sudo -u dcdash dcdash totp reset <username>
+```
+
+Every administrative action is recorded in the audit log; actions on the command line use the
+operating system user as the actor.
 
 ### CSRF protection
 
@@ -311,5 +333,7 @@ entry can't be stored, it is written to the application log as an error instead.
 | `auth.totp.enroll` | TOTP enrollment, in the web interface or with `dcdash totp enroll` |
 | `auth.recovery_codes.regenerate` | A user replaced their recovery codes |
 | `security.reencrypt` | `dcdash reencrypt` |
+| `admin.session.terminate` | An administrator terminated sessions; `target` is the user |
+| `admin.totp.reset` | TOTP reset in the API or with `dcdash totp reset` |
 | `auth.logout` | Logout |
 | `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |

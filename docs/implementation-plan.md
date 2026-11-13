@@ -155,7 +155,7 @@ These apply to every task:
 - [x] **4.9** Audit log: data model, writer, logging of logins and every state change,
   query API with filters, optional output to syslog or a file
   - [x] **4.9.1** Test that `configs/config.example.yaml` stays valid (it had no test yet)
-- [ ] **4.10** Admin API: list and terminate sessions, reset a user's TOTP (root only), plus
+- [x] **4.10** Admin API: list and terminate sessions, reset a user's TOTP (root only), plus
   the `dcdash totp reset` CLI command
 - [ ] **4.11** User preferences: storage and API (`GET`/`PUT /api/v1/me/preferences`) for
   language and theme

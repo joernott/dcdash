@@ -23,7 +23,8 @@ import (
 	"github.com/joernott/dcdash/internal/vault"
 )
 
-// fakeDirectory accepts alice (dashroot), bob (dcdash-dns) and carol (no groups),
+// fakeDirectory accepts alice (dashroot), bob (dcdash-dns), dave (dcdash-ops) and
+// carol (no groups),
 // all with password "secret"; "down" simulates an unavailable directory.
 type fakeDirectory struct{ calls int }
 
@@ -36,6 +37,11 @@ func (f *fakeDirectory) Authenticate(_ context.Context, username, password strin
 		return &ldapauth.User{
 			DN: "CN=Bob,OU=Users,DC=example,DC=com", Username: "bob", DisplayName: "Bob",
 			Groups: []ldapauth.Group{{DN: "CN=dcdash-dns,OU=Groups,DC=example,DC=com", Name: "dcdash-dns"}},
+		}, nil
+	case username == "dave" && password == "secret":
+		return &ldapauth.User{
+			DN: "CN=Dave,OU=Users,DC=example,DC=com", Username: "dave",
+			Groups: []ldapauth.Group{{DN: "CN=dcdash-ops,OU=Groups,DC=example,DC=com", Name: "dcdash-ops"}},
 		}, nil
 	case username == "carol" && password == "secret":
 		return &ldapauth.User{DN: "CN=Carol,OU=Users,DC=example,DC=com", Username: "carol"}, nil

@@ -77,7 +77,7 @@ func newTOTPCommand(configPath *string) *cobra.Command {
 		Long: "Manage TOTP enrollments. Run these commands as the user dcdash runs as\n" +
 			"(e.g. sudo -u dcdash dcdash totp ...), so that the database stays accessible.",
 	}
-	cmd.AddCommand(newTOTPEnrollCommand(configPath))
+	cmd.AddCommand(newTOTPEnrollCommand(configPath), newTOTPResetCommand(configPath))
 	return cmd
 }
 
@@ -163,6 +163,35 @@ func newReencryptCommand(configPath *string) *cobra.Command {
 				return err
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%d TOTP secret(s) re-encrypted; all secrets now use the current key\n", n)
+			return err
+		},
+	}
+}
+
+func newTOTPResetCommand(configPath *string) *cobra.Command {
+	return &cobra.Command{
+		Use:   "reset <username>",
+		Short: "Reset the TOTP enrollment of a user",
+		Long: "Removes the TOTP secret and recovery codes of a user, e.g. after the device was\n" +
+			"lost. Directory users enroll again at their next login; the break-glass account\n" +
+			"with `dcdash totp enroll`.",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			s, err := openState(cmd.Context(), *configPath)
+			if err != nil {
+				return err
+			}
+			defer s.Close()
+			name := strings.TrimSpace(args[0])
+			ok, err := s.totp.Reset(cmd.Context(), name)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return fmt.Errorf("TOTP is not enrolled for %q", name)
+			}
+			s.record(cmd.Context(), "admin.totp.reset", name, audit.ResultSuccess, nil)
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "TOTP of %s reset\n", name)
 			return err
 		},
 	}

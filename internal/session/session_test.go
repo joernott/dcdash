@@ -260,3 +260,39 @@ func TestPendingTOTP(t *testing.T) {
 		t.Errorf("deleted session: %v", err)
 	}
 }
+
+func TestListAndDeleteByID(t *testing.T) {
+	m, c := newManager(t)
+	ctx := context.Background()
+	_, a := create(t, m)
+	c.advance(time.Second)
+	_, b, _ := m.Create(ctx, New{Username: "Bob", Source: SourceLDAP, Stage: StageAuthenticated})
+	_, _, _ = m.Create(ctx, New{Username: "carol", Source: SourceLDAP, Stage: StageTOTP})
+	if a.ID == "" || a.ID == b.ID {
+		t.Fatalf("IDs: %q %q", a.ID, b.ID)
+	}
+	all, err := m.List(ctx, "")
+	if err != nil || len(all) != 3 || all[2].ID != a.ID {
+		t.Fatalf("list: %+v, %v", all, err)
+	}
+	if all[2].CSRFToken != "" || len(all[2].Groups) != 1 {
+		t.Errorf("listed session: %+v", all[2])
+	}
+	if l, _ := m.List(ctx, "BOB"); len(l) != 1 || l[0].ID != b.ID {
+		t.Errorf("filter: %+v", l)
+	}
+	// Abandoned pending sessions are not listed.
+	c.advance(PendingTimeout)
+	if l, _ := m.List(ctx, "carol"); len(l) != 0 {
+		t.Errorf("abandoned pending session listed: %+v", l)
+	}
+	if user, err := m.DeleteByID(ctx, b.ID); err != nil || user != "Bob" {
+		t.Errorf("delete: %q, %v", user, err)
+	}
+	if _, err := m.DeleteByID(ctx, b.ID); !errors.Is(err, ErrNotFound) {
+		t.Errorf("delete twice: %v", err)
+	}
+	if n, _ := m.DeleteUser(ctx, "ALICE"); n != 1 {
+		t.Errorf("DeleteUser ignores case: %d", n)
+	}
+}

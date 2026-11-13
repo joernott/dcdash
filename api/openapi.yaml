@@ -16,6 +16,8 @@ tags:
     description: Login, logout and session information
   - name: audit
     description: Audit log
+  - name: admin
+    description: Administration of sessions and TOTP enrollments
 
 paths:
   /healthz:
@@ -314,6 +316,95 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/admin/sessions:
+    get:
+      tags: [admin]
+      operationId: listSessions
+      summary: List active sessions
+      description: Requires `system:core:sessions:read`. Newest first; tokens are never returned.
+      parameters:
+        - { name: username, in: query, schema: { type: string }, description: Only sessions of this user (case-insensitive). }
+      responses:
+        "200":
+          description: Active sessions.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/sessions/{id}:
+    delete:
+      tags: [admin]
+      operationId: terminateSession
+      summary: Terminate a session
+      description: Requires `system:core:sessions:write`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "204":
+          description: Terminated.
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: "No such session (code: not_found)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/users/{username}/sessions:
+    delete:
+      tags: [admin]
+      operationId: terminateUserSessions
+      summary: Terminate all sessions of a user
+      description: Requires `system:core:sessions:write`.
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "200":
+          description: Number of terminated sessions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [terminated]
+                properties:
+                  terminated: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/users/{username}/totp:
+    delete:
+      tags: [admin]
+      operationId: resetTOTP
+      summary: Reset the TOTP enrollment of a user
+      description: |
+        Only for root. Removes the user's TOTP secret and recovery codes; directory users enroll
+        again at their next login.
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "204":
+          description: Reset.
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: "The user has no TOTP enrolled (code: not_found)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   parameters:
     CSRFToken:
@@ -429,6 +520,30 @@ components:
         recoveryCodes:
           type: array
           items: { type: string }
+
+    SessionList:
+      type: object
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          items: { $ref: "#/components/schemas/SessionSummary" }
+
+    SessionSummary:
+      type: object
+      required: [id, username, displayName, source, stage, createdAt, lastSeenAt, expiresAt, remoteAddr, userAgent, current]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        source: { type: string, enum: [ldap, local] }
+        stage: { type: string, enum: [authenticated, totp, totp_enroll] }
+        createdAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        remoteAddr: { type: string }
+        userAgent: { type: string }
+        current: { type: boolean, description: The session of the request. }
 
     UserInfo:
       type: object
