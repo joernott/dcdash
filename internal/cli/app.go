@@ -16,6 +16,7 @@ import (
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/prefs"
+	"github.com/joernott/dcdash/internal/proxmox"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/status"
@@ -80,6 +81,14 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		},
 		func(mux *http.ServeMux) { prefs.NewStore(st.DB()).Register(mux, auditLog, auth.RequireAuthenticated) },
 	)
+	pve, err := newProxmox(cfg.Proxmox, auditLog, sessions, log)
+	if err != nil {
+		return nil, err
+	}
+	if pve != nil {
+		a.statusChecks = append(a.statusChecks, pve.StatusChecks()...)
+		a.routes = append(a.routes, pve.Register)
+	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
 	return a, nil
@@ -169,4 +178,21 @@ func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Author
 
 func lockoutPolicy(p config.LockoutPolicy) lockout.Policy {
 	return lockout.Policy{MaxFailures: p.MaxFailures, Window: p.Window.D(), Duration: p.Duration.D()}
+}
+
+// newProxmox creates the Proxmox module, or nil if no cluster is configured.
+func newProxmox(cfg config.Proxmox, auditLog *audit.Log, sessions *session.Manager, log zerolog.Logger) (*proxmox.Service, error) {
+	if len(cfg.Clusters) == 0 {
+		return nil, nil
+	}
+	clusters := make([]*proxmox.Cluster, 0, len(cfg.Clusters))
+	for _, c := range cfg.Clusters {
+		cl, err := proxmox.New(c, log)
+		if err != nil {
+			return nil, err
+		}
+		clusters = append(clusters, cl)
+		log.Info().Str("cluster", c.Name).Int("endpoints", len(c.Endpoints)).Msg("proxmox: cluster configured")
+	}
+	return proxmox.NewService(clusters, auditLog, sessions, log), nil
 }

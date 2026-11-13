@@ -195,12 +195,14 @@ These apply to every task:
 
 - [x] **6.1** Configuration: several clusters, each with several endpoints, API token, CA
   or fingerprint, and optional console credentials (see 6.6)
-- [ ] **6.2** Client wrapper around `go-proxmox`: endpoint failover, timeouts, health check
-- [ ] **6.3** Read API: clusters, nodes with resource usage, VMs and containers with status
+- [x] **6.2** Client wrapper around `go-proxmox`: endpoint failover, timeouts, health check.
+  Changed: dcdash uses its own small client instead of go-proxmox, see
+  `docs/adr/0002-proxmox-client.md`
+- [x] **6.3** Read API: clusters, nodes with resource usage, VMs and containers with status
   and details
-- [ ] **6.4** Operate API: start, shutdown, stop, reboot, suspend, resume, all checked for
+- [x] **6.4** Operate API: start, shutdown, stop, reboot, suspend, resume, all checked for
   permission and audited
-- [ ] **6.5** Task tracking: task status and log, polling the result of an action
+- [x] **6.5** Task tracking: task status and log, polling the result of an action
 - [ ] **6.6** Console spike: find out whether the Proxmox `vncwebsocket` and `termproxy`
   accept API-token authentication; otherwise use a dedicated Proxmox user with tickets.
   Record the decision in `docs/adr/`

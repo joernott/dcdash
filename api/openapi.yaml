@@ -20,6 +20,8 @@ tags:
     description: Audit log
   - name: admin
     description: Administration of sessions and TOTP enrollments
+  - name: proxmox
+    description: "Proxmox VE clusters: inventory, power actions, tasks and consoles"
 
 paths:
   /healthz:
@@ -470,6 +472,203 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/proxmox/clusters:
+    get:
+      tags: [proxmox]
+      operationId: listProxmoxClusters
+      summary: List Proxmox clusters
+      description: Returns the clusters on which the user holds at least `read` on any resource.
+      responses:
+        "200":
+          description: Visible clusters.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxClusterList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/resources:
+    get:
+      tags: [proxmox]
+      operationId: getProxmoxInventory
+      summary: Nodes, guests and storage of a cluster
+      description: |
+        Only entries the user may read are returned: `node/<name>`, `qemu/<vmid>`, `lxc/<vmid>`
+        and `storage/<node>/<storage>` (e.g. `proxmox:lab:qemu/*:read`). Usage values are 0
+        when the API token lacks the Proxmox privilege to see them.
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+      responses:
+        "200":
+          description: Inventory.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxInventory" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}:
+    get:
+      tags: [proxmox]
+      operationId: getProxmoxGuest
+      summary: Status and configuration of a guest
+      description: Requires `read` on `<type>/<vmid>`. Secrets (cipassword) are removed from the configuration.
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      responses:
+        "200":
+          description: Guest details.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxGuestDetail" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/actions/{action}:
+    post:
+      tags: [proxmox]
+      operationId: runProxmoxAction
+      summary: Run a power action
+      description: |
+        Requires `operate` on `<type>/<vmid>`. Starts a Proxmox task and returns its ID; poll the
+        task for the result. Audited as `proxmox.guest.<action>`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - name: action
+          in: path
+          required: true
+          schema: { type: string, enum: [start, shutdown, stop, reboot, suspend, resume] }
+      responses:
+        "202":
+          description: Task started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxTaskRef" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/tasks/{upid}:
+    get:
+      tags: [proxmox]
+      operationId: getProxmoxTask
+      summary: Status and log of a task
+      description: |
+        Requires `read` on the task's guest (`qemu/<id>` or `lxc/<id>`), or on `node/<node>` for
+        tasks without a guest.
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - { name: upid, in: path, required: true, schema: { type: string }, description: Proxmox task ID (UPID). }
+        - { name: log, in: query, schema: { type: string }, description: "Any value: include the log (up to 500 lines)." }
+      responses:
+        "200":
+          description: Task.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxTask" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/console:
+    post:
+      tags: [proxmox]
+      operationId: openProxmoxGuestConsole
+      summary: Prepare the console of a guest
+      description: |
+        Requires `console` on `<type>/<vmid>`. Virtual machines get a VNC console (noVNC),
+        containers a terminal (xterm.js). Open the websocket `/api/v1/proxmox/console/{id}` within
+        15 seconds.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      responses:
+        "200":
+          description: Console prepared.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxConsoleTicket" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/nodes/{node}/shell:
+    post:
+      tags: [proxmox]
+      operationId: openProxmoxNodeShell
+      summary: Prepare a shell on a node
+      description: |
+        A node shell is root access to the hypervisor, so it requires `admin` on `node/<node>`.
+        Open the websocket `/api/v1/proxmox/console/{id}` within 15 seconds.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - { name: node, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Shell prepared.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxConsoleTicket" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/console/{id}:
+    get:
+      tags: [proxmox]
+      operationId: connectProxmoxConsole
+      summary: Console websocket
+      description: |
+        Websocket (subprotocol `binary`) proxied to Proxmox. The ticket is valid once, for 15
+        seconds, and only for the session that prepared it. VNC consoles speak RFB (password:
+        `ProxmoxConsoleTicket.password`); terminals speak the Proxmox termproxy protocol
+        (`0:<length>:<data>` input, `1:<cols>:<rows>:` resize, `2` ping), the login is done by
+        dcdash. The connection ends when the dcdash session ends. Start and end are audited.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "101":
+          description: Switching to the websocket protocol.
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -485,7 +684,25 @@ components:
         The csrfToken of the session (returned by login and GET /api/v1/auth/me). Required for
         all state-changing requests of a session.
 
+  parameters:
+    ProxmoxCluster: { name: cluster, in: path, required: true, schema: { type: string }, description: Cluster name from the configuration. }
+    ProxmoxGuestType: { name: type, in: path, required: true, schema: { type: string, enum: [qemu, lxc] } }
+    ProxmoxVMID: { name: vmid, in: path, required: true, schema: { type: integer, minimum: 1 } }
+
   responses:
+    NotFound:
+      description: "Not found (code: not_found)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    Upstream:
+      description: |
+        The backend failed. Codes: upstream_unavailable (not reachable), upstream_forbidden
+        (the backend denied the request, e.g. missing privileges of the API token), upstream_error
+        (message from the backend).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     TooManyAttempts:
       description: "Too many failed attempts (code: too_many_attempts)."
       headers:
@@ -731,3 +948,125 @@ components:
             message:
               type: string
               description: English fallback message.
+
+    ProxmoxClusterList:
+      type: object
+      required: [clusters]
+      properties:
+        clusters:
+          type: array
+          items:
+            type: object
+            required: [name, consoleUser]
+            properties:
+              name: { type: string }
+              consoleUser: { type: boolean, description: Consoles use a dedicated Proxmox user instead of the API token. }
+
+    ProxmoxInventory:
+      type: object
+      required: [nodes, guests, storage]
+      properties:
+        nodes:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxNode" }
+        guests:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxGuest" }
+        storage:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxStorage" }
+
+    ProxmoxNode:
+      type: object
+      required: [name, status, cpu, maxCpu, mem, maxMem, disk, maxDisk, uptime]
+      properties:
+        name: { type: string }
+        status: { type: string, description: "online, offline or unknown" }
+        cpu: { type: number, description: CPU usage (0..1). }
+        maxCpu: { type: number }
+        mem: { type: integer, format: int64, description: Bytes. }
+        maxMem: { type: integer, format: int64 }
+        disk: { type: integer, format: int64 }
+        maxDisk: { type: integer, format: int64 }
+        uptime: { type: integer, format: int64, description: Seconds. }
+
+    ProxmoxGuest:
+      type: object
+      required: [type, vmid, name, node, status, template, tags, pool, lock, haState, cpu, maxCpu, mem, maxMem, disk, maxDisk, uptime]
+      properties:
+        type: { type: string, enum: [qemu, lxc] }
+        vmid: { type: integer }
+        name: { type: string }
+        node: { type: string }
+        status: { type: string, description: "running, stopped, paused, ..." }
+        template: { type: boolean }
+        tags:
+          type: array
+          items: { type: string }
+        pool: { type: string }
+        lock: { type: string }
+        haState: { type: string }
+        cpu: { type: number }
+        maxCpu: { type: number }
+        mem: { type: integer, format: int64 }
+        maxMem: { type: integer, format: int64 }
+        disk: { type: integer, format: int64 }
+        maxDisk: { type: integer, format: int64 }
+        uptime: { type: integer, format: int64 }
+
+    ProxmoxStorage:
+      type: object
+      required: [name, node, status, disk, maxDisk]
+      properties:
+        name: { type: string }
+        node: { type: string }
+        status: { type: string }
+        disk: { type: integer, format: int64 }
+        maxDisk: { type: integer, format: int64 }
+
+    ProxmoxGuestDetail:
+      type: object
+      required: [guest, status, config]
+      properties:
+        guest: { $ref: "#/components/schemas/ProxmoxGuest" }
+        status:
+          type: object
+          additionalProperties: true
+          description: Proxmox status/current as returned by Proxmox.
+        config:
+          type: object
+          additionalProperties: true
+          description: Proxmox configuration as returned by Proxmox, without secrets.
+
+    ProxmoxTaskRef:
+      type: object
+      required: [upid, node]
+      properties:
+        upid: { type: string }
+        node: { type: string }
+
+    ProxmoxTask:
+      type: object
+      required: [upid, node, type, id, user, running, exitStatus, ok, startTime, log]
+      properties:
+        upid: { type: string }
+        node: { type: string }
+        type: { type: string, description: "e.g. qmstart, vzshutdown" }
+        id: { type: string, description: Usually the VMID. }
+        user: { type: string }
+        running: { type: boolean }
+        exitStatus: { type: string, description: "OK or the error message, once stopped." }
+        ok: { type: boolean }
+        startTime: { type: string, format: date-time }
+        endTime: { type: string, format: date-time }
+        log:
+          type: array
+          items: { type: string }
+
+    ProxmoxConsoleTicket:
+      type: object
+      required: [id, kind]
+      properties:
+        id: { type: string, description: One-time ticket for the websocket. }
+        kind: { type: string, enum: [vnc, term] }
+        password: { type: string, description: VNC password for noVNC (only for vnc). }
