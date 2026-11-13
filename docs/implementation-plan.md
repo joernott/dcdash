@@ -37,7 +37,7 @@ These apply to every task:
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | done |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | done |
-| 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | open |
+| 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | in progress |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | open |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | open |
@@ -193,7 +193,7 @@ These apply to every task:
 
 ## Sprint 6 — Proxmox
 
-- [ ] **6.1** Configuration: several clusters, each with several endpoints, API token, CA
+- [x] **6.1** Configuration: several clusters, each with several endpoints, API token, CA
   or fingerprint, and optional console credentials (see 6.6)
 - [ ] **6.2** Client wrapper around `go-proxmox`: endpoint failover, timeouts, health check
 - [ ] **6.3** Read API: clusters, nodes with resource usage, VMs and containers with status

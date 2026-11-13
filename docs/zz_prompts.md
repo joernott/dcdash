@@ -88,3 +88,10 @@ please continue
 ## 2026-11-13 — Sprint 5 (Frontend shell)
 
 please continue
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+You do have sudo on the VM, use the password "[REDACTED]". You can install whatever you need on the vm as its only purpose is to develop this app. Please install the test browser and notify me if you need assistance. Afterwards, please continue with Sprint 6.
+I have created a user "dashroot" with password "[REDACTED]" on the Proxmox server https://proxtester2.wan.kunden.sf.thse.net:8006 and created the API token "[REDACTED]" for that user. I've granted PVEVMUser rights on / to the users group.

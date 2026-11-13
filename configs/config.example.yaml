@@ -142,6 +142,30 @@ audit:
     address: ""
     tag: dcdash
 
+# Proxmox VE clusters (see docs/proxmox.md). The API token needs the Proxmox
+# privileges for what dcdash should do: PVEAuditor to read, PVEVMUser for power
+# actions and consoles. Permissions in dcdash use the cluster name as instance,
+# e.g. "proxmox:lab:qemu/*:operate".
+proxmox:
+  clusters: []
+#  - name: lab
+#    # API URLs of the cluster nodes, tried in order.
+#    endpoints:
+#      - url: https://pve1.example.com:8006
+#      - url: https://pve2.example.com:8006
+#        # Pins this node's certificate (SHA-256, `pvenode cert info`) instead of tls.
+#        fingerprint: ""
+#    # The cluster CA, copied from /etc/pve/pve-root-ca.pem.
+#    tls: {ca_file: /etc/dcdash/pve-lab-ca.pem}
+#    token_id: "dcdash@pve!dcdash"
+#    token_secret: "file:/etc/dcdash/pve-lab.token"
+#    timeout: 15s
+#    # Optional Proxmox user for container and node consoles, which do not
+#    # accept API tokens (see docs/proxmox.md).
+#    console:
+#      username: "dcdash-console@pve"
+#      password: "file:/etc/dcdash/pve-lab-console.password"
+
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
   # Generate one with `dcdash gen-key`. Keep it outside this file, e.g. "file:/etc/dcdash/encryption.key".
