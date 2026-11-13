@@ -45,17 +45,28 @@ cleanup() {
   if [[ $status -ne 0 ]]; then
     echo "==> Integration tests failed, diagnostics:"
     "${COMPOSE[@]}" ps --all 2>&1 | tee /dev/stderr | annotate "docker compose ps" || true
-    for svc in bind openldap pebble step-ca; do
+    for svc in bind dns-primary dns-secondary openldap pebble step-ca; do
       "${COMPOSE[@]}" logs --no-color --tail 40 "$svc" 2>&1 | annotate "logs: $svc" || true
     done
     grep -E -- '--- FAIL|_test.go:[0-9]+|"level":"error"|^(FAIL|panic)' "$TEST_LOG" | tail -40 | annotate "go test" || true
   fi
   if [[ "${KEEP:-0}" != 1 ]]; then
     "${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+    rm -rf "$WORK/dns-keys"
   fi
   exit $status
 }
 trap cleanup EXIT
+
+# SSH keys for the SFTP user of the DNS primary (test-only). They are kept
+# with the containers (KEEP=1) and removed with them.
+KEYS="$WORK/dns-keys"
+mkdir -p "$KEYS"
+if [[ ! -f "$KEYS/client_ed25519" ]]; then
+  ssh-keygen -q -t ed25519 -N "" -C dcdash-it-host -f "$KEYS/host_ed25519"
+  ssh-keygen -q -t ed25519 -N "" -C dcdash-it-client -f "$KEYS/client_ed25519"
+  chmod 644 "$KEYS/host_ed25519" # read by root in the container
+fi
 
 echo "==> Starting test environment"
 "${COMPOSE[@]}" up --detach --build --wait --wait-timeout 180
@@ -79,6 +90,13 @@ export DCDASH_IT_STEPCA_CA="$PWD/$WORK/step-ca-root.pem"
 export DCDASH_IT_OPENLDAP_URL=ldap://localhost:1389
 export DCDASH_IT_OPENLDAPS_URL=ldaps://localhost:1636
 export DCDASH_IT_OPENLDAP_CERT="$PWD/$WORK/openldap-cert.pem"
+export DCDASH_IT_BIND_PRIMARY=10.77.0.54
+export DCDASH_IT_BIND_SECONDARY=10.77.0.55
+export DCDASH_IT_BIND_TSIG_SECRET=fFZGrLET2yX8DfRe1BYU4XHVl2woF0pnApaqrp42jhI=
+export DCDASH_IT_BIND_RNDC_KEY="$PWD/test/integration/dns/rndc.key"
+export DCDASH_IT_BIND_SFTP_KEY="$PWD/$KEYS/client_ed25519"
+DCDASH_IT_BIND_SFTP_HOSTKEY=$(cut -d" " -f1,2 "$KEYS/host_ed25519.pub")
+export DCDASH_IT_BIND_SFTP_HOSTKEY
 
 ENV_FILE="${DCDASH_IT_ENV_FILE:-$HOME/.config/dcdash-it.env}"
 if [[ -f "$ENV_FILE" ]]; then
@@ -88,6 +106,9 @@ if [[ -f "$ENV_FILE" ]]; then
   . "$ENV_FILE"
   set +a
 fi
+
+# rndc on the host (bind9-utils); DCDASH_IT_RNDC may point elsewhere.
+export DCDASH_IT_RNDC="${DCDASH_IT_RNDC:-$(command -v rndc || true)}"
 
 echo "==> Running integration tests"
 go test -tags integration -count=1 -v ./test/integration/... "$@" 2>&1 | tee "$TEST_LOG"

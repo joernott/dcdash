@@ -38,6 +38,8 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: .go-version
+      - name: Install rndc
+        run: sudo apt-get update -q && sudo apt-get install -y -q bind9-utils
       - name: Run integration tests
         run: scripts/integration-test.sh
 

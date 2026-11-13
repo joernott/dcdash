@@ -1,0 +1,5 @@
+; Catalog zone (RFC 9432), version 2. Members are added by dcdash.
+$TTL 0
+@       IN SOA  ns1.dcdash.test. hostmaster.dcdash.test. ( 1 3600 600 86400 0 )
+@       IN NS   invalid.
+version IN TXT  "2"
