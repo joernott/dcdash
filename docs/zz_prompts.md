@@ -108,3 +108,9 @@ The VM with ID 120 is your dev VM, and ID 110 is a currently unused VM (by defau
 ## 2026-11-13 — Sprint 6 (Proxmox)
 
 I did the requested acl modification and created a container with ID 122 for you to test. It has the user dashroot with password "[REDACTED]" and I've added your SSH key. I granted you the same rights as for the two VMs
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+yes, please do so
