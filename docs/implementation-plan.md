@@ -138,7 +138,7 @@ These apply to every task:
   enforced once a user has enrolled voluntarily
 - [ ] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
   it encrypted
-- [ ] **4.4** Recovery codes: generate them, store them hashed, single use
+- [x] **4.4** Recovery codes: generate them, store them hashed, single use
 - [ ] **4.5** TOTP replay protection and lockout after repeated failures
 - [x] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
   group mappings, `require_totp` and permission strings
