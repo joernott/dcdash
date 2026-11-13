@@ -14,6 +14,12 @@ tags:
     description: Health and build information
   - name: auth
     description: Login, logout and session information
+  - name: me
+    description: Settings of the logged-in user
+  - name: audit
+    description: Audit log
+  - name: admin
+    description: Administration of sessions and TOTP enrollments
 
 paths:
   /healthz:
@@ -89,6 +95,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
+        "403":
+          description: "Break-glass account without TOTP enrollment (code: totp_not_enrolled)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
         "429":
           description: "Too many failed attempts (code: too_many_attempts)."
           headers:
@@ -136,6 +147,307 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
 
+
+  /api/v1/auth/totp:
+    post:
+      tags: [auth]
+      operationId: verifyTOTP
+      summary: Complete the login with a TOTP code or a recovery code
+      description: |
+        Only in the login step "totp". On success the session is fully authenticated and its
+        token is replaced (new cookie). Each code is accepted once; recovery codes are single-use.
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TOTPRequest" }
+      responses:
+        "200":
+          description: Logged in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionInfo" }
+        "400":
+          description: "Neither or both of code and recoveryCode given (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401":
+          description: "Wrong, expired or already used code (code: invalid_code), or no session (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "409":
+          description: "The session is not in the TOTP step (code: wrong_stage)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/totp/enroll:
+    post:
+      tags: [auth]
+      operationId: startTOTPEnrollment
+      summary: Start a TOTP enrollment
+      description: |
+        In the login step "totp_enroll", or voluntarily when logged in and not yet enrolled.
+        Returns a new secret; it becomes active once confirmed with a code. The break-glass
+        account cannot enroll here (it uses `dcdash totp enroll`).
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "200":
+          description: The secret to add to an authenticator app.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollmentInfo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: "Break-glass account (code: forbidden)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "409":
+          description: "Already enrolled (code: already_enrolled) or wrong login step (code: wrong_stage)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/totp/enroll/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmTOTPEnrollment
+      summary: Confirm a TOTP enrollment with a code
+      description: |
+        Activates the secret and returns recovery codes, which are shown only once. In the login
+        step "totp_enroll", the session becomes fully authenticated (new cookie).
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CodeRequest" }
+      responses:
+        "200":
+          description: Enrolled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollmentResult" }
+        "401":
+          description: "Wrong code (code: invalid_code), or no session (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "409":
+          description: "No enrollment started (code: no_enrollment), already enrolled (code: already_enrolled) or wrong login step (code: wrong_stage)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/totp/recovery-codes:
+    post:
+      tags: [auth]
+      operationId: regenerateRecoveryCodes
+      summary: Replace all recovery codes
+      description: Requires a current TOTP code. The old recovery codes stop working.
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CodeRequest" }
+      responses:
+        "200":
+          description: The new recovery codes, shown only once.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecoveryCodes" }
+        "401":
+          description: "Wrong code (code: invalid_code), or not logged in (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/me/preferences:
+    get:
+      tags: [me]
+      operationId: getPreferences
+      summary: Preferences of the logged-in user
+      description: Defaults (browser language, system theme) if the user has not saved any.
+      responses:
+        "200":
+          description: The preferences.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Preferences" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [me]
+      operationId: setPreferences
+      summary: Save the preferences of the logged-in user
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Preferences" }
+      responses:
+        "200":
+          description: The saved preferences.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Preferences" }
+        "400":
+          description: "Invalid value (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/audit:
+    get:
+      tags: [audit]
+      operationId: queryAudit
+      summary: Query the audit log
+      description: |
+        Returns audit entries, newest first. Requires the permission `system:core:audit:read`.
+        For the next (older) page, pass `nextBefore` as `before`.
+      parameters:
+        - { name: actor, in: query, schema: { type: string }, description: "User name (exact, case-insensitive)." }
+        - { name: action, in: query, schema: { type: string }, description: 'Action, exact or as a prefix ending with "*" (e.g. "auth.*").' }
+        - { name: target, in: query, schema: { type: string } }
+        - { name: result, in: query, schema: { type: string, enum: [success, failure, denied] } }
+        - { name: since, in: query, schema: { type: string, format: date-time }, description: Inclusive. }
+        - { name: until, in: query, schema: { type: string, format: date-time }, description: Exclusive. }
+        - { name: before, in: query, schema: { type: integer, format: int64, minimum: 1 }, description: Only entries with a lower ID. }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 100 } }
+      responses:
+        "200":
+          description: Matching entries.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditPage" }
+        "400":
+          description: "Invalid filter (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/sessions:
+    get:
+      tags: [admin]
+      operationId: listSessions
+      summary: List active sessions
+      description: Requires `system:core:sessions:read`. Newest first; tokens are never returned.
+      parameters:
+        - { name: username, in: query, schema: { type: string }, description: Only sessions of this user (case-insensitive). }
+      responses:
+        "200":
+          description: Active sessions.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/sessions/{id}:
+    delete:
+      tags: [admin]
+      operationId: terminateSession
+      summary: Terminate a session
+      description: Requires `system:core:sessions:write`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "204":
+          description: Terminated.
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: "No such session (code: not_found)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/users/{username}/sessions:
+    delete:
+      tags: [admin]
+      operationId: terminateUserSessions
+      summary: Terminate all sessions of a user
+      description: Requires `system:core:sessions:write`.
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "200":
+          description: Number of terminated sessions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [terminated]
+                properties:
+                  terminated: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/admin/users/{username}/totp:
+    delete:
+      tags: [admin]
+      operationId: resetTOTP
+      summary: Reset the TOTP enrollment of a user
+      description: |
+        Only for root. Removes the user's TOTP secret and recovery codes; directory users enroll
+        again at their next login.
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "204":
+          description: Reset.
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: "The user has no TOTP enrolled (code: not_found)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   parameters:
     CSRFToken:
@@ -146,6 +458,25 @@ components:
       schema: { type: string }
 
   responses:
+    TooManyAttempts:
+      description: "Too many failed attempts (code: too_many_attempts)."
+      headers:
+        Retry-After:
+          description: Seconds until the next attempt is allowed.
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    Unauthorized:
+      description: "Not logged in (code: not_authenticated)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    Forbidden:
+      description: "Permission denied (code: forbidden)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     Error:
       description: Error response.
       content:
@@ -163,15 +494,112 @@ components:
 
     SessionInfo:
       type: object
-      required: [user, stage, csrfToken, expiresAt]
+      required: [user, stage, csrfToken, expiresAt, roles, permissions, totp]
       properties:
         user: { $ref: "#/components/schemas/UserInfo" }
         stage:
           type: string
-          enum: [authenticated, totp]
-          description: "authenticated: fully logged in; totp: the TOTP code is still required."
+          enum: [authenticated, totp, totp_enroll]
+          description: |
+            authenticated: fully logged in; totp: a TOTP or recovery code is still required;
+            totp_enroll: the user must enroll TOTP first. Pending steps expire after 10 minutes.
         csrfToken: { type: string }
         expiresAt: { type: string, format: date-time, description: Absolute end of the session. }
+        roles:
+          type: array
+          items: { type: string }
+          description: Roles of the user; empty until all login steps are completed.
+        permissions:
+          type: array
+          items: { type: string }
+          description: |
+            Granted permissions (module:instance:resource:action); empty until all login steps
+            are completed. The frontend uses them to hide what the user cannot use; the backend
+            checks every request.
+        totp: { $ref: "#/components/schemas/TOTPInfo" }
+
+    TOTPInfo:
+      type: object
+      required: [enrolled, required, recoveryCodesRemaining]
+      properties:
+        enrolled: { type: boolean }
+        required: { type: boolean, description: A role of the user requires TOTP (always for root and the break-glass account). }
+        recoveryCodesRemaining: { type: integer }
+
+    TOTPRequest:
+      type: object
+      description: Exactly one of code and recoveryCode.
+      additionalProperties: false
+      properties:
+        code: { type: string, pattern: "^[0-9]{6}$" }
+        recoveryCode: { type: string, examples: ["k7m2-x9pq-4hvt-c3wn"] }
+
+    CodeRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, pattern: "^[0-9]{6}$" }
+
+    EnrollmentInfo:
+      type: object
+      required: [secret, uri]
+      properties:
+        secret: { type: string, description: Base32 secret for manual entry. }
+        uri: { type: string, description: "otpauth:// URI, to be shown as QR code." }
+
+    EnrollmentResult:
+      type: object
+      required: [recoveryCodes, session]
+      properties:
+        recoveryCodes:
+          type: array
+          items: { type: string }
+        session: { $ref: "#/components/schemas/SessionInfo" }
+
+    RecoveryCodes:
+      type: object
+      required: [recoveryCodes]
+      properties:
+        recoveryCodes:
+          type: array
+          items: { type: string }
+
+    SessionList:
+      type: object
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          items: { $ref: "#/components/schemas/SessionSummary" }
+
+    SessionSummary:
+      type: object
+      required: [id, username, displayName, source, stage, createdAt, lastSeenAt, expiresAt, remoteAddr, userAgent, current]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        source: { type: string, enum: [ldap, local] }
+        stage: { type: string, enum: [authenticated, totp, totp_enroll] }
+        createdAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        remoteAddr: { type: string }
+        userAgent: { type: string }
+        current: { type: boolean, description: The session of the request. }
+
+    Preferences:
+      type: object
+      required: [language, theme]
+      additionalProperties: false
+      properties:
+        language:
+          type: string
+          enum: ["", en, de]
+          description: Empty means the browser language.
+        theme:
+          type: string
+          enum: [system, light, dark]
 
     UserInfo:
       type: object
@@ -190,6 +618,33 @@ components:
       properties:
         dn: { type: string }
         name: { type: string }
+
+    AuditPage:
+      type: object
+      required: [entries, nextBefore]
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEntry" }
+        nextBefore:
+          type: [integer, "null"]
+          format: int64
+          description: Value of "before" for the next page; null on the last page.
+
+    AuditEntry:
+      type: object
+      required: [id, time, actor, actorSource, clientIp, action, target, result, details, requestId]
+      properties:
+        id: { type: integer, format: int64 }
+        time: { type: string, format: date-time }
+        actor: { type: string, description: "User name; for failed logins the name that was given." }
+        actorSource: { type: string, enum: [ldap, local, cli, system, anonymous] }
+        clientIp: { type: string }
+        action: { type: string, examples: [auth.login, authz.denied] }
+        target: { type: string, description: The object acted on (may be empty). }
+        result: { type: string, enum: [success, failure, denied] }
+        details: { type: object, additionalProperties: true }
+        requestId: { type: string }
 
     HealthStatus:
       type: object

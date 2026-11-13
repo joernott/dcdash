@@ -4,6 +4,7 @@
 package httpx
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -103,4 +104,26 @@ func isTrusted(a netip.Addr, trusted []netip.Prefix) bool {
 		}
 	}
 	return false
+}
+
+type clientIPKey struct{}
+
+// ClientIPMiddleware determines the client IP address once per request (see
+// ClientIP) and stores it in the request context for RequestIP.
+func ClientIPMiddleware(trusted []netip.Prefix) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip := ClientIP(r, trusted)
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), clientIPKey{}, ip)))
+		})
+	}
+}
+
+// RequestIP returns the client IP address stored by ClientIPMiddleware, or the
+// address of the direct peer if the middleware did not run.
+func RequestIP(r *http.Request) netip.Addr {
+	if ip, ok := r.Context().Value(clientIPKey{}).(netip.Addr); ok {
+		return ip
+	}
+	return parseAddr(r.RemoteAddr)
 }

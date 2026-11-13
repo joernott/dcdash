@@ -35,7 +35,7 @@ These apply to every task:
 | 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | done |
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
-| 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
+| 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | done |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | open |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
@@ -131,26 +131,35 @@ These apply to every task:
 
 ## Sprint 4 — TOTP, Authorization, Audit and Preferences
 
-- [ ] **4.1** Two-step login: password first, then TOTP when required, with a session that
+- [x] **4.1** Two-step login: password first, then TOTP when required, with a session that
   only becomes fully authenticated after the second step
-- [ ] **4.2** TOTP requirement per role (`require_totp`, default `true`): required if any of
+  - [x] **4.1.1** Sessions that wait for the TOTP step or the enrollment expire after
+    10 minutes
+- [x] **4.2** TOTP requirement per role (`require_totp`, default `true`): required if any of
   the user's roles requires it; always required for `root` and the break-glass account;
   enforced once a user has enrolled voluntarily
-- [ ] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
+  - [x] **4.2.1** Integration test against the Samba AD: a member of `dashroot` enrolls TOTP,
+    gets the root role and logs in again with the TOTP step
+- [x] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
   it encrypted
-- [ ] **4.4** Recovery codes: generate them, store them hashed, single use
-- [ ] **4.5** TOTP replay protection and lockout after repeated failures
-- [ ] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
+  - [x] **4.3.1** `dcdash totp enroll`: the break-glass account enrolls on the server only, so
+    that its password alone never grants access
+  - [x] **4.3.2** `dcdash reencrypt`: re-encrypt stored secrets after a key rotation (promised in
+    `docs/security.md`)
+- [x] **4.4** Recovery codes: generate them, store them hashed, single use
+- [x] **4.5** TOTP replay protection and lockout after repeated failures
+- [x] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
   group mappings, `require_totp` and permission strings
-- [ ] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,
+- [x] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,
   action hierarchy (`read` < `operate` < `console` < `write` < `admin`), unit tests
-- [ ] **4.8** Authorization middleware and helpers for API handlers, permissions exposed in
+- [x] **4.8** Authorization middleware and helpers for API handlers, permissions exposed in
   `/auth/me`
-- [ ] **4.9** Audit log: data model, writer, logging of logins and every state change,
+- [x] **4.9** Audit log: data model, writer, logging of logins and every state change,
   query API with filters, optional output to syslog or a file
-- [ ] **4.10** Admin API: list and terminate sessions, reset a user's TOTP (root only), plus
+  - [x] **4.9.1** Test that `configs/config.example.yaml` stays valid (it had no test yet)
+- [x] **4.10** Admin API: list and terminate sessions, reset a user's TOTP (root only), plus
   the `dcdash totp reset` CLI command
-- [ ] **4.11** User preferences: storage and API (`GET`/`PUT /api/v1/me/preferences`) for
+- [x] **4.11** User preferences: storage and API (`GET`/`PUT /api/v1/me/preferences`) for
   language and theme
 
 ## Sprint 5 — Frontend Shell
@@ -168,7 +177,9 @@ These apply to every task:
   - [ ] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
     always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
 - [ ] **5.5** Login page with the TOTP step
-- [ ] **5.6** TOTP enrollment page: QR code, confirmation, recovery code display
+- [ ] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
+  returned by the API, see 4.3), confirmation, recovery code display; voluntary enrollment and
+  new recovery codes from the user menu
 - [ ] **5.7** App layout: navigation that only shows modules the user may use, user menu
   (theme, language, logout)
 - [ ] **5.8** Route guards based on permissions

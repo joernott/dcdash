@@ -24,8 +24,10 @@ import (
 const (
 	// StageAuthenticated: the user is fully logged in.
 	StageAuthenticated = "authenticated"
-	// StageTOTP: the password was verified, the TOTP code is still pending (Sprint 4).
+	// StageTOTP: the password was verified, the TOTP code is still pending.
 	StageTOTP = "totp"
+	// StageTOTPEnroll: the password was verified; the user must enroll TOTP first.
+	StageTOTPEnroll = "totp_enroll"
 )
 
 // Session sources.
@@ -40,8 +42,14 @@ var ErrNotFound = errors.New("session not found or expired")
 // touchInterval limits how often last_seen_at is written.
 const touchInterval = time.Minute
 
+// PendingTimeout limits how long a session may wait for the TOTP step (or the
+// enrollment) after the password was verified.
+const PendingTimeout = 10 * time.Minute
+
 // Session is a login session.
 type Session struct {
+	// ID identifies the session for administrators; unlike the token, it is not secret.
+	ID          string
 	Username    string
 	DisplayName string
 	Source      string
@@ -53,6 +61,8 @@ type Session struct {
 	ExpiresAt   time.Time
 	RemoteAddr  string
 	UserAgent   string
+	// PendingTOTP is the encrypted TOTP secret during enrollment, or nil.
+	PendingTOTP []byte
 
 	tokenHash []byte
 }
@@ -120,16 +130,20 @@ func (m *Manager) Create(ctx context.Context, n New) (string, *Session, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	id, err := randomToken()
+	if err != nil {
+		return "", nil, err
+	}
 	s := &Session{
-		Username: n.Username, DisplayName: n.DisplayName, Source: n.Source, Groups: n.Groups,
+		ID: id[:22], Username: n.Username, DisplayName: n.DisplayName, Source: n.Source, Groups: n.Groups,
 		Stage: n.Stage, CSRFToken: csrf, CreatedAt: now, LastSeenAt: now, ExpiresAt: now.Add(m.lifetime),
 		RemoteAddr: n.RemoteAddr, UserAgent: truncate(n.UserAgent, 512), tokenHash: hashToken(token),
 	}
 	_, err = m.db.ExecContext(ctx, `INSERT INTO sessions
-		(token_hash, username, display_name, source, groups, stage, csrf_token,
+		(id, token_hash, username, display_name, source, groups, stage, csrf_token,
 		 created_at, last_seen_at, expires_at, remote_addr, user_agent)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		s.tokenHash, s.Username, s.DisplayName, s.Source, string(groups), s.Stage, s.CSRFToken,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		s.ID, s.tokenHash, s.Username, s.DisplayName, s.Source, string(groups), s.Stage, s.CSRFToken,
 		now.Unix(), now.Unix(), s.ExpiresAt.Unix(), s.RemoteAddr, s.UserAgent)
 	if err != nil {
 		return "", nil, fmt.Errorf("create session: %w", err)
@@ -156,11 +170,11 @@ func (m *Manager) Get(ctx context.Context, token string) (*Session, error) {
 		groups                    string
 		created, seen, expiresAtS int64
 	)
-	err := m.db.QueryRowContext(ctx, `SELECT username, display_name, source, groups, stage, csrf_token,
-		created_at, last_seen_at, expires_at, remote_addr, user_agent
+	err := m.db.QueryRowContext(ctx, `SELECT id, username, display_name, source, groups, stage, csrf_token,
+		created_at, last_seen_at, expires_at, remote_addr, user_agent, pending_totp
 		FROM sessions WHERE token_hash = ?`, hash).Scan(
-		&s.Username, &s.DisplayName, &s.Source, &groups, &s.Stage, &s.CSRFToken,
-		&created, &seen, &expiresAtS, &s.RemoteAddr, &s.UserAgent)
+		&s.ID, &s.Username, &s.DisplayName, &s.Source, &groups, &s.Stage, &s.CSRFToken,
+		&created, &seen, &expiresAtS, &s.RemoteAddr, &s.UserAgent, &s.PendingTOTP)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -174,7 +188,8 @@ func (m *Manager) Get(ctx context.Context, token string) (*Session, error) {
 	}
 
 	now := m.now().UTC()
-	if !now.Before(s.ExpiresAt) || !now.Before(s.LastSeenAt.Add(m.idle)) {
+	if !now.Before(s.ExpiresAt) || !now.Before(s.LastSeenAt.Add(m.idle)) ||
+		(!s.Authenticated() && !now.Before(s.CreatedAt.Add(PendingTimeout))) {
 		_ = m.deleteHash(ctx, hash)
 		return nil, ErrNotFound
 	}
@@ -217,20 +232,23 @@ func (m *Manager) deleteHash(ctx context.Context, hash []byte) error {
 	return err
 }
 
-// DeleteUser ends all sessions of a user and returns how many were ended.
+// DeleteUser ends all sessions of a user (case does not matter) and returns how
+// many were ended.
 func (m *Manager) DeleteUser(ctx context.Context, username string) (int64, error) {
-	res, err := m.db.ExecContext(ctx, `DELETE FROM sessions WHERE username = ?`, username)
+	res, err := m.db.ExecContext(ctx, `DELETE FROM sessions WHERE username = ? COLLATE NOCASE`, username)
 	if err != nil {
 		return 0, err
 	}
 	return res.RowsAffected()
 }
 
-// Cleanup deletes expired and idle sessions and returns how many were deleted.
+// Cleanup deletes expired, idle and abandoned pending sessions and returns how
+// many were deleted.
 func (m *Manager) Cleanup(ctx context.Context) (int64, error) {
 	now := m.now().UTC().Unix()
-	res, err := m.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at <= ? OR last_seen_at <= ?`,
-		now, now-int64(m.idle/time.Second))
+	res, err := m.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at <= ? OR last_seen_at <= ?
+		OR (stage != ? AND created_at <= ?)`,
+		now, now-int64(m.idle/time.Second), StageAuthenticated, now-int64(PendingTimeout/time.Second))
 	if err != nil {
 		return 0, err
 	}
@@ -324,4 +342,63 @@ func (m *Manager) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// SetPendingTOTP stores (or with nil, clears) the encrypted TOTP secret of an
+// enrollment in progress.
+func (m *Manager) SetPendingTOTP(ctx context.Context, s *Session, enc []byte) error {
+	res, err := m.db.ExecContext(ctx, `UPDATE sessions SET pending_totp = ? WHERE token_hash = ?`, enc, s.tokenHash)
+	if err != nil {
+		return fmt.Errorf("update session: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return ErrNotFound
+	}
+	s.PendingTOTP = enc
+	return nil
+}
+
+// List returns the active sessions, optionally only those of one user (case
+// does not matter), newest first. Tokens and CSRF tokens are not included.
+func (m *Manager) List(ctx context.Context, username string) ([]Session, error) {
+	now := m.now().UTC().Unix()
+	q := `SELECT id, username, display_name, source, groups, stage, created_at, last_seen_at, expires_at,
+		remote_addr, user_agent FROM sessions
+		WHERE expires_at > ? AND last_seen_at > ? AND (stage = ? OR created_at > ?)`
+	args := []any{now, now - int64(m.idle/time.Second), StageAuthenticated, now - int64(PendingTimeout/time.Second)}
+	if username != "" {
+		q += ` AND username = ? COLLATE NOCASE`
+		args = append(args, username)
+	}
+	rows, err := m.db.QueryContext(ctx, q+` ORDER BY created_at DESC, id`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list sessions: %w", err)
+	}
+	defer rows.Close()
+	out := []Session{}
+	for rows.Next() {
+		var (
+			s                    Session
+			groups               string
+			created, seen, until int64
+		)
+		if err := rows.Scan(&s.ID, &s.Username, &s.DisplayName, &s.Source, &groups, &s.Stage,
+			&created, &seen, &until, &s.RemoteAddr, &s.UserAgent); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal([]byte(groups), &s.Groups)
+		s.CreatedAt, s.LastSeenAt, s.ExpiresAt = time.Unix(created, 0).UTC(), time.Unix(seen, 0).UTC(), time.Unix(until, 0).UTC()
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+// DeleteByID ends the session with the given ID and returns its user name.
+func (m *Manager) DeleteByID(ctx context.Context, id string) (string, error) {
+	var username string
+	err := m.db.QueryRowContext(ctx, `DELETE FROM sessions WHERE id = ? RETURNING username`, id).Scan(&username)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return username, err
 }

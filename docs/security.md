@@ -1,7 +1,7 @@
 # Security
 
-This document covers how dcdash protects its data and how users authenticate. Roles,
-permissions and TOTP are added in Sprint 4.
+This document covers how dcdash protects its data, how users authenticate and what they
+are allowed to do.
 
 ## Data at rest
 
@@ -60,9 +60,13 @@ Rotate the key when it may have been exposed, or according to your policy:
 
 2. Restart dcdash. Data encrypted with the old key stays readable. Everything written from now
    on uses the new key, and the key check value is re-encrypted right away.
-3. Re-encrypt the remaining data with the new key. Until a re-encryption command is available
-   (it comes with the first encrypted data, TOTP in Sprint 4), records are re-encrypted when
-   they are next written.
+3. Re-encrypt the remaining data with the new key, as the user dcdash runs as:
+
+   ```sh
+   sudo -u dcdash dcdash reencrypt
+   ```
+
+   Without this step, TOTP secrets are re-encrypted when they are next used.
 4. Once all data is re-encrypted, remove the old key from `previous_encryption_keys` and
    destroy it.
 
@@ -110,6 +114,59 @@ password.
   (default 30 minutes) without requests, whichever comes first. Logging in again always
   creates a new session, so a session can't be fixed in advance (session fixation).
 - When a session advances a step (password, then TOTP), its token is replaced.
+- A session that has passed the password step but not the TOTP step (or the enrollment)
+  expires after 10 minutes. Until then it grants no access.
+
+### TOTP
+
+After the password, dcdash asks for a one-time code from an authenticator app (TOTP,
+RFC 6238: HMAC-SHA1, 6 digits, 30 seconds), which every common app supports.
+
+**When it's required:** a user must use TOTP if **any** of their roles has `require_totp: true`
+(the default). The `root` role and the break-glass account always require it. Users who don't
+need TOTP can still enroll voluntarily, and from then on it's enforced for them as well.
+
+**Enrollment:** a user who needs TOTP but hasn't enrolled is asked to enroll right after the
+password step. dcdash creates a secret, the app scans it as a QR code, and the user confirms
+it with one code. Only then is the secret saved. The user then receives 10 **recovery codes**,
+which are shown only once.
+
+**Protection:**
+
+- Secrets are encrypted in the database (see [Data at rest](#data-at-rest)). An enrollment
+  in progress is stored encrypted in the session.
+- Codes from the previous, current and next 30-second interval are accepted, to allow for
+  clock drift. Every code is accepted **only once**; a code that was already used, also the
+  one used for enrollment, is rejected.
+- After `auth.lockout.totp.max_failures` wrong codes (default 5 in 15 minutes), the user is
+  locked out of the TOTP step for the lockout duration.
+- Recovery codes (16 characters, about 79 bits) are stored as hashes and work once each. A
+  logged-in user can replace all of them with a current code.
+
+**Lost device:** a user can log in with a recovery code. If those are lost too, root resets
+the user's TOTP (see [Administration](#administration)), and the user enrolls again at the
+next login.
+
+### Administration
+
+| Task | API | Permission |
+|---|---|---|
+| List active sessions, optionally of one user | `GET /api/v1/admin/sessions?username=` | `system:core:sessions:read` |
+| Terminate a session | `DELETE /api/v1/admin/sessions/{id}` | `system:core:sessions:write` |
+| Terminate all sessions of a user | `DELETE /api/v1/admin/users/{username}/sessions` | `system:core:sessions:write` |
+| Reset a user's TOTP | `DELETE /api/v1/admin/users/{username}/totp` | `root` |
+
+Session lists never contain tokens; sessions are addressed by a separate, non-secret ID.
+
+On the server, TOTP can also be reset without logging in, for example for the break-glass
+account or when no root user can log in:
+
+```sh
+sudo -u dcdash dcdash totp reset <username>
+```
+
+Every administrative action is recorded in the audit log; actions on the command line use the
+operating system user as the actor.
 
 ### CSRF protection
 
@@ -154,6 +211,130 @@ auth:
 - The username is reserved: logins with this name are never sent to the directory. Choose a
   name that doesn't exist there.
 - The password is stored as an argon2id hash (64 MiB memory, 3 iterations, 4 lanes).
-- The account **always** has to complete the TOTP step. Its sessions can't be used before
-  that. The TOTP step arrives in Sprint 4; until then, the account can't complete a login.
-- Every use is logged as a warning. The account holds the `root` role (Sprint 4).
+- The account **always** has to complete the TOTP step. It can't enroll in the web
+  interface, so that its password alone never grants access. Enroll it on the server, as the
+  user dcdash runs as:
+
+  ```sh
+  sudo -u dcdash dcdash totp enroll breakglass
+  ```
+
+  The command prints the `otpauth://` URI and the secret, asks for a code, and prints the
+  recovery codes. Until then, the account's logins are refused.
+- Every use is logged as a warning and recorded in the audit log. The account holds the
+  `root` role.
+
+## Roles and permissions
+
+Roles map directory groups to permissions:
+
+```yaml
+auth:
+  root_group: dashroot          # default
+roles:
+  - name: dns-operator
+    groups: ["dcdash-dns"]      # CN, or a full DN
+    require_totp: true          # default
+    permissions:
+      - "dns:cloudflare-prod:*:write"
+      - "dns:bind-internal:*:read"
+```
+
+A user holds every role whose groups they're a member of, including nested groups in AD
+mode. Group names without `=` are compared with the group's CN. Values with `=` are compared
+as DNs. Both comparisons ignore case.
+
+### The root role
+
+Members of `auth.root_group` hold the built-in `root` role. It has every permission
+(`*:*:*:admin`) and always requires TOTP. A configured role can't be named `root`, so the
+role can't be weakened or removed. The break-glass account always holds `root`.
+
+### Permission format
+
+A permission has four segments, `module:instance:resource:action`:
+
+| Segment | Meaning | Examples |
+|---|---|---|
+| module | The service family | `proxmox`, `dns`, `dhcp`, `system` |
+| instance | A configured backend, by name | `cluster-a`, `cloudflare-prod`; always `core` for `system` |
+| resource | An object of the backend | a VM, a zone, a subnet; `audit` or `sessions` for `system` |
+| action | The level of access | see below |
+
+The resource may contain colons, for example an IPv6 subnet:
+`dhcp:kea:2001:db8::/64:read`.
+
+`*` matches any text, as a whole segment or within one: `dns:*:*.example.com:write` covers
+`www.example.com` but not `example.com` itself. Matching is case-sensitive.
+
+Actions are ordered, and a higher action includes all lower ones:
+
+| Action | Allows |
+|---|---|
+| `read` | Viewing |
+| `operate` | Operating without changing configuration, for example starting or stopping a VM |
+| `console` | Interactive console access |
+| `write` | Creating, changing and deleting |
+| `admin` | Everything; `*` as the action means `admin` |
+
+Permissions only grant; there are no deny rules.
+
+### System permissions
+
+| Permission | Allows |
+|---|---|
+| `system:core:audit:read` | Reading the audit log |
+| `system:core:sessions:read` | Listing all sessions |
+| `system:core:sessions:write` | Terminating other users' sessions |
+
+Resetting another user's TOTP is reserved for `root`.
+
+## Audit log
+
+dcdash records every login attempt and every state-changing action in the audit log, together
+with every request that was denied for lack of permission. Each entry contains:
+
+| Field | Content |
+|---|---|
+| `time` | When it happened (UTC, milliseconds) |
+| `actor`, `actorSource` | The user and where they came from (`ldap`, `local`, `cli`, `system`). For failed logins, the name that was given, with source `anonymous` |
+| `clientIp` | The client address (see `server.trusted_proxies`) |
+| `action` | What happened, for example `auth.login` or `authz.denied` |
+| `target` | The object acted on, for example a zone or a user |
+| `result` | `success`, `failure` or `denied` |
+| `details` | Additional data, for example the reason a login failed |
+| `requestId` | The request ID, also found in the application log |
+
+Passwords, TOTP codes and recovery codes are never recorded.
+
+Entries are stored in the database. Users with the permission `system:core:audit:read` can
+query them via `GET /api/v1/audit`. Optionally, dcdash also writes every entry as a JSON line
+to a file or to syslog (facility `authpriv`), for example to forward it to a SIEM:
+
+```yaml
+audit:
+  retention: 365d               # 0 keeps entries forever
+  file: /var/log/dcdash/audit.log
+  syslog:
+    enabled: true
+    network: udp                # "" for the local syslog daemon
+    address: "log.example.com:514"
+```
+
+The file is opened for every entry, so it can be rotated without restarting dcdash. If an
+entry can't be stored, it is written to the application log as an error instead.
+
+### Recorded actions
+
+| Action | When |
+|---|---|
+| `auth.login` | Every login attempt. A locked-out attempt has the result `denied` |
+| `auth.totp.verify` | Every TOTP or recovery code entered (`details.method`) |
+| `auth.totp.enroll` | TOTP enrollment, in the web interface or with `dcdash totp enroll` |
+| `auth.recovery_codes.regenerate` | A user replaced their recovery codes |
+| `security.reencrypt` | `dcdash reencrypt` |
+| `admin.session.terminate` | An administrator terminated sessions; `target` is the user |
+| `admin.totp.reset` | TOTP reset in the API or with `dcdash totp reset` |
+| `user.preferences.update` | A user saved their preferences (language, theme) |
+| `auth.logout` | Logout |
+| `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |

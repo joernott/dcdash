@@ -21,6 +21,15 @@ type Auth struct {
 	Session Session `yaml:"session"`
 	Lockout Lockout `yaml:"lockout"`
 	Local   Local   `yaml:"local"`
+	// RootGroup grants the built-in root role (CN or DN, default "dashroot").
+	RootGroup string `yaml:"root_group"`
+	TOTP      TOTP   `yaml:"totp"`
+}
+
+// TOTP configures the second login step.
+type TOTP struct {
+	// Issuer is the name shown in authenticator apps.
+	Issuer string `yaml:"issuer"`
 }
 
 // Local is the break-glass account: a local user for when the directory is
@@ -45,10 +54,12 @@ func (l Local) validate(add func(string, ...any)) {
 	}
 }
 
-// Lockout limits failed login attempts per user name and per client IP address.
+// Lockout limits failed login attempts per user name and per client IP address,
+// and failed TOTP or recovery codes per user.
 type Lockout struct {
 	User LockoutPolicy `yaml:"user"`
 	IP   LockoutPolicy `yaml:"ip"`
+	TOTP LockoutPolicy `yaml:"totp"`
 }
 
 // LockoutPolicy locks a key for Duration after MaxFailures failures within Window.
@@ -62,6 +73,7 @@ func defaultLockout() Lockout {
 	return Lockout{
 		User: LockoutPolicy{MaxFailures: 5, Window: Duration(15 * time.Minute), Duration: Duration(15 * time.Minute)},
 		IP:   LockoutPolicy{MaxFailures: 20, Window: Duration(15 * time.Minute), Duration: Duration(15 * time.Minute)},
+		TOTP: LockoutPolicy{MaxFailures: 5, Window: Duration(15 * time.Minute), Duration: Duration(15 * time.Minute)},
 	}
 }
 

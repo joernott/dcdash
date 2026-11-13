@@ -9,6 +9,9 @@
 #
 # Tests against the Samba AD run when the DCDASH_IT_AD_* variables are set, e.g.
 # in ${DCDASH_IT_ENV_FILE:-~/.config/dcdash-it.env} (kept outside the repository).
+#   DCDASH_IT_AD_URL, _BIND_DN, _BIND_PASSWORD, _BASE_DN, _FINGERPRINT: directory access
+#   DCDASH_IT_AD_ROOT_USER, _ROOT_PASSWORD: a member of dashroot for the TOTP login test
+# The tests never send wrong passwords for existing accounts (AD lockout policy).
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."

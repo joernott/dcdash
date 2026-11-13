@@ -95,12 +95,52 @@ auth:
     # Failed logins before a user name or client IP address is locked.
     user: {max_failures: 5, window: 15m, duration: 15m}
     ip: {max_failures: 20, window: 15m, duration: 15m}
+    # Failed TOTP or recovery codes before a user is locked.
+    totp: {max_failures: 5, window: 15m, duration: 15m}
+  totp:
+    # Name shown in authenticator apps.
+    issuer: dcdash
   # Break-glass account for when the directory is unavailable. It always requires
-  # TOTP and holds the root role. Create the hash with `dcdash hash-password`.
+  # TOTP and holds the root role. Create the hash with `dcdash hash-password` and
+  # enroll TOTP with `dcdash totp enroll <username>`.
   local:
     enabled: false
     username: breakglass
     password_hash: "file:/etc/dcdash/breakglass.hash"
+  # Directory group (CN or DN) whose members get the built-in root role: all
+  # permissions, always with TOTP.
+  root_group: dashroot
+
+# Roles map directory groups to permissions (see docs/security.md).
+# Permission format: module:instance:resource:action
+#   module:   proxmox, dns, dhcp or system
+#   action:   read < operate < console < write < admin (a higher action includes the lower ones)
+#   "*" is a wildcard, also within a segment (e.g. "*.example.com").
+roles: []
+#  - name: dns-operator
+#    groups: ["dcdash-dns"]
+#    require_totp: true          # default; a user needs TOTP if any of their roles requires it
+#    permissions:
+#      - "dns:cloudflare-prod:*:write"
+#      - "dns:bind-internal:*:read"
+#  - name: auditor
+#    groups: ["CN=dcdash-audit,OU=Groups,DC=example,DC=com"]
+#    permissions:
+#      - "system:core:audit:read"
+
+# Audit log: logins and every state-changing action, stored in the database
+# (see docs/security.md). File and syslog are optional additional outputs.
+audit:
+  # Delete database entries older than this; 0 keeps them forever. Units: h, m, s or d (days).
+  retention: 0
+  # Append every entry as a JSON line to this file (empty disables it).
+  file: ""
+  syslog:
+    enabled: false
+    # "" and address "" use the local syslog daemon; otherwise udp, tcp or unix.
+    network: ""
+    address: ""
+    tag: dcdash
 
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.

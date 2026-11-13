@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strings"
@@ -243,5 +244,19 @@ func TestTrustedProxies(t *testing.T) {
 	_, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\n  trusted_proxies: [proxy.example]\n"))
 	if err == nil || !strings.Contains(err.Error(), "trusted_proxies") {
 		t.Errorf("invalid proxy: %v", err)
+	}
+}
+
+// TestExampleConfigIsValid keeps configs/config.example.yaml in sync with the
+// code. Secret references are replaced, because their files do not exist here.
+func TestExampleConfigIsValid(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "configs", "config.example.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := regexp.MustCompile(`"(file|env):[^"]*"`).ReplaceAllString(string(b), `"placeholder"`)
+	src = strings.Replace(src, `encryption_key: "placeholder"`, `encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="`, 1)
+	if _, err := Parse(strings.NewReader(src)); err != nil {
+		t.Errorf("config.example.yaml: %v", err)
 	}
 }

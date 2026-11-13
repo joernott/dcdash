@@ -5,6 +5,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,12 +21,22 @@ func (d *Duration) UnmarshalYAML(n *yaml.Node) error {
 	if err := n.Decode(&s); err != nil {
 		return err
 	}
-	v, err := time.ParseDuration(s)
+	v, err := parseDuration(s)
 	if err != nil {
 		return fmt.Errorf("line %d: invalid duration %q: %w", n.Line, s, err)
 	}
 	*d = Duration(v)
 	return nil
+}
+
+// parseDuration accepts Go durations ("90m", "8h") and whole days ("365d").
+func parseDuration(s string) (time.Duration, error) {
+	if days, ok := strings.CutSuffix(s, "d"); ok {
+		if n, err := strconv.Atoi(days); err == nil && n >= 0 && n <= 100*365 {
+			return time.Duration(n) * 24 * time.Hour, nil
+		}
+	}
+	return time.ParseDuration(s)
 }
 
 // MarshalYAML implements yaml.Marshaler.

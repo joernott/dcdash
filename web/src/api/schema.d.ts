@@ -114,6 +114,213 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/auth/totp': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Complete the login with a TOTP code or a recovery code
+     * @description Only in the login step "totp". On success the session is fully authenticated and its
+     *     token is replaced (new cookie). Each code is accepted once; recovery codes are single-use.
+     */
+    post: operations['verifyTOTP']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/totp/enroll': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Start a TOTP enrollment
+     * @description In the login step "totp_enroll", or voluntarily when logged in and not yet enrolled.
+     *     Returns a new secret; it becomes active once confirmed with a code. The break-glass
+     *     account cannot enroll here (it uses `dcdash totp enroll`).
+     */
+    post: operations['startTOTPEnrollment']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/totp/enroll/confirm': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Confirm a TOTP enrollment with a code
+     * @description Activates the secret and returns recovery codes, which are shown only once. In the login
+     *     step "totp_enroll", the session becomes fully authenticated (new cookie).
+     */
+    post: operations['confirmTOTPEnrollment']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/auth/totp/recovery-codes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Replace all recovery codes
+     * @description Requires a current TOTP code. The old recovery codes stop working.
+     */
+    post: operations['regenerateRecoveryCodes']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/me/preferences': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Preferences of the logged-in user
+     * @description Defaults (browser language, system theme) if the user has not saved any.
+     */
+    get: operations['getPreferences']
+    /** Save the preferences of the logged-in user */
+    put: operations['setPreferences']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/audit': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Query the audit log
+     * @description Returns audit entries, newest first. Requires the permission `system:core:audit:read`.
+     *     For the next (older) page, pass `nextBefore` as `before`.
+     */
+    get: operations['queryAudit']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List active sessions
+     * @description Requires `system:core:sessions:read`. Newest first; tokens are never returned.
+     */
+    get: operations['listSessions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/sessions/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Terminate a session
+     * @description Requires `system:core:sessions:write`.
+     */
+    delete: operations['terminateSession']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users/{username}/sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Terminate all sessions of a user
+     * @description Requires `system:core:sessions:write`.
+     */
+    delete: operations['terminateUserSessions']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users/{username}/totp': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Reset the TOTP enrollment of a user
+     * @description Only for root. Removes the user's TOTP secret and recovery codes; directory users enroll
+     *     again at their next login.
+     */
+    delete: operations['resetTOTP']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -126,16 +333,85 @@ export interface components {
     SessionInfo: {
       user: components['schemas']['UserInfo']
       /**
-       * @description authenticated: fully logged in; totp: the TOTP code is still required.
+       * @description authenticated: fully logged in; totp: a TOTP or recovery code is still required;
+       *     totp_enroll: the user must enroll TOTP first. Pending steps expire after 10 minutes.
        * @enum {string}
        */
-      stage: 'authenticated' | 'totp'
+      stage: 'authenticated' | 'totp' | 'totp_enroll'
       csrfToken: string
       /**
        * Format: date-time
        * @description Absolute end of the session.
        */
       expiresAt: string
+      /** @description Roles of the user; empty until all login steps are completed. */
+      roles: string[]
+      /**
+       * @description Granted permissions (module:instance:resource:action); empty until all login steps
+       *     are completed. The frontend uses them to hide what the user cannot use; the backend
+       *     checks every request.
+       */
+      permissions: string[]
+      totp: components['schemas']['TOTPInfo']
+    }
+    TOTPInfo: {
+      enrolled: boolean
+      /** @description A role of the user requires TOTP (always for root and the break-glass account). */
+      required: boolean
+      recoveryCodesRemaining: number
+    }
+    /** @description Exactly one of code and recoveryCode. */
+    TOTPRequest: {
+      code?: string
+      /** @example k7m2-x9pq-4hvt-c3wn */
+      recoveryCode?: string
+    }
+    CodeRequest: {
+      code: string
+    }
+    EnrollmentInfo: {
+      /** @description Base32 secret for manual entry. */
+      secret: string
+      /** @description otpauth:// URI, to be shown as QR code. */
+      uri: string
+    }
+    EnrollmentResult: {
+      recoveryCodes: string[]
+      session: components['schemas']['SessionInfo']
+    }
+    RecoveryCodes: {
+      recoveryCodes: string[]
+    }
+    SessionList: {
+      sessions: components['schemas']['SessionSummary'][]
+    }
+    SessionSummary: {
+      id: string
+      username: string
+      displayName: string
+      /** @enum {string} */
+      source: 'ldap' | 'local'
+      /** @enum {string} */
+      stage: 'authenticated' | 'totp' | 'totp_enroll'
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      lastSeenAt: string
+      /** Format: date-time */
+      expiresAt: string
+      remoteAddr: string
+      userAgent: string
+      /** @description The session of the request. */
+      current: boolean
+    }
+    Preferences: {
+      /**
+       * @description Empty means the browser language.
+       * @enum {string}
+       */
+      language: '' | 'en' | 'de'
+      /** @enum {string} */
+      theme: 'system' | 'light' | 'dark'
     }
     UserInfo: {
       username: string
@@ -147,6 +423,38 @@ export interface components {
     GroupInfo: {
       dn: string
       name: string
+    }
+    AuditPage: {
+      entries: components['schemas']['AuditEntry'][]
+      /**
+       * Format: int64
+       * @description Value of "before" for the next page; null on the last page.
+       */
+      nextBefore: number | null
+    }
+    AuditEntry: {
+      /** Format: int64 */
+      id: number
+      /** Format: date-time */
+      time: string
+      /** @description User name; for failed logins the name that was given. */
+      actor: string
+      /** @enum {string} */
+      actorSource: 'ldap' | 'local' | 'cli' | 'system' | 'anonymous'
+      clientIp: string
+      /**
+       * @example auth.login
+       * @example authz.denied
+       */
+      action: string
+      /** @description The object acted on (may be empty). */
+      target: string
+      /** @enum {string} */
+      result: 'success' | 'failure' | 'denied'
+      details: {
+        [key: string]: unknown
+      }
+      requestId: string
     }
     HealthStatus: {
       /** @enum {string} */
@@ -178,6 +486,35 @@ export interface components {
     }
   }
   responses: {
+    /** @description Too many failed attempts (code: too_many_attempts). */
+    TooManyAttempts: {
+      headers: {
+        /** @description Seconds until the next attempt is allowed. */
+        'Retry-After'?: number
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description Not logged in (code: not_authenticated). */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description Permission denied (code: forbidden). */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Error response. */
     Error: {
       headers: {
@@ -301,6 +638,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description Break-glass account without TOTP enrollment (code: totp_not_enrolled). */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
       /** @description Too many failed attempts (code: too_many_attempts). */
       429: {
         headers: {
@@ -373,6 +719,422 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+    }
+  }
+  verifyTOTP: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TOTPRequest']
+      }
+    }
+    responses: {
+      /** @description Logged in. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SessionInfo']
+        }
+      }
+      /** @description Neither or both of code and recoveryCode given (code: invalid_request). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description Wrong, expired or already used code (code: invalid_code), or no session (code: not_authenticated). */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description The session is not in the TOTP step (code: wrong_stage). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      429: components['responses']['TooManyAttempts']
+      default: components['responses']['Error']
+    }
+  }
+  startTOTPEnrollment: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The secret to add to an authenticator app. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['EnrollmentInfo']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      /** @description Break-glass account (code: forbidden). */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description Already enrolled (code: already_enrolled) or wrong login step (code: wrong_stage). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  confirmTOTPEnrollment: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CodeRequest']
+      }
+    }
+    responses: {
+      /** @description Enrolled. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['EnrollmentResult']
+        }
+      }
+      /** @description Wrong code (code: invalid_code), or no session (code: not_authenticated). */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description No enrollment started (code: no_enrollment), already enrolled (code: already_enrolled) or wrong login step (code: wrong_stage). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      429: components['responses']['TooManyAttempts']
+      default: components['responses']['Error']
+    }
+  }
+  regenerateRecoveryCodes: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CodeRequest']
+      }
+    }
+    responses: {
+      /** @description The new recovery codes, shown only once. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RecoveryCodes']
+        }
+      }
+      /** @description Wrong code (code: invalid_code), or not logged in (code: not_authenticated). */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      429: components['responses']['TooManyAttempts']
+      default: components['responses']['Error']
+    }
+  }
+  getPreferences: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Preferences']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  setPreferences: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['Preferences']
+      }
+    }
+    responses: {
+      /** @description The saved preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Preferences']
+        }
+      }
+      /** @description Invalid value (code: invalid_request). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  queryAudit: {
+    parameters: {
+      query?: {
+        /** @description User name (exact, case-insensitive). */
+        actor?: string
+        /** @description Action, exact or as a prefix ending with "*" (e.g. "auth.*"). */
+        action?: string
+        target?: string
+        result?: 'success' | 'failure' | 'denied'
+        /** @description Inclusive. */
+        since?: string
+        /** @description Exclusive. */
+        until?: string
+        /** @description Only entries with a lower ID. */
+        before?: number
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Matching entries. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AuditPage']
+        }
+      }
+      /** @description Invalid filter (code: invalid_request). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      default: components['responses']['Error']
+    }
+  }
+  listSessions: {
+    parameters: {
+      query?: {
+        /** @description Only sessions of this user (case-insensitive). */
+        username?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Active sessions. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SessionList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      default: components['responses']['Error']
+    }
+  }
+  terminateSession: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Terminated. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description No such session (code: not_found). */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  terminateUserSessions: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path: {
+        username: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Number of terminated sessions. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            terminated: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      default: components['responses']['Error']
+    }
+  }
+  resetTOTP: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path: {
+        username: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Reset. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description The user has no TOTP enrolled (code: not_found). */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      default: components['responses']['Error']
     }
   }
 }
