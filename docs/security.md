@@ -222,3 +222,46 @@ Permissions only grant; there are no deny rules.
 | `system:core:sessions:write` | Terminating other users' sessions |
 
 Resetting another user's TOTP is reserved for `root`.
+
+## Audit log
+
+dcdash records every login attempt and every state-changing action in the audit log, together
+with every request that was denied for lack of permission. Each entry contains:
+
+| Field | Content |
+|---|---|
+| `time` | When it happened (UTC, milliseconds) |
+| `actor`, `actorSource` | The user and where they came from (`ldap`, `local`, `cli`, `system`). For failed logins, the name that was given, with source `anonymous` |
+| `clientIp` | The client address (see `server.trusted_proxies`) |
+| `action` | What happened, for example `auth.login` or `authz.denied` |
+| `target` | The object acted on, for example a zone or a user |
+| `result` | `success`, `failure` or `denied` |
+| `details` | Additional data, for example the reason a login failed |
+| `requestId` | The request ID, also found in the application log |
+
+Passwords, TOTP codes and recovery codes are never recorded.
+
+Entries are stored in the database. Users with the permission `system:core:audit:read` can
+query them via `GET /api/v1/audit`. Optionally, dcdash also writes every entry as a JSON line
+to a file or to syslog (facility `authpriv`), for example to forward it to a SIEM:
+
+```yaml
+audit:
+  retention: 365d               # 0 keeps entries forever
+  file: /var/log/dcdash/audit.log
+  syslog:
+    enabled: true
+    network: udp                # "" for the local syslog daemon
+    address: "log.example.com:514"
+```
+
+The file is opened for every entry, so it can be rotated without restarting dcdash. If an
+entry can't be stored, it is written to the application log as an error instead.
+
+### Recorded actions
+
+| Action | When |
+|---|---|
+| `auth.login` | Every login attempt. A locked-out attempt has the result `denied` |
+| `auth.logout` | Logout |
+| `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |

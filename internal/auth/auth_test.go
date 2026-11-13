@@ -14,6 +14,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/session"
@@ -47,9 +48,10 @@ func (f *fakeDirectory) Authenticate(_ context.Context, username, password strin
 }
 
 type env struct {
-	h   http.Handler
-	dir *fakeDirectory
-	sm  *session.Manager
+	h     http.Handler
+	dir   *fakeDirectory
+	sm    *session.Manager
+	audit *audit.Log
 }
 
 func newEnv(t *testing.T) *env {
@@ -61,16 +63,17 @@ func newEnv(t *testing.T) *env {
 	t.Cleanup(func() { _ = st.Close() })
 	sm := session.NewManager(st.DB(), 8*time.Hour, 30*time.Minute, zerolog.Nop())
 	dir := &fakeDirectory{}
-	authz := testAuthorizer(t)
+	auditLog := audit.New(st.DB(), zerolog.Nop())
+	authz := testAuthorizer(t, auditLog)
 	svc := New(Options{
-		LDAP: dir, Sessions: sm, Authorizer: authz, Log: zerolog.Nop(),
+		LDAP: dir, Sessions: sm, Authorizer: authz, Audit: auditLog, Log: zerolog.Nop(),
 		UserLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
 		IPLockout:   lockout.Policy{MaxFailures: 5, Window: time.Minute, Duration: time.Minute},
 	})
 	mux := http.NewServeMux()
 	svc.Register(mux)
 	registerTestRoutes(mux)
-	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm}
+	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm, audit: auditLog}
 }
 
 type call struct {
@@ -246,4 +249,14 @@ func TestGroupName(t *testing.T) {
 			t.Errorf("groupName(%q) = %q, want %q", dn, got, want)
 		}
 	}
+}
+
+// csrfToken returns the CSRF token from a login or me response.
+func csrfToken(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	var info SessionInfo
+	if err := json.Unmarshal(rec.Body.Bytes(), &info); err != nil || info.CSRFToken == "" {
+		t.Fatalf("no CSRF token in %s", rec.Body)
+	}
+	return info.CSRFToken
 }

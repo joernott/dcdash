@@ -74,3 +74,20 @@ func TestClientIP(t *testing.T) {
 		}
 	}
 }
+
+func TestClientIPMiddleware(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.RemoteAddr = "10.0.0.5:1"
+	r.Header.Set("X-Forwarded-For", "203.0.113.7")
+	if got := RequestIP(r); got.String() != "10.0.0.5" {
+		t.Errorf("without middleware: %s", got)
+	}
+	var got netip.Addr
+	h := ClientIPMiddleware([]netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")})(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		got = RequestIP(r)
+	}))
+	h.ServeHTTP(httptest.NewRecorder(), r)
+	if got.String() != "203.0.113.7" {
+		t.Errorf("with middleware: %s", got)
+	}
+}

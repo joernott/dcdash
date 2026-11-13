@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/netip"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 
+	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
@@ -30,14 +30,14 @@ type Authenticator interface {
 
 // Service provides the authentication endpoints.
 type Service struct {
-	ldap           Authenticator // nil if LDAP is not configured
-	local          *LocalAccount // nil if the break-glass account is disabled
-	sessions       *session.Manager
-	authz          *Authorizer
-	users          *lockout.Limiter
-	ips            *lockout.Limiter
-	trustedProxies []netip.Prefix
-	log            zerolog.Logger
+	ldap     Authenticator // nil if LDAP is not configured
+	local    *LocalAccount // nil if the break-glass account is disabled
+	sessions *session.Manager
+	authz    *Authorizer
+	users    *lockout.Limiter
+	ips      *lockout.Limiter
+	audit    *audit.Log
+	log      zerolog.Logger
 }
 
 // Options configures the service.
@@ -46,24 +46,25 @@ type Options struct {
 	Local    *LocalAccount
 	Sessions *session.Manager
 	// Authorizer resolves roles; nil means no roles (only for tests).
-	Authorizer     *Authorizer
-	UserLockout    lockout.Policy
-	IPLockout      lockout.Policy
-	TrustedProxies []netip.Prefix
-	Log            zerolog.Logger
+	Authorizer  *Authorizer
+	UserLockout lockout.Policy
+	IPLockout   lockout.Policy
+	// Audit records logins; nil disables auditing (only for tests).
+	Audit *audit.Log
+	Log   zerolog.Logger
 }
 
 // New creates the service.
 func New(o Options) *Service {
 	return &Service{
-		ldap:           o.LDAP,
-		local:          o.Local,
-		sessions:       o.Sessions,
-		authz:          o.Authorizer,
-		users:          lockout.New(o.UserLockout),
-		ips:            lockout.New(o.IPLockout),
-		trustedProxies: o.TrustedProxies,
-		log:            o.Log.With().Str("component", "auth").Logger(),
+		ldap:     o.LDAP,
+		local:    o.Local,
+		sessions: o.Sessions,
+		authz:    o.Authorizer,
+		users:    lockout.New(o.UserLockout),
+		ips:      lockout.New(o.IPLockout),
+		audit:    o.Audit,
+		log:      o.Log.With().Str("component", "auth").Logger(),
 	}
 }
 
@@ -143,7 +144,7 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}
-	ip := httpx.ClientIP(r, s.trustedProxies)
+	ip := httpx.RequestIP(r)
 	ipKey := "ip:" + ip.String()
 	userKey := "user:" + strings.ToLower(strings.TrimSpace(req.Username))
 	log := hlog.FromRequest(r).With().Str("component", "auth").Str("username", req.Username).Str("client_ip", ip.String()).Logger()
@@ -154,6 +155,7 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}{{s.ips, ipKey}, {s.users, userKey}} {
 		if ok, wait := check.l.Allowed(check.key); !ok {
 			log.Warn().Str("locked", check.key).Dur("retry_after", wait).Msg("login rejected: locked out")
+			s.auditLogin(r, req.Username, audit.ResultDenied, map[string]any{"reason": "locked", "lock": strings.SplitN(check.key, ":", 2)[0]})
 			w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 			httpx.WriteError(w, http.StatusTooManyRequests, "too_many_attempts", "too many failed login attempts, try again later")
 			return
@@ -166,10 +168,12 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		lockedUser := s.users.Failure(userKey)
 		lockedIP := s.ips.Failure(ipKey)
 		log.Warn().Bool("user_locked", lockedUser).Bool("ip_locked", lockedIP).Msg("login failed: invalid credentials")
+		s.auditLogin(r, req.Username, audit.ResultFailure, map[string]any{"reason": "invalid_credentials"})
 		httpx.WriteError(w, http.StatusUnauthorized, "invalid_credentials", "invalid username or password")
 		return
 	case err != nil:
 		log.Error().Err(err).Msg("login failed: directory unavailable")
+		s.auditLogin(r, req.Username, audit.ResultFailure, map[string]any{"reason": "directory_unavailable"})
 		httpx.WriteError(w, http.StatusServiceUnavailable, "directory_unavailable", "the user directory is not available")
 		return
 	}
@@ -194,6 +198,7 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.sessions.SetCookie(w, token, sess.ExpiresAt)
+	s.auditSession(r, sess, "auth.login", "", audit.ResultSuccess, map[string]any{"stage": sess.Stage})
 	if source == session.SourceLocal {
 		log.Warn().Str("stage", sess.Stage).Msg("break-glass account used: password verified")
 	} else {
@@ -232,6 +237,7 @@ func (s *Service) handleLogout(w http.ResponseWriter, r *http.Request) {
 			hlog.FromRequest(r).Error().Err(err).Msg("cannot delete session")
 		}
 		hlog.FromRequest(r).Info().Str("component", "auth").Str("username", sess.Username).Msg("logout")
+		s.auditSession(r, sess, "auth.logout", "", audit.ResultSuccess, nil)
 	}
 	s.sessions.ClearCookie(w)
 	w.WriteHeader(http.StatusNoContent)
@@ -255,4 +261,22 @@ func RequireAuthenticated(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// auditLogin records a failed or rejected login. The actor is the name given.
+func (s *Service) auditLogin(r *http.Request, username, result string, details map[string]any) {
+	e := audit.FromRequest(r, "auth.login", "", result)
+	e.Actor, e.ActorSource, e.Details = strings.TrimSpace(username), audit.SourceAnonymous, details
+	_ = s.audit.Record(r.Context(), e)
+}
+
+// auditSession records an action of a session's user. The session does not
+// have to be in the request context (e.g. right after login).
+func (s *Service) auditSession(r *http.Request, sess *session.Session, action, target, result string, details map[string]any) {
+	e := audit.FromRequest(r, action, target, result)
+	e.Actor, e.ActorSource = sess.Username, sess.Source
+	if details != nil {
+		e.Details = details
+	}
+	_ = s.audit.Record(r.Context(), e)
 }

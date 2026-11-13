@@ -14,6 +14,8 @@ tags:
     description: Health and build information
   - name: auth
     description: Login, logout and session information
+  - name: audit
+    description: Audit log
 
 paths:
   /healthz:
@@ -136,6 +138,40 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
 
+
+  /api/v1/audit:
+    get:
+      tags: [audit]
+      operationId: queryAudit
+      summary: Query the audit log
+      description: |
+        Returns audit entries, newest first. Requires the permission `system:core:audit:read`.
+        For the next (older) page, pass `nextBefore` as `before`.
+      parameters:
+        - { name: actor, in: query, schema: { type: string }, description: "User name (exact, case-insensitive)." }
+        - { name: action, in: query, schema: { type: string }, description: 'Action, exact or as a prefix ending with "*" (e.g. "auth.*").' }
+        - { name: target, in: query, schema: { type: string } }
+        - { name: result, in: query, schema: { type: string, enum: [success, failure, denied] } }
+        - { name: since, in: query, schema: { type: string, format: date-time }, description: Inclusive. }
+        - { name: until, in: query, schema: { type: string, format: date-time }, description: Exclusive. }
+        - { name: before, in: query, schema: { type: integer, format: int64, minimum: 1 }, description: Only entries with a lower ID. }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 1000, default: 100 } }
+      responses:
+        "200":
+          description: Matching entries.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditPage" }
+        "400":
+          description: "Invalid filter (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   parameters:
     CSRFToken:
@@ -211,6 +247,33 @@ components:
       properties:
         dn: { type: string }
         name: { type: string }
+
+    AuditPage:
+      type: object
+      required: [entries, nextBefore]
+      properties:
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEntry" }
+        nextBefore:
+          type: [integer, "null"]
+          format: int64
+          description: Value of "before" for the next page; null on the last page.
+
+    AuditEntry:
+      type: object
+      required: [id, time, actor, actorSource, clientIp, action, target, result, details, requestId]
+      properties:
+        id: { type: integer, format: int64 }
+        time: { type: string, format: date-time }
+        actor: { type: string, description: "User name; for failed logins the name that was given." }
+        actorSource: { type: string, enum: [ldap, local, cli, system, anonymous] }
+        clientIp: { type: string }
+        action: { type: string, examples: [auth.login, authz.denied] }
+        target: { type: string, description: The object acted on (may be empty). }
+        result: { type: string, enum: [success, failure, denied] }
+        details: { type: object, additionalProperties: true }
+        requestId: { type: string }
 
     HealthStatus:
       type: object

@@ -34,6 +34,7 @@ type Config struct {
 	Server   Server   `yaml:"server"`
 	Auth     Auth     `yaml:"auth"`
 	Roles    []Role   `yaml:"roles"`
+	Audit    Audit    `yaml:"audit"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -93,6 +94,7 @@ func Default() Config {
 			ShutdownTimeout:   Duration(15 * time.Second),
 		},
 		Auth:    Auth{LDAP: defaultLDAP(), Session: defaultSession(), Lockout: defaultLockout()},
+		Audit:   defaultAudit(),
 		Log:     Log{Level: "info", Format: "json"},
 		DataDir: "/var/lib/dcdash",
 	}
@@ -207,6 +209,7 @@ func (c *Config) Validate() error {
 	c.Auth.Lockout.IP.validate("auth.lockout.ip", add)
 	c.Auth.Local.validate(add)
 	validateRoles(c.Roles, add)
+	c.Audit.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {

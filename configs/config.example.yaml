@@ -122,6 +122,20 @@ roles: []
 #    permissions:
 #      - "system:core:audit:read"
 
+# Audit log: logins and every state-changing action, stored in the database
+# (see docs/security.md). File and syslog are optional additional outputs.
+audit:
+  # Delete database entries older than this; 0 keeps them forever. Units: h, m, s or d (days).
+  retention: 0
+  # Append every entry as a JSON line to this file (empty disables it).
+  file: ""
+  syslog:
+    enabled: false
+    # "" and address "" use the local syslog daemon; otherwise udp, tcp or unix.
+    network: ""
+    address: ""
+    tag: dcdash
+
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
   # Generate one with `dcdash gen-key`. Keep it outside this file, e.g. "file:/etc/dcdash/encryption.key".

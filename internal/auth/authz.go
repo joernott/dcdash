@@ -8,6 +8,7 @@ import (
 
 	"github.com/rs/zerolog/hlog"
 
+	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
@@ -18,11 +19,13 @@ import (
 // frontend only hides what the user cannot use.
 type Authorizer struct {
 	roles *rbac.Resolver
+	audit *audit.Log
 }
 
-// NewAuthorizer creates an authorizer.
-func NewAuthorizer(roles *rbac.Resolver) *Authorizer {
-	return &Authorizer{roles: roles}
+// NewAuthorizer creates an authorizer. Denied requests are written to the
+// audit log (nil disables this, only for tests).
+func NewAuthorizer(roles *rbac.Resolver, auditLog *audit.Log) *Authorizer {
+	return &Authorizer{roles: roles, audit: auditLog}
 }
 
 // Subject returns the subject for a session (also for sessions that have not
@@ -31,7 +34,10 @@ func (a *Authorizer) Subject(s *session.Session) *rbac.Subject {
 	return a.roles.Resolve(s.Username, s.Groups, s.Source == session.SourceLocal)
 }
 
-type subjectKey struct{}
+type (
+	subjectKey    struct{}
+	authorizerKey struct{}
+)
 
 // SubjectFromContext returns the subject of a fully authenticated request, or nil.
 func SubjectFromContext(ctx context.Context) *rbac.Subject {
@@ -50,6 +56,7 @@ func WithSubject(ctx context.Context, s *rbac.Subject) context.Context {
 // configuration.
 func (a *Authorizer) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(context.WithValue(r.Context(), authorizerKey{}, a))
 		if s := session.FromContext(r.Context()); s != nil && s.Authenticated() {
 			r = r.WithContext(WithSubject(r.Context(), a.Subject(s)))
 		}
@@ -105,5 +112,9 @@ func RequireRoot(next http.Handler) http.Handler {
 func deny(w http.ResponseWriter, r *http.Request, subj *rbac.Subject, required string) {
 	hlog.FromRequest(r).Warn().Str("component", "authz").Str("username", subj.Username).
 		Str("required", required).Str("method", r.Method).Str("path", r.URL.Path).Msg("permission denied")
+	if a, ok := r.Context().Value(authorizerKey{}).(*Authorizer); ok {
+		a.audit.RecordRequest(r, "authz.denied", required, audit.ResultDenied,
+			map[string]any{"method": r.Method, "path": r.URL.Path})
+	}
 	httpx.WriteError(w, http.StatusForbidden, "forbidden", "permission denied")
 }

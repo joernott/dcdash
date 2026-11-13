@@ -13,6 +13,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/session"
@@ -78,16 +79,17 @@ func newLocalEnv(t *testing.T) (*env, *LocalAccount) {
 	t.Cleanup(func() { _ = st.Close() })
 	sm := session.NewManager(st.DB(), time.Hour, time.Hour, zerolog.Nop())
 	dir := &fakeDirectory{}
-	authz := testAuthorizer(t)
+	auditLog := audit.New(st.DB(), zerolog.Nop())
+	authz := testAuthorizer(t, auditLog)
 	svc := New(Options{
-		LDAP: dir, Local: local, Sessions: sm, Authorizer: authz, Log: zerolog.Nop(),
+		LDAP: dir, Local: local, Sessions: sm, Authorizer: authz, Audit: auditLog, Log: zerolog.Nop(),
 		UserLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
 		IPLockout:   lockout.Policy{MaxFailures: 50, Window: time.Minute, Duration: time.Minute},
 	})
 	mux := http.NewServeMux()
 	svc.Register(mux)
 	registerTestRoutes(mux)
-	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm}, local
+	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm, audit: auditLog}, local
 }
 
 func TestLocalLoginRequiresTOTP(t *testing.T) {

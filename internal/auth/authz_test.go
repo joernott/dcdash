@@ -8,10 +8,11 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/rbac"
 )
 
-func testAuthorizer(t *testing.T) *Authorizer {
+func testAuthorizer(t *testing.T, auditLog *audit.Log) *Authorizer {
 	t.Helper()
 	perms, err := rbac.ParseSet([]string{"dns:cf:*:write"})
 	if err != nil {
@@ -19,7 +20,7 @@ func testAuthorizer(t *testing.T) *Authorizer {
 	}
 	return NewAuthorizer(rbac.NewResolver("", []rbac.Role{
 		{Name: "dns-operator", Groups: []string{"dcdash-dns"}, RequireTOTP: false, Permissions: perms},
-	}))
+	}), auditLog)
 }
 
 func noContent(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }

@@ -146,8 +146,9 @@ These apply to every task:
   action hierarchy (`read` < `operate` < `console` < `write` < `admin`), unit tests
 - [x] **4.8** Authorization middleware and helpers for API handlers, permissions exposed in
   `/auth/me`
-- [ ] **4.9** Audit log: data model, writer, logging of logins and every state change,
+- [x] **4.9** Audit log: data model, writer, logging of logins and every state change,
   query API with filters, optional output to syslog or a file
+  - [x] **4.9.1** Test that `configs/config.example.yaml` stays valid (it had no test yet)
 - [ ] **4.10** Admin API: list and terminate sessions, reset a user's TOTP (root only), plus
   the `dcdash totp reset` CLI command
 - [ ] **4.11** User preferences: storage and API (`GET`/`PUT /api/v1/me/preferences`) for

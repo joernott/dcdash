@@ -185,3 +185,13 @@ func (s Set) Strings() []string {
 	}
 	return out
 }
+
+// System permissions.
+var (
+	// PermAuditRead allows reading the audit log.
+	PermAuditRead = P("system", "core", "audit", ActionRead)
+	// PermSessionsRead allows listing the sessions of all users.
+	PermSessionsRead = P("system", "core", "sessions", ActionRead)
+	// PermSessionsWrite allows terminating the sessions of other users.
+	PermSessionsWrite = P("system", "core", "sessions", ActionWrite)
+)
