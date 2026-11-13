@@ -101,6 +101,53 @@
     "regenerate": "New recovery codes",
     "regenerateHint": "Enter a current code from your authenticator app. Your old recovery codes stop working."
   },
+  "audit": {
+    "filter": "Filter",
+    "time": "Time",
+    "actor": "User",
+    "action": "Action",
+    "actionHint": "Exact, or a prefix ending with * (for example auth.*)",
+    "target": "Target",
+    "result": "Result",
+    "details": "Details",
+    "since": "From",
+    "until": "Until",
+    "allResults": "All results",
+    "results": {
+      "success": "Success",
+      "failure": "Failure",
+      "denied": "Denied"
+    },
+    "apply": "Apply",
+    "reset": "Reset",
+    "more": "Load older entries"
+  },
+  "sessions": {
+    "filter": "User name",
+    "user": "User",
+    "stage": "State",
+    "stages": {
+      "authenticated": "Logged in",
+      "totp": "Waiting for code",
+      "totp_enroll": "Setting up the authenticator app"
+    },
+    "created": "Logged in at",
+    "lastSeen": "Last activity",
+    "client": "Client",
+    "actions": "Actions",
+    "current": "this session",
+    "terminate": "Terminate",
+    "terminateText": "Terminate this session of {user}? The user has to log in again.",
+    "terminateOwn": "This is your own session. You will be logged out.",
+    "terminated": "The session was terminated.",
+    "terminateAll": "Terminate all sessions of this user",
+    "terminateAllText": "Terminate all sessions of {user}?",
+    "terminatedCount": "No sessions were active. | One session was terminated. | {n} sessions were terminated.",
+    "resetTotp": "Reset authenticator app",
+    "resetTotpHint": "For users who lost their device and their recovery codes. Directory users set up a new app at their next login; the break-glass account must be set up on the server.",
+    "resetTotpText": "Reset the authenticator app of {user}? The user's recovery codes stop working as well.",
+    "resetDone": "The authenticator app of {user} was reset."
+  },
   "forbidden": {
     "title": "No access",
     "text": "You don't have permission to open this page."

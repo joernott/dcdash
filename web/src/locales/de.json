@@ -101,6 +101,53 @@
     "regenerate": "Neue Wiederherstellungscodes",
     "regenerateHint": "Geben Sie einen aktuellen Code aus Ihrer Authenticator-App ein. Ihre alten Wiederherstellungscodes werden ungültig."
   },
+  "audit": {
+    "filter": "Filter",
+    "time": "Zeit",
+    "actor": "Benutzer",
+    "action": "Aktion",
+    "actionHint": "Exakt, oder als Präfix mit * am Ende (zum Beispiel auth.*)",
+    "target": "Ziel",
+    "result": "Ergebnis",
+    "details": "Details",
+    "since": "Von",
+    "until": "Bis",
+    "allResults": "Alle Ergebnisse",
+    "results": {
+      "success": "Erfolgreich",
+      "failure": "Fehlgeschlagen",
+      "denied": "Abgelehnt"
+    },
+    "apply": "Anwenden",
+    "reset": "Zurücksetzen",
+    "more": "Ältere Einträge laden"
+  },
+  "sessions": {
+    "filter": "Benutzername",
+    "user": "Benutzer",
+    "stage": "Status",
+    "stages": {
+      "authenticated": "Angemeldet",
+      "totp": "Wartet auf Code",
+      "totp_enroll": "Richtet Authenticator-App ein"
+    },
+    "created": "Angemeldet um",
+    "lastSeen": "Letzte Aktivität",
+    "client": "Client",
+    "actions": "Aktionen",
+    "current": "diese Sitzung",
+    "terminate": "Beenden",
+    "terminateText": "Diese Sitzung von {user} beenden? Der Benutzer muss sich erneut anmelden.",
+    "terminateOwn": "Das ist Ihre eigene Sitzung. Sie werden abgemeldet.",
+    "terminated": "Die Sitzung wurde beendet.",
+    "terminateAll": "Alle Sitzungen dieses Benutzers beenden",
+    "terminateAllText": "Alle Sitzungen von {user} beenden?",
+    "terminatedCount": "Es waren keine Sitzungen aktiv. | Eine Sitzung wurde beendet. | {n} Sitzungen wurden beendet.",
+    "resetTotp": "Authenticator-App zurücksetzen",
+    "resetTotpHint": "Für Benutzer, die ihr Gerät und ihre Wiederherstellungscodes verloren haben. Verzeichnisbenutzer richten bei der nächsten Anmeldung eine neue App ein; das Notfallkonto muss auf dem Server eingerichtet werden.",
+    "resetTotpText": "Die Authenticator-App von {user} zurücksetzen? Auch die Wiederherstellungscodes werden ungültig.",
+    "resetDone": "Die Authenticator-App von {user} wurde zurückgesetzt."
+  },
   "forbidden": {
     "title": "Kein Zugriff",
     "text": "Sie haben keine Berechtigung, diese Seite zu öffnen."

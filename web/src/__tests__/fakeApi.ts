@@ -5,6 +5,12 @@ import type { SessionInfo } from '@/api/client'
 
 type Handler = (body: unknown) => [number, unknown]
 
+/** The request options of openapi-fetch that the fake understands. */
+export interface Init {
+  body?: unknown
+  params?: { query?: Record<string, unknown>; path?: Record<string, unknown> }
+}
+
 export class FakeApi {
   handlers = new Map<string, Handler>()
   calls: { route: string; body: unknown }[] = []
@@ -14,7 +20,7 @@ export class FakeApi {
     return this
   }
 
-  private call(method: string, path: string, init?: { body?: unknown }) {
+  private call(method: string, path: string, init?: Init) {
     const route = `${method} ${path}`
     this.calls.push({ route, body: init?.body })
     const handler = this.handlers.get(route)
@@ -26,10 +32,10 @@ export class FakeApi {
   }
 
   client = {
-    GET: (path: string, init?: { body?: unknown }) => this.call('GET', path, init),
-    POST: (path: string, init?: { body?: unknown }) => this.call('POST', path, init),
-    PUT: (path: string, init?: { body?: unknown }) => this.call('PUT', path, init),
-    DELETE: (path: string, init?: { body?: unknown }) => this.call('DELETE', path, init),
+    GET: (path: string, init?: Init) => this.call('GET', path, init),
+    POST: (path: string, init?: Init) => this.call('POST', path, init),
+    PUT: (path: string, init?: Init) => this.call('PUT', path, init),
+    DELETE: (path: string, init?: Init) => this.call('DELETE', path, init),
   }
 }
 
