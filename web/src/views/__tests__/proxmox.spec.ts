@@ -86,10 +86,7 @@ async function setup(terminals = true): Promise<Router> {
       { path: '/proxmox/:cluster/nodes/:node/shell', name: 'proxmox-shell', component: Dummy },
     ],
   })
-  api.on('GET /api/v1/proxmox/clusters', () => [
-    200,
-    { clusters: [{ name: 'lab', terminals }] },
-  ])
+  api.on('GET /api/v1/proxmox/clusters', () => [200, { clusters: [{ name: 'lab', terminals }] }])
   api.on('GET /api/v1/proxmox/clusters/{cluster}/resources', () => [200, inventory])
   return router
 }

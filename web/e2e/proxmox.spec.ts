@@ -11,7 +11,10 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   await page.getByRole('button', { name: 'Log in' }).click()
   await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible()
 
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Proxmox' }).click()
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Proxmox' })
+    .click()
   await expect(page).toHaveURL(/\/proxmox\/lab$/)
   await expect(page.getByRole('heading', { name: 'pve1' })).toBeVisible()
   const guests = page.getByRole('table', { name: 'Virtual machines and containers' })
@@ -46,8 +49,6 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   await expect(page.getByText('Connected')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Send Ctrl+Alt+Del' })).toBeVisible()
   const canvas = page.getByTestId('console-screen').locator('canvas')
-  await expect
-    .poll(async () => (await canvas.boundingBox())?.height ?? 0)
-    .toBeGreaterThan(100)
+  await expect.poll(async () => (await canvas.boundingBox())?.height ?? 0).toBeGreaterThan(100)
   await page.screenshot({ path: '../.e2e/screenshots/proxmox-vnc.png' })
 })

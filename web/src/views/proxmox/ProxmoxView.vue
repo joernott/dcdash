@@ -207,7 +207,10 @@ onBeforeUnmount(() => clearInterval(timer))
           <div class="flex items-center justify-between gap-2 text-sm text-fg-muted">
             <span v-if="node.uptime > 0">{{ t('proxmox.uptime') }}: {{ uptime(node.uptime) }}</span>
             <RouterLink
-              v-if="clusterStore.terminals(cluster) && session.can(nodeShellPermission(cluster, node.name))"
+              v-if="
+                clusterStore.terminals(cluster) &&
+                session.can(nodeShellPermission(cluster, node.name))
+              "
               :to="{ name: 'proxmox-shell', params: { cluster, node: node.name } }"
               class="text-primary underline"
             >
