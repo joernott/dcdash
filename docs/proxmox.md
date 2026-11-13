@@ -38,6 +38,12 @@ for who in "--users dcdash@pve" "--tokens dcdash@pve!dcdash"; do
 done
 ```
 
+An ACL entry for a user replaces the entries of the user's groups **on the same path**. For
+example, `PVEAuditor` for `dcdash@pve` on `/` hides a `PVEVMUser` granted to one of its
+groups on `/`. Grant all roles the user needs on that path in one entry
+(`--roles PVEAuditor,PVEVMUser`). `pveum user permissions dcdash@pve` and
+`pveum user token permissions dcdash@pve dcdash` show the effective privileges.
+
 Without `Sys.Audit`, dcdash shows nodes without CPU, memory and disk usage. Grant node shells
 only if they are needed: a node shell is a root shell on the hypervisor.
 
@@ -108,3 +114,4 @@ privileges as the token:
 | "The backend refused the request" | The API token lacks a Proxmox privilege for the action (see the table above), or the token is wrong or expired. |
 | A cluster shows no or only some guests | The token lacks `VM.Audit` on those guests, or the user lacks `read` on them in dcdash. |
 | Nodes show no usage | The token lacks `Sys.Audit`. |
+| `403 Permission check failed (/vms/…, VM.PowerMgmt)` although the token has `PVEVMUser` | With privilege separation, the user needs the privilege too. Check `pveum user token permissions`, and look for a user ACL that hides a group ACL on the same path (see above). |

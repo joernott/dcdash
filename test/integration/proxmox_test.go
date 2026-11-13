@@ -26,8 +26,9 @@ import (
 //	DCDASH_IT_PVE_CONSOLE_USER, _CONSOLE_PASSWORD              optional console user
 //	DCDASH_IT_PVE_CONSOLE_GUESTS  e.g. "qemu/201,lxc/202": consoles are opened
 //	                              (handshake only, no input is sent)
-//	DCDASH_IT_PVE_POWER_GUEST     e.g. "qemu/201": a running guest that may be
-//	                              suspended and resumed
+//	DCDASH_IT_PVE_POWER_GUEST     e.g. "qemu/110": a guest that may be started,
+//	                              suspended, resumed and stopped. A stopped
+//	                              guest is started and stopped again at the end.
 
 func pveCluster(t *testing.T, withConsoleUser bool) *proxmox.Cluster {
 	t.Helper()
@@ -175,7 +176,7 @@ func waitTask(t *testing.T, c *proxmox.Cluster, upid string) string {
 	}
 	deadline := time.Now().Add(2 * time.Minute)
 	for time.Now().Before(deadline) {
-		st, err := c.Task(t.Context(), u)
+		st, err := c.Task(context.Background(), u)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -200,23 +201,48 @@ func TestProxmoxPowerActions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Status != "running" {
-		t.Skipf("%s is %s, not running", g, res.Status)
-	}
-	for _, action := range []string{"suspend", "resume"} {
-		upid, err := c.Action(t.Context(), res.Node, guest[0], vmid, action)
+	run := func(action string) {
+		t.Helper()
+		upid, err := c.Action(context.Background(), res.Node, guest[0], vmid, action)
 		if err != nil {
 			t.Fatalf("%s: %v", action, err)
 		}
 		if exit := waitTask(t, c, upid); exit != "OK" {
 			t.Fatalf("%s: task exit %q", action, exit)
 		}
-		log, err := c.TaskLog(t.Context(), mustUPID(t, upid), 0, 50)
+		log, err := c.TaskLog(context.Background(), mustUPID(t, upid), 0, 50)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Logf("%s: %d log lines", action, len(log))
 	}
+	switch res.Status {
+	case "running":
+	case "stopped":
+		// The guest is left as it was found: started here, stopped at the end.
+		run("start")
+		t.Cleanup(func() { run("stop") })
+	default:
+		t.Skipf("%s is %s", g, res.Status)
+	}
+	// The console of the power guest is tested here, while it runs.
+	if guest[0] == proxmox.TypeQEMU {
+		for _, m := range []struct {
+			name string
+			user bool
+		}{{"token", false}, {"console user", true}} {
+			if m.user && os.Getenv("DCDASH_IT_PVE_CONSOLE_USER") == "" {
+				continue
+			}
+			err := openConsole(t, pveCluster(t, m.user), guest[0], vmid)
+			t.Logf("console (%s): %s", m.name, errOK(err))
+			if err != nil {
+				t.Errorf("console (%s): %v", m.name, err)
+			}
+		}
+	}
+	run("suspend")
+	run("resume")
 }
 
 func mustUPID(t *testing.T, s string) proxmox.UPID {
