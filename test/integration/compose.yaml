@@ -29,6 +29,21 @@ services:
       interval: 2s
       retries: 30
 
+  # OpenLDAP (generic LDAP mode) with test users and groups.
+  openldap:
+    build: ./openldap
+    image: dcdash-it-openldap
+    ports:
+      - "127.0.0.1:1389:389"
+      - "127.0.0.1:1636:636"
+    networks:
+      it:
+        ipv4_address: 10.77.0.30
+    healthcheck:
+      test: ["CMD", "ldapsearch", "-x", "-H", "ldap://localhost", "-D", "cn=admin,dc=dcdash,dc=test", "-w", "admin-test-only", "-b", "dc=dcdash,dc=test", "-s", "base"]
+      interval: 2s
+      retries: 30
+
   # Let's Encrypt's ACME test server; validates DNS-01 via the bind container.
   pebble:
     image: ghcr.io/letsencrypt/pebble:2.10.3

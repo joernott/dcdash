@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/joernott/dcdash/internal/auth"
+	"github.com/joernott/dcdash/internal/vault"
 )
 
 func run(t *testing.T, args ...string) (stdout, stderr string, err error) {
@@ -36,7 +39,8 @@ func TestConfigValidate(t *testing.T) {
 	dir := t.TempDir()
 	good := filepath.Join(dir, "good.yaml")
 	bad := filepath.Join(dir, "bad.yaml")
-	if err := os.WriteFile(good, []byte("server:\n  tls: {mode: none}\n"), 0o600); err != nil {
+	goodConfig := "server:\n  tls: {mode: none}\nsecurity:\n  encryption_key: \"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=\"\n"
+	if err := os.WriteFile(good, []byte(goodConfig), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(bad, []byte("log: {level: loud}\n"), 0o600); err != nil {
@@ -62,5 +66,40 @@ func TestConfigFromEnv(t *testing.T) {
 func TestServeFailsOnMissingConfig(t *testing.T) {
 	if _, _, err := run(t, "-c", filepath.Join(t.TempDir(), "missing.yaml"), "serve"); err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestGenKey(t *testing.T) {
+	out, _, err := run(t, "gen-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := vault.ParseKey(out); err != nil {
+		t.Errorf("generated key is invalid: %v", err)
+	}
+	out2, _, _ := run(t, "gen-key")
+	if out == out2 {
+		t.Error("gen-key returned the same key twice")
+	}
+}
+
+func TestHashPassword(t *testing.T) {
+	var out, errOut bytes.Buffer
+	cmd := NewRootCommand(Deps{Stdout: &out, Stderr: &errOut})
+	cmd.SetIn(strings.NewReader("correct horse battery staple\n"))
+	cmd.SetArgs([]string{"hash-password"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	hash := strings.TrimSpace(out.String())
+	if ok, err := auth.VerifyPassword(hash, "correct horse battery staple"); err != nil || !ok {
+		t.Errorf("hash does not verify: %q, %v", hash, err)
+	}
+
+	cmd = NewRootCommand(Deps{Stdout: &out, Stderr: &errOut})
+	cmd.SetIn(strings.NewReader("short\n"))
+	cmd.SetArgs([]string{"hash-password"})
+	if err := cmd.Execute(); err == nil {
+		t.Error("short password accepted")
 	}
 }

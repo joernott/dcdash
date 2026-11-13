@@ -22,7 +22,7 @@ server:
 `
 
 func TestACMEDefaults(t *testing.T) {
-	cfg, err := Parse(strings.NewReader(acmeCloudflare))
+	cfg, err := Parse(strings.NewReader(testKeyYAML + acmeCloudflare))
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestACMEDefaults(t *testing.T) {
 
 func TestACMERFC2136(t *testing.T) {
 	t.Setenv("DCDASH_TEST_TSIG", "c2VjcmV0")
-	cfg, err := Parse(strings.NewReader(`
+	cfg, err := Parse(strings.NewReader(testKeyYAML + `
 server:
   tls:
     mode: acme
@@ -63,7 +63,7 @@ server:
 }
 
 func TestACMEValidation(t *testing.T) {
-	_, err := Parse(strings.NewReader(`
+	_, err := Parse(strings.NewReader(testKeyYAML + `
 server:
   tls:
     mode: acme
@@ -94,11 +94,11 @@ server:
 }
 
 func TestACMEProviderRequired(t *testing.T) {
-	_, err := Parse(strings.NewReader("server:\n  tls:\n    mode: acme\n    acme: {accept_tos: true, domains: [a.example]}\n"))
+	_, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls:\n    mode: acme\n    acme: {accept_tos: true, domains: [a.example]}\n"))
 	if err == nil || !strings.Contains(err.Error(), "dns.provider") {
 		t.Fatalf("expected provider error, got %v", err)
 	}
-	_, err = Parse(strings.NewReader("server:\n  tls:\n    mode: acme\n    acme: {accept_tos: true, domains: [a.example], dns: {provider: cloudflare}}\n"))
+	_, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls:\n    mode: acme\n    acme: {accept_tos: true, domains: [a.example], dns: {provider: cloudflare}}\n"))
 	if err == nil || !strings.Contains(err.Error(), "api_token") {
 		t.Fatalf("expected api_token error, got %v", err)
 	}

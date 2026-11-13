@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/version"
 )
 
@@ -29,6 +30,12 @@ type Options struct {
 	Checks []Check
 	// TLSConfig enables HTTPS. If nil, the server speaks plain HTTP.
 	TLSConfig *tls.Config
+	// Routes register additional handlers, e.g. the authentication API.
+	Routes []func(mux *http.ServeMux)
+	// Middleware wraps the router inside the standard middleware chain (after
+	// logging, recovery and security headers), in the given order (outermost
+	// first), e.g. session loading and CSRF protection.
+	Middleware []func(http.Handler) http.Handler
 }
 
 // Server is the dcdash HTTP(S) server.
@@ -54,15 +61,22 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /readyz", s.handleReady)
 	mux.HandleFunc("GET /api/v1/version", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, version.Get())
+		httpx.WriteJSON(w, http.StatusOK, version.Get())
 	})
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
-		writeError(w, http.StatusNotFound, "not_found", "no such API endpoint")
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "no such API endpoint")
 	})
 	if s.opts.UI != nil {
 		mux.Handle("/", s.opts.UI)
 	}
-	return chain(mux, s.log, hstsValue(s.cfg.Server.HSTSMaxAge))
+	for _, register := range s.opts.Routes {
+		register(mux)
+	}
+	var h http.Handler = mux
+	for i := len(s.opts.Middleware) - 1; i >= 0; i-- {
+		h = s.opts.Middleware[i](h)
+	}
+	return chain(h, s.log, hstsValue(s.cfg.Server.HSTSMaxAge))
 }
 
 func hstsValue(maxAge config.Duration) string {

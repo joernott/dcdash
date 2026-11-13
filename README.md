@@ -6,6 +6,7 @@ dcdash is a dashboard for administrators to manage multiple infrastructure compo
 - [Concept](docs/concept.md) and [concept review](docs/concept-review.md)
 - [Implementation plan](docs/implementation-plan.md)
 - [TLS certificates](docs/certificates.md)
+- [Security](docs/security.md)
 - [Development guide](docs/development.md)
 
 ## License

@@ -6,6 +6,8 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/joernott/dcdash/internal/httpx"
 )
 
 // Check is a named readiness check, e.g. "database" or "certificate".
@@ -26,7 +28,7 @@ const readyTimeout = 5 * time.Second
 
 // handleHealth reports liveness: the process is up and serving HTTP.
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, HealthStatus{Status: "ok"})
+	httpx.WriteJSON(w, http.StatusOK, HealthStatus{Status: "ok"})
 }
 
 // handleReady reports readiness: all registered checks pass.
@@ -49,5 +51,5 @@ func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 			res.Checks[c.Name] = "ok"
 		}
 	}
-	writeJSON(w, status, res)
+	httpx.WriteJSON(w, status, res)
 }

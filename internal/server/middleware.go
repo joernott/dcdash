@@ -12,6 +12,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
+
+	"github.com/joernott/dcdash/internal/httpx"
 )
 
 // chain wraps h with the standard middleware stack (outermost first):
@@ -59,7 +61,7 @@ func recoverer(next http.Handler) http.Handler {
 				Interface("panic", rec).
 				Bytes("stack", debug.Stack()).
 				Msg("panic in handler")
-			writeError(w, http.StatusInternalServerError, "internal_error", "internal server error")
+			httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
 		}()
 		next.ServeHTTP(w, r)
 	})

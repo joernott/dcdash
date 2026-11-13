@@ -18,6 +18,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/testutil"
 )
 
@@ -83,7 +84,7 @@ func TestVersion(t *testing.T) {
 
 func TestUnknownAPIIsJSON404(t *testing.T) {
 	rec := do(t, New(testConfig(), zerolog.Nop(), Options{}).Handler(), http.MethodGet, "/api/v1/nope")
-	var body ErrorBody
+	var body httpx.ErrorBody
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || rec.Code != http.StatusNotFound || body.Error.Code != "not_found" {
 		t.Fatalf("got %d %s", rec.Code, rec.Body)
 	}
@@ -151,5 +152,30 @@ func TestServeTLSAndShutdown(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("server did not shut down")
+	}
+}
+
+func TestRoutesAndMiddleware(t *testing.T) {
+	var order []string
+	mw := func(name string) func(http.Handler) http.Handler {
+		return func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				order = append(order, name)
+				next.ServeHTTP(w, r)
+			})
+		}
+	}
+	opts := Options{
+		Routes: []func(*http.ServeMux){func(mux *http.ServeMux) {
+			mux.HandleFunc("GET /api/v1/extra", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusAccepted) })
+		}},
+		Middleware: []func(http.Handler) http.Handler{mw("outer"), mw("inner")},
+	}
+	rec := do(t, New(testConfig(), zerolog.Nop(), opts).Handler(), http.MethodGet, "/api/v1/extra")
+	if rec.Code != http.StatusAccepted {
+		t.Errorf("extra route: %d", rec.Code)
+	}
+	if strings.Join(order, ",") != "outer,inner" {
+		t.Errorf("middleware order %v", order)
 	}
 }

@@ -6,6 +6,8 @@ server:
     mode: files
     cert_file: .dev/tls/cert.pem
     key_file: .dev/tls/key.pem
+security:
+  encryption_key: "file:.dev/encryption.key"
 log:
   level: debug
   format: console

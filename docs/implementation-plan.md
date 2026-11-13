@@ -34,7 +34,7 @@ These apply to every task:
 | 0 | `sprint/00-planning` | Concept review, plan, conventions | – | done |
 | 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | done |
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
-| 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | open |
+| 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | open |
@@ -105,25 +105,28 @@ These apply to every task:
 
 ## Sprint 3 — State Store and Authentication
 
-- [ ] **3.1** State store: SQLite (`modernc.org/sqlite`), migrations, data directory from
+- [x] **3.1** State store: SQLite (`modernc.org/sqlite`), migrations, data directory from
   the config
-- [ ] **3.2** Encryption of secrets at rest: AES-GCM, key from the config or a key file,
+- [x] **3.2** Encryption of secrets at rest: AES-GCM, key from the config or a key file,
   key rotation concept documented
-- [ ] **3.3** LDAP client: LDAPS and StartTLS, custom CA, service bind, user search and
+- [x] **3.3** LDAP client: LDAPS and StartTLS, custom CA, service bind, user search and
   bind, connection timeouts
-- [ ] **3.4** Group resolution: AD nested groups (matching rule in chain) and generic LDAP
+- [x] **3.4** Group resolution: AD nested groups (matching rule in chain) and generic LDAP
   (`memberOf` or group search), groups given as CN or DN
-- [ ] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
+- [x] **3.5** Sessions: server-side store, opaque cookie, absolute lifetime and idle
   timeout from the config, logout, cleanup job
-- [ ] **3.6** CSRF protection for state-changing requests
-- [ ] **3.7** Login rate limiting and temporary lockout per user and per source IP
-- [ ] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
-- [ ] **3.9** LDAP integration tests:
+- [x] **3.6** CSRF protection for state-changing requests
+- [x] **3.7** Login rate limiting and temporary lockout per user and per source IP
+  - [x] **3.7.1** Client IP behind reverse proxies: `server.trusted_proxies`; `X-Forwarded-For`
+    is only used when the request comes from a trusted proxy (otherwise all clients would
+    share the proxy address and the per-IP lockout would lock everyone out)
+- [x] **3.8** API: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
+- [x] **3.9** LDAP integration tests:
   - AD mode against the existing Samba AD server in the network, with connection data and
     test accounts from environment variables. The tests are skipped when these aren't set
     (for example in GitHub Actions, which can't reach the internal network).
   - Generic LDAP mode against an OpenLDAP container, which also runs in CI.
-- [ ] **3.10** Break-glass local account: disabled by default, password hash in the config,
+- [x] **3.10** Break-glass local account: disabled by default, password hash in the config,
   always holds `root` and always requires TOTP, every use is audited and logged as a warning
 
 ## Sprint 4 — TOTP, Authorization, Audit and Preferences
@@ -162,6 +165,8 @@ These apply to every task:
   formats
 - [ ] **5.4** API client layer: error handling (localized messages), CSRF header,
   session-expiry handling
+  - [ ] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
+    always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
 - [ ] **5.5** Login page with the TOTP step
 - [ ] **5.6** TOTP enrollment page: QR code, confirmation, recovery code display
 - [ ] **5.7** App layout: navigation that only shows modules the user may use, user menu
