@@ -12,5 +12,24 @@
     "saved": "Saved",
     "confirm": "Confirm",
     "retry": "Try again"
+  },
+  "errors": {
+    "unknown": "Something went wrong: {message}",
+    "network_error": "The server cannot be reached. Check your connection and try again.",
+    "internal_error": "An internal error occurred. Please try again later.",
+    "invalid_request": "The request was invalid.",
+    "not_found": "Not found.",
+    "not_authenticated": "You are not logged in.",
+    "session_expired": "Your session has expired. Please log in again.",
+    "forbidden": "You don't have permission to do this.",
+    "csrf_failed": "The request was rejected for security reasons. Please reload the page.",
+    "invalid_credentials": "The user name or password is wrong.",
+    "too_many_attempts": "Too many failed attempts. Please wait a few minutes and try again.",
+    "directory_unavailable": "The user directory is not available. Please try again later.",
+    "totp_not_enrolled": "No authenticator app is set up for this account. An administrator must set it up on the server.",
+    "invalid_code": "The code is wrong, expired or was already used.",
+    "wrong_stage": "This step is not possible right now. Please log in again.",
+    "already_enrolled": "An authenticator app is already set up.",
+    "no_enrollment": "The setup was not started or has expired. Please start again."
   }
 }

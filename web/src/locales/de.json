@@ -12,5 +12,24 @@
     "saved": "Gespeichert",
     "confirm": "Bestätigen",
     "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Etwas ist schiefgegangen: {message}",
+    "network_error": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "internal_error": "Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.",
+    "invalid_request": "Die Anfrage war ungültig.",
+    "not_found": "Nicht gefunden.",
+    "not_authenticated": "Sie sind nicht angemeldet.",
+    "session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "forbidden": "Dafür fehlt Ihnen die Berechtigung.",
+    "csrf_failed": "Die Anfrage wurde aus Sicherheitsgründen abgelehnt. Bitte laden Sie die Seite neu.",
+    "invalid_credentials": "Benutzername oder Passwort ist falsch.",
+    "too_many_attempts": "Zu viele Fehlversuche. Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.",
+    "directory_unavailable": "Das Benutzerverzeichnis ist nicht erreichbar. Bitte versuchen Sie es später erneut.",
+    "totp_not_enrolled": "Für dieses Konto ist keine Authenticator-App eingerichtet. Ein Administrator muss sie auf dem Server einrichten.",
+    "invalid_code": "Der Code ist falsch, abgelaufen oder wurde bereits verwendet.",
+    "wrong_stage": "Dieser Schritt ist gerade nicht möglich. Bitte melden Sie sich erneut an.",
+    "already_enrolled": "Eine Authenticator-App ist bereits eingerichtet.",
+    "no_enrollment": "Die Einrichtung wurde nicht gestartet oder ist abgelaufen. Bitte beginnen Sie erneut."
   }
 }

@@ -68,8 +68,13 @@ Use two terminals:
 
 ```sh
 make dev-backend   # creates a self-signed cert in .dev/ and serves https://localhost:8443
-make dev-web       # Vite dev server on http://localhost:5173 with hot reload
+make dev-web       # Vite dev server on https://localhost:5173 with hot reload
 ```
+
+The dev server uses the same self-signed certificate (`make dev-cert`, run automatically). It
+must use HTTPS because the session cookie is always `Secure`; over plain HTTP the browser
+would not send it back and every login would seem to fail. Your browser warns about the
+self-signed certificate once.
 
 The Vite dev server proxies `/api`, `/healthz` and `/readyz` to the backend. Set
 `DCDASH_BACKEND` to use another backend URL. If you develop on a remote machine or VM,

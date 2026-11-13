@@ -525,10 +525,7 @@ export interface components {
       }
     }
   }
-  parameters: {
-    /** @description The csrfToken of the session. */
-    CSRFToken: string
-  }
+  parameters: never
   requestBodies: never
   headers: never
   pathItems: never
@@ -673,10 +670,7 @@ export interface operations {
   logout: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -724,10 +718,7 @@ export interface operations {
   verifyTOTP: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -780,10 +771,7 @@ export interface operations {
   startTOTPEnrollment: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -823,10 +811,7 @@ export interface operations {
   confirmTOTPEnrollment: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -870,10 +855,7 @@ export interface operations {
   regenerateRecoveryCodes: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -930,10 +912,7 @@ export interface operations {
   setPreferences: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -1040,10 +1019,7 @@ export interface operations {
   terminateSession: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path: {
         id: string
       }
@@ -1075,10 +1051,7 @@ export interface operations {
   terminateUserSessions: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path: {
         username: string
       }
@@ -1105,10 +1078,7 @@ export interface operations {
   resetTOTP: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path: {
         username: string
       }

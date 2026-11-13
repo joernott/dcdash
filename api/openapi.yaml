@@ -122,8 +122,8 @@ paths:
       tags: [auth]
       operationId: logout
       summary: End the current session
-      parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+      security:
+        - { session: [], csrf: [] }
       responses:
         "204":
           description: Logged out (also when there was no session).
@@ -156,8 +156,8 @@ paths:
       description: |
         Only in the login step "totp". On success the session is fully authenticated and its
         token is replaced (new cookie). Each code is accepted once; recovery codes are single-use.
-      parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+      security:
+        - { session: [], csrf: [] }
       requestBody:
         required: true
         content:
@@ -198,8 +198,8 @@ paths:
         In the login step "totp_enroll", or voluntarily when logged in and not yet enrolled.
         Returns a new secret; it becomes active once confirmed with a code. The break-glass
         account cannot enroll here (it uses `dcdash totp enroll`).
-      parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+      security:
+        - { session: [], csrf: [] }
       responses:
         "200":
           description: The secret to add to an authenticator app.
@@ -228,8 +228,8 @@ paths:
       description: |
         Activates the secret and returns recovery codes, which are shown only once. In the login
         step "totp_enroll", the session becomes fully authenticated (new cookie).
-      parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+      security:
+        - { session: [], csrf: [] }
       requestBody:
         required: true
         content:
@@ -262,8 +262,8 @@ paths:
       operationId: regenerateRecoveryCodes
       summary: Replace all recovery codes
       description: Requires a current TOTP code. The old recovery codes stop working.
-      parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+      security:
+        - { session: [], csrf: [] }
       requestBody:
         required: true
         content:
@@ -304,8 +304,8 @@ paths:
       tags: [me]
       operationId: setPreferences
       summary: Save the preferences of the logged-in user
-      parameters:
-        - $ref: "#/components/parameters/CSRFToken"
+      security:
+        - { session: [], csrf: [] }
       requestBody:
         required: true
         content:
@@ -384,9 +384,10 @@ paths:
       operationId: terminateSession
       summary: Terminate a session
       description: Requires `system:core:sessions:write`.
+      security:
+        - { session: [], csrf: [] }
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
-        - $ref: "#/components/parameters/CSRFToken"
       responses:
         "204":
           description: Terminated.
@@ -406,9 +407,10 @@ paths:
       operationId: terminateUserSessions
       summary: Terminate all sessions of a user
       description: Requires `system:core:sessions:write`.
+      security:
+        - { session: [], csrf: [] }
       parameters:
         - { name: username, in: path, required: true, schema: { type: string } }
-        - $ref: "#/components/parameters/CSRFToken"
       responses:
         "200":
           description: Number of terminated sessions.
@@ -432,9 +434,10 @@ paths:
       description: |
         Only for root. Removes the user's TOTP secret and recovery codes; directory users enroll
         again at their next login.
+      security:
+        - { session: [], csrf: [] }
       parameters:
         - { name: username, in: path, required: true, schema: { type: string } }
-        - $ref: "#/components/parameters/CSRFToken"
       responses:
         "204":
           description: Reset.
@@ -449,13 +452,19 @@ paths:
           $ref: "#/components/responses/Error"
 
 components:
-  parameters:
-    CSRFToken:
-      name: X-CSRF-Token
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: __Host-dcdash_session
+      description: Session cookie, set by login.
+    csrf:
+      type: apiKey
       in: header
-      required: true
-      description: The csrfToken of the session.
-      schema: { type: string }
+      name: X-CSRF-Token
+      description: |
+        The csrfToken of the session (returned by login and GET /api/v1/auth/me). Required for
+        all state-changing requests of a session.
 
   responses:
     TooManyAttempts:

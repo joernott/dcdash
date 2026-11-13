@@ -107,7 +107,7 @@ dev-backend: dev-cert $(DEV_DIR)/encryption.key ## Run the backend with configs/
 	go run ./cmd/dcdash --config configs/dev.yaml serve
 
 .PHONY: dev-web
-dev-web: web/node_modules ## Run the Vite dev server with proxy to the backend (DEV_HOST=0.0.0.0 to expose it)
+dev-web: web/node_modules dev-cert ## Run the Vite dev server with proxy to the backend (DEV_HOST=0.0.0.0 to expose it)
 	cd web && npm run dev -- --host $(DEV_HOST)
 
 .PHONY: clean

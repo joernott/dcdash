@@ -172,9 +172,9 @@ These apply to every task:
 - [ ] **5.3** i18n: vue-i18n setup, English and German message files, browser language
   detection, language switcher stored in the user preferences, localized date and number
   formats
-- [ ] **5.4** API client layer: error handling (localized messages), CSRF header,
+- [x] **5.4** API client layer: error handling (localized messages), CSRF header,
   session-expiry handling
-  - [ ] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
+  - [x] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
     always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
 - [ ] **5.5** Login page with the TOTP step
 - [ ] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
