@@ -64,3 +64,9 @@ Please squas-merge sprint 1 into main, push theit and start with sprint 2
 ## 2026-11-12 — Sprint 2 (TLS)
 
 Please continue with the next sprint. You can use the ldap bind user "ssp-service@windows.test.sf.thse.net" with password "[REDACTED]" to connect to the domain controller "ldaps://DC1.windows.test.sf.thse.net:636"
+
+---
+
+## 2026-11-13 — Sprint 3 (Authentication)
+
+yes, please
