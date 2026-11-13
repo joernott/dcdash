@@ -13,6 +13,18 @@
     "confirm": "Bestätigen",
     "retry": "Erneut versuchen"
   },
+  "preferences": {
+    "theme": {
+      "label": "Darstellung",
+      "system": "Wie System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "language": {
+      "label": "Sprache",
+      "browser": "Browsersprache"
+    }
+  },
   "errors": {
     "unknown": "Etwas ist schiefgegangen: {message}",
     "network_error": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",

@@ -166,10 +166,10 @@ These apply to every task:
 
 - [x] **5.1** Design system: Tailwind theme tokens for light and dark, base components
   (button, table, form, modal, toast), each checked in both themes
-- [ ] **5.2** Dark mode: light, dark and system modes (`prefers-color-scheme`), toggle in the
+- [x] **5.2** Dark mode: light, dark and system modes (`prefers-color-scheme`), toggle in the
   user menu, stored in the user preferences, inline bootstrap script so the page doesn't
   flash the wrong theme on load
-- [ ] **5.3** i18n: vue-i18n setup, English and German message files, browser language
+- [x] **5.3** i18n: vue-i18n setup, English and German message files, browser language
   detection, language switcher stored in the user preferences, localized date and number
   formats
 - [x] **5.4** API client layer: error handling (localized messages), CSRF header,

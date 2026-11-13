@@ -13,6 +13,18 @@
     "confirm": "Confirm",
     "retry": "Try again"
   },
+  "preferences": {
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "browser": "Browser language"
+    }
+  },
   "errors": {
     "unknown": "Something went wrong: {message}",
     "network_error": "The server cannot be reached. Check your connection and try again.",
