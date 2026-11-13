@@ -142,7 +142,7 @@ These apply to every task:
 - [ ] **4.5** TOTP replay protection and lockout after repeated failures
 - [ ] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
   group mappings, `require_totp` and permission strings
-- [ ] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,
+- [x] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,
   action hierarchy (`read` < `operate` < `console` < `write` < `admin`), unit tests
 - [ ] **4.8** Authorization middleware and helpers for API handlers, permissions exposed in
   `/auth/me`
