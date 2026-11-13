@@ -57,6 +57,9 @@ type Zone struct {
 	Status string `json:"status,omitempty"`
 	// ID is the provider's zone ID (Cloudflare), empty for bind9.
 	ID string `json:"-"`
+	// NameServers are the name servers Cloudflare assigned to the zone;
+	// the registrar must delegate the zone to them.
+	NameServers []string `json:"nameServers,omitempty"`
 }
 
 // Record is one resource record.
