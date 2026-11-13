@@ -25,6 +25,7 @@ import {
   type Guest,
   type GuestFilter,
 } from '@/proxmox/guests'
+import { useProxmoxClustersStore } from '@/stores/proxmoxClusters'
 import { useSessionStore } from '@/stores/session'
 
 type Inventory = Schemas['ProxmoxInventory']
@@ -39,7 +40,8 @@ const router = useRouter()
 const session = useSessionStore()
 const dialog = useTemplateRef<InstanceType<typeof PowerActionDialog>>('dialog')
 
-const clusters = ref<string[]>([])
+const clusterStore = useProxmoxClustersStore()
+const clusters = computed(() => clusterStore.clusters.map((c) => c.name))
 const inventory = ref<Inventory | null>(null)
 const loading = ref(false)
 const error = ref('')
@@ -93,8 +95,7 @@ function uptime(seconds: number): string {
 }
 
 async function loadClusters() {
-  const res = await unwrap(api.GET('/api/v1/proxmox/clusters'))
-  clusters.value = res.clusters.map((c) => c.name)
+  await clusterStore.load(true)
   if (!cluster.value && clusters.value.length > 0) {
     await router.replace({ name: 'proxmox', params: { cluster: clusters.value[0] } })
   }
@@ -206,7 +207,7 @@ onBeforeUnmount(() => clearInterval(timer))
           <div class="flex items-center justify-between gap-2 text-sm text-fg-muted">
             <span v-if="node.uptime > 0">{{ t('proxmox.uptime') }}: {{ uptime(node.uptime) }}</span>
             <RouterLink
-              v-if="session.can(nodeShellPermission(cluster, node.name))"
+              v-if="clusterStore.terminals(cluster) && session.can(nodeShellPermission(cluster, node.name))"
               :to="{ name: 'proxmox-shell', params: { cluster, node: node.name } }"
               class="text-primary underline"
             >

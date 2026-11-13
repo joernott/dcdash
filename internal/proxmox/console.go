@@ -46,13 +46,26 @@ type proxyResponse struct {
 	UPID   string      `json:"upid"`
 }
 
-// consoleAuth returns the authentication for consoles: the ticket of the
-// console user if configured, otherwise the API token.
-func (c *Cluster) consoleAuth(ctx context.Context) (authFunc, error) {
-	if c.HasConsoleUser() {
-		return c.ticketAuth(ctx)
+// ErrTerminalUnavailable means that a terminal (container console or node
+// shell) was requested, but no console user is configured. Proxmox does not
+// accept API tokens for the termproxy login (see ADR 0001).
+var ErrTerminalUnavailable = errors.New("proxmox: terminals need a console user")
+
+// Terminals reports whether container terminals and node shells are
+// available: they need the console user.
+func (c *Cluster) Terminals() bool { return c.HasConsoleUser() }
+
+// consoleAuth returns the authentication for a console. VNC uses the API
+// token. Terminals use the ticket of the console user, because termproxy
+// rejects logins with tickets issued to an API token.
+func (c *Cluster) consoleAuth(ctx context.Context, kind string) (authFunc, error) {
+	if kind == ConsoleVNC {
+		return c.tokenAuth, nil
 	}
-	return c.tokenAuth, nil
+	if !c.HasConsoleUser() {
+		return nil, ErrTerminalUnavailable
+	}
+	return c.ticketAuth(ctx)
 }
 
 // OpenGuestConsole prepares the console of a guest: VNC for virtual machines,
@@ -77,10 +90,14 @@ func (c *Cluster) OpenNodeShell(ctx context.Context, node string) (*Console, err
 }
 
 func (c *Cluster) openConsole(ctx context.Context, base, kind string, form url.Values) (*Console, error) {
-	a, err := c.consoleAuth(ctx)
+	a, err := c.consoleAuth(ctx, kind)
 	if err != nil {
 		return nil, err
 	}
+	return c.openConsoleAuth(ctx, base, kind, form, a)
+}
+
+func (c *Cluster) openConsoleAuth(ctx context.Context, base, kind string, form url.Values, a authFunc) (*Console, error) {
 	endpointName := "/vncproxy"
 	if kind == ConsoleTerm {
 		endpointName = "/termproxy"

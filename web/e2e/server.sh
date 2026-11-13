@@ -54,6 +54,7 @@ proxmox:
       endpoints: [{url: "https://$PVE_LISTEN", fingerprint: "$PVE_FP"}]
       token_id: "dcdash@pve!e2e"
       token_secret: "e2e-test-only"
+      console: {username: "console@pve", password: "console-e2e"}
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}

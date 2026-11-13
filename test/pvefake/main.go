@@ -25,7 +25,7 @@ func main() {
 		pvefake.Guest{Type: "qemu", VMID: 102, Name: "db", Node: "pve2", Status: "stopped"},
 		pvefake.Guest{Type: "lxc", VMID: 200, Name: "proxy", Node: "pve1", Status: "running"},
 	)
-	f.Set(func(s *pvefake.Settings) { s.TokenConsole = true })
+	f.Set(func(s *pvefake.Settings) { s.User, s.Password = "console@pve", "console-e2e" })
 	srv := &http.Server{Addr: *listen, Handler: f, ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("pvefake listening on https://%s", *listen)
 	log.Fatal(srv.ListenAndServeTLS(*cert, *key))

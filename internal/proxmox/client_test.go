@@ -204,10 +204,12 @@ func readMsg(t *testing.T, ws *websocket.Conn) string {
 }
 
 func TestConsoles(t *testing.T) {
-	f, srv := fakeServer(t)
-	f.Set(func(s *pvefake.Settings) { s.TokenConsole = true })
-	c := newCluster(t, endpointFor(srv))
+	_, srv := fakeServer(t)
+	c := newCluster(t, endpointFor(srv)) // API token only
 	ctx := t.Context()
+	if c.Terminals() {
+		t.Error("terminals without console user")
+	}
 
 	vnc, err := c.OpenGuestConsole(ctx, "pve1", TypeQEMU, 101)
 	if err != nil || vnc.Kind != ConsoleVNC || vnc.Password == "" {
@@ -220,50 +222,39 @@ func TestConsoles(t *testing.T) {
 	if got := readMsg(t, ws); got != "RFB 003.008\n" {
 		t.Errorf("vnc greeting %q", got)
 	}
+	// The fake continues with RFB: one security type (None).
+	_ = ws.WriteMessage(websocket.BinaryMessage, []byte("RFB 003.008\n"))
+	if got := readMsg(t, ws); got != "\x01\x01" {
+		t.Errorf("security types %q", got)
+	}
 	_ = ws.Close()
 	if _, err := vnc.Dial(ctx); err == nil {
 		t.Error("console ticket used twice")
 	}
 
-	term, err := c.OpenGuestConsole(ctx, "pve1", TypeLXC, 200)
-	if err != nil || term.Kind != ConsoleTerm || term.Password != "" {
-		t.Fatalf("term %+v, %v", term, err)
+	// Terminals need the console user.
+	if _, err := c.OpenGuestConsole(ctx, "pve1", TypeLXC, 200); !errors.Is(err, ErrTerminalUnavailable) {
+		t.Errorf("lxc terminal with token: %v", err)
 	}
-	ws, err = term.Dial(ctx)
-	if err != nil {
-		t.Fatal(err)
+	if _, err := c.OpenNodeShell(ctx, "pve1"); !errors.Is(err, ErrTerminalUnavailable) {
+		t.Errorf("node shell with token: %v", err)
 	}
-	_ = ws.WriteMessage(websocket.BinaryMessage, []byte("0:2:ls"))
-	if got := readMsg(t, ws); got != "ls" {
-		t.Errorf("echo %q", got)
-	}
-	_ = ws.Close()
-
-	shell, err := c.OpenNodeShell(ctx, "pve1")
-	if err != nil || shell.Kind != ConsoleTerm {
-		t.Fatalf("shell %+v, %v", shell, err)
-	}
-	if _, err := c.OpenNodeShell(ctx, "pve1/../x"); err == nil {
-		t.Error("invalid node accepted")
+	if _, err := c.OpenNodeShell(ctx, "pve1/../x"); err == nil || errors.Is(err, ErrTerminalUnavailable) {
+		t.Errorf("invalid node: %v", err)
 	}
 }
 
-func TestConsoleWithTokenRejected(t *testing.T) {
+// Proxmox issues termproxy tickets to API tokens, but rejects the login with
+// them on the websocket. That is why terminals need the console user.
+func TestTerminalLoginWithTokenRejected(t *testing.T) {
 	_, srv := fakeServer(t)
 	c := newCluster(t, endpointFor(srv))
-	term, err := c.OpenGuestConsole(t.Context(), "pve1", TypeLXC, 200)
+	term, err := c.openConsoleAuth(t.Context(), "/nodes/pve1/lxc/200", ConsoleTerm, nil, c.tokenAuth)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := term.Dial(t.Context()); !errors.Is(err, ErrConsoleRejected) {
 		t.Errorf("term with token: %v", err)
-	}
-	vnc, err := c.OpenGuestConsole(t.Context(), "pve1", TypeQEMU, 101)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := vnc.Dial(t.Context()); !IsStatus(err, http.StatusForbidden) {
-		t.Errorf("vnc with token: %v", err)
 	}
 }
 
@@ -280,6 +271,9 @@ func TestConsoleUser(t *testing.T) {
 	}
 	now := time.Now()
 	c.now = func() time.Time { return now }
+	if !c.Terminals() {
+		t.Error("no terminals with console user")
+	}
 	for _, typ := range []string{TypeLXC, TypeQEMU} {
 		vmid := map[string]int{TypeLXC: 200, TypeQEMU: 101}[typ]
 		con, err := c.OpenGuestConsole(t.Context(), "pve1", typ, vmid)
@@ -290,7 +284,17 @@ func TestConsoleUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", typ, err)
 		}
+		if typ == TypeLXC {
+			_ = ws.WriteMessage(websocket.BinaryMessage, []byte("0:2:ls"))
+			if got := readMsg(t, ws); got != "ls" {
+				t.Errorf("echo %q", got)
+			}
+		}
 		_ = ws.Close()
+	}
+	shell, err := c.OpenNodeShell(t.Context(), "pve1")
+	if err != nil || shell.Kind != ConsoleTerm {
+		t.Fatalf("shell %+v, %v", shell, err)
 	}
 	// The ticket is reused until it expires, then renewed.
 	logins := f.Requests()

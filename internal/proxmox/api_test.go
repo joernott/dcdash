@@ -17,6 +17,7 @@ import (
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
+	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/proxmox/pvefake"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
@@ -38,17 +39,33 @@ type apiEnv struct {
 	audit *audit.Log
 }
 
-// newAPIEnv serves the API; the header X-Test-User selects the user.
-func newAPIEnv(t *testing.T) *apiEnv {
+// newAPIEnv serves the API; the header X-Test-User selects the user. The
+// cluster has a console user, so terminals are available.
+func newAPIEnv(t *testing.T) *apiEnv { return newAPIEnvWith(t, true) }
+
+func newAPIEnvWith(t *testing.T, consoleUser bool) *apiEnv {
 	t.Helper()
 	fake, pve := fakeServer(t)
+	cluster := newCluster(t, endpointFor(pve))
+	if consoleUser {
+		fake.Set(func(s *pvefake.Settings) { s.User, s.Password = "console@pve", "pw" })
+		var err error
+		cluster, err = New(config.ProxmoxCluster{
+			Name: "lab", Endpoints: []config.ProxmoxEndpoint{endpointFor(pve)}, TokenID: "dcdash@pve!test",
+			TokenSecret: config.NewSecret("secret"), Timeout: config.Duration(2 * time.Second),
+			Console: config.ProxmoxConsole{Username: "console@pve", Password: config.NewSecret("pw")},
+		}, zerolog.Nop())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	st, err := store.Open(context.Background(), t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	auditLog := audit.New(st.DB(), zerolog.Nop())
-	svc := NewService([]*Cluster{newCluster(t, endpointFor(pve))}, auditLog, nil, zerolog.Nop())
+	svc := NewService([]*Cluster{cluster}, auditLog, nil, zerolog.Nop())
 	mux := http.NewServeMux()
 	svc.Register(mux)
 	authz := auth.NewAuthorizer(rbac.NewResolver("", nil), auditLog)
@@ -106,7 +123,7 @@ const base = "/api/v1/proxmox/clusters"
 func TestClusterListAndInventory(t *testing.T) {
 	e := newAPIEnv(t)
 	var cl ClusterList
-	if code := e.do(t, "viewer", "GET", base, &cl); code != 200 || len(cl.Clusters) != 1 || cl.Clusters[0].Name != "lab" {
+	if code := e.do(t, "viewer", "GET", base, &cl); code != 200 || len(cl.Clusters) != 1 || cl.Clusters[0].Name != "lab" || !cl.Clusters[0].Terminals {
 		t.Errorf("viewer clusters: %d %+v", code, cl)
 	}
 	if code := e.do(t, "other", "GET", base, &cl); code != 200 || len(cl.Clusters) != 0 {
@@ -230,7 +247,6 @@ func (e *apiEnv) dial(t *testing.T, user, id string) (*websocket.Conn, int) {
 
 func TestConsoleProxy(t *testing.T) {
 	e := newAPIEnv(t)
-	e.fake.Set(func(s *pvefake.Settings) { s.TokenConsole = true })
 
 	if code := e.do(t, "viewer", "POST", base+"/lab/guests/lxc/200/console", nil); code != 403 {
 		t.Errorf("viewer console: %d", code)
@@ -291,7 +307,8 @@ func TestConsoleProxy(t *testing.T) {
 }
 
 func TestConsoleRejectedByProxmox(t *testing.T) {
-	e := newAPIEnv(t) // the fake rejects consoles with the API token
+	e := newAPIEnv(t)
+	e.fake.Set(func(s *pvefake.Settings) { s.RejectTerminals = true })
 	var ct ConsoleTicket
 	if code := e.do(t, "console", "POST", base+"/lab/guests/lxc/200/console", &ct); code != 200 {
 		t.Fatal(code)
@@ -302,6 +319,30 @@ func TestConsoleRejectedByProxmox(t *testing.T) {
 	if l := e.entries(t, "proxmox.console.open"); len(l) != 1 || l[0].Result != audit.ResultFailure {
 		t.Errorf("audit: %+v", l)
 	}
+}
+
+func TestTerminalsWithoutConsoleUser(t *testing.T) {
+	e := newAPIEnvWith(t, false)
+	var cl ClusterList
+	if code := e.do(t, "viewer", "GET", base, &cl); code != 200 || len(cl.Clusters) != 1 || cl.Clusters[0].Terminals {
+		t.Errorf("clusters: %d %+v", code, cl)
+	}
+	if code := e.do(t, "console", "POST", base+"/lab/guests/lxc/200/console", nil); code != 409 {
+		t.Errorf("lxc terminal: %d", code)
+	}
+	if code := e.do(t, "admin", "POST", base+"/lab/nodes/pve1/shell", nil); code != 409 {
+		t.Errorf("node shell: %d", code)
+	}
+	// VNC works with the API token.
+	var ct ConsoleTicket
+	if code := e.do(t, "admin", "POST", base+"/lab/guests/qemu/101/console", &ct); code != 200 || ct.Kind != ConsoleVNC {
+		t.Fatalf("vnc: %d %+v", code, ct)
+	}
+	ws, code := e.dial(t, "admin", ct.ID)
+	if code != 101 {
+		t.Fatalf("vnc dial: %d", code)
+	}
+	_ = ws.Close()
 }
 
 func TestConsoleTicketExpiry(t *testing.T) {
@@ -330,4 +371,20 @@ func waitFor(t *testing.T, cond func() bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatal("condition not met")
+}
+
+func TestLiveStatus(t *testing.T) {
+	for _, c := range []struct {
+		st   map[string]any
+		want string
+	}{
+		{map[string]any{"status": "running", "qmpstatus": "paused"}, "paused"},
+		{map[string]any{"status": "running"}, "running"},
+		{map[string]any{"status": "stopped", "qmpstatus": ""}, "stopped"},
+		{map[string]any{}, ""},
+	} {
+		if got := liveStatus(c.st); got != c.want {
+			t.Errorf("liveStatus(%v) = %q, want %q", c.st, got, c.want)
+		}
+	}
 }

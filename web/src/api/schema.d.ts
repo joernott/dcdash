@@ -459,7 +459,8 @@ export interface paths {
     /**
      * Prepare the console of a guest
      * @description Requires `console` on `<type>/<vmid>`. Virtual machines get a VNC console (noVNC),
-     *     containers a terminal (xterm.js). Open the websocket `/api/v1/proxmox/console/{id}` within
+     *     containers a terminal (xterm.js). Terminals need a console user in the cluster
+     *     configuration (409 otherwise). Open the websocket `/api/v1/proxmox/console/{id}` within
      *     15 seconds.
      */
     post: operations['openProxmoxGuestConsole']
@@ -701,8 +702,11 @@ export interface components {
     ProxmoxClusterList: {
       clusters: {
         name: string
-        /** @description Consoles use a dedicated Proxmox user instead of the API token. */
-        consoleUser: boolean
+        /**
+         * @description Container terminals and node shells are available. They need a console user in the
+         *     cluster configuration, because Proxmox does not accept API tokens for them.
+         */
+        terminals: boolean
       }[]
     }
     ProxmoxInventory: {
@@ -770,6 +774,7 @@ export interface components {
       maxDisk: number
     }
     ProxmoxGuestDetail: {
+      /** @description The guest, with `status` taken from status/current (qmpstatus for VMs). The inventory uses /cluster/resources, which lags about 10 seconds behind. */
       guest: components['schemas']['ProxmoxGuest']
       /** @description Proxmox status/current as returned by Proxmox. */
       status: {
@@ -1654,6 +1659,15 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      /** @description Terminals need a console user in the cluster configuration (code: terminal_unavailable). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
@@ -1682,6 +1696,15 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      /** @description Terminals need a console user in the cluster configuration (code: terminal_unavailable). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }

@@ -76,7 +76,7 @@ const inventory = {
 
 const Dummy = defineComponent({ render: () => h('div') })
 
-async function setup(): Promise<Router> {
+async function setup(terminals = true): Promise<Router> {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -88,7 +88,7 @@ async function setup(): Promise<Router> {
   })
   api.on('GET /api/v1/proxmox/clusters', () => [
     200,
-    { clusters: [{ name: 'lab', consoleUser: false }] },
+    { clusters: [{ name: 'lab', terminals }] },
   ])
   api.on('GET /api/v1/proxmox/clusters/{cluster}/resources', () => [200, inventory])
   return router
@@ -192,6 +192,19 @@ describe('ProxmoxView', () => {
     expect(tasks[0]!.state).toBe('ok')
     expect(useToastStore().toasts.map((t) => t.message)).toContain('Done: db (102): Start')
     expect(w.text()).toContain('TASK OK')
+    w.unmount()
+  })
+
+  it('hides terminals and node shells without a console user', async () => {
+    const router = await setup(false)
+    await router.push('/proxmox/lab')
+    const w = mountView(router, ['proxmox:lab:*:admin'])
+    await flushPromises()
+    const rows = w.findAll('tbody tr')
+    // VNC works with the API token, terminals need the console user.
+    expect(rows[0]!.text()).toContain('Console')
+    expect(rows[2]!.text()).not.toContain('Console')
+    expect(w.text()).not.toContain('Shell')
     w.unmount()
   })
 

@@ -11,6 +11,7 @@ import {
   type Guest,
   type PowerAction,
 } from '@/proxmox/guests'
+import { useProxmoxClustersStore } from '@/stores/proxmoxClusters'
 import { useSessionStore } from '@/stores/session'
 
 /** Buttons for the power actions and the console the user may use on a guest. */
@@ -26,6 +27,7 @@ const emit = defineEmits<{ action: [action: PowerAction] }>()
 
 const { t } = useI18n()
 const session = useSessionStore()
+const clusters = useProxmoxClustersStore()
 
 const actions = computed(() =>
   session.can(guestPermission(props.cluster, props.guest.type, props.guest.vmid, 'operate'))
@@ -35,6 +37,8 @@ const actions = computed(() =>
 const canConsole = computed(
   () =>
     props.guest.status === 'running' &&
+    // Terminals need a console user; VNC works with the API token.
+    (props.guest.type === 'qemu' || clusters.terminals(props.cluster)) &&
     session.can(guestPermission(props.cluster, props.guest.type, props.guest.vmid, 'console')),
 )
 </script>

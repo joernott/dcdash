@@ -12,6 +12,7 @@ import TaskList from '@/components/proxmox/TaskList.vue'
 import UsageBar from '@/components/proxmox/UsageBar.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatBytes, ratio, statusStyle, uptimeParts, type PowerAction } from '@/proxmox/guests'
+import { useProxmoxClustersStore } from '@/stores/proxmoxClusters'
 
 type Detail = Schemas['ProxmoxGuestDetail']
 
@@ -20,6 +21,7 @@ const REFRESH_MS = 10_000
 const i18n = useI18n()
 const { t, locale } = i18n
 const route = useRoute()
+const clusterStore = useProxmoxClustersStore()
 const dialog = useTemplateRef<InstanceType<typeof PowerActionDialog>>('dialog')
 
 const detail = ref<Detail | null>(null)
@@ -73,6 +75,8 @@ watch([cluster, type, vmid], () => {
 })
 onMounted(() => {
   void load()
+  // Whether the console button is shown for containers; errors show in load().
+  clusterStore.load(true).catch(() => {})
   timer = setInterval(() => {
     if (!document.hidden) void load()
   }, REFRESH_MS)

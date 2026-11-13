@@ -280,6 +280,7 @@
     "no_enrollment": "Die Einrichtung wurde nicht gestartet oder ist abgelaufen. Bitte beginnen Sie erneut.",
     "upstream_unavailable": "Das Backend ist nicht erreichbar. Bitte versuchen Sie es später erneut.",
     "upstream_forbidden": "Das Backend hat die Anfrage abgelehnt. Möglicherweise fehlen dcdash die Zugriffsrechte im Backend.",
+    "terminal_unavailable": "Für diesen Cluster sind keine Terminals verfügbar, weil in der dcdash-Konfiguration kein Konsolen-Benutzer eingerichtet ist.",
     "upstream_error": "Das Backend hat einen Fehler gemeldet."
   }
 }

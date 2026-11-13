@@ -78,8 +78,10 @@ func (s *Service) Register(mux *http.ServeMux) {
 // ClusterInfo describes a cluster in GET /api/v1/proxmox/clusters.
 type ClusterInfo struct {
 	Name string `json:"name"`
-	// ConsoleUser is true if consoles use a dedicated Proxmox user.
-	ConsoleUser bool `json:"consoleUser"`
+	// Terminals is true if container terminals and node shells are available.
+	// They need a console user, because Proxmox does not accept API tokens for
+	// them (see ADR 0001).
+	Terminals bool `json:"terminals"`
 }
 
 // ClusterList is the response of GET /api/v1/proxmox/clusters.
@@ -96,7 +98,7 @@ func (s *Service) handleClusters(w http.ResponseWriter, r *http.Request) {
 	out := ClusterList{Clusters: []ClusterInfo{}}
 	for _, n := range s.order {
 		if subj.Permissions.AllowsAny(Module, n, rbac.ActionRead) {
-			out.Clusters = append(out.Clusters, ClusterInfo{Name: n, ConsoleUser: s.clusters[n].HasConsoleUser()})
+			out.Clusters = append(out.Clusters, ClusterInfo{Name: n, Terminals: s.clusters[n].Terminals()})
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
@@ -129,6 +131,8 @@ func upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, ErrNotFound) || IsStatus(err, http.StatusNotFound):
 		httpx.WriteError(w, http.StatusNotFound, "not_found", "not found in Proxmox")
+	case errors.Is(err, ErrTerminalUnavailable):
+		httpx.WriteError(w, http.StatusConflict, "terminal_unavailable", "terminals need a console user in the cluster configuration")
 	case errors.Is(err, context.Canceled):
 		// The client went away; nothing to answer.
 	case errors.Is(err, ErrUnavailable):
@@ -307,7 +311,11 @@ func (s *Service) handleGuest(w http.ResponseWriter, r *http.Request) {
 		upstreamError(w, r, err)
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, GuestDetail{Guest: toGuest(res), Status: st, Config: cfg})
+	g := toGuest(res)
+	if live := liveStatus(st); live != "" {
+		g.Status = live
+	}
+	httpx.WriteJSON(w, http.StatusOK, GuestDetail{Guest: g, Status: st, Config: cfg})
 }
 
 // TaskRef is the response of a power action.
@@ -403,4 +411,16 @@ func (s *Service) handleTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// liveStatus returns the current status from .../status/current. The status in
+// /cluster/resources lags about 10 seconds behind (pvestatd), so the guest
+// page uses this one: qmpstatus for VMs ("paused" when suspended, while
+// status stays "running"), status for containers.
+func liveStatus(st map[string]any) string {
+	if s, ok := st["qmpstatus"].(string); ok && s != "" {
+		return s
+	}
+	s, _ := st["status"].(string)
+	return s
 }

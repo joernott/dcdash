@@ -3,7 +3,7 @@
 // Package pvefake is a small in-memory fake of the Proxmox VE API for tests:
 // cluster resources, guest status and config, power actions with tasks, and
 // consoles (vncproxy/termproxy with vncwebsocket). Terminals echo their input;
-// VNC sends the RFB version and then echoes.
+// VNC speaks a minimal RFB server with a gray screen (see rfb.go).
 package pvefake
 
 import (
@@ -35,8 +35,8 @@ type Settings struct {
 	Token string
 	// User and Password are accepted by /access/ticket (empty: no login).
 	User, Password string
-	// TokenConsole controls whether consoles accept the API token.
-	TokenConsole bool
+	// RejectTerminals makes every termproxy login fail.
+	RejectTerminals bool
 	// Fail makes every API request fail with this status (e.g. 503).
 	Fail int
 	// Denied lists guests ("qemu/101") the token may not operate or open.
@@ -64,7 +64,7 @@ type task struct {
 
 type console struct {
 	port, ticket, user string
-	term               bool
+	term, token        bool
 }
 
 // New creates a fake with the given nodes and guests.
@@ -165,9 +165,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case p == "/cluster/resources":
 		s.resources(w)
 	case len(parts) == 3 && parts[0] == "nodes" && parts[2] == "termproxy":
-		s.openConsole(w, set, kind, user, true)
+		s.openConsole(w, kind, user, true)
 	case len(parts) == 3 && parts[0] == "nodes" && parts[2] == "vncwebsocket":
-		s.websocket(w, r, set, kind)
+		s.websocket(w, r, set)
 	case len(parts) >= 4 && parts[0] == "nodes" && parts[2] == "tasks":
 		s.task(w, parts)
 	case len(parts) >= 5 && parts[0] == "nodes" && (parts[2] == "qemu" || parts[2] == "lxc"):
@@ -243,9 +243,9 @@ func (s *Server) guestRequest(w http.ResponseWriter, r *http.Request, set Settin
 			fail(w, http.StatusForbidden, "Permission check failed (/vms/"+parts[3]+", VM.Console)")
 			return
 		}
-		s.openConsole(w, set, kind, user, rest == "termproxy")
+		s.openConsole(w, kind, user, rest == "termproxy")
 	case rest == "vncwebsocket":
-		s.websocket(w, r, set, kind)
+		s.websocket(w, r, set)
 	default:
 		fail(w, http.StatusNotImplemented, "Method '"+r.Method+" "+rest+"' not implemented")
 	}
@@ -312,22 +312,20 @@ func (s *Server) task(w http.ResponseWriter, parts []string) {
 	}
 }
 
-func (s *Server) openConsole(w http.ResponseWriter, set Settings, kind authKind, user string, term bool) {
-	if kind == authToken && !set.TokenConsole && term {
-		// Proxmox issues the ticket, but the login on the websocket fails.
-		user += "-token"
-	}
+func (s *Server) openConsole(w http.ResponseWriter, kind authKind, user string, term bool) {
 	s.mu.Lock()
 	s.seq++
-	c := console{port: strconv.Itoa(5900 + s.seq), ticket: "PVEVNC:fake" + strconv.Itoa(s.seq), user: user, term: term}
+	// Like Proxmox, the fake issues terminal tickets to API tokens, but the
+	// termproxy login with them fails (see ADR 0001).
+	c := console{port: strconv.Itoa(5900 + s.seq), ticket: "PVEVNC:fake" + strconv.Itoa(s.seq), user: user, term: term, token: kind == authToken}
 	s.consoles[c.port] = c
 	s.mu.Unlock()
-	writeData(w, map[string]any{"port": c.port, "ticket": c.ticket, "user": strings.TrimSuffix(user, "-token"), "upid": "UPID:fake"})
+	writeData(w, map[string]any{"port": c.port, "ticket": c.ticket, "user": user, "upid": "UPID:fake"})
 }
 
 var upgrader = websocket.Upgrader{Subprotocols: []string{"binary"}, CheckOrigin: func(*http.Request) bool { return true }}
 
-func (s *Server) websocket(w http.ResponseWriter, r *http.Request, set Settings, kind authKind) {
+func (s *Server) websocket(w http.ResponseWriter, r *http.Request, set Settings) {
 	q := r.URL.Query()
 	s.mu.Lock()
 	c, ok := s.consoles[q.Get("port")]
@@ -335,10 +333,6 @@ func (s *Server) websocket(w http.ResponseWriter, r *http.Request, set Settings,
 	s.mu.Unlock()
 	if !ok || q.Get("vncticket") != c.ticket {
 		fail(w, http.StatusForbidden, "invalid ticket")
-		return
-	}
-	if kind == authToken && !set.TokenConsole && !c.term {
-		fail(w, http.StatusForbidden, "token not accepted")
 		return
 	}
 	if !strings.Contains(r.Header.Get("Sec-WebSocket-Protocol"), "binary") {
@@ -355,24 +349,27 @@ func (s *Server) websocket(w http.ResponseWriter, r *http.Request, set Settings,
 		if err != nil {
 			return
 		}
+		if c.token || set.RejectTerminals {
+			return // Proxmox closes the connection without an answer
+		}
 		if string(msg) != c.user+":"+c.ticket+"\n" {
 			_ = ws.WriteMessage(websocket.BinaryMessage, []byte("NO"))
 			return
 		}
 		_ = ws.WriteMessage(websocket.BinaryMessage, []byte("OK"))
 	} else {
-		_ = ws.WriteMessage(websocket.BinaryMessage, []byte("RFB 003.008\n"))
+		if ws.WriteMessage(websocket.BinaryMessage, []byte("RFB 003.008\n")) == nil {
+			serveRFB(ws)
+		}
+		return
 	}
 	for {
 		t, msg, err := ws.ReadMessage()
 		if err != nil {
 			return
 		}
-		if c.term {
-			msg = termOutput(msg)
-			if msg == nil {
-				continue
-			}
+		if msg = termOutput(msg); msg == nil {
+			continue
 		}
 		if err := ws.WriteMessage(t, msg); err != nil {
 			return

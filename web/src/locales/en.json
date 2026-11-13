@@ -280,6 +280,7 @@
     "no_enrollment": "The setup was not started or has expired. Please start again.",
     "upstream_unavailable": "The backend cannot be reached. Please try again later.",
     "upstream_forbidden": "The backend refused the request. The access rights of dcdash on the backend may be missing.",
+    "terminal_unavailable": "Terminals are not available for this cluster, because no console user is configured in dcdash.",
     "upstream_error": "The backend reported an error."
   }
 }

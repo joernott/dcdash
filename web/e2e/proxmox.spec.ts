@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Proxmox module against the fake Proxmox API (test/pvefake, see server.sh):
-// inventory, a power action with its task, and a container terminal through
+// inventory, a power action with its task, a container terminal and a VNC console through
 // the console websocket proxy. bob holds proxmox:*:*:console (no TOTP).
 import { expect, test } from '@playwright/test'
 
-test('inventory, power action and container terminal', async ({ page }) => {
+test('inventory, power action, container terminal and VNC console', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('User name').fill('bob')
   await page.getByLabel(/^Password$/).fill('bob-test-only')
@@ -39,4 +39,15 @@ test('inventory, power action and container terminal', async ({ page }) => {
   await page.keyboard.type('hello dcdash')
   await expect(page.locator('.xterm-rows')).toContainText('hello dcdash')
   await page.screenshot({ path: '../.e2e/screenshots/proxmox-terminal.png' })
+
+  // VNC console: the fake speaks a minimal RFB server with a gray screen. The
+  // canvas must have a size (regression: it was 0x0 under a min-height).
+  await page.goto('/proxmox/lab/qemu/101/console')
+  await expect(page.getByText('Connected')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Send Ctrl+Alt+Del' })).toBeVisible()
+  const canvas = page.getByTestId('console-screen').locator('canvas')
+  await expect
+    .poll(async () => (await canvas.boundingBox())?.height ?? 0)
+    .toBeGreaterThan(100)
+  await page.screenshot({ path: '../.e2e/screenshots/proxmox-vnc.png' })
 })

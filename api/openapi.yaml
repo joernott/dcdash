@@ -600,7 +600,8 @@ paths:
       summary: Prepare the console of a guest
       description: |
         Requires `console` on `<type>/<vmid>`. Virtual machines get a VNC console (noVNC),
-        containers a terminal (xterm.js). Open the websocket `/api/v1/proxmox/console/{id}` within
+        containers a terminal (xterm.js). Terminals need a console user in the cluster
+        configuration (409 otherwise). Open the websocket `/api/v1/proxmox/console/{id}` within
         15 seconds.
       security:
         - { session: [], csrf: [] }
@@ -617,6 +618,11 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: "Terminals need a console user in the cluster configuration (code: terminal_unavailable)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
@@ -642,6 +648,11 @@ paths:
               schema: { $ref: "#/components/schemas/ProxmoxConsoleTicket" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: "Terminals need a console user in the cluster configuration (code: terminal_unavailable)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
@@ -957,10 +968,14 @@ components:
           type: array
           items:
             type: object
-            required: [name, consoleUser]
+            required: [name, terminals]
             properties:
               name: { type: string }
-              consoleUser: { type: boolean, description: Consoles use a dedicated Proxmox user instead of the API token. }
+              terminals:
+                type: boolean
+                description: |
+                  Container terminals and node shells are available. They need a console user in the
+                  cluster configuration, because Proxmox does not accept API tokens for them.
 
     ProxmoxInventory:
       type: object
@@ -1028,7 +1043,11 @@ components:
       type: object
       required: [guest, status, config]
       properties:
-        guest: { $ref: "#/components/schemas/ProxmoxGuest" }
+        guest:
+          allOf: [{ $ref: "#/components/schemas/ProxmoxGuest" }]
+          description: >-
+            The guest, with `status` taken from status/current (qmpstatus for VMs). The inventory
+            uses /cluster/resources, which lags about 10 seconds behind.
         status:
           type: object
           additionalProperties: true

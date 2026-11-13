@@ -236,11 +236,13 @@ onBeforeUnmount(() => cleanup?.())
 
     <div
       ref="frame"
-      class="min-h-[60vh] flex-1 overflow-hidden rounded-lg border border-border bg-surface-sunken p-2"
+      class="relative min-h-[60vh] flex-1 overflow-hidden rounded-lg border border-border bg-surface-sunken"
     >
+      <!-- Absolute, so the screen has a definite size: noVNC sizes its canvas
+           container with height: 100%, which is 0 under a min-height alone. -->
       <div
         ref="screen"
-        class="h-full min-h-[58vh] w-full"
+        class="absolute inset-2"
         data-testid="console-screen"
         :aria-label="title"
         role="application"
