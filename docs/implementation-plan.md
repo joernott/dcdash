@@ -35,7 +35,7 @@ These apply to every task:
 | 1 | `sprint/01-foundation` | Repo skeleton, config, HTTP server, frontend scaffold, CI | v0.1.0 | done |
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
-| 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | open |
+| 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | in progress |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | open |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
@@ -140,7 +140,7 @@ These apply to every task:
   it encrypted
 - [ ] **4.4** Recovery codes: generate them, store them hashed, single use
 - [ ] **4.5** TOTP replay protection and lockout after repeated failures
-- [ ] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
+- [x] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
   group mappings, `require_totp` and permission strings
 - [x] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,
   action hierarchy (`read` < `operate` < `console` < `write` < `admin`), unit tests

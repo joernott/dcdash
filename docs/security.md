@@ -1,7 +1,7 @@
 # Security
 
-This document covers how dcdash protects its data and how users authenticate. Roles,
-permissions and TOTP are added in Sprint 4.
+This document covers how dcdash protects its data, how users authenticate and what they
+are allowed to do.
 
 ## Data at rest
 
@@ -157,3 +157,68 @@ auth:
 - The account **always** has to complete the TOTP step. Its sessions can't be used before
   that. The TOTP step arrives in Sprint 4; until then, the account can't complete a login.
 - Every use is logged as a warning. The account holds the `root` role (Sprint 4).
+
+## Roles and permissions
+
+Roles map directory groups to permissions:
+
+```yaml
+auth:
+  root_group: dashroot          # default
+roles:
+  - name: dns-operator
+    groups: ["dcdash-dns"]      # CN, or a full DN
+    require_totp: true          # default
+    permissions:
+      - "dns:cloudflare-prod:*:write"
+      - "dns:bind-internal:*:read"
+```
+
+A user holds every role whose groups they're a member of, including nested groups in AD
+mode. Group names without `=` are compared with the group's CN. Values with `=` are compared
+as DNs. Both comparisons ignore case.
+
+### The root role
+
+Members of `auth.root_group` hold the built-in `root` role. It has every permission
+(`*:*:*:admin`) and always requires TOTP. A configured role can't be named `root`, so the
+role can't be weakened or removed. The break-glass account always holds `root`.
+
+### Permission format
+
+A permission has four segments, `module:instance:resource:action`:
+
+| Segment | Meaning | Examples |
+|---|---|---|
+| module | The service family | `proxmox`, `dns`, `dhcp`, `system` |
+| instance | A configured backend, by name | `cluster-a`, `cloudflare-prod`; always `core` for `system` |
+| resource | An object of the backend | a VM, a zone, a subnet; `audit` or `sessions` for `system` |
+| action | The level of access | see below |
+
+The resource may contain colons, for example an IPv6 subnet:
+`dhcp:kea:2001:db8::/64:read`.
+
+`*` matches any text, as a whole segment or within one: `dns:*:*.example.com:write` covers
+`www.example.com` but not `example.com` itself. Matching is case-sensitive.
+
+Actions are ordered, and a higher action includes all lower ones:
+
+| Action | Allows |
+|---|---|
+| `read` | Viewing |
+| `operate` | Operating without changing configuration, for example starting or stopping a VM |
+| `console` | Interactive console access |
+| `write` | Creating, changing and deleting |
+| `admin` | Everything; `*` as the action means `admin` |
+
+Permissions only grant; there are no deny rules.
+
+### System permissions
+
+| Permission | Allows |
+|---|---|
+| `system:core:audit:read` | Reading the audit log |
+| `system:core:sessions:read` | Listing all sessions |
+| `system:core:sessions:write` | Terminating other users' sessions |
+
+Resetting another user's TOTP is reserved for `root`.

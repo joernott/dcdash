@@ -21,6 +21,8 @@ type Auth struct {
 	Session Session `yaml:"session"`
 	Lockout Lockout `yaml:"lockout"`
 	Local   Local   `yaml:"local"`
+	// RootGroup grants the built-in root role (CN or DN, default "dashroot").
+	RootGroup string `yaml:"root_group"`
 }
 
 // Local is the break-glass account: a local user for when the directory is

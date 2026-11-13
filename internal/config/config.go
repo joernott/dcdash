@@ -33,6 +33,7 @@ const (
 type Config struct {
 	Server   Server   `yaml:"server"`
 	Auth     Auth     `yaml:"auth"`
+	Roles    []Role   `yaml:"roles"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -205,6 +206,7 @@ func (c *Config) Validate() error {
 	c.Auth.Lockout.User.validate("auth.lockout.user", add)
 	c.Auth.Lockout.IP.validate("auth.lockout.ip", add)
 	c.Auth.Local.validate(add)
+	validateRoles(c.Roles, add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {

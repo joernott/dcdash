@@ -101,6 +101,26 @@ auth:
     enabled: false
     username: breakglass
     password_hash: "file:/etc/dcdash/breakglass.hash"
+  # Directory group (CN or DN) whose members get the built-in root role: all
+  # permissions, always with TOTP.
+  root_group: dashroot
+
+# Roles map directory groups to permissions (see docs/security.md).
+# Permission format: module:instance:resource:action
+#   module:   proxmox, dns, dhcp or system
+#   action:   read < operate < console < write < admin (a higher action includes the lower ones)
+#   "*" is a wildcard, also within a segment (e.g. "*.example.com").
+roles: []
+#  - name: dns-operator
+#    groups: ["dcdash-dns"]
+#    require_totp: true          # default; a user needs TOTP if any of their roles requires it
+#    permissions:
+#      - "dns:cloudflare-prod:*:write"
+#      - "dns:bind-internal:*:read"
+#  - name: auditor
+#    groups: ["CN=dcdash-audit,OU=Groups,DC=example,DC=com"]
+#    permissions:
+#      - "system:core:audit:read"
 
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
