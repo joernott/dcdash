@@ -21,6 +21,13 @@ openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 1 \
   -keyout "$DIR/key.pem" -out "$DIR/cert.pem" 2>/dev/null
 "$BIN" gen-key > "$DIR/encryption.key"
 
+# Fake Proxmox API (internal/proxmox/pvefake) with the same certificate, pinned
+# by its fingerprint. Playwright stops the whole process group at the end.
+PVE_LISTEN="${DCDASH_E2E_PVE_LISTEN:-127.0.0.1:18006}"
+go build -o "$DIR/pvefake" ./test/pvefake
+"$DIR/pvefake" -listen "$PVE_LISTEN" -cert "$DIR/cert.pem" -key "$DIR/key.pem" 2>"$DIR/pvefake.log" &
+PVE_FP=$(openssl x509 -in "$DIR/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2)
+
 cat > "$DIR/config.yaml" <<EOF
 server:
   listen: "$LISTEN"
@@ -35,11 +42,18 @@ auth:
     base_dn: "ou=people,dc=dcdash,dc=test"
     group_base_dn: "ou=groups,dc=dcdash,dc=test"
 roles:
-  # bob: no TOTP required; alice is in dashroot (root, TOTP required).
+  # bob: no TOTP required, power actions and consoles (no node shell);
+  # alice is in dashroot (root, TOTP required).
   - name: vm-operator
     groups: [dcdash-vm]
     require_totp: false
-    permissions: ["proxmox:*:*:operate"]
+    permissions: ["proxmox:*:*:console"]
+proxmox:
+  clusters:
+    - name: lab
+      endpoints: [{url: "https://$PVE_LISTEN", fingerprint: "$PVE_FP"}]
+      token_id: "dcdash@pve!e2e"
+      token_secret: "e2e-test-only"
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}

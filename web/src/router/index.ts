@@ -17,6 +17,8 @@ declare module 'vue-router' {
     public?: boolean
     /** Permission required to open the page (hidden in the navigation otherwise). */
     permission?: string
+    /** Module the user needs at least read on (any instance). */
+    module?: string
     /** Only for the root role. */
     root?: boolean
     /** i18n key of the page title. */
@@ -52,6 +54,30 @@ export const routes = [
         name: 'account',
         component: () => import('@/views/AccountView.vue'),
         meta: { title: 'account.title' },
+      },
+      {
+        path: 'proxmox/:cluster?',
+        name: 'proxmox',
+        component: () => import('@/views/proxmox/ProxmoxView.vue'),
+        meta: { title: 'nav.proxmox', module: 'proxmox' },
+      },
+      {
+        path: 'proxmox/:cluster/:type(qemu|lxc)/:vmid(\\d+)',
+        name: 'proxmox-guest',
+        component: () => import('@/views/proxmox/GuestView.vue'),
+        meta: { title: 'nav.proxmox', module: 'proxmox' },
+      },
+      {
+        path: 'proxmox/:cluster/:type(qemu|lxc)/:vmid(\\d+)/console',
+        name: 'proxmox-console',
+        component: () => import('@/views/proxmox/ConsoleView.vue'),
+        meta: { title: 'proxmox.console', module: 'proxmox' },
+      },
+      {
+        path: 'proxmox/:cluster/nodes/:node/shell',
+        name: 'proxmox-shell',
+        component: () => import('@/views/proxmox/ConsoleView.vue'),
+        meta: { title: 'proxmox.shell', module: 'proxmox' },
       },
       {
         path: 'admin/audit',
@@ -114,7 +140,8 @@ export async function guard(to: RouteLocationNormalized): Promise<true | RouteLo
   }
   if (
     (to.meta.permission && !session.can(to.meta.permission)) ||
-    (to.meta.root && !session.isRoot)
+    (to.meta.root && !session.isRoot) ||
+    (to.meta.module && !session.canAny(to.meta.module))
   ) {
     return { name: 'forbidden' }
   }

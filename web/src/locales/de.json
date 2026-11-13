@@ -18,6 +18,7 @@
     "toggle": "Navigation ein- oder ausblenden",
     "skip": "Zum Inhalt springen",
     "home": "Übersicht",
+    "proxmox": "Proxmox",
     "audit": "Audit-Log",
     "sessions": "Sitzungen",
     "logout": "Abmelden",
@@ -169,6 +170,96 @@
       "browser": "Browsersprache"
     }
   },
+  "proxmox": {
+    "cluster": "Cluster",
+    "noClusters": "Ihnen steht kein Proxmox-Cluster zur Verfügung.",
+    "nodes": "Knoten",
+    "noNodes": "Keine Knoten sichtbar.",
+    "guests": "Virtuelle Maschinen und Container",
+    "noGuests": "Keine virtuellen Maschinen oder Container passen zum Filter.",
+    "search": "Suche (Name, ID, Tag)",
+    "shown": "{n} von {total} angezeigt",
+    "all": "Alle",
+    "vmid": "ID",
+    "name": "Name",
+    "type": "Typ",
+    "node": "Knoten",
+    "status": "Status",
+    "usage": "Auslastung",
+    "actionsColumn": "Aktionen",
+    "actionsFor": "Aktionen für {name}",
+    "template": "Vorlage",
+    "tags": "Tags",
+    "pool": "Pool",
+    "ha": "Hochverfügbarkeit",
+    "lock": "Sperre",
+    "cpu": "CPU",
+    "cores": "CPUs: {n}",
+    "memory": "Arbeitsspeicher",
+    "disk": "Festplatte",
+    "uptime": "Laufzeit",
+    "uptimeValue": "{days} T. {hours} Std. {minutes} Min.",
+    "configuration": "Konfiguration",
+    "breadcrumb": "Position",
+    "types": {
+      "qemu": "Virtuelle Maschine",
+      "lxc": "Container"
+    },
+    "states": {
+      "running": "Läuft",
+      "stopped": "Gestoppt",
+      "paused": "Pausiert",
+      "suspended": "Angehalten",
+      "online": "Online",
+      "offline": "Offline",
+      "unknown": "Unbekannt",
+      "available": "Verfügbar"
+    },
+    "actions": {
+      "start": "Starten",
+      "shutdown": "Herunterfahren",
+      "stop": "Stoppen",
+      "reboot": "Neu starten",
+      "suspend": "Anhalten",
+      "resume": "Fortsetzen"
+    },
+    "confirm": {
+      "start": "{name} starten?",
+      "shutdown": "{name} herunterfahren? Das Gastbetriebssystem wird gebeten, sich zu beenden.",
+      "stop": "{name} sofort stoppen? Das entspricht dem Ziehen des Netzsteckers: Ungespeicherte Daten gehen verloren.",
+      "reboot": "{name} neu starten? Laufende Anwendungen werden unterbrochen.",
+      "suspend": "{name} anhalten? Der Gast pausiert, bis er fortgesetzt wird.",
+      "resume": "{name} fortsetzen?"
+    },
+    "taskLabel": "{name}: {action}",
+    "taskStarted": "Gestartet: {task}",
+    "taskOk": "Erledigt: {task}",
+    "taskFailed": "Fehlgeschlagen: {task} ({message})",
+    "taskUnknown": "Das Ergebnis von {task} ist unbekannt. Bitte prüfen Sie die Aufgabe in Proxmox.",
+    "tasks": "Aufgaben",
+    "clearTasks": "Erledigte Aufgaben entfernen",
+    "taskLog": "Protokoll",
+    "taskStates": {
+      "running": "Läuft",
+      "ok": "Erledigt",
+      "failed": "Fehlgeschlagen",
+      "unknown": "Unbekannt"
+    },
+    "console": "Konsole",
+    "consoleOf": "Konsole von {name}",
+    "shell": "Shell",
+    "shellOf": "Shell auf {node}",
+    "consoleStates": {
+      "connecting": "Verbinde",
+      "connected": "Verbunden",
+      "closed": "Getrennt",
+      "failed": "Fehlgeschlagen"
+    },
+    "consoleAuthFailed": "Die Anmeldung an der Konsole wurde abgelehnt.",
+    "ctrlAltDel": "Strg+Alt+Entf senden",
+    "fullscreen": "Vollbild",
+    "reconnect": "Erneut verbinden"
+  },
   "errors": {
     "unknown": "Etwas ist schiefgegangen: {message}",
     "network_error": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
@@ -186,6 +277,9 @@
     "invalid_code": "Der Code ist falsch, abgelaufen oder wurde bereits verwendet.",
     "wrong_stage": "Dieser Schritt ist gerade nicht möglich. Bitte melden Sie sich erneut an.",
     "already_enrolled": "Eine Authenticator-App ist bereits eingerichtet.",
-    "no_enrollment": "Die Einrichtung wurde nicht gestartet oder ist abgelaufen. Bitte beginnen Sie erneut."
+    "no_enrollment": "Die Einrichtung wurde nicht gestartet oder ist abgelaufen. Bitte beginnen Sie erneut.",
+    "upstream_unavailable": "Das Backend ist nicht erreichbar. Bitte versuchen Sie es später erneut.",
+    "upstream_forbidden": "Das Backend hat die Anfrage abgelehnt. Möglicherweise fehlen dcdash die Zugriffsrechte im Backend.",
+    "upstream_error": "Das Backend hat einen Fehler gemeldet."
   }
 }

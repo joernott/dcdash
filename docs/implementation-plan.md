@@ -209,7 +209,7 @@ These apply to every task:
 - [ ] **6.7** Console backend: websocket proxy for `vncproxy` (VMs) and `termproxy`
   (containers, node shell), short-lived one-time console tickets, `console` permission,
   audit of console session start and end
-- [ ] **6.8** Frontend inventory: cluster overview, node list, VM and container list with
+- [x] **6.8** Frontend inventory: cluster overview, node list, VM and container list with
   filter and search, detail view, action buttons with confirmation
 - [ ] **6.9** Frontend console: noVNC for VMs, xterm.js for containers and node shells,
   full-screen mode and theming for dark mode
