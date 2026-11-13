@@ -34,6 +34,12 @@ var (
 	ErrExists = errors.New("dns: already exists")
 	// ErrUnsupported: the provider can't do this (e.g. create zones).
 	ErrUnsupported = errors.New("dns: not supported by this provider")
+	// ErrUnavailable: the backend can't be reached.
+	ErrUnavailable = errors.New("dns: backend not reachable")
+	// ErrForbidden: the backend refused the request (credentials, policy).
+	ErrForbidden = errors.New("dns: refused by the backend")
+	// ErrRejected: the backend accepted the request but didn't apply it.
+	ErrRejected = errors.New("dns: change not applied by the backend")
 )
 
 // ValidationError describes an invalid record or zone.

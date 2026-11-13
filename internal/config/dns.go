@@ -139,7 +139,7 @@ type SOA struct {
 
 // ZoneCreation reports whether the provider can create and delete zones.
 func (b Bind) ZoneCreation() bool {
-	return b.RNDC.Enabled() && b.SFTP.Enabled() && b.NewZones.FileDir != ""
+	return b.RNDC.Enabled() && b.SFTP.Enabled() && b.NewZones.FileDir != "" && b.CatalogZone != ""
 }
 
 // ZoneOptions returns the options for rndc addzone with the default applied.
@@ -274,6 +274,9 @@ func (b Bind) validate(pre string, add func(string, ...any)) {
 	}
 	if !b.RNDC.Enabled() || !b.SFTP.Enabled() {
 		add("%s.new_zones: needs rndc and sftp", pre)
+	}
+	if b.CatalogZone == "" {
+		add("%s.new_zones: needs catalog_zone, which lists the created zones", pre)
 	}
 	if !path.IsAbs(n.FileDir) {
 		add("%s.new_zones.file_dir %q: must be an absolute path", pre, n.FileDir)

@@ -89,7 +89,7 @@ dns:
 		`tsig_algorithm "md5"`, `invalid zone "bad zone"`, `invalid zone "*.example.org"`,
 		`rndc.binary "rndc"`, "rndc.port 70000", "exactly one of host_key and known_hosts_file",
 		`sftp.zone_dir "zones"`, `new_zones.file_dir "dyn"`, "soa: mname and rname",
-		"nameservers: at least one", "options: must be a single line",
+		"nameservers: at least one", "options: must be a single line", "needs catalog_zone",
 		`dns.providers[2].name "b": duplicate`, `type "powerdns"`,
 	} {
 		if !strings.Contains(err.Error(), want) {
