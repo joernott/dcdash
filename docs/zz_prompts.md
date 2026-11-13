@@ -76,3 +76,15 @@ yes, please
 ## 2026-11-13 — Sprint 4 (TOTP, roles, audit)
 
 I have created the dashroot group in the AD and added a user dashtest with password "[REDACTED]" to that group. This should enable you to run the tests. After that, squash merge sprint 4 into main and start with sprint 5
+
+---
+
+## 2026-11-13 — Sprint 5 (Frontend shell)
+
+please continue
+
+---
+
+## 2026-11-13 — Sprint 5 (Frontend shell)
+
+please continue

@@ -58,6 +58,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * State of dcdash's components and backends
+     * @description For the dashboard; requires a logged-in user. Unlike /readyz it includes components
+     *     whose failure must not take dcdash out of a load balancer, such as the directory.
+     *     Checks run concurrently with a timeout of 5 seconds each.
+     */
+    get: operations['getStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/auth/login': {
     parameters: {
       query?: never
@@ -456,6 +478,27 @@ export interface components {
       }
       requestId: string
     }
+    StatusReport: {
+      components: components['schemas']['StatusComponent'][]
+      /** Format: date-time */
+      checkedAt: string
+    }
+    StatusComponent: {
+      /**
+       * @example database
+       * @example directory
+       * @example certificate
+       */
+      name: string
+      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp). */
+      kind: string
+      /** @enum {string} */
+      status: 'ok' | 'error'
+      /** @description A detail such as "valid until ..." or the error message. */
+      detail: string
+      /** Format: int64 */
+      latencyMs: number
+    }
     HealthStatus: {
       /** @enum {string} */
       status: 'ok' | 'unavailable'
@@ -525,10 +568,7 @@ export interface components {
       }
     }
   }
-  parameters: {
-    /** @description The csrfToken of the session. */
-    CSRFToken: string
-  }
+  parameters: never
   requestBodies: never
   headers: never
   pathItems: never
@@ -605,6 +645,28 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  getStatus: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The state of every component. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StatusReport']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
   login: {
     parameters: {
       query?: never
@@ -673,10 +735,7 @@ export interface operations {
   logout: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -724,10 +783,7 @@ export interface operations {
   verifyTOTP: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -780,10 +836,7 @@ export interface operations {
   startTOTPEnrollment: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -823,10 +876,7 @@ export interface operations {
   confirmTOTPEnrollment: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -870,10 +920,7 @@ export interface operations {
   regenerateRecoveryCodes: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -930,10 +977,7 @@ export interface operations {
   setPreferences: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path?: never
       cookie?: never
     }
@@ -1040,10 +1084,7 @@ export interface operations {
   terminateSession: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path: {
         id: string
       }
@@ -1075,10 +1116,7 @@ export interface operations {
   terminateUserSessions: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path: {
         username: string
       }
@@ -1105,10 +1143,7 @@ export interface operations {
   resetTOTP: {
     parameters: {
       query?: never
-      header: {
-        /** @description The csrfToken of the session. */
-        'X-CSRF-Token': components['parameters']['CSRFToken']
-      }
+      header?: never
       path: {
         username: string
       }

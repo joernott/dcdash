@@ -36,7 +36,7 @@ These apply to every task:
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | done |
-| 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
+| 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | done |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | open |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | open |
@@ -164,28 +164,31 @@ These apply to every task:
 
 ## Sprint 5 — Frontend Shell
 
-- [ ] **5.1** Design system: Tailwind theme tokens for light and dark, base components
+- [x] **5.1** Design system: Tailwind theme tokens for light and dark, base components
   (button, table, form, modal, toast), each checked in both themes
-- [ ] **5.2** Dark mode: light, dark and system modes (`prefers-color-scheme`), toggle in the
+- [x] **5.2** Dark mode: light, dark and system modes (`prefers-color-scheme`), toggle in the
   user menu, stored in the user preferences, inline bootstrap script so the page doesn't
   flash the wrong theme on load
-- [ ] **5.3** i18n: vue-i18n setup, English and German message files, browser language
+- [x] **5.3** i18n: vue-i18n setup, English and German message files, browser language
   detection, language switcher stored in the user preferences, localized date and number
   formats
-- [ ] **5.4** API client layer: error handling (localized messages), CSRF header,
+- [x] **5.4** API client layer: error handling (localized messages), CSRF header,
   session-expiry handling
-  - [ ] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
+  - [x] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
     always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
-- [ ] **5.5** Login page with the TOTP step
-- [ ] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
+- [x] **5.5** Login page with the TOTP step
+- [x] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
   returned by the API, see 4.3), confirmation, recovery code display; voluntary enrollment and
   new recovery codes from the user menu
-- [ ] **5.7** App layout: navigation that only shows modules the user may use, user menu
+- [x] **5.7** App layout: navigation that only shows modules the user may use, user menu
   (theme, language, logout)
-- [ ] **5.8** Route guards based on permissions
-- [ ] **5.9** Home dashboard: per-backend health tiles
-- [ ] **5.10** Admin views: audit log (filter, paginate), sessions, TOTP reset
-- [ ] **5.11** Frontend tests (Vitest) and an end-to-end smoke test (Playwright) for login,
+- [x] **5.8** Route guards based on permissions
+- [x] **5.9** Home dashboard: per-backend health tiles
+  - [x] **5.9.1** `GET /api/v1/status` for logged-in users: database, certificate and directory
+    (later the backends), checked concurrently; `/readyz` stays limited to what a load balancer
+    needs, so a directory outage does not take dcdash and the break-glass access offline
+- [x] **5.10** Admin views: audit log (filter, paginate), sessions, TOTP reset
+- [x] **5.11** Frontend tests (Vitest) and an end-to-end smoke test (Playwright) for login,
   run in both themes and both languages
 
 ## Sprint 6 — Proxmox
@@ -276,6 +279,9 @@ These apply to every task:
   systemd unit, container image
 - [ ] **9.7** Release workflow in CI: build artifacts and checksums when a tag is pushed
 - [ ] **9.8** `CHANGELOG.md`, update the README, tag `v0.1.0`
+- [ ] **9.9** Translatable status details: `/api/v1/status` returns a detail code with parameters
+  (for example the certificate expiry) instead of English text, so that the overview shows
+  them in German as well (found in the 5.11 screenshots)
 
 ## Sprint 10 — Proxmox Provisioning and Release v0.1.1
 

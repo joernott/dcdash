@@ -54,6 +54,11 @@ test-go: ## Run Go tests with the race detector
 test-integration: ## Run integration tests against containers (needs Docker; KEEP=1 keeps them)
 	scripts/integration-test.sh
 
+.PHONY: test-e2e
+test-e2e: build ## Run the end-to-end tests (Playwright) against the OpenLDAP test container (needs Docker)
+	docker compose -f test/integration/compose.yaml up -d --build --wait openldap
+	cd web && npx playwright test
+
 .PHONY: test-web
 test-web: web/node_modules ## Run frontend unit tests
 	cd web && npm test
@@ -107,7 +112,7 @@ dev-backend: dev-cert $(DEV_DIR)/encryption.key ## Run the backend with configs/
 	go run ./cmd/dcdash --config configs/dev.yaml serve
 
 .PHONY: dev-web
-dev-web: web/node_modules ## Run the Vite dev server with proxy to the backend (DEV_HOST=0.0.0.0 to expose it)
+dev-web: web/node_modules dev-cert ## Run the Vite dev server with proxy to the backend (DEV_HOST=0.0.0.0 to expose it)
 	cd web && npm run dev -- --host $(DEV_HOST)
 
 .PHONY: clean

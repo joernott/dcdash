@@ -18,6 +18,7 @@ import (
 	"github.com/joernott/dcdash/internal/prefs"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/totp"
 	"github.com/joernott/dcdash/internal/vault"
@@ -30,6 +31,8 @@ type app struct {
 	// runners are background tasks that run until the context is canceled.
 	runners []func(context.Context) error
 	closers []func() error
+	// statusChecks are shown on the dashboard (GET /api/v1/status).
+	statusChecks []status.Check
 }
 
 // Close releases resources (e.g. the syslog connection).
@@ -62,9 +65,13 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	sessions := session.NewManager(st.DB(), cfg.Auth.Session.Lifetime.D(), cfg.Auth.Session.IdleTimeout.D(), log)
 	a.runners = append(a.runners, sessions.Run)
 
-	authSvc, err := newAuthService(cfg.Auth, sessions, authz, auditLog, totp.NewStore(st.DB(), kr), kr, log)
+	authSvc, directory, err := newAuthService(cfg.Auth, sessions, authz, auditLog, totp.NewStore(st.DB(), kr), kr, log)
 	if err != nil {
 		return nil, err
+	}
+	a.statusChecks = append(a.statusChecks, status.Check{Name: "database", Kind: "system", Check: st.Check})
+	if directory != nil {
+		a.statusChecks = append(a.statusChecks, status.Check{Name: "directory", Kind: "system", Check: directory.Check})
 	}
 	a.routes = append(a.routes,
 		authSvc.Register,
@@ -125,7 +132,7 @@ func newKeyring(ctx context.Context, cfg *config.Config, st *store.Store) (*vaul
 // newAuthService creates the authentication service.
 func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Authorizer, auditLog *audit.Log,
 	totpStore *totp.Store, kr *vault.Keyring, log zerolog.Logger,
-) (*auth.Service, error) {
+) (*auth.Service, *ldapauth.Client, error) {
 	opts := auth.Options{
 		TOTP:        totpStore,
 		Keyring:     kr,
@@ -141,7 +148,7 @@ func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Author
 	if a.Local.Enabled {
 		local, err := auth.NewLocalAccount(a.Local.Username, a.Local.PasswordHash.Value())
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		opts.Local = local
 		log.Warn().Str("username", a.Local.Username).Msg("break-glass account enabled (always requires TOTP)")
@@ -149,14 +156,15 @@ func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Author
 	if a.LDAP.URL != "" {
 		client, err := ldapauth.New(a.LDAP, log)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		opts.LDAP = client
 		log.Info().Str("url", a.LDAP.URL).Str("mode", a.LDAP.Mode).Msg("LDAP authentication enabled")
 	} else {
 		log.Warn().Msg("auth.ldap.url is not set: LDAP login is disabled")
 	}
-	return auth.New(opts), nil
+	client, _ := opts.LDAP.(*ldapauth.Client)
+	return auth.New(opts), client, nil
 }
 
 func lockoutPolicy(p config.LockoutPolicy) lockout.Policy {

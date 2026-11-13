@@ -2,5 +2,190 @@
   "app": {
     "title": "dcdash",
     "tagline": "Dashboard for central data center services"
+  },
+  "common": {
+    "close": "Close",
+    "loading": "Loading…",
+    "empty": "No entries",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saved": "Saved",
+    "confirm": "Confirm",
+    "retry": "Try again"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "toggle": "Show or hide the navigation",
+    "skip": "Skip to content",
+    "home": "Overview",
+    "audit": "Audit log",
+    "sessions": "Sessions",
+    "logout": "Log out",
+    "backHome": "Back to the overview"
+  },
+  "home": {
+    "welcome": "Welcome, {name}",
+    "allOk": "All components are working.",
+    "failing": "One component has a problem. | {n} components have a problem.",
+    "checkedAt": "checked at {time}",
+    "refresh": "Refresh",
+    "ok": "OK",
+    "error": "Error",
+    "noDetail": "No further information",
+    "latency": "Response time: {ms} ms",
+    "kinds": {
+      "system": "dcdash",
+      "proxmox": "Proxmox",
+      "dns": "DNS",
+      "dhcp": "DHCP"
+    },
+    "components": {
+      "database": "Database",
+      "directory": "User directory",
+      "certificate": "Certificate"
+    }
+  },
+  "login": {
+    "title": "Log in",
+    "username": "User name",
+    "password": "Password",
+    "submit": "Log in",
+    "totpTitle": "Verification code",
+    "totpHint": "Enter the 6-digit code from your authenticator app.",
+    "recoveryHint": "Enter one of your recovery codes. Each code works only once.",
+    "code": "Code",
+    "recoveryCode": "Recovery code",
+    "verify": "Verify",
+    "useRecovery": "Use a recovery code",
+    "useCode": "Use the authenticator app",
+    "restart": "Log in as another user"
+  },
+  "enroll": {
+    "title": "Set up an authenticator app",
+    "introRequired": "Your account requires a second login step. Set up an authenticator app now.",
+    "introVoluntary": "Protect your account with a second login step.",
+    "step1": "Scan the QR code with an authenticator app (for example on your phone).",
+    "step2": "Enter the 6-digit code the app shows to confirm.",
+    "qrLabel": "QR code for the authenticator app",
+    "manual": "Can't scan? Show the key for manual entry",
+    "confirm": "Confirm",
+    "done": "The authenticator app is set up.",
+    "continue": "Continue"
+  },
+  "recovery": {
+    "intro": "Store these recovery codes in a safe place. If you lose your device, each code lets you log in once. They are shown only now.",
+    "listLabel": "Recovery codes",
+    "copy": "Copy codes",
+    "copied": "Copied"
+  },
+  "account": {
+    "title": "My account",
+    "user": "User",
+    "username": "User name",
+    "displayName": "Name",
+    "source": "Account type",
+    "sources": {
+      "ldap": "Directory",
+      "local": "Break-glass account"
+    },
+    "roles": "Roles",
+    "noRoles": "No roles",
+    "groups": "Groups",
+    "sessionEnds": "Session ends",
+    "totp": "Authenticator app",
+    "totpEnrolled": "Set up",
+    "totpNotEnrolled": "Not set up",
+    "totpOptional": "Your roles don't require it, but you can set it up to protect your account. Once set up, it is required at every login.",
+    "enroll": "Set up now",
+    "recoveryRemaining": "Unused recovery codes: {n}",
+    "regenerate": "New recovery codes",
+    "regenerateHint": "Enter a current code from your authenticator app. Your old recovery codes stop working."
+  },
+  "audit": {
+    "filter": "Filter",
+    "time": "Time",
+    "actor": "User",
+    "action": "Action",
+    "actionHint": "Exact, or a prefix ending with * (for example auth.*)",
+    "target": "Target",
+    "result": "Result",
+    "details": "Details",
+    "since": "From",
+    "until": "Until",
+    "allResults": "All results",
+    "results": {
+      "success": "Success",
+      "failure": "Failure",
+      "denied": "Denied"
+    },
+    "apply": "Apply",
+    "reset": "Reset",
+    "more": "Load older entries"
+  },
+  "sessions": {
+    "filter": "User name",
+    "user": "User",
+    "stage": "State",
+    "stages": {
+      "authenticated": "Logged in",
+      "totp": "Waiting for code",
+      "totp_enroll": "Setting up the authenticator app"
+    },
+    "created": "Logged in at",
+    "lastSeen": "Last activity",
+    "client": "Client",
+    "actions": "Actions",
+    "current": "this session",
+    "terminate": "Terminate",
+    "terminateText": "Terminate this session of {user}? The user has to log in again.",
+    "terminateOwn": "This is your own session. You will be logged out.",
+    "terminated": "The session was terminated.",
+    "terminateAll": "Terminate all sessions of this user",
+    "terminateAllText": "Terminate all sessions of {user}?",
+    "terminatedCount": "No sessions were active. | One session was terminated. | {n} sessions were terminated.",
+    "resetTotp": "Reset authenticator app",
+    "resetTotpHint": "For users who lost their device and their recovery codes. Directory users set up a new app at their next login; the break-glass account must be set up on the server.",
+    "resetTotpText": "Reset the authenticator app of {user}? The user's recovery codes stop working as well.",
+    "resetDone": "The authenticator app of {user} was reset."
+  },
+  "forbidden": {
+    "title": "No access",
+    "text": "You don't have permission to open this page."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "This page does not exist."
+  },
+  "preferences": {
+    "title": "Display settings",
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "browser": "Browser language"
+    }
+  },
+  "errors": {
+    "unknown": "Something went wrong: {message}",
+    "network_error": "The server cannot be reached. Check your connection and try again.",
+    "internal_error": "An internal error occurred. Please try again later.",
+    "invalid_request": "The request was invalid.",
+    "not_found": "Not found.",
+    "not_authenticated": "You are not logged in.",
+    "session_expired": "Your session has expired. Please log in again.",
+    "forbidden": "You don't have permission to do this.",
+    "csrf_failed": "The request was rejected for security reasons. Please reload the page.",
+    "invalid_credentials": "The user name or password is wrong.",
+    "too_many_attempts": "Too many failed attempts. Please wait a few minutes and try again.",
+    "directory_unavailable": "The user directory is not available. Please try again later.",
+    "totp_not_enrolled": "No authenticator app is set up for this account. An administrator must set it up on the server.",
+    "invalid_code": "The code is wrong, expired or was already used.",
+    "wrong_stage": "This step is not possible right now. Please log in again.",
+    "already_enrolled": "An authenticator app is already set up.",
+    "no_enrollment": "The setup was not started or has expired. Please start again."
   }
 }

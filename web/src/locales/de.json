@@ -2,5 +2,190 @@
   "app": {
     "title": "dcdash",
     "tagline": "Dashboard für zentrale Rechenzentrumsdienste"
+  },
+  "common": {
+    "close": "Schließen",
+    "loading": "Wird geladen …",
+    "empty": "Keine Einträge",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saved": "Gespeichert",
+    "confirm": "Bestätigen",
+    "retry": "Erneut versuchen"
+  },
+  "nav": {
+    "label": "Hauptnavigation",
+    "toggle": "Navigation ein- oder ausblenden",
+    "skip": "Zum Inhalt springen",
+    "home": "Übersicht",
+    "audit": "Audit-Log",
+    "sessions": "Sitzungen",
+    "logout": "Abmelden",
+    "backHome": "Zurück zur Übersicht"
+  },
+  "home": {
+    "welcome": "Willkommen, {name}",
+    "allOk": "Alle Komponenten funktionieren.",
+    "failing": "Eine Komponente hat ein Problem. | {n} Komponenten haben ein Problem.",
+    "checkedAt": "geprüft um {time}",
+    "refresh": "Aktualisieren",
+    "ok": "OK",
+    "error": "Fehler",
+    "noDetail": "Keine weiteren Informationen",
+    "latency": "Antwortzeit: {ms} ms",
+    "kinds": {
+      "system": "dcdash",
+      "proxmox": "Proxmox",
+      "dns": "DNS",
+      "dhcp": "DHCP"
+    },
+    "components": {
+      "database": "Datenbank",
+      "directory": "Benutzerverzeichnis",
+      "certificate": "Zertifikat"
+    }
+  },
+  "login": {
+    "title": "Anmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "submit": "Anmelden",
+    "totpTitle": "Bestätigungscode",
+    "totpHint": "Geben Sie den sechsstelligen Code aus Ihrer Authenticator-App ein.",
+    "recoveryHint": "Geben Sie einen Ihrer Wiederherstellungscodes ein. Jeder Code funktioniert nur einmal.",
+    "code": "Code",
+    "recoveryCode": "Wiederherstellungscode",
+    "verify": "Bestätigen",
+    "useRecovery": "Wiederherstellungscode verwenden",
+    "useCode": "Authenticator-App verwenden",
+    "restart": "Als anderer Benutzer anmelden"
+  },
+  "enroll": {
+    "title": "Authenticator-App einrichten",
+    "introRequired": "Ihr Konto erfordert einen zweiten Anmeldeschritt. Richten Sie jetzt eine Authenticator-App ein.",
+    "introVoluntary": "Schützen Sie Ihr Konto mit einem zweiten Anmeldeschritt.",
+    "step1": "Scannen Sie den QR-Code mit einer Authenticator-App (zum Beispiel auf Ihrem Smartphone).",
+    "step2": "Geben Sie zur Bestätigung den sechsstelligen Code aus der App ein.",
+    "qrLabel": "QR-Code für die Authenticator-App",
+    "manual": "Scannen nicht möglich? Schlüssel zur manuellen Eingabe anzeigen",
+    "confirm": "Bestätigen",
+    "done": "Die Authenticator-App ist eingerichtet.",
+    "continue": "Weiter"
+  },
+  "recovery": {
+    "intro": "Bewahren Sie diese Wiederherstellungscodes sicher auf. Wenn Sie Ihr Gerät verlieren, ermöglicht jeder Code eine Anmeldung. Sie werden nur jetzt angezeigt.",
+    "listLabel": "Wiederherstellungscodes",
+    "copy": "Codes kopieren",
+    "copied": "Kopiert"
+  },
+  "account": {
+    "title": "Mein Konto",
+    "user": "Benutzer",
+    "username": "Benutzername",
+    "displayName": "Name",
+    "source": "Kontoart",
+    "sources": {
+      "ldap": "Verzeichnis",
+      "local": "Notfallkonto"
+    },
+    "roles": "Rollen",
+    "noRoles": "Keine Rollen",
+    "groups": "Gruppen",
+    "sessionEnds": "Sitzung endet",
+    "totp": "Authenticator-App",
+    "totpEnrolled": "Eingerichtet",
+    "totpNotEnrolled": "Nicht eingerichtet",
+    "totpOptional": "Ihre Rollen erfordern sie nicht, aber Sie können sie zum Schutz Ihres Kontos einrichten. Danach ist sie bei jeder Anmeldung erforderlich.",
+    "enroll": "Jetzt einrichten",
+    "recoveryRemaining": "Unbenutzte Wiederherstellungscodes: {n}",
+    "regenerate": "Neue Wiederherstellungscodes",
+    "regenerateHint": "Geben Sie einen aktuellen Code aus Ihrer Authenticator-App ein. Ihre alten Wiederherstellungscodes werden ungültig."
+  },
+  "audit": {
+    "filter": "Filter",
+    "time": "Zeit",
+    "actor": "Benutzer",
+    "action": "Aktion",
+    "actionHint": "Exakt, oder als Präfix mit * am Ende (zum Beispiel auth.*)",
+    "target": "Ziel",
+    "result": "Ergebnis",
+    "details": "Details",
+    "since": "Von",
+    "until": "Bis",
+    "allResults": "Alle Ergebnisse",
+    "results": {
+      "success": "Erfolgreich",
+      "failure": "Fehlgeschlagen",
+      "denied": "Abgelehnt"
+    },
+    "apply": "Anwenden",
+    "reset": "Zurücksetzen",
+    "more": "Ältere Einträge laden"
+  },
+  "sessions": {
+    "filter": "Benutzername",
+    "user": "Benutzer",
+    "stage": "Status",
+    "stages": {
+      "authenticated": "Angemeldet",
+      "totp": "Wartet auf Code",
+      "totp_enroll": "Richtet Authenticator-App ein"
+    },
+    "created": "Angemeldet um",
+    "lastSeen": "Letzte Aktivität",
+    "client": "Client",
+    "actions": "Aktionen",
+    "current": "diese Sitzung",
+    "terminate": "Beenden",
+    "terminateText": "Diese Sitzung von {user} beenden? Der Benutzer muss sich erneut anmelden.",
+    "terminateOwn": "Das ist Ihre eigene Sitzung. Sie werden abgemeldet.",
+    "terminated": "Die Sitzung wurde beendet.",
+    "terminateAll": "Alle Sitzungen dieses Benutzers beenden",
+    "terminateAllText": "Alle Sitzungen von {user} beenden?",
+    "terminatedCount": "Es waren keine Sitzungen aktiv. | Eine Sitzung wurde beendet. | {n} Sitzungen wurden beendet.",
+    "resetTotp": "Authenticator-App zurücksetzen",
+    "resetTotpHint": "Für Benutzer, die ihr Gerät und ihre Wiederherstellungscodes verloren haben. Verzeichnisbenutzer richten bei der nächsten Anmeldung eine neue App ein; das Notfallkonto muss auf dem Server eingerichtet werden.",
+    "resetTotpText": "Die Authenticator-App von {user} zurücksetzen? Auch die Wiederherstellungscodes werden ungültig.",
+    "resetDone": "Die Authenticator-App von {user} wurde zurückgesetzt."
+  },
+  "forbidden": {
+    "title": "Kein Zugriff",
+    "text": "Sie haben keine Berechtigung, diese Seite zu öffnen."
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "text": "Diese Seite existiert nicht."
+  },
+  "preferences": {
+    "title": "Anzeigeeinstellungen",
+    "theme": {
+      "label": "Darstellung",
+      "system": "Wie System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "language": {
+      "label": "Sprache",
+      "browser": "Browsersprache"
+    }
+  },
+  "errors": {
+    "unknown": "Etwas ist schiefgegangen: {message}",
+    "network_error": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "internal_error": "Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.",
+    "invalid_request": "Die Anfrage war ungültig.",
+    "not_found": "Nicht gefunden.",
+    "not_authenticated": "Sie sind nicht angemeldet.",
+    "session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "forbidden": "Dafür fehlt Ihnen die Berechtigung.",
+    "csrf_failed": "Die Anfrage wurde aus Sicherheitsgründen abgelehnt. Bitte laden Sie die Seite neu.",
+    "invalid_credentials": "Benutzername oder Passwort ist falsch.",
+    "too_many_attempts": "Zu viele Fehlversuche. Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.",
+    "directory_unavailable": "Das Benutzerverzeichnis ist nicht erreichbar. Bitte versuchen Sie es später erneut.",
+    "totp_not_enrolled": "Für dieses Konto ist keine Authenticator-App eingerichtet. Ein Administrator muss sie auf dem Server einrichten.",
+    "invalid_code": "Der Code ist falsch, abgelaufen oder wurde bereits verwendet.",
+    "wrong_stage": "Dieser Schritt ist gerade nicht möglich. Bitte melden Sie sich erneut an.",
+    "already_enrolled": "Eine Authenticator-App ist bereits eingerichtet.",
+    "no_enrollment": "Die Einrichtung wurde nicht gestartet oder ist abgelaufen. Bitte beginnen Sie erneut."
   }
 }

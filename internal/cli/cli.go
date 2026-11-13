@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"slices"
@@ -24,6 +25,7 @@ import (
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/logging"
 	"github.com/joernott/dcdash/internal/server"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/vault"
 	"github.com/joernott/dcdash/internal/version"
@@ -125,10 +127,13 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			if mgr != nil {
 				opts.TLSConfig = certs.TLSConfig(mgr)
 				opts.Checks = append(opts.Checks, server.Check{Name: "certificate", Check: mgr.Check})
+				app.statusChecks = append(app.statusChecks, status.Check{Name: "certificate", Kind: "system", Check: mgr.Check})
 				g.Go(func() error { return mgr.Run(gctx) })
 			}
 
 			opts.Routes = append(slices.Clone(opts.Routes), app.routes...)
+			statusSvc := status.New(app.statusChecks...)
+			opts.Routes = append(opts.Routes, func(mux *http.ServeMux) { statusSvc.Register(mux, auth.RequireAuthenticated) })
 			opts.Middleware = append(slices.Clone(opts.Middleware), app.middleware...)
 			for _, run := range app.runners {
 				g.Go(func() error { return run(gctx) })
