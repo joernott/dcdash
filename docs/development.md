@@ -57,6 +57,7 @@ Run `make` to list all targets. The most important ones:
 | `make build-go` | Build only the binary, with the frontend currently in `internal/ui/dist` |
 | `make test` | Go tests (with race detector) and frontend unit tests |
 | `make test-integration` | Integration tests against containers (bind9, Pebble, step-ca); needs Docker. `KEEP=1` keeps the containers running |
+| `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
 | `make fmt` | Format and auto-fix Go and frontend sources |
 | `make gen-api` | Regenerate `web/src/api/schema.d.ts` from `api/openapi.yaml` |

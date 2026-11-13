@@ -188,7 +188,7 @@ These apply to every task:
     (later the backends), checked concurrently; `/readyz` stays limited to what a load balancer
     needs, so a directory outage does not take dcdash and the break-glass access offline
 - [x] **5.10** Admin views: audit log (filter, paginate), sessions, TOTP reset
-- [ ] **5.11** Frontend tests (Vitest) and an end-to-end smoke test (Playwright) for login,
+- [x] **5.11** Frontend tests (Vitest) and an end-to-end smoke test (Playwright) for login,
   run in both themes and both languages
 
 ## Sprint 6 — Proxmox
@@ -279,6 +279,9 @@ These apply to every task:
   systemd unit, container image
 - [ ] **9.7** Release workflow in CI: build artifacts and checksums when a tag is pushed
 - [ ] **9.8** `CHANGELOG.md`, update the README, tag `v0.1.0`
+- [ ] **9.9** Translatable status details: `/api/v1/status` returns a detail code with parameters
+  (for example the certificate expiry) instead of English text, so that the overview shows
+  them in German as well (found in the 5.11 screenshots)
 
 ## Sprint 10 — Proxmox Provisioning and Release v0.1.1
 

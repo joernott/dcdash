@@ -10,6 +10,9 @@ node_modules/
 /web/test-results/
 /web/playwright-report/
 
+# End-to-end test state (web/e2e/server.sh, Playwright results and screenshots)
+/.e2e/
+
 # Local development state (certificates, data, local configs)
 /.dev/
 
