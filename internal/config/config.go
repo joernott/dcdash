@@ -36,6 +36,7 @@ type Config struct {
 	Auth     Auth     `yaml:"auth"`
 	Roles    []Role   `yaml:"roles"`
 	Audit    Audit    `yaml:"audit"`
+	Proxmox  Proxmox  `yaml:"proxmox"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -215,6 +216,7 @@ func (c *Config) Validate() error {
 	c.Auth.Local.validate(add)
 	validateRoles(c.Roles, add)
 	c.Audit.validate(add)
+	c.Proxmox.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {

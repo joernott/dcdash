@@ -289,6 +289,25 @@ Permissions only grant; there are no deny rules.
 
 Resetting another user's TOTP is reserved for `root`.
 
+### Proxmox permissions
+
+The instance is the cluster name from the configuration. Resources:
+
+| Resource | Object | Actions used |
+|---|---|---|
+| `qemu/<vmid>` | A virtual machine | `read` (list, details), `operate` (power actions), `console` (noVNC) |
+| `lxc/<vmid>` | A container | `read`, `operate`, `console` (terminal) |
+| `node/<name>` | A node | `read` (list, usage); `admin` for the node shell |
+| `storage/<node>/<storage>` | A storage | `read` |
+
+Examples: `proxmox:lab:*:read` (everything in cluster `lab`, read-only),
+`proxmox:lab:qemu/1*:operate` (power actions on VMs whose ID starts with 1),
+`proxmox:*:lxc/*:console` (container terminals in all clusters).
+
+A node shell is a root shell on the hypervisor, so it needs `admin` on the node, not just
+`console`. Proxmox checks the privileges of dcdash's API token in addition; see
+[proxmox.md](proxmox.md).
+
 ## Audit log
 
 dcdash records every login attempt and every state-changing action in the audit log, together
@@ -338,3 +357,6 @@ entry can't be stored, it is written to the application log as an error instead.
 | `user.preferences.update` | A user saved their preferences (language, theme) |
 | `auth.logout` | Logout |
 | `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |
+| `proxmox.guest.<action>` | A power action (`start`, `shutdown`, `stop`, `reboot`, `suspend`, `resume`); `target` is `<cluster>/<type>/<vmid>`, `details` contain the node and the Proxmox task ID or the error |
+| `proxmox.console.open` | Opening a console or node shell failed (`result` `failure`) |
+| `proxmox.console.start`, `proxmox.console.end` | A console session started and ended; `details` contain the duration, the bytes in both directions and why it ended |

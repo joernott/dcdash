@@ -343,6 +343,178 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/proxmox/clusters': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List Proxmox clusters
+     * @description Returns the clusters on which the user holds at least `read` on any resource.
+     */
+    get: operations['listProxmoxClusters']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/resources': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Nodes, guests and storage of a cluster
+     * @description Only entries the user may read are returned: `node/<name>`, `qemu/<vmid>`, `lxc/<vmid>`
+     *     and `storage/<node>/<storage>` (e.g. `proxmox:lab:qemu/*:read`). Usage values are 0
+     *     when the API token lacks the Proxmox privilege to see them.
+     */
+    get: operations['getProxmoxInventory']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Status and configuration of a guest
+     * @description Requires `read` on `<type>/<vmid>`. Secrets (cipassword) are removed from the configuration.
+     */
+    get: operations['getProxmoxGuest']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/actions/{action}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Run a power action
+     * @description Requires `operate` on `<type>/<vmid>`. Starts a Proxmox task and returns its ID; poll the
+     *     task for the result. Audited as `proxmox.guest.<action>`.
+     */
+    post: operations['runProxmoxAction']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/tasks/{upid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Status and log of a task
+     * @description Requires `read` on the task's guest (`qemu/<id>` or `lxc/<id>`), or on `node/<node>` for
+     *     tasks without a guest.
+     */
+    get: operations['getProxmoxTask']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/console': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Prepare the console of a guest
+     * @description Requires `console` on `<type>/<vmid>`. Virtual machines get a VNC console (noVNC),
+     *     containers a terminal (xterm.js). Terminals need a console user in the cluster
+     *     configuration (409 otherwise). Open the websocket `/api/v1/proxmox/console/{id}` within
+     *     15 seconds.
+     */
+    post: operations['openProxmoxGuestConsole']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/nodes/{node}/shell': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Prepare a shell on a node
+     * @description A node shell is root access to the hypervisor, so it requires `admin` on `node/<node>`.
+     *     Open the websocket `/api/v1/proxmox/console/{id}` within 15 seconds.
+     */
+    post: operations['openProxmoxNodeShell']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/console/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Console websocket
+     * @description Websocket (subprotocol `binary`) proxied to Proxmox. The ticket is valid once, for 15
+     *     seconds, and only for the session that prepared it. VNC consoles speak RFB (password:
+     *     `ProxmoxConsoleTicket.password`); terminals speak the Proxmox termproxy protocol
+     *     (`0:<length>:<data>` input, `1:<cols>:<rows>:` resize, `2` ping), the login is done by
+     *     dcdash. The connection ends when the dcdash session ends. Start and end are audited.
+     */
+    get: operations['connectProxmoxConsole']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -527,8 +699,146 @@ export interface components {
         message: string
       }
     }
+    ProxmoxClusterList: {
+      clusters: {
+        name: string
+        /**
+         * @description Container terminals and node shells are available. They need a console user in the
+         *     cluster configuration, because Proxmox does not accept API tokens for them.
+         */
+        terminals: boolean
+      }[]
+    }
+    ProxmoxInventory: {
+      nodes: components['schemas']['ProxmoxNode'][]
+      guests: components['schemas']['ProxmoxGuest'][]
+      storage: components['schemas']['ProxmoxStorage'][]
+    }
+    ProxmoxNode: {
+      name: string
+      /** @description online, offline or unknown */
+      status: string
+      /** @description CPU usage (0..1). */
+      cpu: number
+      maxCpu: number
+      /**
+       * Format: int64
+       * @description Bytes.
+       */
+      mem: number
+      /** Format: int64 */
+      maxMem: number
+      /** Format: int64 */
+      disk: number
+      /** Format: int64 */
+      maxDisk: number
+      /**
+       * Format: int64
+       * @description Seconds.
+       */
+      uptime: number
+    }
+    ProxmoxGuest: {
+      /** @enum {string} */
+      type: 'qemu' | 'lxc'
+      vmid: number
+      name: string
+      node: string
+      /** @description running, stopped, paused, ... */
+      status: string
+      template: boolean
+      tags: string[]
+      pool: string
+      lock: string
+      haState: string
+      cpu: number
+      maxCpu: number
+      /** Format: int64 */
+      mem: number
+      /** Format: int64 */
+      maxMem: number
+      /** Format: int64 */
+      disk: number
+      /** Format: int64 */
+      maxDisk: number
+      /** Format: int64 */
+      uptime: number
+    }
+    ProxmoxStorage: {
+      name: string
+      node: string
+      status: string
+      /** Format: int64 */
+      disk: number
+      /** Format: int64 */
+      maxDisk: number
+    }
+    ProxmoxGuestDetail: {
+      /** @description The guest, with `status` taken from status/current (qmpstatus for VMs). The inventory uses /cluster/resources, which lags about 10 seconds behind. */
+      guest: components['schemas']['ProxmoxGuest']
+      /** @description Proxmox status/current as returned by Proxmox. */
+      status: {
+        [key: string]: unknown
+      }
+      /** @description Proxmox configuration as returned by Proxmox, without secrets. */
+      config: {
+        [key: string]: unknown
+      }
+    }
+    ProxmoxTaskRef: {
+      upid: string
+      node: string
+    }
+    ProxmoxTask: {
+      upid: string
+      node: string
+      /** @description e.g. qmstart, vzshutdown */
+      type: string
+      /** @description Usually the VMID. */
+      id: string
+      user: string
+      running: boolean
+      /** @description OK or the error message, once stopped. */
+      exitStatus: string
+      ok: boolean
+      /** Format: date-time */
+      startTime: string
+      /** Format: date-time */
+      endTime?: string
+      log: string[]
+    }
+    ProxmoxConsoleTicket: {
+      /** @description One-time ticket for the websocket. */
+      id: string
+      /** @enum {string} */
+      kind: 'vnc' | 'term'
+      /** @description VNC password for noVNC (only for vnc). */
+      password?: string
+    }
   }
   responses: {
+    /** @description Not found (code: not_found). */
+    NotFound: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /**
+     * @description The backend failed. Codes: upstream_unavailable (not reachable), upstream_forbidden
+     *     (the backend denied the request, e.g. missing privileges of the API token), upstream_error
+     *     (message from the backend).
+     */
+    Upstream: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Too many failed attempts (code: too_many_attempts). */
     TooManyAttempts: {
       headers: {
@@ -568,7 +878,12 @@ export interface components {
       }
     }
   }
-  parameters: never
+  parameters: {
+    /** @description Cluster name from the configuration. */
+    ProxmoxCluster: string
+    ProxmoxGuestType: 'qemu' | 'lxc'
+    ProxmoxVMID: number
+  }
   requestBodies: never
   headers: never
   pathItems: never
@@ -1169,6 +1484,253 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      default: components['responses']['Error']
+    }
+  }
+  listProxmoxClusters: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Visible clusters. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxClusterList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  getProxmoxInventory: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Inventory. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxInventory']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getProxmoxGuest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Guest details. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxGuestDetail']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  runProxmoxAction: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        action: 'start' | 'shutdown' | 'stop' | 'reboot' | 'suspend' | 'resume'
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Task started. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxTaskRef']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getProxmoxTask: {
+    parameters: {
+      query?: {
+        /** @description Any value: include the log (up to 500 lines). */
+        log?: string
+      }
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        /** @description Proxmox task ID (UPID). */
+        upid: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Task. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxTask']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  openProxmoxGuestConsole: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Console prepared. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxConsoleTicket']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      /** @description Terminals need a console user in the cluster configuration (code: terminal_unavailable). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  openProxmoxNodeShell: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        node: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Shell prepared. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxConsoleTicket']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description Terminals need a console user in the cluster configuration (code: terminal_unavailable). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  connectProxmoxConsole: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Switching to the websocket protocol. */
+      101: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
   }

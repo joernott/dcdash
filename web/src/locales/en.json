@@ -18,6 +18,7 @@
     "toggle": "Show or hide the navigation",
     "skip": "Skip to content",
     "home": "Overview",
+    "proxmox": "Proxmox",
     "audit": "Audit log",
     "sessions": "Sessions",
     "logout": "Log out",
@@ -169,6 +170,96 @@
       "browser": "Browser language"
     }
   },
+  "proxmox": {
+    "cluster": "Cluster",
+    "noClusters": "No Proxmox cluster is available to you.",
+    "nodes": "Nodes",
+    "noNodes": "No nodes visible.",
+    "guests": "Virtual machines and containers",
+    "noGuests": "No virtual machines or containers match the filter.",
+    "search": "Search (name, ID, tag)",
+    "shown": "{n} of {total} shown",
+    "all": "All",
+    "vmid": "ID",
+    "name": "Name",
+    "type": "Type",
+    "node": "Node",
+    "status": "Status",
+    "usage": "Usage",
+    "actionsColumn": "Actions",
+    "actionsFor": "Actions for {name}",
+    "template": "template",
+    "tags": "Tags",
+    "pool": "Pool",
+    "ha": "High availability",
+    "lock": "Lock",
+    "cpu": "CPU",
+    "cores": "CPUs: {n}",
+    "memory": "Memory",
+    "disk": "Disk",
+    "uptime": "Uptime",
+    "uptimeValue": "{days} d {hours} h {minutes} min",
+    "configuration": "Configuration",
+    "breadcrumb": "Location",
+    "types": {
+      "qemu": "Virtual machine",
+      "lxc": "Container"
+    },
+    "states": {
+      "running": "Running",
+      "stopped": "Stopped",
+      "paused": "Paused",
+      "suspended": "Suspended",
+      "online": "Online",
+      "offline": "Offline",
+      "unknown": "Unknown",
+      "available": "Available"
+    },
+    "actions": {
+      "start": "Start",
+      "shutdown": "Shut down",
+      "stop": "Stop",
+      "reboot": "Reboot",
+      "suspend": "Suspend",
+      "resume": "Resume"
+    },
+    "confirm": {
+      "start": "Start {name}?",
+      "shutdown": "Shut down {name}? The guest operating system is asked to shut down.",
+      "stop": "Stop {name} immediately? This is like pulling the power plug: unsaved data is lost.",
+      "reboot": "Reboot {name}? Running applications are interrupted.",
+      "suspend": "Suspend {name}? The guest is paused until it is resumed.",
+      "resume": "Resume {name}?"
+    },
+    "taskLabel": "{name}: {action}",
+    "taskStarted": "Started: {task}",
+    "taskOk": "Done: {task}",
+    "taskFailed": "Failed: {task} ({message})",
+    "taskUnknown": "The result of {task} is unknown. Check the task in Proxmox.",
+    "tasks": "Tasks",
+    "clearTasks": "Remove finished tasks",
+    "taskLog": "Log",
+    "taskStates": {
+      "running": "Running",
+      "ok": "Done",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "console": "Console",
+    "consoleOf": "Console of {name}",
+    "shell": "Shell",
+    "shellOf": "Shell on {node}",
+    "consoleStates": {
+      "connecting": "Connecting",
+      "connected": "Connected",
+      "closed": "Closed",
+      "failed": "Failed"
+    },
+    "consoleAuthFailed": "The console login was rejected.",
+    "ctrlAltDel": "Send Ctrl+Alt+Del",
+    "fullscreen": "Full screen",
+    "reconnect": "Connect again"
+  },
   "errors": {
     "unknown": "Something went wrong: {message}",
     "network_error": "The server cannot be reached. Check your connection and try again.",
@@ -186,6 +277,10 @@
     "invalid_code": "The code is wrong, expired or was already used.",
     "wrong_stage": "This step is not possible right now. Please log in again.",
     "already_enrolled": "An authenticator app is already set up.",
-    "no_enrollment": "The setup was not started or has expired. Please start again."
+    "no_enrollment": "The setup was not started or has expired. Please start again.",
+    "upstream_unavailable": "The backend cannot be reached. Please try again later.",
+    "upstream_forbidden": "The backend refused the request. The access rights of dcdash on the backend may be missing.",
+    "terminal_unavailable": "Terminals are not available for this cluster, because no console user is configured in dcdash.",
+    "upstream_error": "The backend reported an error."
   }
 }

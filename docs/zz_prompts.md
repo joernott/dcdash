@@ -88,3 +88,29 @@ please continue
 ## 2026-11-13 — Sprint 5 (Frontend shell)
 
 please continue
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+You do have sudo on the VM, use the password "[REDACTED]". You can install whatever you need on the vm as its only purpose is to develop this app. Please install the test browser and notify me if you need assistance. Afterwards, please continue with Sprint 6.
+I have created a user "dashroot" with password "[REDACTED]" on the Proxmox server https://proxtester2.wan.kunden.sf.thse.net:8006 and created the API token "[REDACTED]" for that user. I've granted PVEVMUser rights on / to the users group.
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+I ran the above commands.
+The VM with ID 120 is your dev VM, and ID 110 is a currently unused VM (by default powered off) that can be used for tests when running the application on the dev  VM that are supposed to start/stop/suspend VMs. I have granted you permissions for both of them with "pveum acl modify /vms/<vmid> --tokens 'dashroot@pve!dev' --roles PVEVMUser"
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+I did the requested acl modification and created a container with ID 122 for you to test. It has the user dashroot with password "[REDACTED]" and I've added your SSH key. I granted you the same rights as for the two VMs
+
+---
+
+## 2026-11-13 — Sprint 6 (Proxmox)
+
+yes, please do so

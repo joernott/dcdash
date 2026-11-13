@@ -19,6 +19,7 @@ export interface NavItem {
  */
 export const navigation: NavItem[] = [
   { name: 'home', label: 'nav.home' },
+  { name: 'proxmox', label: 'nav.proxmox', module: { name: 'proxmox', action: 'read' } },
   { name: 'audit', label: 'nav.audit', permission: PERMISSIONS.auditRead },
   { name: 'sessions', label: 'nav.sessions', permission: PERMISSIONS.sessionsRead },
 ]

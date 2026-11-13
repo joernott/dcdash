@@ -36,8 +36,10 @@ make tools-check                       # verifies the installed versions
 | `internal/server/` | HTTP(S) server, middleware, health endpoints |
 | `internal/ui/` | Embedded frontend build (`dist/`) and SPA handler |
 | `internal/version/` | Build information (set via `-ldflags`) |
+| `internal/proxmox/` | Proxmox API client (failover, pinning), inventory, power actions, tasks, console proxy; `pvefake/` is an in-memory fake of the Proxmox API for tests |
 | `internal/testutil/` | Helpers shared by tests |
 | `test/integration/` | Integration tests (build tag `integration`) and their container environment |
+| `test/pvefake/` | The Proxmox fake as a program, used by the end-to-end tests |
 | `api/openapi.yaml` | API specification; source of the TypeScript client types |
 | `web/` | Frontend: Vue 3, TypeScript, Vite, Tailwind CSS v4, Pinia, vue-i18n |
 | `configs/` | Example and development configuration |
@@ -57,7 +59,7 @@ Run `make` to list all targets. The most important ones:
 | `make build-go` | Build only the binary, with the frontend currently in `internal/ui/dist` |
 | `make test` | Go tests (with race detector) and frontend unit tests |
 | `make test-integration` | Integration tests against containers (bind9, Pebble, step-ca); needs Docker. `KEEP=1` keeps the containers running |
-| `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
+| `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container and the Proxmox fake; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
 | `make fmt` | Format and auto-fix Go and frontend sources |
 | `make gen-api` | Regenerate `web/src/api/schema.d.ts` from `api/openapi.yaml` |
@@ -91,6 +93,30 @@ enough:
 ```sh
 ./bin/dcdash --config configs/dev.yaml serve
 ```
+
+## Tests against a real Proxmox cluster
+
+The Proxmox integration tests in `test/integration/proxmox_test.go` run with `make
+test-integration` when the `DCDASH_IT_PVE_*` variables are set (see
+`scripts/integration-test.sh`). Keep them out of the repository, for example in a file with
+mode 0600 that you load with `set -a; . file; set +a`. Use guests that exist only for tests:
+`DCDASH_IT_PVE_POWER_GUEST` guests are started, suspended, resumed and stopped.
+
+Last manual test: 2026-11-13, Proxmox VE 9.0.11, single node, API token with privilege
+separation (`PVEAuditor` on `/`, `PVEVMUser` on two test guests) and a console user.
+
+| Check | Result |
+|---|---|
+| Inventory (`TestProxmoxRead`): node, 35 VMs, 3 containers, storage | passed |
+| Power actions on a VM: start, suspend, resume, stop, with task status and log | passed |
+| Power actions on a container: start, stop | passed |
+| VNC console with the API token and with the console user | passed |
+| Container terminal with the console user | passed |
+| Container terminal with the API token | rejected by Proxmox, as described in ADR 0001 |
+| Browser (Chromium): login, inventory, start and stop from the guest page, VNC console with the guest's screen, container terminal with login prompt | passed |
+
+The browser test used a separate dcdash configuration whose role allowed `console` only on
+the two test guests.
 
 ## Configuration
 
