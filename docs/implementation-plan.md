@@ -183,7 +183,10 @@ These apply to every task:
 - [x] **5.7** App layout: navigation that only shows modules the user may use, user menu
   (theme, language, logout)
 - [x] **5.8** Route guards based on permissions
-- [ ] **5.9** Home dashboard: per-backend health tiles
+- [x] **5.9** Home dashboard: per-backend health tiles
+  - [x] **5.9.1** `GET /api/v1/status` for logged-in users: database, certificate and directory
+    (later the backends), checked concurrently; `/readyz` stays limited to what a load balancer
+    needs, so a directory outage does not take dcdash and the break-glass access offline
 - [ ] **5.10** Admin views: audit log (filter, paginate), sessions, TOTP reset
 - [ ] **5.11** Frontend tests (Vitest) and an end-to-end smoke test (Playwright) for login,
   run in both themes and both languages

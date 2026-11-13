@@ -23,6 +23,28 @@
     "logout": "Log out",
     "backHome": "Back to the overview"
   },
+  "home": {
+    "welcome": "Welcome, {name}",
+    "allOk": "All components are working.",
+    "failing": "One component has a problem. | {n} components have a problem.",
+    "checkedAt": "checked at {time}",
+    "refresh": "Refresh",
+    "ok": "OK",
+    "error": "Error",
+    "noDetail": "No further information",
+    "latency": "Response time: {ms} ms",
+    "kinds": {
+      "system": "dcdash",
+      "proxmox": "Proxmox",
+      "dns": "DNS",
+      "dhcp": "DHCP"
+    },
+    "components": {
+      "database": "Database",
+      "directory": "User directory",
+      "certificate": "Certificate"
+    }
+  },
   "login": {
     "title": "Log in",
     "username": "User name",

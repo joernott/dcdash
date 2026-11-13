@@ -23,6 +23,28 @@
     "logout": "Abmelden",
     "backHome": "Zurück zur Übersicht"
   },
+  "home": {
+    "welcome": "Willkommen, {name}",
+    "allOk": "Alle Komponenten funktionieren.",
+    "failing": "Eine Komponente hat ein Problem. | {n} Komponenten haben ein Problem.",
+    "checkedAt": "geprüft um {time}",
+    "refresh": "Aktualisieren",
+    "ok": "OK",
+    "error": "Fehler",
+    "noDetail": "Keine weiteren Informationen",
+    "latency": "Antwortzeit: {ms} ms",
+    "kinds": {
+      "system": "dcdash",
+      "proxmox": "Proxmox",
+      "dns": "DNS",
+      "dhcp": "DHCP"
+    },
+    "components": {
+      "database": "Datenbank",
+      "directory": "Benutzerverzeichnis",
+      "certificate": "Zertifikat"
+    }
+  },
   "login": {
     "title": "Anmelden",
     "username": "Benutzername",

@@ -66,6 +66,25 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/status:
+    get:
+      tags: [system]
+      operationId: getStatus
+      summary: State of dcdash's components and backends
+      description: |
+        For the dashboard; requires a logged-in user. Unlike /readyz it includes components
+        whose failure must not take dcdash out of a load balancer, such as the directory.
+        Checks run concurrently with a timeout of 5 seconds each.
+      responses:
+        "200":
+          description: The state of every component.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusReport" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/auth/login:
     post:
       tags: [auth]
@@ -654,6 +673,27 @@ components:
         result: { type: string, enum: [success, failure, denied] }
         details: { type: object, additionalProperties: true }
         requestId: { type: string }
+
+    StatusReport:
+      type: object
+      required: [components, checkedAt]
+      properties:
+        components:
+          type: array
+          items: { $ref: "#/components/schemas/StatusComponent" }
+        checkedAt: { type: string, format: date-time }
+
+    StatusComponent:
+      type: object
+      required: [name, kind, status, detail, latencyMs]
+      properties:
+        name: { type: string, examples: [database, directory, certificate] }
+        kind:
+          type: string
+          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp).'
+        status: { type: string, enum: [ok, error] }
+        detail: { type: string, description: A detail such as "valid until ..." or the error message. }
+        latencyMs: { type: integer, format: int64 }
 
     HealthStatus:
       type: object

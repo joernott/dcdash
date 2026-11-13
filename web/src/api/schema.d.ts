@@ -58,6 +58,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * State of dcdash's components and backends
+     * @description For the dashboard; requires a logged-in user. Unlike /readyz it includes components
+     *     whose failure must not take dcdash out of a load balancer, such as the directory.
+     *     Checks run concurrently with a timeout of 5 seconds each.
+     */
+    get: operations['getStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/auth/login': {
     parameters: {
       query?: never
@@ -456,6 +478,27 @@ export interface components {
       }
       requestId: string
     }
+    StatusReport: {
+      components: components['schemas']['StatusComponent'][]
+      /** Format: date-time */
+      checkedAt: string
+    }
+    StatusComponent: {
+      /**
+       * @example database
+       * @example directory
+       * @example certificate
+       */
+      name: string
+      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp). */
+      kind: string
+      /** @enum {string} */
+      status: 'ok' | 'error'
+      /** @description A detail such as "valid until ..." or the error message. */
+      detail: string
+      /** Format: int64 */
+      latencyMs: number
+    }
     HealthStatus: {
       /** @enum {string} */
       status: 'ok' | 'unavailable'
@@ -599,6 +642,28 @@ export interface operations {
           'application/json': components['schemas']['VersionInfo']
         }
       }
+      default: components['responses']['Error']
+    }
+  }
+  getStatus: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The state of every component. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StatusReport']
+        }
+      }
+      401: components['responses']['Unauthorized']
       default: components['responses']['Error']
     }
   }
