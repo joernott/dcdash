@@ -19,6 +19,8 @@ import (
 	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/store"
+	"github.com/joernott/dcdash/internal/totp"
+	"github.com/joernott/dcdash/internal/vault"
 )
 
 // fakeDirectory accepts alice (dashroot), bob (dcdash-dns) and carol (no groups),
@@ -52,28 +54,43 @@ type env struct {
 	dir   *fakeDirectory
 	sm    *session.Manager
 	audit *audit.Log
+	totp  *totp.Store
+	// now is the clock of the TOTP store; advance it to get codes of later time steps.
+	now time.Time
 }
 
-func newEnv(t *testing.T) *env {
+func newEnv(t *testing.T) *env { return newEnvWith(t, nil) }
+
+// newEnvWith creates a test server; local is the break-glass account or nil.
+func newEnvWith(t *testing.T, local *LocalAccount) *env {
 	t.Helper()
 	st, err := store.Open(context.Background(), t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
-	sm := session.NewManager(st.DB(), 8*time.Hour, 30*time.Minute, zerolog.Nop())
-	dir := &fakeDirectory{}
-	auditLog := audit.New(st.DB(), zerolog.Nop())
-	authz := testAuthorizer(t, auditLog)
+	kr, err := vault.New([]byte("0123456789abcdef0123456789abcdef"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := &env{dir: &fakeDirectory{}, now: time.Now()}
+	e.sm = session.NewManager(st.DB(), 8*time.Hour, 30*time.Minute, zerolog.Nop())
+	e.audit = audit.New(st.DB(), zerolog.Nop())
+	e.totp = totp.NewStore(st.DB(), kr)
+	e.totp.SetClock(func() time.Time { return e.now })
+	authz := testAuthorizer(t, e.audit)
 	svc := New(Options{
-		LDAP: dir, Sessions: sm, Authorizer: authz, Audit: auditLog, Log: zerolog.Nop(),
+		LDAP: e.dir, Local: local, Sessions: e.sm, Authorizer: authz, Audit: e.audit, Log: zerolog.Nop(),
 		UserLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
 		IPLockout:   lockout.Policy{MaxFailures: 5, Window: time.Minute, Duration: time.Minute},
+		TOTP:        e.totp, Keyring: kr, TOTPIssuer: "dcdash test",
+		TOTPLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
 	})
 	mux := http.NewServeMux()
 	svc.Register(mux)
 	registerTestRoutes(mux)
-	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm, audit: auditLog}
+	e.h = e.sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux)))
+	return e
 }
 
 type call struct {
@@ -118,7 +135,7 @@ func cookieValue(t *testing.T, rec *httptest.ResponseRecorder) string {
 
 func TestLoginMeLogout(t *testing.T) {
 	e := newEnv(t)
-	rec := e.do(login("alice", "secret"))
+	rec := e.do(login("bob", "secret")) // bob needs no TOTP
 	if rec.Code != http.StatusOK {
 		t.Fatalf("login: %d %s", rec.Code, rec.Body)
 	}
@@ -126,8 +143,8 @@ func TestLoginMeLogout(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &info); err != nil {
 		t.Fatal(err)
 	}
-	if info.User.Username != "alice" || info.Stage != session.StageAuthenticated || info.CSRFToken == "" ||
-		len(info.User.Groups) != 1 || info.User.Groups[0].Name != "dashroot" {
+	if info.User.Username != "bob" || info.Stage != session.StageAuthenticated || info.CSRFToken == "" ||
+		len(info.User.Groups) != 1 || info.User.Groups[0].Name != "dcdash-dns" {
 		t.Errorf("login response: %+v", info)
 	}
 	token := cookieValue(t, rec)

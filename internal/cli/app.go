@@ -18,6 +18,7 @@ import (
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/store"
+	"github.com/joernott/dcdash/internal/totp"
 	"github.com/joernott/dcdash/internal/vault"
 )
 
@@ -41,7 +42,8 @@ func (a *app) Close() {
 // authorization and the login API.
 func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolog.Logger) (*app, error) {
 	a := &app{}
-	if _, err := newKeyring(ctx, cfg, st); err != nil {
+	kr, err := newKeyring(ctx, cfg, st)
+	if err != nil {
 		return nil, err
 	}
 	proxies, err := cfg.Server.TrustedProxyPrefixes()
@@ -59,7 +61,7 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	sessions := session.NewManager(st.DB(), cfg.Auth.Session.Lifetime.D(), cfg.Auth.Session.IdleTimeout.D(), log)
 	a.runners = append(a.runners, sessions.Run)
 
-	authSvc, err := newAuthService(cfg.Auth, sessions, authz, auditLog, log)
+	authSvc, err := newAuthService(cfg.Auth, sessions, authz, auditLog, totp.NewStore(st.DB(), kr), kr, log)
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +121,14 @@ func newKeyring(ctx context.Context, cfg *config.Config, st *store.Store) (*vaul
 }
 
 // newAuthService creates the authentication service.
-func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Authorizer, auditLog *audit.Log, log zerolog.Logger) (*auth.Service, error) {
+func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Authorizer, auditLog *audit.Log,
+	totpStore *totp.Store, kr *vault.Keyring, log zerolog.Logger,
+) (*auth.Service, error) {
 	opts := auth.Options{
+		TOTP:        totpStore,
+		Keyring:     kr,
+		TOTPIssuer:  a.TOTP.Issuer,
+		TOTPLockout: lockoutPolicy(a.Lockout.TOTP),
 		Sessions:    sessions,
 		Authorizer:  authz,
 		Audit:       auditLog,

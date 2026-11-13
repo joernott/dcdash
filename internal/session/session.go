@@ -24,8 +24,10 @@ import (
 const (
 	// StageAuthenticated: the user is fully logged in.
 	StageAuthenticated = "authenticated"
-	// StageTOTP: the password was verified, the TOTP code is still pending (Sprint 4).
+	// StageTOTP: the password was verified, the TOTP code is still pending.
 	StageTOTP = "totp"
+	// StageTOTPEnroll: the password was verified; the user must enroll TOTP first.
+	StageTOTPEnroll = "totp_enroll"
 )
 
 // Session sources.
@@ -40,6 +42,10 @@ var ErrNotFound = errors.New("session not found or expired")
 // touchInterval limits how often last_seen_at is written.
 const touchInterval = time.Minute
 
+// PendingTimeout limits how long a session may wait for the TOTP step (or the
+// enrollment) after the password was verified.
+const PendingTimeout = 10 * time.Minute
+
 // Session is a login session.
 type Session struct {
 	Username    string
@@ -53,6 +59,8 @@ type Session struct {
 	ExpiresAt   time.Time
 	RemoteAddr  string
 	UserAgent   string
+	// PendingTOTP is the encrypted TOTP secret during enrollment, or nil.
+	PendingTOTP []byte
 
 	tokenHash []byte
 }
@@ -157,10 +165,10 @@ func (m *Manager) Get(ctx context.Context, token string) (*Session, error) {
 		created, seen, expiresAtS int64
 	)
 	err := m.db.QueryRowContext(ctx, `SELECT username, display_name, source, groups, stage, csrf_token,
-		created_at, last_seen_at, expires_at, remote_addr, user_agent
+		created_at, last_seen_at, expires_at, remote_addr, user_agent, pending_totp
 		FROM sessions WHERE token_hash = ?`, hash).Scan(
 		&s.Username, &s.DisplayName, &s.Source, &groups, &s.Stage, &s.CSRFToken,
-		&created, &seen, &expiresAtS, &s.RemoteAddr, &s.UserAgent)
+		&created, &seen, &expiresAtS, &s.RemoteAddr, &s.UserAgent, &s.PendingTOTP)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -174,7 +182,8 @@ func (m *Manager) Get(ctx context.Context, token string) (*Session, error) {
 	}
 
 	now := m.now().UTC()
-	if !now.Before(s.ExpiresAt) || !now.Before(s.LastSeenAt.Add(m.idle)) {
+	if !now.Before(s.ExpiresAt) || !now.Before(s.LastSeenAt.Add(m.idle)) ||
+		(!s.Authenticated() && !now.Before(s.CreatedAt.Add(PendingTimeout))) {
 		_ = m.deleteHash(ctx, hash)
 		return nil, ErrNotFound
 	}
@@ -226,11 +235,13 @@ func (m *Manager) DeleteUser(ctx context.Context, username string) (int64, error
 	return res.RowsAffected()
 }
 
-// Cleanup deletes expired and idle sessions and returns how many were deleted.
+// Cleanup deletes expired, idle and abandoned pending sessions and returns how
+// many were deleted.
 func (m *Manager) Cleanup(ctx context.Context) (int64, error) {
 	now := m.now().UTC().Unix()
-	res, err := m.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at <= ? OR last_seen_at <= ?`,
-		now, now-int64(m.idle/time.Second))
+	res, err := m.db.ExecContext(ctx, `DELETE FROM sessions WHERE expires_at <= ? OR last_seen_at <= ?
+		OR (stage != ? AND created_at <= ?)`,
+		now, now-int64(m.idle/time.Second), StageAuthenticated, now-int64(PendingTimeout/time.Second))
 	if err != nil {
 		return 0, err
 	}
@@ -324,4 +335,18 @@ func (m *Manager) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// SetPendingTOTP stores (or with nil, clears) the encrypted TOTP secret of an
+// enrollment in progress.
+func (m *Manager) SetPendingTOTP(ctx context.Context, s *Session, enc []byte) error {
+	res, err := m.db.ExecContext(ctx, `UPDATE sessions SET pending_totp = ? WHERE token_hash = ?`, enc, s.tokenHash)
+	if err != nil {
+		return fmt.Errorf("update session: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return ErrNotFound
+	}
+	s.PendingTOTP = enc
+	return nil
 }

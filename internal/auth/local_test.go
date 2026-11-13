@@ -9,15 +9,9 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/rs/zerolog"
-
-	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/ldapauth"
-	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/session"
-	"github.com/joernott/dcdash/internal/store"
 )
 
 func TestHashAndVerify(t *testing.T) {
@@ -72,28 +66,12 @@ func newLocalEnv(t *testing.T) (*env, *LocalAccount) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(context.Background(), t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = st.Close() })
-	sm := session.NewManager(st.DB(), time.Hour, time.Hour, zerolog.Nop())
-	dir := &fakeDirectory{}
-	auditLog := audit.New(st.DB(), zerolog.Nop())
-	authz := testAuthorizer(t, auditLog)
-	svc := New(Options{
-		LDAP: dir, Local: local, Sessions: sm, Authorizer: authz, Audit: auditLog, Log: zerolog.Nop(),
-		UserLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
-		IPLockout:   lockout.Policy{MaxFailures: 50, Window: time.Minute, Duration: time.Minute},
-	})
-	mux := http.NewServeMux()
-	svc.Register(mux)
-	registerTestRoutes(mux)
-	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm, audit: auditLog}, local
+	return newEnvWith(t, local), local
 }
 
 func TestLocalLoginRequiresTOTP(t *testing.T) {
 	e, _ := newLocalEnv(t)
+	e.enroll(t, "breakglass")
 	rec := e.do(login("BreakGlass", "break-glass-password"))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("local login: %d %s", rec.Code, rec.Body)

@@ -83,6 +83,7 @@ func TestMeExposesRolesAndPermissions(t *testing.T) {
 
 func TestPendingSessionHasNoPermissions(t *testing.T) {
 	e, _ := newLocalEnv(t)
+	e.enroll(t, "breakglass")
 	rec := e.do(login("breakglass", "break-glass-password"))
 	var info SessionInfo
 	_ = json.Unmarshal(rec.Body.Bytes(), &info)

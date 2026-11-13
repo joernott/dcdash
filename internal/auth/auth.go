@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // Package auth implements the login API: password verification against LDAP
-// (or the local break-glass account), lockout, session creation and logout.
+// (or the local break-glass account), the TOTP step, lockout, sessions,
+// authorization and logout.
 package auth
 
 import (
@@ -21,6 +22,8 @@ import (
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/session"
+	"github.com/joernott/dcdash/internal/totp"
+	"github.com/joernott/dcdash/internal/vault"
 )
 
 // Authenticator verifies a user name and password.
@@ -38,6 +41,11 @@ type Service struct {
 	ips      *lockout.Limiter
 	audit    *audit.Log
 	log      zerolog.Logger
+
+	totp         *totp.Store
+	keyring      *vault.Keyring // encrypts secrets of enrollments in progress
+	issuer       string
+	totpFailures *lockout.Limiter
 }
 
 // Options configures the service.
@@ -52,6 +60,11 @@ type Options struct {
 	// Audit records logins; nil disables auditing (only for tests).
 	Audit *audit.Log
 	Log   zerolog.Logger
+
+	TOTP        *totp.Store
+	Keyring     *vault.Keyring
+	TOTPIssuer  string
+	TOTPLockout lockout.Policy
 }
 
 // New creates the service.
@@ -65,6 +78,11 @@ func New(o Options) *Service {
 		ips:      lockout.New(o.IPLockout),
 		audit:    o.Audit,
 		log:      o.Log.With().Str("component", "auth").Logger(),
+
+		totp:         o.TOTP,
+		keyring:      o.Keyring,
+		issuer:       o.TOTPIssuer,
+		totpFailures: lockout.New(o.TOTPLockout),
 	}
 }
 
@@ -77,6 +95,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+LoginPath, s.handleLogin)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
 	mux.HandleFunc("GET /api/v1/auth/me", s.handleMe)
+	s.registerTOTP(mux)
 }
 
 // LoginRequest is the body of POST /api/v1/auth/login.
@@ -108,9 +127,10 @@ type SessionInfo struct {
 	// Roles and Permissions are only set once all login steps are completed.
 	Roles       []string `json:"roles"`
 	Permissions []string `json:"permissions"`
+	TOTP        TOTPInfo `json:"totp"`
 }
 
-func (s *Service) sessionInfo(sess *session.Session) SessionInfo {
+func (s *Service) sessionInfo(ctx context.Context, sess *session.Session) SessionInfo {
 	groups := make([]GroupInfo, 0, len(sess.Groups))
 	for _, dn := range sess.Groups {
 		groups = append(groups, GroupInfo{DN: dn, Name: groupName(dn)})
@@ -126,7 +146,13 @@ func (s *Service) sessionInfo(sess *session.Session) SessionInfo {
 		subj := s.authz.Subject(sess)
 		info.Roles, info.Permissions = subj.Roles, subj.Permissions.Strings()
 	}
+	info.TOTP, _ = s.totpInfo(ctx, sess)
 	return info
+}
+
+// writeSession writes the session info as response.
+func (s *Service) writeSession(w http.ResponseWriter, r *http.Request, sess *session.Session) {
+	httpx.WriteJSON(w, http.StatusOK, s.sessionInfo(r.Context(), sess))
 }
 
 // groupName returns the value of the first RDN (usually the CN) of a DN.
@@ -187,11 +213,23 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 	for _, g := range user.Groups {
 		groups = append(groups, g.DN)
 	}
-	token, sess, err := s.sessions.Create(r.Context(), session.New{
-		Username: user.Username, DisplayName: user.DisplayName, Source: source,
-		Groups: groups, Stage: initialStage(source),
+	n := session.New{
+		Username: user.Username, DisplayName: user.DisplayName, Source: source, Groups: groups,
 		RemoteAddr: ip.String(), UserAgent: r.UserAgent(),
-	})
+	}
+	n.Stage, err = s.initialStage(r.Context(), n)
+	if errors.Is(err, errBreakGlassNotEnrolled) {
+		log.Warn().Msg("break-glass login rejected: no TOTP enrolled (use `dcdash totp enroll`)")
+		s.auditLogin(r, req.Username, audit.ResultDenied, map[string]any{"reason": "totp_not_enrolled"})
+		httpx.WriteError(w, http.StatusForbidden, "totp_not_enrolled", "TOTP is not enrolled for this account")
+		return
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("cannot determine login stage")
+		httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
+		return
+	}
+	token, sess, err := s.sessions.Create(r.Context(), n)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot create session")
 		httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
@@ -204,7 +242,7 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Str("dn", user.DN).Int("groups", len(groups)).Msg("login successful")
 	}
-	httpx.WriteJSON(w, http.StatusOK, s.sessionInfo(sess))
+	s.writeSession(w, r, sess)
 }
 
 // authenticate verifies the credentials against the break-glass account (if
@@ -219,16 +257,6 @@ func (s *Service) authenticate(ctx context.Context, username, password string) (
 	}
 	u, err := s.ldap.Authenticate(ctx, username, password)
 	return u, session.SourceLDAP, err
-}
-
-// initialStage returns the session stage after the password step. The
-// break-glass account must always complete the TOTP step (Sprint 4); until
-// that step exists, its sessions cannot be completed.
-func initialStage(source string) string {
-	if source == session.SourceLocal {
-		return session.StageTOTP
-	}
-	return session.StageAuthenticated
 }
 
 func (s *Service) handleLogout(w http.ResponseWriter, r *http.Request) {
@@ -249,7 +277,7 @@ func (s *Service) handleMe(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusUnauthorized, "not_authenticated", "not logged in")
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, s.sessionInfo(sess))
+	s.writeSession(w, r, sess)
 }
 
 // RequireAuthenticated rejects requests without a fully authenticated session.

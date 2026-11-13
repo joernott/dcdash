@@ -91,6 +91,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
+        "403":
+          description: "Break-glass account without TOTP enrollment (code: totp_not_enrolled)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
         "429":
           description: "Too many failed attempts (code: too_many_attempts)."
           headers:
@@ -139,6 +144,143 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorBody" }
 
 
+  /api/v1/auth/totp:
+    post:
+      tags: [auth]
+      operationId: verifyTOTP
+      summary: Complete the login with a TOTP code or a recovery code
+      description: |
+        Only in the login step "totp". On success the session is fully authenticated and its
+        token is replaced (new cookie). Each code is accepted once; recovery codes are single-use.
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TOTPRequest" }
+      responses:
+        "200":
+          description: Logged in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionInfo" }
+        "400":
+          description: "Neither or both of code and recoveryCode given (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401":
+          description: "Wrong, expired or already used code (code: invalid_code), or no session (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "409":
+          description: "The session is not in the TOTP step (code: wrong_stage)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/totp/enroll:
+    post:
+      tags: [auth]
+      operationId: startTOTPEnrollment
+      summary: Start a TOTP enrollment
+      description: |
+        In the login step "totp_enroll", or voluntarily when logged in and not yet enrolled.
+        Returns a new secret; it becomes active once confirmed with a code. The break-glass
+        account cannot enroll here (it uses `dcdash totp enroll`).
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "200":
+          description: The secret to add to an authenticator app.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollmentInfo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: "Break-glass account (code: forbidden)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "409":
+          description: "Already enrolled (code: already_enrolled) or wrong login step (code: wrong_stage)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/totp/enroll/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmTOTPEnrollment
+      summary: Confirm a TOTP enrollment with a code
+      description: |
+        Activates the secret and returns recovery codes, which are shown only once. In the login
+        step "totp_enroll", the session becomes fully authenticated (new cookie).
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CodeRequest" }
+      responses:
+        "200":
+          description: Enrolled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollmentResult" }
+        "401":
+          description: "Wrong code (code: invalid_code), or no session (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "409":
+          description: "No enrollment started (code: no_enrollment), already enrolled (code: already_enrolled) or wrong login step (code: wrong_stage)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/auth/totp/recovery-codes:
+    post:
+      tags: [auth]
+      operationId: regenerateRecoveryCodes
+      summary: Replace all recovery codes
+      description: Requires a current TOTP code. The old recovery codes stop working.
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CodeRequest" }
+      responses:
+        "200":
+          description: The new recovery codes, shown only once.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecoveryCodes" }
+        "401":
+          description: "Wrong code (code: invalid_code), or not logged in (code: not_authenticated)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          $ref: "#/components/responses/TooManyAttempts"
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/audit:
     get:
       tags: [audit]
@@ -182,6 +324,15 @@ components:
       schema: { type: string }
 
   responses:
+    TooManyAttempts:
+      description: "Too many failed attempts (code: too_many_attempts)."
+      headers:
+        Retry-After:
+          description: Seconds until the next attempt is allowed.
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     Unauthorized:
       description: "Not logged in (code: not_authenticated)."
       content:
@@ -209,13 +360,15 @@ components:
 
     SessionInfo:
       type: object
-      required: [user, stage, csrfToken, expiresAt, roles, permissions]
+      required: [user, stage, csrfToken, expiresAt, roles, permissions, totp]
       properties:
         user: { $ref: "#/components/schemas/UserInfo" }
         stage:
           type: string
-          enum: [authenticated, totp]
-          description: "authenticated: fully logged in; totp: the TOTP code is still required."
+          enum: [authenticated, totp, totp_enroll]
+          description: |
+            authenticated: fully logged in; totp: a TOTP or recovery code is still required;
+            totp_enroll: the user must enroll TOTP first. Pending steps expire after 10 minutes.
         csrfToken: { type: string }
         expiresAt: { type: string, format: date-time, description: Absolute end of the session. }
         roles:
@@ -229,6 +382,53 @@ components:
             Granted permissions (module:instance:resource:action); empty until all login steps
             are completed. The frontend uses them to hide what the user cannot use; the backend
             checks every request.
+        totp: { $ref: "#/components/schemas/TOTPInfo" }
+
+    TOTPInfo:
+      type: object
+      required: [enrolled, required, recoveryCodesRemaining]
+      properties:
+        enrolled: { type: boolean }
+        required: { type: boolean, description: A role of the user requires TOTP (always for root and the break-glass account). }
+        recoveryCodesRemaining: { type: integer }
+
+    TOTPRequest:
+      type: object
+      description: Exactly one of code and recoveryCode.
+      additionalProperties: false
+      properties:
+        code: { type: string, pattern: "^[0-9]{6}$" }
+        recoveryCode: { type: string, examples: ["k7m2-x9pq-4hvt-c3wn"] }
+
+    CodeRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, pattern: "^[0-9]{6}$" }
+
+    EnrollmentInfo:
+      type: object
+      required: [secret, uri]
+      properties:
+        secret: { type: string, description: Base32 secret for manual entry. }
+        uri: { type: string, description: "otpauth:// URI, to be shown as QR code." }
+
+    EnrollmentResult:
+      type: object
+      required: [recoveryCodes, session]
+      properties:
+        recoveryCodes:
+          type: array
+          items: { type: string }
+        session: { $ref: "#/components/schemas/SessionInfo" }
+
+    RecoveryCodes:
+      type: object
+      required: [recoveryCodes]
+      properties:
+        recoveryCodes:
+          type: array
+          items: { type: string }
 
     UserInfo:
       type: object

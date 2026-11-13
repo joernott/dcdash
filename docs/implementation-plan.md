@@ -131,15 +131,17 @@ These apply to every task:
 
 ## Sprint 4 — TOTP, Authorization, Audit and Preferences
 
-- [ ] **4.1** Two-step login: password first, then TOTP when required, with a session that
+- [x] **4.1** Two-step login: password first, then TOTP when required, with a session that
   only becomes fully authenticated after the second step
-- [ ] **4.2** TOTP requirement per role (`require_totp`, default `true`): required if any of
+  - [x] **4.1.1** Sessions that wait for the TOTP step or the enrollment expire after
+    10 minutes
+- [x] **4.2** TOTP requirement per role (`require_totp`, default `true`): required if any of
   the user's roles requires it; always required for `root` and the break-glass account;
   enforced once a user has enrolled voluntarily
-- [ ] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
+- [x] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
   it encrypted
 - [x] **4.4** Recovery codes: generate them, store them hashed, single use
-- [ ] **4.5** TOTP replay protection and lockout after repeated failures
+- [x] **4.5** TOTP replay protection and lockout after repeated failures
 - [x] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
   group mappings, `require_totp` and permission strings
 - [x] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,

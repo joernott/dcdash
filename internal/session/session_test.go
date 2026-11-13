@@ -206,3 +206,57 @@ func TestMiddleware(t *testing.T) {
 		t.Errorf("bogus token: session %+v, cookie %q", got, rec.Header().Get("Set-Cookie"))
 	}
 }
+
+func TestPendingSessionTimeout(t *testing.T) {
+	m, c := newManager(t)
+	ctx := context.Background()
+	token, _, err := m.Create(ctx, New{Username: "alice", Source: SourceLDAP, Stage: StageTOTP})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.advance(PendingTimeout - time.Second)
+	if _, err := m.Get(ctx, token); err != nil {
+		t.Fatalf("pending session within timeout: %v", err)
+	}
+	c.advance(time.Second)
+	if _, err := m.Get(ctx, token); !errors.Is(err, ErrNotFound) {
+		t.Errorf("pending session after timeout: %v", err)
+	}
+
+	// Cleanup removes abandoned pending sessions, but not authenticated ones of the same age.
+	_, _, _ = m.Create(ctx, New{Username: "bob", Source: SourceLDAP, Stage: StageTOTPEnroll})
+	authToken, _ := create(t, m)
+	c.advance(PendingTimeout)
+	if _, err := m.Get(ctx, authToken); err != nil { // keeps it from idling out
+		t.Fatal(err)
+	}
+	if n, err := m.Cleanup(ctx); err != nil || n != 1 {
+		t.Errorf("cleanup: %d, %v", n, err)
+	}
+}
+
+func TestPendingTOTP(t *testing.T) {
+	m, _ := newManager(t)
+	ctx := context.Background()
+	token, s, err := m.Create(ctx, New{Username: "alice", Source: SourceLDAP, Stage: StageTOTPEnroll})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.SetPendingTOTP(ctx, s, []byte("encrypted")); err != nil {
+		t.Fatal(err)
+	}
+	got, err := m.Get(ctx, token)
+	if err != nil || string(got.PendingTOTP) != "encrypted" {
+		t.Fatalf("pending secret: %q, %v", got.PendingTOTP, err)
+	}
+	if err := m.SetPendingTOTP(ctx, got, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := m.Get(ctx, token); got.PendingTOTP != nil {
+		t.Error("pending secret not cleared")
+	}
+	_ = m.Delete(ctx, token)
+	if err := m.SetPendingTOTP(ctx, got, nil); !errors.Is(err, ErrNotFound) {
+		t.Errorf("deleted session: %v", err)
+	}
+}

@@ -95,8 +95,14 @@ auth:
     # Failed logins before a user name or client IP address is locked.
     user: {max_failures: 5, window: 15m, duration: 15m}
     ip: {max_failures: 20, window: 15m, duration: 15m}
+    # Failed TOTP or recovery codes before a user is locked.
+    totp: {max_failures: 5, window: 15m, duration: 15m}
+  totp:
+    # Name shown in authenticator apps.
+    issuer: dcdash
   # Break-glass account for when the directory is unavailable. It always requires
-  # TOTP and holds the root role. Create the hash with `dcdash hash-password`.
+  # TOTP and holds the root role. Create the hash with `dcdash hash-password` and
+  # enroll TOTP with `dcdash totp enroll <username>`.
   local:
     enabled: false
     username: breakglass

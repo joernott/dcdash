@@ -13,6 +13,7 @@ import (
 	"os"
 	"runtime"
 	"slices"
+	"strings"
 	"time"
 
 	"go.yaml.in/yaml/v3"
@@ -93,7 +94,7 @@ func Default() Config {
 			ReadHeaderTimeout: Duration(10 * time.Second),
 			ShutdownTimeout:   Duration(15 * time.Second),
 		},
-		Auth:    Auth{LDAP: defaultLDAP(), Session: defaultSession(), Lockout: defaultLockout()},
+		Auth:    Auth{LDAP: defaultLDAP(), Session: defaultSession(), Lockout: defaultLockout(), TOTP: TOTP{Issuer: "dcdash"}},
 		Audit:   defaultAudit(),
 		Log:     Log{Level: "info", Format: "json"},
 		DataDir: "/var/lib/dcdash",
@@ -207,6 +208,10 @@ func (c *Config) Validate() error {
 	c.Auth.Session.validate(add)
 	c.Auth.Lockout.User.validate("auth.lockout.user", add)
 	c.Auth.Lockout.IP.validate("auth.lockout.ip", add)
+	c.Auth.Lockout.TOTP.validate("auth.lockout.totp", add)
+	if strings.TrimSpace(c.Auth.TOTP.Issuer) == "" || strings.Contains(c.Auth.TOTP.Issuer, ":") {
+		add("auth.totp.issuer: required, without \":\"")
+	}
 	c.Auth.Local.validate(add)
 	validateRoles(c.Roles, add)
 	c.Audit.validate(add)
