@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { h } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import App from '../App.vue'
-import { createAppI18n, detectLocale, type Locale } from '../i18n'
-
-function mountApp(locale: Locale) {
-  const router = createRouter({ history: createMemoryHistory(), routes: [] })
-  return mount(App, { global: { plugins: [router, createAppI18n(locale)] } })
-}
+import { detectLocale } from '../i18n'
+import { mountWith } from './helpers'
 
 describe('App', () => {
-  it('renders in English', () => {
-    expect(mountApp('en').text()).toContain('Dashboard for central data center services')
-  })
-
-  it('renders in German', () => {
-    expect(mountApp('de').text()).toContain('Dashboard für zentrale Rechenzentrumsdienste')
+  it('renders the route and the toast area', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { render: () => h('p', 'page') } }],
+    })
+    await router.push('/')
+    const w = mountWith(App, { global: { plugins: [router] } })
+    expect(w.text()).toContain('page')
+    expect(w.find('[aria-live="polite"]').exists()).toBe(true)
   })
 })
 

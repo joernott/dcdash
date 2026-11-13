@@ -176,13 +176,13 @@ These apply to every task:
   session-expiry handling
   - [x] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
     always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
-- [ ] **5.5** Login page with the TOTP step
-- [ ] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
+- [x] **5.5** Login page with the TOTP step
+- [x] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
   returned by the API, see 4.3), confirmation, recovery code display; voluntary enrollment and
   new recovery codes from the user menu
-- [ ] **5.7** App layout: navigation that only shows modules the user may use, user menu
+- [x] **5.7** App layout: navigation that only shows modules the user may use, user menu
   (theme, language, logout)
-- [ ] **5.8** Route guards based on permissions
+- [x] **5.8** Route guards based on permissions
 - [ ] **5.9** Home dashboard: per-backend health tiles
 - [ ] **5.10** Admin views: audit log (filter, paginate), sessions, TOTP reset
 - [ ] **5.11** Frontend tests (Vitest) and an end-to-end smoke test (Playwright) for login,

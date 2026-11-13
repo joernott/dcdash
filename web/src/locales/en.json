@@ -13,7 +13,82 @@
     "confirm": "Confirm",
     "retry": "Try again"
   },
+  "nav": {
+    "label": "Main navigation",
+    "toggle": "Show or hide the navigation",
+    "skip": "Skip to content",
+    "home": "Overview",
+    "audit": "Audit log",
+    "sessions": "Sessions",
+    "logout": "Log out",
+    "backHome": "Back to the overview"
+  },
+  "login": {
+    "title": "Log in",
+    "username": "User name",
+    "password": "Password",
+    "submit": "Log in",
+    "totpTitle": "Verification code",
+    "totpHint": "Enter the 6-digit code from your authenticator app.",
+    "recoveryHint": "Enter one of your recovery codes. Each code works only once.",
+    "code": "Code",
+    "recoveryCode": "Recovery code",
+    "verify": "Verify",
+    "useRecovery": "Use a recovery code",
+    "useCode": "Use the authenticator app",
+    "restart": "Log in as another user"
+  },
+  "enroll": {
+    "title": "Set up an authenticator app",
+    "introRequired": "Your account requires a second login step. Set up an authenticator app now.",
+    "introVoluntary": "Protect your account with a second login step.",
+    "step1": "Scan the QR code with an authenticator app (for example on your phone).",
+    "step2": "Enter the 6-digit code the app shows to confirm.",
+    "qrLabel": "QR code for the authenticator app",
+    "manual": "Can't scan? Show the key for manual entry",
+    "confirm": "Confirm",
+    "done": "The authenticator app is set up.",
+    "continue": "Continue"
+  },
+  "recovery": {
+    "intro": "Store these recovery codes in a safe place. If you lose your device, each code lets you log in once. They are shown only now.",
+    "listLabel": "Recovery codes",
+    "copy": "Copy codes",
+    "copied": "Copied"
+  },
+  "account": {
+    "title": "My account",
+    "user": "User",
+    "username": "User name",
+    "displayName": "Name",
+    "source": "Account type",
+    "sources": {
+      "ldap": "Directory",
+      "local": "Break-glass account"
+    },
+    "roles": "Roles",
+    "noRoles": "No roles",
+    "groups": "Groups",
+    "sessionEnds": "Session ends",
+    "totp": "Authenticator app",
+    "totpEnrolled": "Set up",
+    "totpNotEnrolled": "Not set up",
+    "totpOptional": "Your roles don't require it, but you can set it up to protect your account. Once set up, it is required at every login.",
+    "enroll": "Set up now",
+    "recoveryRemaining": "Unused recovery codes: {n}",
+    "regenerate": "New recovery codes",
+    "regenerateHint": "Enter a current code from your authenticator app. Your old recovery codes stop working."
+  },
+  "forbidden": {
+    "title": "No access",
+    "text": "You don't have permission to open this page."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "This page does not exist."
+  },
   "preferences": {
+    "title": "Display settings",
     "theme": {
       "label": "Theme",
       "system": "System",

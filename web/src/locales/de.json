@@ -13,7 +13,82 @@
     "confirm": "Bestätigen",
     "retry": "Erneut versuchen"
   },
+  "nav": {
+    "label": "Hauptnavigation",
+    "toggle": "Navigation ein- oder ausblenden",
+    "skip": "Zum Inhalt springen",
+    "home": "Übersicht",
+    "audit": "Audit-Log",
+    "sessions": "Sitzungen",
+    "logout": "Abmelden",
+    "backHome": "Zurück zur Übersicht"
+  },
+  "login": {
+    "title": "Anmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "submit": "Anmelden",
+    "totpTitle": "Bestätigungscode",
+    "totpHint": "Geben Sie den sechsstelligen Code aus Ihrer Authenticator-App ein.",
+    "recoveryHint": "Geben Sie einen Ihrer Wiederherstellungscodes ein. Jeder Code funktioniert nur einmal.",
+    "code": "Code",
+    "recoveryCode": "Wiederherstellungscode",
+    "verify": "Bestätigen",
+    "useRecovery": "Wiederherstellungscode verwenden",
+    "useCode": "Authenticator-App verwenden",
+    "restart": "Als anderer Benutzer anmelden"
+  },
+  "enroll": {
+    "title": "Authenticator-App einrichten",
+    "introRequired": "Ihr Konto erfordert einen zweiten Anmeldeschritt. Richten Sie jetzt eine Authenticator-App ein.",
+    "introVoluntary": "Schützen Sie Ihr Konto mit einem zweiten Anmeldeschritt.",
+    "step1": "Scannen Sie den QR-Code mit einer Authenticator-App (zum Beispiel auf Ihrem Smartphone).",
+    "step2": "Geben Sie zur Bestätigung den sechsstelligen Code aus der App ein.",
+    "qrLabel": "QR-Code für die Authenticator-App",
+    "manual": "Scannen nicht möglich? Schlüssel zur manuellen Eingabe anzeigen",
+    "confirm": "Bestätigen",
+    "done": "Die Authenticator-App ist eingerichtet.",
+    "continue": "Weiter"
+  },
+  "recovery": {
+    "intro": "Bewahren Sie diese Wiederherstellungscodes sicher auf. Wenn Sie Ihr Gerät verlieren, ermöglicht jeder Code eine Anmeldung. Sie werden nur jetzt angezeigt.",
+    "listLabel": "Wiederherstellungscodes",
+    "copy": "Codes kopieren",
+    "copied": "Kopiert"
+  },
+  "account": {
+    "title": "Mein Konto",
+    "user": "Benutzer",
+    "username": "Benutzername",
+    "displayName": "Name",
+    "source": "Kontoart",
+    "sources": {
+      "ldap": "Verzeichnis",
+      "local": "Notfallkonto"
+    },
+    "roles": "Rollen",
+    "noRoles": "Keine Rollen",
+    "groups": "Gruppen",
+    "sessionEnds": "Sitzung endet",
+    "totp": "Authenticator-App",
+    "totpEnrolled": "Eingerichtet",
+    "totpNotEnrolled": "Nicht eingerichtet",
+    "totpOptional": "Ihre Rollen erfordern sie nicht, aber Sie können sie zum Schutz Ihres Kontos einrichten. Danach ist sie bei jeder Anmeldung erforderlich.",
+    "enroll": "Jetzt einrichten",
+    "recoveryRemaining": "Unbenutzte Wiederherstellungscodes: {n}",
+    "regenerate": "Neue Wiederherstellungscodes",
+    "regenerateHint": "Geben Sie einen aktuellen Code aus Ihrer Authenticator-App ein. Ihre alten Wiederherstellungscodes werden ungültig."
+  },
+  "forbidden": {
+    "title": "Kein Zugriff",
+    "text": "Sie haben keine Berechtigung, diese Seite zu öffnen."
+  },
+  "notFound": {
+    "title": "Seite nicht gefunden",
+    "text": "Diese Seite existiert nicht."
+  },
   "preferences": {
+    "title": "Anzeigeeinstellungen",
     "theme": {
       "label": "Darstellung",
       "system": "Wie System",
