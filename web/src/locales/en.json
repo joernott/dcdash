@@ -2,5 +2,15 @@
   "app": {
     "title": "dcdash",
     "tagline": "Dashboard for central data center services"
+  },
+  "common": {
+    "close": "Close",
+    "loading": "Loading…",
+    "empty": "No entries",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saved": "Saved",
+    "confirm": "Confirm",
+    "retry": "Try again"
   }
 }

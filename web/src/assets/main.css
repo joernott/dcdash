@@ -1,4 +1,73 @@
 @import 'tailwindcss';
 
-/* Dark mode is toggled by the `dark` class on <html> (light / dark / system, see Sprint 5). */
+/* Dark mode is toggled by the `dark` class on <html> (see src/stores/theme.ts). */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Components use these semantic colors (bg-surface, text-fg,
+ * border-border, bg-primary, ...) instead of fixed palette colors, so that every
+ * component works in light and dark mode without separate dark: variants.
+ * Text colors meet WCAG AA contrast (4.5:1) on all surface colors.
+ */
+@theme inline {
+  --color-surface: var(--dc-surface);
+  --color-surface-raised: var(--dc-surface-raised);
+  --color-surface-sunken: var(--dc-surface-sunken);
+  --color-fg: var(--dc-fg);
+  --color-fg-muted: var(--dc-fg-muted);
+  --color-border: var(--dc-border);
+  --color-primary: var(--dc-primary);
+  --color-primary-hover: var(--dc-primary-hover);
+  --color-primary-fg: var(--dc-primary-fg);
+  --color-danger: var(--dc-danger);
+  --color-danger-fg: var(--dc-danger-fg);
+  --color-success: var(--dc-success);
+  --color-warning: var(--dc-warning);
+  --color-focus: var(--dc-focus);
+}
+
+:root {
+  color-scheme: light;
+  --dc-surface: #ffffff;
+  --dc-surface-raised: #f8fafc;
+  --dc-surface-sunken: #f1f5f9;
+  --dc-fg: #0f172a;
+  --dc-fg-muted: #475569;
+  --dc-border: #cbd5e1;
+  --dc-primary: #1d4ed8;
+  --dc-primary-hover: #1e40af;
+  --dc-primary-fg: #ffffff;
+  --dc-danger: #b91c1c;
+  --dc-danger-fg: #ffffff;
+  --dc-success: #15803d;
+  --dc-warning: #a16207;
+  --dc-focus: #2563eb;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --dc-surface: #020617;
+  --dc-surface-raised: #0f172a;
+  --dc-surface-sunken: #1e293b;
+  --dc-fg: #f1f5f9;
+  --dc-fg-muted: #94a3b8;
+  --dc-border: #334155;
+  --dc-primary: #60a5fa;
+  --dc-primary-hover: #93c5fd;
+  --dc-primary-fg: #0f172a;
+  --dc-danger: #f87171;
+  --dc-danger-fg: #0f172a;
+  --dc-success: #4ade80;
+  --dc-warning: #facc15;
+  --dc-focus: #93c5fd;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-fg antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-focus;
+  }
+}

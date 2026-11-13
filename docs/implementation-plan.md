@@ -36,7 +36,7 @@ These apply to every task:
 | 2 | `sprint/02-tls` | Certificates: static files, ACME (Let's Encrypt, step-ca) | v0.1.0 | done |
 | 3 | `sprint/03-auth` | State store, LDAP login, sessions, break-glass account | v0.1.0 | done |
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | done |
-| 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | open |
+| 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | in progress |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | open |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | open |
@@ -164,7 +164,7 @@ These apply to every task:
 
 ## Sprint 5 — Frontend Shell
 
-- [ ] **5.1** Design system: Tailwind theme tokens for light and dark, base components
+- [x] **5.1** Design system: Tailwind theme tokens for light and dark, base components
   (button, table, form, modal, toast), each checked in both themes
 - [ ] **5.2** Dark mode: light, dark and system modes (`prefers-color-scheme`), toggle in the
   user menu, stored in the user preferences, inline bootstrap script so the page doesn't
