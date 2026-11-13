@@ -14,6 +14,8 @@ tags:
     description: Health and build information
   - name: auth
     description: Login, logout and session information
+  - name: me
+    description: Settings of the logged-in user
   - name: audit
     description: Audit log
   - name: admin
@@ -283,6 +285,47 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/me/preferences:
+    get:
+      tags: [me]
+      operationId: getPreferences
+      summary: Preferences of the logged-in user
+      description: Defaults (browser language, system theme) if the user has not saved any.
+      responses:
+        "200":
+          description: The preferences.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Preferences" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [me]
+      operationId: setPreferences
+      summary: Save the preferences of the logged-in user
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Preferences" }
+      responses:
+        "200":
+          description: The saved preferences.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Preferences" }
+        "400":
+          description: "Invalid value (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/audit:
     get:
       tags: [audit]
@@ -544,6 +587,19 @@ components:
         remoteAddr: { type: string }
         userAgent: { type: string }
         current: { type: boolean, description: The session of the request. }
+
+    Preferences:
+      type: object
+      required: [language, theme]
+      additionalProperties: false
+      properties:
+        language:
+          type: string
+          enum: ["", en, de]
+          description: Empty means the browser language.
+        theme:
+          type: string
+          enum: [system, light, dark]
 
     UserInfo:
       type: object

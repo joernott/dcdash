@@ -157,7 +157,7 @@ These apply to every task:
   - [x] **4.9.1** Test that `configs/config.example.yaml` stays valid (it had no test yet)
 - [x] **4.10** Admin API: list and terminate sessions, reset a user's TOTP (root only), plus
   the `dcdash totp reset` CLI command
-- [ ] **4.11** User preferences: storage and API (`GET`/`PUT /api/v1/me/preferences`) for
+- [x] **4.11** User preferences: storage and API (`GET`/`PUT /api/v1/me/preferences`) for
   language and theme
 
 ## Sprint 5 — Frontend Shell
@@ -175,7 +175,9 @@ These apply to every task:
   - [ ] **5.4.1** Vite dev server over HTTPS with the dev certificate: the session cookie is
     always `Secure` (`__Host-` prefix), so it is not sent over plain HTTP (added in 3.5)
 - [ ] **5.5** Login page with the TOTP step
-- [ ] **5.6** TOTP enrollment page: QR code, confirmation, recovery code display
+- [ ] **5.6** TOTP enrollment page: QR code (rendered in the browser from the `otpauth://` URI
+  returned by the API, see 4.3), confirmation, recovery code display; voluntary enrollment and
+  new recovery codes from the user menu
 - [ ] **5.7** App layout: navigation that only shows modules the user may use, user menu
   (theme, language, logout)
 - [ ] **5.8** Route guards based on permissions

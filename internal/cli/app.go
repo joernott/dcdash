@@ -15,6 +15,7 @@ import (
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
+	"github.com/joernott/dcdash/internal/prefs"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/store"
@@ -70,6 +71,7 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		func(mux *http.ServeMux) {
 			auditLog.Register(mux, func(h http.Handler) http.Handler { return auth.Require(rbac.PermAuditRead, h) })
 		},
+		func(mux *http.ServeMux) { prefs.NewStore(st.DB()).Register(mux, auditLog, auth.RequireAuthenticated) },
 	)
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

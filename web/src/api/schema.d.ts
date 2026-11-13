@@ -198,6 +198,27 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/me/preferences': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Preferences of the logged-in user
+     * @description Defaults (browser language, system theme) if the user has not saved any.
+     */
+    get: operations['getPreferences']
+    /** Save the preferences of the logged-in user */
+    put: operations['setPreferences']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/audit': {
     parameters: {
       query?: never
@@ -382,6 +403,15 @@ export interface components {
       userAgent: string
       /** @description The session of the request. */
       current: boolean
+    }
+    Preferences: {
+      /**
+       * @description Empty means the browser language.
+       * @enum {string}
+       */
+      language: '' | 'en' | 'de'
+      /** @enum {string} */
+      theme: 'system' | 'light' | 'dark'
     }
     UserInfo: {
       username: string
@@ -872,6 +902,66 @@ export interface operations {
         }
       }
       429: components['responses']['TooManyAttempts']
+      default: components['responses']['Error']
+    }
+  }
+  getPreferences: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Preferences']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  setPreferences: {
+    parameters: {
+      query?: never
+      header: {
+        /** @description The csrfToken of the session. */
+        'X-CSRF-Token': components['parameters']['CSRFToken']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['Preferences']
+      }
+    }
+    responses: {
+      /** @description The saved preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Preferences']
+        }
+      }
+      /** @description Invalid value (code: invalid_request). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: components['responses']['Unauthorized']
       default: components['responses']['Error']
     }
   }

@@ -335,5 +335,6 @@ entry can't be stored, it is written to the application log as an error instead.
 | `security.reencrypt` | `dcdash reencrypt` |
 | `admin.session.terminate` | An administrator terminated sessions; `target` is the user |
 | `admin.totp.reset` | TOTP reset in the API or with `dcdash totp reset` |
+| `user.preferences.update` | A user saved their preferences (language, theme) |
 | `auth.logout` | Logout |
 | `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |
