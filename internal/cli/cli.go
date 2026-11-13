@@ -58,6 +58,8 @@ func NewRootCommand(deps Deps) *cobra.Command {
 		newGenKeyCommand(),
 		newHashPasswordCommand(),
 		newConfigCommand(&configPath),
+		newTOTPCommand(&configPath),
+		newReencryptCommand(&configPath),
 	)
 	return root
 }

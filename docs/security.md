@@ -60,9 +60,13 @@ Rotate the key when it may have been exposed, or according to your policy:
 
 2. Restart dcdash. Data encrypted with the old key stays readable. Everything written from now
    on uses the new key, and the key check value is re-encrypted right away.
-3. Re-encrypt the remaining data with the new key. Until a re-encryption command is available
-   (it comes with the first encrypted data, TOTP in Sprint 4), records are re-encrypted when
-   they are next written.
+3. Re-encrypt the remaining data with the new key, as the user dcdash runs as:
+
+   ```sh
+   sudo -u dcdash dcdash reencrypt
+   ```
+
+   Without this step, TOTP secrets are re-encrypted when they are next used.
 4. Once all data is re-encrypted, remove the old key from `previous_encryption_keys` and
    destroy it.
 
@@ -110,6 +114,37 @@ password.
   (default 30 minutes) without requests, whichever comes first. Logging in again always
   creates a new session, so a session can't be fixed in advance (session fixation).
 - When a session advances a step (password, then TOTP), its token is replaced.
+- A session that has passed the password step but not the TOTP step (or the enrollment)
+  expires after 10 minutes. Until then it grants no access.
+
+### TOTP
+
+After the password, dcdash asks for a one-time code from an authenticator app (TOTP,
+RFC 6238: HMAC-SHA1, 6 digits, 30 seconds), which every common app supports.
+
+**When it's required:** a user must use TOTP if **any** of their roles has `require_totp: true`
+(the default). The `root` role and the break-glass account always require it. Users who don't
+need TOTP can still enroll voluntarily, and from then on it's enforced for them as well.
+
+**Enrollment:** a user who needs TOTP but hasn't enrolled is asked to enroll right after the
+password step. dcdash creates a secret, the app scans it as a QR code, and the user confirms
+it with one code. Only then is the secret saved. The user then receives 10 **recovery codes**,
+which are shown only once.
+
+**Protection:**
+
+- Secrets are encrypted in the database (see [Data at rest](#data-at-rest)). An enrollment
+  in progress is stored encrypted in the session.
+- Codes from the previous, current and next 30-second interval are accepted, to allow for
+  clock drift. Every code is accepted **only once**; a code that was already used, also the
+  one used for enrollment, is rejected.
+- After `auth.lockout.totp.max_failures` wrong codes (default 5 in 15 minutes), the user is
+  locked out of the TOTP step for the lockout duration.
+- Recovery codes (16 characters, about 79 bits) are stored as hashes and work once each. A
+  logged-in user can replace all of them with a current code.
+
+**Lost device:** a user can log in with a recovery code. If those are lost too, root resets
+the user's TOTP, and the user enrolls again at the next login.
 
 ### CSRF protection
 
@@ -154,9 +189,18 @@ auth:
 - The username is reserved: logins with this name are never sent to the directory. Choose a
   name that doesn't exist there.
 - The password is stored as an argon2id hash (64 MiB memory, 3 iterations, 4 lanes).
-- The account **always** has to complete the TOTP step. Its sessions can't be used before
-  that. The TOTP step arrives in Sprint 4; until then, the account can't complete a login.
-- Every use is logged as a warning. The account holds the `root` role (Sprint 4).
+- The account **always** has to complete the TOTP step. It can't enroll in the web
+  interface, so that its password alone never grants access. Enroll it on the server, as the
+  user dcdash runs as:
+
+  ```sh
+  sudo -u dcdash dcdash totp enroll breakglass
+  ```
+
+  The command prints the `otpauth://` URI and the secret, asks for a code, and prints the
+  recovery codes. Until then, the account's logins are refused.
+- Every use is logged as a warning and recorded in the audit log. The account holds the
+  `root` role.
 
 ## Roles and permissions
 
@@ -263,5 +307,9 @@ entry can't be stored, it is written to the application log as an error instead.
 | Action | When |
 |---|---|
 | `auth.login` | Every login attempt. A locked-out attempt has the result `denied` |
+| `auth.totp.verify` | Every TOTP or recovery code entered (`details.method`) |
+| `auth.totp.enroll` | TOTP enrollment, in the web interface or with `dcdash totp enroll` |
+| `auth.recovery_codes.regenerate` | A user replaced their recovery codes |
+| `security.reencrypt` | `dcdash reencrypt` |
 | `auth.logout` | Logout |
 | `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |

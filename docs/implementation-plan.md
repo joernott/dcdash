@@ -140,6 +140,10 @@ These apply to every task:
   enforced once a user has enrolled voluntarily
 - [x] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
   it encrypted
+  - [x] **4.3.1** `dcdash totp enroll`: the break-glass account enrolls on the server only, so
+    that its password alone never grants access
+  - [x] **4.3.2** `dcdash reencrypt`: re-encrypt stored secrets after a key rotation (promised in
+    `docs/security.md`)
 - [x] **4.4** Recovery codes: generate them, store them hashed, single use
 - [x] **4.5** TOTP replay protection and lockout after repeated failures
 - [x] **4.6** Role model: built-in `root` (group `dashroot`), roles from the config with
