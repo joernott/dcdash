@@ -20,7 +20,8 @@ import (
 	"github.com/joernott/dcdash/internal/store"
 )
 
-// fakeDirectory accepts alice/secret; "down" simulates an unavailable directory.
+// fakeDirectory accepts alice (dashroot), bob (dcdash-dns) and carol (no groups),
+// all with password "secret"; "down" simulates an unavailable directory.
 type fakeDirectory struct{ calls int }
 
 func (f *fakeDirectory) Authenticate(_ context.Context, username, password string) (*ldapauth.User, error) {
@@ -28,6 +29,13 @@ func (f *fakeDirectory) Authenticate(_ context.Context, username, password strin
 	switch {
 	case username == "down":
 		return nil, fmt.Errorf("%w: connection refused", ldapauth.ErrUnavailable)
+	case username == "bob" && password == "secret":
+		return &ldapauth.User{
+			DN: "CN=Bob,OU=Users,DC=example,DC=com", Username: "bob", DisplayName: "Bob",
+			Groups: []ldapauth.Group{{DN: "CN=dcdash-dns,OU=Groups,DC=example,DC=com", Name: "dcdash-dns"}},
+		}, nil
+	case username == "carol" && password == "secret":
+		return &ldapauth.User{DN: "CN=Carol,OU=Users,DC=example,DC=com", Username: "carol"}, nil
 	case username == "alice" && password == "secret":
 		return &ldapauth.User{
 			DN: "CN=Alice,OU=Users,DC=example,DC=com", Username: "alice", DisplayName: "Alice",
@@ -53,17 +61,16 @@ func newEnv(t *testing.T) *env {
 	t.Cleanup(func() { _ = st.Close() })
 	sm := session.NewManager(st.DB(), 8*time.Hour, 30*time.Minute, zerolog.Nop())
 	dir := &fakeDirectory{}
+	authz := testAuthorizer(t)
 	svc := New(Options{
-		LDAP: dir, Sessions: sm, Log: zerolog.Nop(),
+		LDAP: dir, Sessions: sm, Authorizer: authz, Log: zerolog.Nop(),
 		UserLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
 		IPLockout:   lockout.Policy{MaxFailures: 5, Window: time.Minute, Duration: time.Minute},
 	})
 	mux := http.NewServeMux()
 	svc.Register(mux)
-	mux.Handle("GET /api/v1/protected", RequireAuthenticated(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})))
-	return &env{h: sm.Middleware(session.CSRFExcept(LoginPath)(mux)), dir: dir, sm: sm}
+	registerTestRoutes(mux)
+	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm}
 }
 
 type call struct {

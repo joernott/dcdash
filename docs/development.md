@@ -108,6 +108,12 @@ are rejected, so typos are caught early.
   translated by the frontend, `message` is an English fallback.
 - Every API change updates `api/openapi.yaml`, followed by `make gen-api`. CI fails if the
   generated types are out of date.
+- **Permission checks:** every API handler checks the caller's permission (see
+  [security.md](security.md#roles-and-permissions)). Wrap handlers that need a fixed
+  permission with `auth.Require(rbac.MustParse("system:core:audit:read"), h)`, or root-only
+  handlers with `auth.RequireRoot(h)`. When the permission depends on the request, call
+  `auth.Check(w, r, rbac.P(module, instance, resource, action))` in the handler; it writes the
+  401 or 403 response itself. Never rely on the frontend hiding something.
 
 ### Frontend
 

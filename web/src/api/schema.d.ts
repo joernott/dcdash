@@ -136,6 +136,14 @@ export interface components {
        * @description Absolute end of the session.
        */
       expiresAt: string
+      /** @description Roles of the user; empty until all login steps are completed. */
+      roles: string[]
+      /**
+       * @description Granted permissions (module:instance:resource:action); empty until all login steps
+       *     are completed. The frontend uses them to hide what the user cannot use; the backend
+       *     checks every request.
+       */
+      permissions: string[]
     }
     UserInfo: {
       username: string
@@ -178,6 +186,24 @@ export interface components {
     }
   }
   responses: {
+    /** @description Not logged in (code: not_authenticated). */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description Permission denied (code: forbidden). */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Error response. */
     Error: {
       headers: {

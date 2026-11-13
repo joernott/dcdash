@@ -78,17 +78,16 @@ func newLocalEnv(t *testing.T) (*env, *LocalAccount) {
 	t.Cleanup(func() { _ = st.Close() })
 	sm := session.NewManager(st.DB(), time.Hour, time.Hour, zerolog.Nop())
 	dir := &fakeDirectory{}
+	authz := testAuthorizer(t)
 	svc := New(Options{
-		LDAP: dir, Local: local, Sessions: sm, Log: zerolog.Nop(),
+		LDAP: dir, Local: local, Sessions: sm, Authorizer: authz, Log: zerolog.Nop(),
 		UserLockout: lockout.Policy{MaxFailures: 3, Window: time.Minute, Duration: time.Minute},
 		IPLockout:   lockout.Policy{MaxFailures: 50, Window: time.Minute, Duration: time.Minute},
 	})
 	mux := http.NewServeMux()
 	svc.Register(mux)
-	mux.Handle("GET /api/v1/protected", RequireAuthenticated(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})))
-	return &env{h: sm.Middleware(session.CSRFExcept(LoginPath)(mux)), dir: dir, sm: sm}, local
+	registerTestRoutes(mux)
+	return &env{h: sm.Middleware(authz.Middleware(session.CSRFExcept(LoginPath)(mux))), dir: dir, sm: sm}, local
 }
 
 func TestLocalLoginRequiresTOTP(t *testing.T) {

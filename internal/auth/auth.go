@@ -33,6 +33,7 @@ type Service struct {
 	ldap           Authenticator // nil if LDAP is not configured
 	local          *LocalAccount // nil if the break-glass account is disabled
 	sessions       *session.Manager
+	authz          *Authorizer
 	users          *lockout.Limiter
 	ips            *lockout.Limiter
 	trustedProxies []netip.Prefix
@@ -41,9 +42,11 @@ type Service struct {
 
 // Options configures the service.
 type Options struct {
-	LDAP           Authenticator
-	Local          *LocalAccount
-	Sessions       *session.Manager
+	LDAP     Authenticator
+	Local    *LocalAccount
+	Sessions *session.Manager
+	// Authorizer resolves roles; nil means no roles (only for tests).
+	Authorizer     *Authorizer
 	UserLockout    lockout.Policy
 	IPLockout      lockout.Policy
 	TrustedProxies []netip.Prefix
@@ -56,6 +59,7 @@ func New(o Options) *Service {
 		ldap:           o.LDAP,
 		local:          o.Local,
 		sessions:       o.Sessions,
+		authz:          o.Authorizer,
 		users:          lockout.New(o.UserLockout),
 		ips:            lockout.New(o.IPLockout),
 		trustedProxies: o.TrustedProxies,
@@ -100,19 +104,28 @@ type SessionInfo struct {
 	Stage     string    `json:"stage"`
 	CSRFToken string    `json:"csrfToken"`
 	ExpiresAt time.Time `json:"expiresAt"`
+	// Roles and Permissions are only set once all login steps are completed.
+	Roles       []string `json:"roles"`
+	Permissions []string `json:"permissions"`
 }
 
-func sessionInfo(s *session.Session) SessionInfo {
-	groups := make([]GroupInfo, 0, len(s.Groups))
-	for _, dn := range s.Groups {
+func (s *Service) sessionInfo(sess *session.Session) SessionInfo {
+	groups := make([]GroupInfo, 0, len(sess.Groups))
+	for _, dn := range sess.Groups {
 		groups = append(groups, GroupInfo{DN: dn, Name: groupName(dn)})
 	}
-	return SessionInfo{
-		User:      UserInfo{Username: s.Username, DisplayName: s.DisplayName, Source: s.Source, Groups: groups},
-		Stage:     s.Stage,
-		CSRFToken: s.CSRFToken,
-		ExpiresAt: s.ExpiresAt,
+	info := SessionInfo{
+		User:      UserInfo{Username: sess.Username, DisplayName: sess.DisplayName, Source: sess.Source, Groups: groups},
+		Stage:     sess.Stage,
+		CSRFToken: sess.CSRFToken,
+		ExpiresAt: sess.ExpiresAt,
 	}
+	info.Roles, info.Permissions = []string{}, []string{}
+	if sess.Authenticated() && s.authz != nil {
+		subj := s.authz.Subject(sess)
+		info.Roles, info.Permissions = subj.Roles, subj.Permissions.Strings()
+	}
+	return info
 }
 
 // groupName returns the value of the first RDN (usually the CN) of a DN.
@@ -186,7 +199,7 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Info().Str("dn", user.DN).Int("groups", len(groups)).Msg("login successful")
 	}
-	httpx.WriteJSON(w, http.StatusOK, sessionInfo(sess))
+	httpx.WriteJSON(w, http.StatusOK, s.sessionInfo(sess))
 }
 
 // authenticate verifies the credentials against the break-glass account (if
@@ -230,7 +243,7 @@ func (s *Service) handleMe(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusUnauthorized, "not_authenticated", "not logged in")
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, sessionInfo(sess))
+	httpx.WriteJSON(w, http.StatusOK, s.sessionInfo(sess))
 }
 
 // RequireAuthenticated rejects requests without a fully authenticated session.

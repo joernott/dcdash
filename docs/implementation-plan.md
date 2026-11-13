@@ -144,7 +144,7 @@ These apply to every task:
   group mappings, `require_totp` and permission strings
 - [x] **4.7** Permission engine: the `module:instance:resource:action` grammar, wildcards,
   action hierarchy (`read` < `operate` < `console` < `write` < `admin`), unit tests
-- [ ] **4.8** Authorization middleware and helpers for API handlers, permissions exposed in
+- [x] **4.8** Authorization middleware and helpers for API handlers, permissions exposed in
   `/auth/me`
 - [ ] **4.9** Audit log: data model, writer, logging of logins and every state change,
   query API with filters, optional output to syslog or a file
