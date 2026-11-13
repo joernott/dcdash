@@ -138,6 +138,8 @@ These apply to every task:
 - [x] **4.2** TOTP requirement per role (`require_totp`, default `true`): required if any of
   the user's roles requires it; always required for `root` and the break-glass account;
   enforced once a user has enrolled voluntarily
+  - [x] **4.2.1** Integration test against the Samba AD: a member of `dashroot` enrolls TOTP,
+    gets the root role and logs in again with the TOTP step
 - [x] **4.3** TOTP enrollment: generate the secret and QR code, confirm with one code, store
   it encrypted
   - [x] **4.3.1** `dcdash totp enroll`: the break-glass account enrolls on the server only, so
