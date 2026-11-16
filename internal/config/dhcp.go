@@ -73,7 +73,7 @@ func (d DHCP) validate(add func(string, ...any)) {
 		u, err := url.Parse(s.URL)
 		switch {
 		case err != nil || u.Host == "" || (u.Path != "" && u.Path != "/") || (u.Scheme != "https" && u.Scheme != "http"):
-			add("%s.url %q: must be https://host:port", pre, s.URL)
+			add("%s.url %q: must be https://host[:port] without a path", pre, s.URL)
 		case u.Scheme == "http" && !s.Insecure:
 			add("%s.url %q: http sends the password in clear text; use https or set insecure: true", pre, s.URL)
 		}

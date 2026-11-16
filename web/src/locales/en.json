@@ -168,7 +168,7 @@
     "terminatedCount": "No sessions were active. | One session was terminated. | {n} sessions were terminated.",
     "resetTotp": "Reset authenticator app",
     "resetTotpHint": "For users who lost their device and their recovery codes. Directory users set up a new app at their next login; the break-glass account must be set up on the server.",
-    "resetTotpText": "Reset the authenticator app of {user}? The user's recovery codes stop working as well.",
+    "resetTotpText": "Reset the authenticator app of {user}? The user's recovery codes stop working as well, and all their sessions end.",
     "resetDone": "The authenticator app of {user} was reset."
   },
   "forbidden": {

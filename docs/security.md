@@ -34,7 +34,7 @@ chown dcdash: /etc/dcdash/encryption.key
 ```
 
 dcdash warns at startup if the configuration file or a file referenced with `file:` (keys,
-tokens, passwords) is readable by other users.
+tokens, passwords) is accessible by other users (any permission for "others").
 
 **Back up the key separately from the database.** Without it, the encrypted secrets can't be
 recovered. For TOTP this means every user has to enroll again after an administrator reset.

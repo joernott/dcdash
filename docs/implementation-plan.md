@@ -303,7 +303,7 @@ These apply to every task:
   checked for WCAG AA contrast on all views
   - [x] **9.4.1** Automated WCAG 2.1 AA check (axe-core, including color contrast) of every view
     in the end-to-end tests, in light and dark mode: no violations
-- [ ] **9.5** Documentation: installation, full configuration reference, admin guide, user
+- [x] **9.5** Documentation: installation, full configuration reference, admin guide, user
   guide, backend prerequisites (Proxmox token, bind, Kea, LDAP)
 - [x] **9.6** Packaging: goreleaser, Linux amd64 and arm64 binaries, `.deb`/`.rpm` with a
   systemd unit, container image

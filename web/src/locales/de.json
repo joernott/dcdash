@@ -168,7 +168,7 @@
     "terminatedCount": "Es waren keine Sitzungen aktiv. | Eine Sitzung wurde beendet. | {n} Sitzungen wurden beendet.",
     "resetTotp": "Authenticator-App zurücksetzen",
     "resetTotpHint": "Für Benutzer, die ihr Gerät und ihre Wiederherstellungscodes verloren haben. Verzeichnisbenutzer richten bei der nächsten Anmeldung eine neue App ein; das Notfallkonto muss auf dem Server eingerichtet werden.",
-    "resetTotpText": "Die Authenticator-App von {user} zurücksetzen? Auch die Wiederherstellungscodes werden ungültig.",
+    "resetTotpText": "Die Authenticator-App von {user} zurücksetzen? Auch die Wiederherstellungscodes werden ungültig, und alle Sitzungen der Person werden beendet.",
     "resetDone": "Die Authenticator-App von {user} wurde zurückgesetzt."
   },
   "forbidden": {
