@@ -24,6 +24,8 @@ tags:
     description: "Proxmox VE clusters: inventory, power actions, tasks and consoles"
   - name: dns
     description: "DNS zones and records in Cloudflare and bind9"
+  - name: dhcp
+    description: "Kea DHCP servers: subnets, leases and reservations"
 
 paths:
   /healthz:
@@ -889,6 +891,220 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/dhcp/servers:
+    get:
+      tags: [dhcp]
+      operationId: listDHCPServers
+      summary: List DHCP servers
+      description: |
+        Returns the Kea servers on which the user holds at least `read` on any subnet, with
+        their state, capabilities (from the loaded hook libraries) and HA state.
+      responses:
+        "200":
+          description: Visible servers.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPServerList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dhcp/servers/{server}/subnets:
+    get:
+      tags: [dhcp]
+      operationId: listDHCPSubnets
+      summary: List the subnets of a server
+      description: |
+        Only subnets the user may read are returned (`dhcp:<server>:<prefix>:read`). Pools need
+        the subnet_cmds hook, statistics the stat_cmds hook.
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+      responses:
+        "200":
+          description: Subnets.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPSubnetList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dhcp/servers/{server}/leases:
+    get:
+      tags: [dhcp]
+      operationId: listDHCPLeases
+      summary: List or search leases
+      description: |
+        Either the leases of one subnet (`subnet`, at most 5000) or a search (`by` and `q`).
+        Only leases of readable subnets are returned. Needs the lease_cmds hook.
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+        - { name: subnet, in: query, schema: { type: integer, minimum: 1 }, description: Subnet ID. }
+        - name: by
+          in: query
+          schema: { type: string, enum: [ip, hw-address, client-id, duid, hostname] }
+          description: Search key; the server's searchKeys lists those of its family.
+        - { name: q, in: query, schema: { type: string }, description: Search value. }
+      responses:
+        "200":
+          description: Leases.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPLeaseList" }
+        "400": { $ref: "#/components/responses/DHCPInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DHCPConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dhcp/servers/{server}/leases/{ip}:
+    delete:
+      tags: [dhcp]
+      operationId: deleteDHCPLease
+      summary: Delete a lease
+      description: |
+        Requires `operate` on the lease's subnet. Kea doesn't pass this change to an HA partner,
+        so dcdash deletes the lease on the other servers of the HA group too and reports the
+        result per partner. Audited as `dhcp.lease.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+        - { name: ip, in: path, required: true, schema: { type: string }, description: Address or delegated prefix. }
+        - { name: type, in: query, schema: { type: string, enum: [IA_NA, IA_PD] }, description: "DHCPv6: lease type (default IA_NA)." }
+      responses:
+        "200":
+          description: Lease deleted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPLeaseDeleteResult" }
+        "400": { $ref: "#/components/responses/DHCPInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DHCPConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dhcp/servers/{server}/reservations:
+    get:
+      tags: [dhcp]
+      operationId: listDHCPReservations
+      summary: List reservations
+      description: |
+        Reservations from the configuration file (read-only) and the host database, of all
+        readable subnets or of one subnet. Needs the host_cmds hook.
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+        - { name: subnet, in: query, schema: { type: integer, minimum: 0 }, description: "Subnet ID; 0 for global reservations." }
+      responses:
+        "200":
+          description: Reservations.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPReservationList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DHCPConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [dhcp]
+      operationId: createDHCPReservation
+      summary: Add a reservation
+      description: |
+        Requires `write` on the subnet and a host database: on this server, or on a partner of
+        its HA group (the partners share the host database). Audited as
+        `dhcp.reservation.create`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DHCPReservationRequest" }
+      responses:
+        "201":
+          description: Reservation added.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPReservation" }
+        "400": { $ref: "#/components/responses/DHCPInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DHCPConflict" }
+        "422": { $ref: "#/components/responses/DHCPRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dhcp/servers/{server}/reservations/{id}:
+    put:
+      tags: [dhcp]
+      operationId: updateDHCPReservation
+      summary: Change a reservation
+      description: |
+        Requires `write` on the subnet. Subnet and identifier can't change. Client classes,
+        options and boot fields are kept. Audited as `dhcp.reservation.update`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+        - $ref: "#/components/parameters/DHCPReservationID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DHCPReservationRequest" }
+      responses:
+        "200":
+          description: Reservation changed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DHCPReservation" }
+        "400": { $ref: "#/components/responses/DHCPInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DHCPConflict" }
+        "422": { $ref: "#/components/responses/DHCPRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [dhcp]
+      operationId: deleteDHCPReservation
+      summary: Delete a reservation
+      description: Requires `write` on the subnet. Audited as `dhcp.reservation.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DHCPServer"
+        - $ref: "#/components/parameters/DHCPReservationID"
+        - { name: version, in: query, required: true, schema: { type: string }, description: Version of the reservation as read. }
+      responses:
+        "204": { description: Reservation deleted. }
+        "400": { $ref: "#/components/responses/DHCPInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DHCPConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -912,7 +1128,28 @@ components:
     DNSProvider: { name: provider, in: path, required: true, schema: { type: string }, description: Provider name from the configuration. }
     DNSZone: { name: zone, in: path, required: true, schema: { type: string }, description: Zone name without trailing dot. }
     DNSRecordID: { name: id, in: path, required: true, schema: { type: string } }
+
+    DHCPServer: { name: server, in: path, required: true, schema: { type: string }, description: Server name from the configuration. }
+    DHCPReservationID: { name: id, in: path, required: true, schema: { type: string }, description: The id of the reservation as listed. }
   responses:
+    DHCPInvalid:
+      description: "Invalid reservation (code: invalid_reservation, with the reason as message) or request (invalid_request)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    DHCPConflict:
+      description: |
+        Codes: conflict (changed since it was read, or Kea reports a conflict), read_only (the
+        reservation is in the configuration file), unsupported (the server lacks the hook
+        library or the host database).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    DHCPRejected:
+      description: "Kea rejected the change, e.g. a duplicate reservation (code: rejected, with Kea's message)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     DNSInvalid:
       description: "Invalid record or zone (code: invalid_record, with the reason as message) or body (invalid_request)."
       content:
@@ -1409,3 +1646,187 @@ components:
         proxied: { type: boolean }
         comment: { type: string }
         version: { type: string }
+
+    DHCPCapabilities:
+      type: object
+      required: [leases, leaseDelete, reservations, reservationWrite, subnets, statistics, ha]
+      properties:
+        leases: { type: boolean, description: List and search leases (lease_cmds). }
+        leaseDelete: { type: boolean, description: Delete leases (lease_cmds). }
+        reservations: { type: boolean, description: List reservations (host_cmds). }
+        reservationWrite: { type: boolean, description: Change reservations (host_cmds and a host database). }
+        subnets: { type: boolean, description: Pools of the subnets (subnet_cmds). }
+        statistics: { type: boolean, description: Utilization of the subnets (stat_cmds). }
+        ha: { type: boolean, description: The HA hook is loaded. }
+
+    DHCPServer:
+      type: object
+      required: [name, family, status, capabilities, hostDatabase, ha, searchKeys]
+      properties:
+        name: { type: string }
+        family: { type: string, enum: [v4, v6] }
+        haGroup: { type: string }
+        partners:
+          type: array
+          items: { type: string }
+          description: The other servers of the HA group.
+        status: { type: string, enum: [ok, unavailable] }
+        error: { type: string, description: Why the server is unavailable. }
+        version: { type: string, examples: ["3.0.4"] }
+        uptime: { type: integer, description: Seconds since the start. }
+        capabilities: { $ref: "#/components/schemas/DHCPCapabilities" }
+        hostDatabase: { type: boolean }
+        ha:
+          type: array
+          items:
+            type: object
+            required: [mode, role, state, partner, partnerState, inTouch]
+            properties:
+              mode: { type: string, examples: [hot-standby, load-balancing] }
+              role: { type: string }
+              state: { type: string }
+              partner: { type: string }
+              partnerState: { type: string }
+              inTouch: { type: boolean }
+        searchKeys:
+          type: array
+          items: { type: string, enum: [ip, hw-address, client-id, duid, hostname] }
+
+    DHCPServerList:
+      type: object
+      required: [servers]
+      properties:
+        servers:
+          type: array
+          items: { $ref: "#/components/schemas/DHCPServer" }
+
+    DHCPSubnetStats:
+      type: object
+      required: [subnetId, total, assigned, declined]
+      properties:
+        subnetId: { type: integer }
+        total: { type: number, description: Addresses in the pools (v6 IA_NA); can exceed 2^53. }
+        assigned: { type: number }
+        declined: { type: number }
+        totalPd: { type: number, description: Delegatable prefixes (v6). }
+        assignedPd: { type: number }
+
+    DHCPSubnet:
+      type: object
+      required: [id, prefix, pools]
+      properties:
+        id: { type: integer }
+        prefix: { type: string, examples: ["192.0.2.0/24"] }
+        sharedNetwork: { type: string }
+        pools:
+          type: array
+          items: { type: string, examples: ["192.0.2.100-192.0.2.199"] }
+        pdPools:
+          type: array
+          items: { type: string, examples: ["2001:db8:8000::/48 → /56"] }
+        stats: { $ref: "#/components/schemas/DHCPSubnetStats" }
+
+    DHCPSubnetList:
+      type: object
+      required: [subnets]
+      properties:
+        subnets:
+          type: array
+          items: { $ref: "#/components/schemas/DHCPSubnet" }
+
+    DHCPLease:
+      type: object
+      required: [ipAddress, subnetId, subnet, state, validLifetime, expires, canDelete]
+      properties:
+        ipAddress: { type: string }
+        type: { type: string, enum: [IA_NA, IA_PD], description: DHCPv6 only. }
+        prefixLen: { type: integer }
+        hwAddress: { type: string }
+        clientId: { type: string }
+        duid: { type: string }
+        iaid: { type: integer }
+        hostname: { type: string }
+        subnetId: { type: integer }
+        subnet: { type: string }
+        state: { type: string, enum: [assigned, declined, expired, released] }
+        validLifetime: { type: integer }
+        preferredLifetime: { type: integer }
+        expires: { type: string, format: date-time }
+        canDelete: { type: boolean, description: The user may delete the lease. }
+
+    DHCPLeaseList:
+      type: object
+      required: [leases, truncated]
+      properties:
+        leases:
+          type: array
+          items: { $ref: "#/components/schemas/DHCPLease" }
+        truncated: { type: boolean, description: The subnet has more leases than returned. }
+
+    DHCPLeaseDeleteResult:
+      type: object
+      required: [partners]
+      properties:
+        partners:
+          type: array
+          items:
+            type: object
+            required: [server, done]
+            properties:
+              server: { type: string }
+              done: { type: boolean, description: "false without error: the partner had no such lease." }
+              error: { type: string }
+
+    DHCPReservation:
+      type: object
+      required: [id, version, subnetId, subnet, identifierType, identifier, ipAddresses, source, readOnly]
+      properties:
+        id: { type: string }
+        version: { type: string, description: Send back with an update or delete. }
+        subnetId: { type: integer, description: "0: global reservation." }
+        subnet: { type: string }
+        identifierType: { type: string, examples: [hw-address, duid, client-id] }
+        identifier: { type: string }
+        ipAddresses:
+          type: array
+          items: { type: string }
+        prefixes:
+          type: array
+          items: { type: string }
+        hostname: { type: string }
+        clientClasses:
+          type: array
+          items: { type: string }
+        options: { type: integer, description: Number of option values (not editable in dcdash). }
+        source: { type: string, enum: [config, database] }
+        readOnly: { type: boolean }
+
+    DHCPReservationList:
+      type: object
+      required: [reservations]
+      properties:
+        reservations:
+          type: array
+          items: { $ref: "#/components/schemas/DHCPReservation" }
+
+    DHCPReservationRequest:
+      type: object
+      required: [subnetId, identifierType, identifier]
+      additionalProperties: false
+      properties:
+        subnetId: { type: integer, minimum: 0 }
+        identifierType:
+          type: string
+          enum: [hw-address, client-id, duid]
+          description: "client-id for DHCPv4, duid for DHCPv6."
+        identifier: { type: string, description: "Hex bytes, e.g. aa:bb:cc:dd:ee:ff." }
+        ipAddresses:
+          type: array
+          items: { type: string }
+          description: At most one for DHCPv4; within the subnet.
+        prefixes:
+          type: array
+          items: { type: string }
+          description: Delegated prefixes (DHCPv6).
+        hostname: { type: string }
+        version: { type: string, description: Required for updates. }

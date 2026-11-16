@@ -264,14 +264,14 @@ These apply to every task:
 - [x] **8.2** Kea client: HTTP and HTTPS, basic auth, client certificates, command and
   response model, error mapping
 - [x] **8.3** Capability detection with `list-commands`, `status-get` and `version-get`
-- [ ] **8.4** Read API: subnets and pools with utilisation, leases for v4 and v6 (search by
+- [x] **8.4** Read API: subnets and pools with utilisation, leases for v4 and v6 (search by
   IP, MAC or DUID, hostname)
-  - [ ] **8.4.1** Reservations from the configuration file and the host database
+  - [x] **8.4.1** Reservations from the configuration file and the host database
     (`operation-target`), the configuration ones read-only
-- [ ] **8.5** Write API: delete a lease, host reservation CRUD (`host_cmds`), all checked
+- [x] **8.5** Write API: delete a lease, host reservation CRUD (`host_cmds`), all checked
   for permission and audited
-- [ ] **8.6** HA pair awareness in the config: grouping and choosing the write target
-  - [ ] **8.6.1** Check with an HA pair in containers whether lease changes through
+- [x] **8.6** HA pair awareness in the config: grouping and choosing the write target
+  - [x] **8.6.1** Check with an HA pair in containers whether lease changes through
     `lease_cmds` reach the partner; otherwise delete leases on both partners
 - [ ] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
   management, features hidden when the server doesn't support them

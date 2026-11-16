@@ -114,3 +114,26 @@ func (c *Client) DeleteLease(ctx context.Context, ip, typ string) (deleted bool,
 	r, err := c.Do(ctx, "lease"+c.v()+"-del", args, nil)
 	return err == nil && !r.Empty(), err
 }
+
+// Lease returns the lease of an address; typ is "IA_NA" or "IA_PD" for v6
+// (empty: IA_NA) and ignored for v4.
+func (c *Client) Lease(ctx context.Context, ip, typ string) (Lease, bool, error) {
+	args := map[string]any{"ip-address": ip}
+	if c.family == "v6" && typ != "" {
+		args["type"] = typ
+	}
+	var l Lease
+	r, err := c.Do(ctx, "lease"+c.v()+"-get", args, &l)
+	if err != nil || r.Empty() {
+		return Lease{}, false, err
+	}
+	return l, true, nil
+}
+
+// SubnetLeases returns all leases of a subnet (lease4-get-all or
+// lease6-get-all with a subnet filter).
+func (c *Client) SubnetLeases(ctx context.Context, subnetID uint32) ([]Lease, error) {
+	var l leaseList
+	_, err := c.Do(ctx, "lease"+c.v()+"-get-all", map[string]any{"subnets": []uint32{subnetID}}, &l)
+	return l.Leases, err
+}

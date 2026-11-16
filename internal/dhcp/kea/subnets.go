@@ -194,3 +194,59 @@ func (c *Client) PoolStats(ctx context.Context) ([]PoolStats, error) {
 	})
 	return out, nil
 }
+
+// SubnetsFromConfig lists the subnets from config-get, including those of
+// shared networks, for servers without subnet_cmds. Only IDs and prefixes are
+// kept; the rest of the configuration (which can contain passwords) is
+// dropped.
+func (c *Client) SubnetsFromConfig(ctx context.Context) ([]SubnetRef, error) {
+	key := "subnet" + c.v()
+	type subnet struct {
+		ID     uint32 `json:"id"`
+		Prefix string `json:"subnet"`
+	}
+	var cfg map[string]json.RawMessage
+	if _, err := c.Do(ctx, "config-get", nil, &cfg); err != nil {
+		return nil, err
+	}
+	raw, ok := cfg["Dhcp"+c.v()]
+	if !ok {
+		return nil, fmt.Errorf("kea: config-get: no Dhcp%s configuration; wrong family?", c.v())
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return nil, fmt.Errorf("kea: config-get: %w", err)
+	}
+	var out []SubnetRef
+	var top []subnet
+	if err := json.Unmarshal(orEmptyList(fields[key]), &top); err != nil {
+		return nil, fmt.Errorf("kea: config-get: %s: %w", key, err)
+	}
+	for _, s := range top {
+		out = append(out, SubnetRef{ID: s.ID, Prefix: s.Prefix})
+	}
+	var shared []map[string]json.RawMessage
+	if err := json.Unmarshal(orEmptyList(fields["shared-networks"]), &shared); err != nil {
+		return nil, fmt.Errorf("kea: config-get: shared-networks: %w", err)
+	}
+	for _, n := range shared {
+		var name string
+		_ = json.Unmarshal(n["name"], &name)
+		var subs []subnet
+		if err := json.Unmarshal(orEmptyList(n[key]), &subs); err != nil {
+			return nil, fmt.Errorf("kea: config-get: shared network %s: %w", name, err)
+		}
+		for _, s := range subs {
+			out = append(out, SubnetRef{ID: s.ID, Prefix: s.Prefix, SharedNetwork: &name})
+		}
+	}
+	slices.SortFunc(out, func(a, b SubnetRef) int { return cmp.Compare(a.ID, b.ID) })
+	return out, nil
+}
+
+func orEmptyList(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 {
+		return json.RawMessage("[]")
+	}
+	return raw
+}

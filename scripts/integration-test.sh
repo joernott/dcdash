@@ -45,7 +45,7 @@ cleanup() {
   if [[ $status -ne 0 ]]; then
     echo "==> Integration tests failed, diagnostics:"
     "${COMPOSE[@]}" ps --all 2>&1 | tee /dev/stderr | annotate "docker compose ps" || true
-    for svc in bind dns-primary dns-secondary kea-db kea-dhcp4 kea-dhcp6 openldap pebble step-ca; do
+    for svc in bind dns-primary dns-secondary kea-db kea-dhcp4 kea-dhcp6 kea-ha1 kea-ha2 openldap pebble step-ca; do
       "${COMPOSE[@]}" logs --no-color --tail 40 "$svc" 2>&1 | annotate "logs: $svc" || true
     done
     grep -E -- '--- FAIL|_test.go:[0-9]+|"level":"error"|^(FAIL|panic)' "$TEST_LOG" | tail -40 | annotate "go test" || true
@@ -99,6 +99,8 @@ DCDASH_IT_BIND_SFTP_HOSTKEY=$(cut -d" " -f1,2 "$KEYS/host_ed25519.pub")
 export DCDASH_IT_BIND_SFTP_HOSTKEY
 export DCDASH_IT_KEA4_URL=http://10.77.0.67:8000
 export DCDASH_IT_KEA6_URL=http://10.77.0.68:8000
+export DCDASH_IT_KEA_HA1_URL=http://10.77.0.69:8000
+export DCDASH_IT_KEA_HA2_URL=http://10.77.0.70:8000
 export DCDASH_IT_KEA_PASSWORD=kea-api-test-only
 
 ENV_FILE="${DCDASH_IT_ENV_FILE:-$HOME/.config/dcdash-it.env}"

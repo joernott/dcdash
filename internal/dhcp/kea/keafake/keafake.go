@@ -56,6 +56,8 @@ type Settings struct {
 	// HostDatabase: reservations can be added (host_cmds needs it).
 	HostDatabase bool
 	Version      string
+	// Unavailable answers every request with HTTP 503.
+	Unavailable bool
 }
 
 // Server is the fake. Family is "4" or "6".
@@ -142,6 +144,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.requests++
+	if s.settings.Unavailable {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
 	if u, p, ok := r.BasicAuth(); !ok || u != s.user || p != s.password {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -238,11 +244,20 @@ func (s *Server) command(cmd string, args map[string]any) answer {
 		return s.leasePage(args)
 	case "lease#-get":
 		for _, l := range s.leases {
-			if l.IP == str(args, "ip-address") {
+			if l.IP == str(args, "ip-address") && (v == "4" || cmp.Or(str(args, "type"), "IA_NA") == cmp.Or(l.Type, "IA_NA")) {
 				return answer{Text: "IPv" + v + " lease found.", Arguments: l}
 			}
 		}
 		return empty("Lease not found.", map[string]any{})
+	case "lease#-get-all":
+		ids, _ := args["subnets"].([]any)
+		var out []Lease
+		for _, l := range s.leases {
+			if len(ids) == 0 || slices.Contains(ids, any(float64(l.SubnetID))) {
+				out = append(out, l)
+			}
+		}
+		return leaseList(v, out)
 	case "lease#-get-by-hw-address", "lease#-get-by-client-id", "lease#-get-by-hostname", "lease#-get-by-duid":
 		key := strings.TrimPrefix(cmd, "lease"+v+"-get-by-")
 		var out []Lease

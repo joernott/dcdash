@@ -1,0 +1,50 @@
+{
+  "Dhcp4": {
+    "server-tag": "server1",
+    "interfaces-config": { "interfaces": [] },
+    "control-sockets": [
+      {
+        "socket-type": "http",
+        "socket-address": "0.0.0.0",
+        "socket-port": 8000,
+        "authentication": {
+          "type": "basic",
+          "realm": "kea",
+          "directory": "/etc/kea",
+          "clients": [ { "user": "dcdash", "password-file": "dcdash.password" } ]
+        }
+      }
+    ],
+    "lease-database": { "type": "memfile", "persist": false },
+    "hooks-libraries": [
+      { "library": "libdhcp_lease_cmds.so" },
+      { "library": "libdhcp_stat_cmds.so" },
+      { "library": "libdhcp_subnet_cmds.so" },
+      {
+        "library": "libdhcp_ha.so",
+        "parameters": {
+          "high-availability": [
+            {
+              "this-server-name": "server1",
+              "mode": "hot-standby",
+              "heartbeat-delay": 2000,
+              "max-response-delay": 6000,
+              "max-ack-delay": 2000,
+              "max-unacked-clients": 0,
+              "sync-timeout": 5000,
+              "peers": [
+                { "name": "server1", "url": "http://10.77.0.69:8001/", "role": "primary", "auto-failover": true },
+                { "name": "server2", "url": "http://10.77.0.70:8001/", "role": "standby", "auto-failover": true }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "valid-lifetime": 3600,
+    "subnet4": [
+      { "id": 1, "subnet": "192.0.2.0/24", "pools": [ { "pool": "192.0.2.100 - 192.0.2.199" } ] }
+    ],
+    "loggers": [ { "name": "kea-dhcp4", "output-options": [ { "output": "stdout" } ], "severity": "INFO" } ]
+  }
+}

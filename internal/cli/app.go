@@ -12,6 +12,7 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/dhcp"
 	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/dns/bind"
 	"github.com/joernott/dcdash/internal/dns/cloudflare"
@@ -99,6 +100,14 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	if dnsSvc != nil {
 		a.statusChecks = append(a.statusChecks, dnsSvc.StatusChecks()...)
 		a.routes = append(a.routes, dnsSvc.Register)
+	}
+	if len(cfg.DHCP.Servers) > 0 {
+		dhcpSvc, err := dhcp.NewService(cfg.DHCP.Servers, auditLog, log)
+		if err != nil {
+			return nil, err
+		}
+		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
+		a.routes = append(a.routes, dhcpSvc.Register)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

@@ -124,12 +124,22 @@ offers.
    the schema from the source archive. The PostgreSQL image is built with the archive pinned by
    its SHA-256, so the schema isn't copied into this repository.
 
-## Open question for task 8.6
+## HA pairs (task 8.6.1)
 
-It's not documented whether a lease change made through `lease_cmds` on one HA partner is
-replicated to the other one. Task 8.6.1 checks this with an HA pair in containers. If it
-isn't replicated, dcdash sends lease deletions to both partners. Reservations live in the
-shared host database, so they're written once.
+Kea doesn't document whether a lease change made through `lease_cmds` on one HA partner
+reaches the other one. A hot-standby pair of `kea-dhcp4` 3.0.4 containers showed that it
+doesn't, in either direction. The partners do send each other the leases they hand out to
+clients, but `lease4-add`, `lease4-update` and `lease4-del` stay on the server that received
+them. The integration test `TestKeaHAPair` checks this.
+
+So:
+
+- The configuration groups the servers of a pair with `ha_group`.
+- dcdash deletes a lease on the requested server and then on the other servers of its group.
+  The response and the audit entry show the result for each partner.
+- Reservations live in the host database, which the partners share. dcdash writes them once:
+  to the requested server, or to a partner of its group if the requested server has no host
+  database.
 
 ## Consequences
 

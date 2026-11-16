@@ -226,3 +226,39 @@ func TestKeaReservations(t *testing.T) {
 		t.Errorf("v6 delete: %v, %v", ok, err)
 	}
 }
+
+// TestKeaHAPair documents what dcdash relies on for HA pairs (ADR 0003):
+// both partners report the HA state, and lease changes made through
+// lease_cmds are not passed to the partner, so dcdash deletes leases on both.
+func TestKeaHAPair(t *testing.T) {
+	ctx := keaCtx(t)
+	pw := requireEnv(t, "DCDASH_IT_KEA_PASSWORD")
+	ha1 := keaClient(t, "v4", "DCDASH_IT_KEA_HA1_URL", pw)
+	ha2 := keaClient(t, "v4", "DCDASH_IT_KEA_HA2_URL", pw)
+
+	// The pair needs a few seconds to reach hot-standby after the start.
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		info, err := ha1.Probe(ctx)
+		if err == nil && info.Capabilities.HA && len(info.Status.HA) == 1 &&
+			info.Status.HA[0].Servers.Local.State == "hot-standby" && info.Status.HA[0].Servers.Remote.InTouch {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("HA pair not in hot-standby: %+v, %v", info.Status.HA, err)
+		}
+		time.Sleep(time.Second)
+	}
+
+	if _, err := ha1.Do(ctx, "lease4-add", map[string]any{"ip-address": "192.0.2.170", "hw-address": "11:22:33:44:57:01"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = ha1.DeleteLease(context.Background(), "192.0.2.170", "")
+		_, _ = ha2.DeleteLease(context.Background(), "192.0.2.170", "")
+	})
+	time.Sleep(time.Second)
+	if _, found, err := ha2.Lease(ctx, "192.0.2.170", ""); found || err != nil {
+		t.Errorf("lease4-add was passed to the partner (found %v, %v); dcdash's partner deletion may be unnecessary", found, err)
+	}
+}
