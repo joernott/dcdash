@@ -515,6 +515,124 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/dns/providers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List DNS providers
+     * @description Returns the providers on which the user holds at least `read` on any zone.
+     */
+    get: operations['listDNSProviders']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/dns/providers/{provider}/zones': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the zones of a provider
+     * @description Only zones the user may read are returned (`dns:<provider>:<zone>:read`).
+     */
+    get: operations['listDNSZones']
+    put?: never
+    /**
+     * Create a zone
+     * @description Requires `admin` on the zone. bind9: uploads the zone file over SFTP, adds the zone with
+     *     rndc addzone and lists it in the catalog zone. Cloudflare: creates a "pending" zone; the
+     *     registrar must delegate it to the returned name servers. Audited as `dns.zone.create`.
+     */
+    post: operations['createDNSZone']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/dns/providers/{provider}/zones/{zone}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete a zone
+     * @description Requires `admin` on the zone and the zone name repeated in `confirm`. bind9 can delete
+     *     only zones of the catalog zone (zones created by dcdash), not zones from named.conf.
+     *     Audited as `dns.zone.delete`.
+     */
+    delete: operations['deleteDNSZone']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/dns/providers/{provider}/zones/{zone}/records': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the records of a zone
+     * @description Requires `read` on the zone.
+     */
+    get: operations['listDNSRecords']
+    put?: never
+    /**
+     * Create a record
+     * @description Requires `write` on the zone. `version` is the version of the record set. Audited as
+     *     `dns.record.create`.
+     */
+    post: operations['createDNSRecord']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/dns/providers/{provider}/zones/{zone}/records/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Replace a record
+     * @description Requires `write` on the zone. `version` is the version of the record as read. For bind9
+     *     the ID changes when the name, type or content changes. Audited as `dns.record.update`.
+     */
+    put: operations['updateDNSRecord']
+    post?: never
+    /**
+     * Delete a record
+     * @description Requires `write` on the zone. Audited as `dns.record.delete`.
+     */
+    delete: operations['deleteDNSRecord']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -815,8 +933,110 @@ export interface components {
       /** @description VNC password for noVNC (only for vnc). */
       password?: string
     }
+    DNSCapabilities: {
+      /** @description Records have the Cloudflare proxy flag. */
+      proxied: boolean
+      /** @description Records have comments. */
+      comments: boolean
+      /** @description TTL 1 means automatic. */
+      autoTtl: boolean
+      /** @description Zones can be created and deleted. */
+      zoneCreate: boolean
+    }
+    DNSProviderList: {
+      providers: {
+        name: string
+        /** @enum {string} */
+        kind: 'cloudflare' | 'bind'
+        capabilities: components['schemas']['DNSCapabilities']
+      }[]
+    }
+    DNSZone: {
+      /** @description Zone name without trailing dot. */
+      name: string
+      /** @description Cloudflare: active, pending, ... */
+      status?: string
+      /** @description Cloudflare name servers to delegate the zone to. */
+      nameServers?: string[]
+    }
+    DNSZoneList: {
+      zones: components['schemas']['DNSZone'][]
+    }
+    DNSZoneRequest: {
+      name: string
+    }
+    DNSRecord: {
+      id: string
+      /** @description Fully qualified name without trailing dot. */
+      name: string
+      /**
+       * @example A
+       * @example MX
+       * @example TXT
+       */
+      type: string
+      /** @description Seconds; 1 means automatic (Cloudflare). */
+      ttl: number
+      /** @description RDATA in zone-file presentation format, e.g. "10 mail.example.org." for MX. */
+      content: string
+      /** @description Cloudflare proxy flag (A */
+      proxied?: boolean
+      comment?: string
+      /** @description SOA */
+      readOnly?: boolean
+      /** @description Send back with an update or delete. */
+      version: string
+    }
+    DNSRecordSet: {
+      records: components['schemas']['DNSRecord'][]
+      /** @description Send with a new record (bind9: SOA serial; empty for Cloudflare). */
+      version: string
+    }
+    DNSRecordRequest: {
+      /** @description Relative to the zone, "@" for the apex, or fully qualified. */
+      name: string
+      /** @enum {string} */
+      type: 'A' | 'AAAA' | 'CNAME' | 'MX' | 'TXT' | 'SRV' | 'PTR' | 'NS' | 'CAA'
+      /** @description 0: the default of the provider. */
+      ttl?: number
+      /** @description RDATA in presentation format; plain TXT text is quoted automatically. */
+      content: string
+      proxied?: boolean
+      comment?: string
+      version?: string
+    }
   }
   responses: {
+    /** @description Invalid record or zone (code: invalid_record, with the reason as message) or body (invalid_request). */
+    DNSInvalid: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /**
+     * @description Codes: conflict (changed since it was read, reload and try again), exists (the record or
+     *     zone exists already), unsupported (the provider can't create or delete zones).
+     */
+    DNSConflict: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description The server accepted the update but didn't apply it, e.g. a CNAME next to other records (code: rejected). */
+    DNSRejected: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Not found (code: not_found). */
     NotFound: {
       headers: {
@@ -883,6 +1103,11 @@ export interface components {
     ProxmoxCluster: string
     ProxmoxGuestType: 'qemu' | 'lxc'
     ProxmoxVMID: number
+    /** @description Provider name from the configuration. */
+    DNSProvider: string
+    /** @description Zone name without trailing dot. */
+    DNSZone: string
+    DNSRecordID: string
   }
   requestBodies: never
   headers: never
@@ -1730,6 +1955,268 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listDNSProviders: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Visible providers. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DNSProviderList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  listDNSZones: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Zones. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DNSZoneList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createDNSZone: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DNSZoneRequest']
+      }
+    }
+    responses: {
+      /** @description Zone created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DNSZone']
+        }
+      }
+      400: components['responses']['DNSInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      409: components['responses']['DNSConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteDNSZone: {
+    parameters: {
+      query: {
+        /** @description The zone name again. */
+        confirm: string
+      }
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+        /** @description Zone name without trailing dot. */
+        zone: components['parameters']['DNSZone']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Zone deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description The confirmation is missing or wrong (code: confirmation_required). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DNSConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listDNSRecords: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+        /** @description Zone name without trailing dot. */
+        zone: components['parameters']['DNSZone']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Records. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DNSRecordSet']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createDNSRecord: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+        /** @description Zone name without trailing dot. */
+        zone: components['parameters']['DNSZone']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DNSRecordRequest']
+      }
+    }
+    responses: {
+      /** @description Record created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DNSRecord']
+        }
+      }
+      400: components['responses']['DNSInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DNSConflict']
+      422: components['responses']['DNSRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateDNSRecord: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+        /** @description Zone name without trailing dot. */
+        zone: components['parameters']['DNSZone']
+        id: components['parameters']['DNSRecordID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DNSRecordRequest']
+      }
+    }
+    responses: {
+      /** @description Record replaced. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DNSRecord']
+        }
+      }
+      400: components['responses']['DNSInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DNSConflict']
+      422: components['responses']['DNSRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteDNSRecord: {
+    parameters: {
+      query: {
+        /** @description Version of the record as read. */
+        version: string
+      }
+      header?: never
+      path: {
+        /** @description Provider name from the configuration. */
+        provider: components['parameters']['DNSProvider']
+        /** @description Zone name without trailing dot. */
+        zone: components['parameters']['DNSZone']
+        id: components['parameters']['DNSRecordID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Record deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DNSConflict']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
