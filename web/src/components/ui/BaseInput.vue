@@ -13,6 +13,7 @@ const props = withDefaults(
     required?: boolean
     inputmode?: 'text' | 'numeric' | 'email' | 'search'
     placeholder?: string
+    disabled?: boolean
   }>(),
   {
     type: 'text',
@@ -42,9 +43,10 @@ defineExpose({ focus: () => input.value?.focus() })
       :required="props.required"
       :inputmode="props.inputmode"
       :placeholder="props.placeholder"
+      :disabled="props.disabled"
       :aria-invalid="props.error ? true : undefined"
       :aria-describedby="props.error || props.hint ? `${id}-desc` : undefined"
-      class="rounded-md border bg-surface px-3 py-2 text-fg placeholder:text-fg-muted"
+      class="rounded-md border bg-surface px-3 py-2 text-fg placeholder:text-fg-muted disabled:opacity-60"
       :class="props.error ? 'border-danger' : 'border-border'"
     />
     <p

@@ -33,6 +33,12 @@ CF_LISTEN="${DCDASH_E2E_CF_LISTEN:-127.0.0.1:18007}"
 go build -o "$DIR/cffake" ./test/cffake
 "$DIR/cffake" -listen "$CF_LISTEN" 2>"$DIR/cffake.log" &
 
+# Fake Kea DHCPv4 and DHCPv6 servers (internal/dhcp/kea/keafake), plain HTTP on loopback.
+KEA4_LISTEN="${DCDASH_E2E_KEA4_LISTEN:-127.0.0.1:18010}"
+KEA6_LISTEN="${DCDASH_E2E_KEA6_LISTEN:-127.0.0.1:18011}"
+go build -o "$DIR/keafake" ./test/keafake
+"$DIR/keafake" -listen4 "$KEA4_LISTEN" -listen6 "$KEA6_LISTEN" 2>"$DIR/keafake.log" &
+
 cat > "$DIR/config.yaml" <<EOF
 server:
   listen: "$LISTEN"
@@ -57,6 +63,10 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["dns:cf:*:write"]
+  - name: dhcp-operator
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["dhcp:kea4:192.0.2.0/24:write", "dhcp:kea4:*:read", "dhcp:kea6:*:read"]
 proxmox:
   clusters:
     - name: lab
@@ -71,6 +81,10 @@ dns:
       cloudflare:
         api_token: "cf-e2e-test-only"
         base_url: "http://$CF_LISTEN/client/v4/"
+dhcp:
+  servers:
+    - {name: kea4, family: v4, url: "http://$KEA4_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
+    - {name: kea6, family: v6, url: "http://$KEA6_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}

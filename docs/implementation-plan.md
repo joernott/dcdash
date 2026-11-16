@@ -273,7 +273,7 @@ These apply to every task:
 - [x] **8.6** HA pair awareness in the config: grouping and choosing the write target
   - [x] **8.6.1** Check with an HA pair in containers whether lease changes through
     `lease_cmds` reach the partner; otherwise delete leases on both partners
-- [ ] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
+- [x] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
   management, features hidden when the server doesn't support them
 - [x] **8.8** Tests: Kea 3.x container (DHCPv4 and DHCPv6, with hooks and a host database)
   for integration tests

@@ -68,6 +68,12 @@ export const routes = [
         meta: { title: 'nav.dns', module: 'dns' },
       },
       {
+        path: 'dhcp/:server?',
+        name: 'dhcp',
+        component: () => import('@/views/dhcp/DhcpView.vue'),
+        meta: { title: 'nav.dhcp', module: 'dhcp' },
+      },
+      {
         path: 'proxmox/:cluster?',
         name: 'proxmox',
         component: () => import('@/views/proxmox/ProxmoxView.vue'),

@@ -23,7 +23,8 @@
     "sessions": "Sessions",
     "logout": "Log out",
     "backHome": "Back to the overview",
-    "dns": "DNS"
+    "dns": "DNS",
+    "dhcp": "DHCP"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -285,10 +286,12 @@
     "upstream_error": "The backend reported an error.",
     "conflict": "The data was changed in the meantime. It has been reloaded; please try again.",
     "exists": "This entry exists already.",
-    "unsupported": "This DNS provider does not support that.",
-    "rejected": "The DNS server accepted the change but did not apply it (for example a CNAME next to other records).",
+    "unsupported": "This is not supported here: {message}",
+    "rejected": "The server did not accept the change: {message}",
     "invalid_record": "Invalid entry: {message}",
-    "confirmation_required": "Please confirm by typing the zone name."
+    "confirmation_required": "Please confirm by typing the zone name.",
+    "invalid_reservation": "Invalid reservation: {message}",
+    "read_only": "This reservation is in the Kea configuration file and cannot be changed in dcdash."
   },
   "dns": {
     "provider": "Provider",
@@ -352,5 +355,130 @@
       "NS": "A name server of the delegated zone",
       "CAA": "Flags, tag and value"
     }
+  },
+  "dhcp": {
+    "server": "Server",
+    "families": {
+      "v4": "DHCPv4",
+      "v6": "DHCPv6"
+    },
+    "noServers": "No DHCP server is available to you.",
+    "status": {
+      "ok": "Available",
+      "unavailable": "Unavailable"
+    },
+    "unavailable": "The server cannot be used right now: {error}",
+    "version": "Version",
+    "uptime": "Running for",
+    "uptimeDays": "{d} d {h} h",
+    "uptimeHours": "{h} h {m} min",
+    "ha": "High availability",
+    "haState": "{mode}, {role}: {state}",
+    "haPartner": "Partner {partner}: {state}",
+    "haPartnerLost": "No contact to partner {partner}",
+    "haGroup": "HA group",
+    "haGroupMembers": "{group}, together with {partners}",
+    "missing": {
+      "leases": "Leases are not available: the lease_cmds hook library is not loaded.",
+      "reservations": "Reservations are not available: the host_cmds hook library is not loaded.",
+      "hostDatabase": "Reservations are read-only: the server has no host database for changes.",
+      "subnets": "Pools are not shown: the subnet_cmds hook library is not loaded.",
+      "statistics": "Utilization is not shown: the stat_cmds hook library is not loaded."
+    },
+    "views": "Views",
+    "tabs": {
+      "subnets": "Subnets",
+      "leases": "Leases",
+      "reservations": "Reservations"
+    },
+    "subnet": "Subnet",
+    "pools": "Pools",
+    "utilization": "Utilization",
+    "actionsColumn": "Actions",
+    "noSubnets": "No subnets are available to you.",
+    "subnetId": "ID {id}",
+    "sharedNetwork": "shared network {name}",
+    "addresses": "Addresses",
+    "prefixes": "Prefixes",
+    "usedOf": "{used} of {total}",
+    "declined": "{n} declined",
+    "showLeases": "Show leases",
+    "chooseSubnet": "Choose a subnet",
+    "searchKeys": {
+      "ip": "IP address",
+      "hw-address": "MAC address",
+      "client-id": "Client ID",
+      "duid": "DUID",
+      "hostname": "Host name"
+    },
+    "address": "Address",
+    "duid": "DUID",
+    "mac": "MAC address",
+    "hostname": "Host name",
+    "state": "State",
+    "expires": "Expires",
+    "leaseDeleted": "Lease {address} deleted.",
+    "partnerFailed": "The lease could not be deleted on HA partner {server}: {error}",
+    "searchBy": "Search by",
+    "searchValue": "Value",
+    "search": "Search",
+    "subnetLeases": "Leases of a subnet",
+    "leaseCount": "No leases | One lease | {n} leases",
+    "truncated": "only the first ones are shown",
+    "noLeases": "No leases found.",
+    "delegatedPrefix": "delegated prefix",
+    "leaseStates": {
+      "assigned": "Assigned",
+      "declined": "Declined",
+      "expired": "Expired",
+      "released": "Released"
+    },
+    "deleteLeaseFor": "Delete lease {address}",
+    "delete": "Delete",
+    "leasesHint": "Search for a lease, or choose a subnet to see its leases.",
+    "deleteLease": "Delete lease",
+    "deleteLeaseQuestion": "Delete the lease of {address}?",
+    "deleteLeaseHint": "The address becomes free. A client that still uses it gets a new lease when it renews.",
+    "deleteLeasePartners": "The lease is also deleted on the HA partner {partners}.",
+    "allSubnets": "All subnets",
+    "identifier": "Identifier",
+    "source": "Stored in",
+    "reservationAdded": "Reservation {name} added.",
+    "reservationSaved": "Reservation {name} saved.",
+    "reservationDeleted": "Reservation {name} deleted.",
+    "filterReservations": "Filter (identifier, address, host name)",
+    "addReservation": "Add reservation",
+    "editReservation": "Edit reservation",
+    "shownOf": "{shown} of {total} shown",
+    "noReservations": "No reservations match.",
+    "identifierType": "Identifier type",
+    "identifierTypes": {
+      "hw-address": "MAC address",
+      "client-id": "Client ID",
+      "duid": "DUID",
+      "circuit-id": "Circuit ID",
+      "flex-id": "Flexible ID"
+    },
+    "identifierHints": {
+      "hw-address": "For example aa:bb:cc:dd:ee:ff",
+      "client-id": "Hex bytes, for example 01:aa:bb:cc:dd:ee:ff",
+      "duid": "Hex bytes, for example 00:03:00:01:aa:bb:cc:dd:ee:ff"
+    },
+    "global": "Global",
+    "sources": {
+      "config": "Configuration file",
+      "database": "Host database"
+    },
+    "actionsFor": "Actions for {name}",
+    "edit": "Edit",
+    "readOnly": "read-only",
+    "deleteReservation": "Delete reservation",
+    "deleteReservationQuestion": "Delete the reservation {name}?",
+    "ipv4Address": "IPv4 address",
+    "ipv4Hint": "Optional; must be in the subnet.",
+    "ipv6Addresses": "IPv6 addresses",
+    "delegatedPrefixes": "Delegated prefixes",
+    "listHint": "Optional; several separated by commas.",
+    "keptFields": "Client classes and options of this reservation are kept unchanged."
   }
 }
