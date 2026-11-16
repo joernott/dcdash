@@ -257,21 +257,28 @@ These apply to every task:
 
 ## Sprint 8 — DHCP (Kea v3)
 
-- [ ] **8.1** Kea 3.x API research: control socket configuration, authentication, hooks
+- [x] **8.1** Kea 3.x API research: control socket configuration, authentication, hooks
   needed (`lease_cmds`, `host_cmds` with a host database, `stat_cmds`, and `subnet_cmds` if
   useful); amend this sprint if needed
+  (`docs/adr/0003-kea-api.md`)
 - [ ] **8.2** Kea client: HTTP and HTTPS, basic auth, client certificates, command and
   response model, error mapping
 - [ ] **8.3** Capability detection with `list-commands`, `status-get` and `version-get`
 - [ ] **8.4** Read API: subnets and pools with utilisation, leases for v4 and v6 (search by
   IP, MAC or DUID, hostname)
+  - [ ] **8.4.1** Reservations from the configuration file and the host database
+    (`operation-target`), the configuration ones read-only
 - [ ] **8.5** Write API: delete a lease, host reservation CRUD (`host_cmds`), all checked
   for permission and audited
 - [ ] **8.6** HA pair awareness in the config: grouping and choosing the write target
+  - [ ] **8.6.1** Check with an HA pair in containers whether lease changes through
+    `lease_cmds` reach the partner; otherwise delete leases on both partners
 - [ ] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
   management, features hidden when the server doesn't support them
 - [ ] **8.8** Tests: Kea 3.x container (DHCPv4 and DHCPv6, with hooks and a host database)
   for integration tests
+  - [ ] **8.8.1** PostgreSQL image with the Kea schema from the source archive, pinned by
+    SHA-256
 - [ ] **8.9** Documentation: Kea prerequisites (control sockets, hooks, host database)
 
 ## Sprint 9 — Hardening and Release v0.1.0
