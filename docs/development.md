@@ -31,6 +31,7 @@ make tools-check                       # verifies the installed versions
 | `internal/cli/` | Command line interface (cobra): `serve`, `version`, `config validate` |
 | `internal/config/` | YAML configuration: schema, defaults, validation, secrets |
 | `internal/logging/` | zerolog setup |
+| `internal/metrics/` | Optional Prometheus `/metrics`: HTTP, audit, certificate and backend metrics |
 | `internal/store/` | SQLite state database and schema migrations |
 | `internal/vault/` | AES-256-GCM encryption of secrets at rest, key ring for rotation |
 | `internal/server/` | HTTP(S) server, middleware, health endpoints |

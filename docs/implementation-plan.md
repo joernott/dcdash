@@ -286,7 +286,7 @@ These apply to every task:
 - [ ] **9.1** Security review: authentication flows, session handling, CSRF, headers,
   websocket proxy, input validation, secret handling, dependency audit (`govulncheck`,
   `npm audit`)
-- [ ] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
+- [x] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
 - [ ] **9.3** End-to-end test suite against the full docker compose environment
 - [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
   checked for WCAG AA contrast on all views

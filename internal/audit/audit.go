@@ -61,12 +61,18 @@ type Log struct {
 	sinks []Sink
 	log   zerolog.Logger
 	now   func() time.Time
+	// observers are called after each stored entry, e.g. for metrics.
+	observers []func(action, result string)
 }
 
 // New creates an audit log.
 func New(db *sql.DB, log zerolog.Logger, sinks ...Sink) *Log {
 	return &Log{db: db, sinks: sinks, log: log.With().Str("component", "audit").Logger(), now: time.Now}
 }
+
+// OnRecord registers f to be called with the action and result of every
+// stored entry. It must be called before the log is used.
+func (l *Log) OnRecord(f func(action, result string)) { l.observers = append(l.observers, f) }
 
 // maxField limits the length of free-text fields that may come from users.
 const maxField = 512
@@ -112,6 +118,9 @@ func (l *Log) Record(ctx context.Context, e Entry) error {
 		return fmt.Errorf("store audit entry: %w", err)
 	}
 	e.ID, _ = res.LastInsertId()
+	for _, f := range l.observers {
+		f(e.Action, e.Result)
+	}
 	for _, s := range l.sinks {
 		if err := s.Write(e); err != nil {
 			l.log.Error().Err(err).Int64("id", e.ID).Msg("cannot write audit entry to sink")

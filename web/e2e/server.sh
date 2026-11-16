@@ -85,6 +85,7 @@ dhcp:
   servers:
     - {name: kea4, family: v4, url: "http://$KEA4_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
     - {name: kea6, family: v6, url: "http://$KEA6_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
+metrics: {enabled: true, token: "metrics-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}

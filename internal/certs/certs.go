@@ -27,6 +27,8 @@ type Manager interface {
 	Run(ctx context.Context) error
 	// Check reports whether a valid certificate is available, for /readyz.
 	Check(ctx context.Context) (string, error)
+	// NotAfter returns the expiry of the current certificate; false while there is none.
+	NotAfter() (time.Time, bool)
 }
 
 // ErrNoCertificate is returned while no certificate has been loaded or obtained yet.
@@ -109,4 +111,13 @@ func (h *holder) status(now time.Time) (string, error) {
 		return "", fmt.Errorf("certificate not valid before %s", c.Leaf.NotBefore.UTC().Format(time.RFC3339))
 	}
 	return "valid until " + c.Leaf.NotAfter.UTC().Format(time.RFC3339), nil
+}
+
+// NotAfter implements Manager.NotAfter.
+func (h *holder) NotAfter() (time.Time, bool) {
+	c := h.current()
+	if c == nil {
+		return time.Time{}, false
+	}
+	return c.Leaf.NotAfter, true
 }
