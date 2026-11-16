@@ -6,6 +6,7 @@
 package certs
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -17,6 +18,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/status"
 )
 
 // Manager provides the server certificate and keeps it up to date.
@@ -120,4 +122,24 @@ func (h *holder) NotAfter() (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return c.Leaf.NotAfter, true
+}
+
+// StatusCheck returns the certificate check for the status page, with codes
+// that the web interface translates.
+func StatusCheck(m Manager) func(context.Context) (status.Detail, error) {
+	return func(ctx context.Context) (status.Detail, error) {
+		text, err := m.Check(ctx)
+		notAfter, ok := m.NotAfter()
+		switch {
+		case !ok:
+			return status.Detail{}, &status.Error{Code: "certificate.missing", Err: cmp.Or(err, ErrNoCertificate)}
+		case err != nil && time.Now().After(notAfter):
+			return status.Detail{}, &status.Error{Code: "certificate.expired",
+				Params: map[string]string{"at": notAfter.UTC().Format(time.RFC3339)}, Err: err}
+		case err != nil:
+			return status.Detail{}, err
+		}
+		return status.Detail{Text: text, Code: "certificate.valid",
+			Params: map[string]string{"until": notAfter.UTC().Format(time.RFC3339)}}, nil
+	}
 }

@@ -921,8 +921,22 @@ export interface components {
       kind: string
       /** @enum {string} */
       status: 'ok' | 'error'
-      /** @description A detail such as "valid until ..." or the error message. */
+      /** @description A detail such as "valid until ..." or the error message */
       detail: string
+      /**
+       * @description Identifies the detail for translation; missing if there is none, for example for
+       *     an error message of a backend. Codes: `certificate.valid` (`until`),
+       *     `certificate.missing`, `certificate.expired` (`at`), `proxmox.connected` (`version`,
+       *     `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
+       *     `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
+       *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`). Times are RFC 3339.
+       * @example certificate.valid
+       */
+      detailCode?: string
+      /** @description Parameters of detailCode. */
+      detailParams?: {
+        [key: string]: string
+      }
       /** Format: int64 */
       latencyMs: number
     }

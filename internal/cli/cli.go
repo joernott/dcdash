@@ -129,7 +129,7 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			if mgr != nil {
 				opts.TLSConfig = certs.TLSConfig(mgr)
 				opts.Checks = append(opts.Checks, server.Check{Name: "certificate", Check: mgr.Check})
-				app.statusChecks = append(app.statusChecks, status.Check{Name: "certificate", Kind: "system", Check: mgr.Check})
+				app.statusChecks = append(app.statusChecks, status.Check{Name: "certificate", Kind: "system", Detail: certs.StatusCheck(mgr)})
 				g.Go(func() error { return mgr.Run(gctx) })
 			}
 

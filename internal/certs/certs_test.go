@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/testutil"
 )
 
@@ -95,5 +96,39 @@ func TestNew(t *testing.T) {
 	}
 	if _, err := m.Check(context.Background()); err != nil {
 		t.Errorf("Check: %v", err)
+	}
+}
+
+func TestStatusCheck(t *testing.T) {
+	var empty FileManager
+	empty.now = time.Now
+	_, err := StatusCheck(&empty)(context.Background())
+	var se *status.Error
+	if !errors.As(err, &se) || se.Code != "certificate.missing" || !errors.Is(err, ErrNoCertificate) {
+		t.Errorf("without certificate: %v", err)
+	}
+
+	now := time.Now()
+	for _, c := range []struct {
+		notAfter time.Time
+		code     string
+		param    string
+	}{
+		{now.Add(time.Hour), "certificate.valid", "until"},
+		{now.Add(-time.Minute), "certificate.expired", "at"},
+	} {
+		cf, kf := testutil.WriteCert(t, t.TempDir(), testutil.CertOptions{NotBefore: now.Add(-2 * time.Hour), NotAfter: c.notAfter})
+		m, err := NewFileManager(cf, kf, 0, zerolog.Nop())
+		if err != nil {
+			t.Fatal(err)
+		}
+		d, err := StatusCheck(m)(context.Background())
+		want := c.notAfter.UTC().Format(time.RFC3339)
+		switch {
+		case c.code == "certificate.valid" && (err != nil || d.Code != c.code || d.Params[c.param] != want):
+			t.Errorf("valid: %+v, %v", d, err)
+		case c.code == "certificate.expired" && (!errors.As(err, &se) || se.Code != c.code || se.Params[c.param] != want):
+			t.Errorf("expired: %v", err)
+		}
 	}
 }

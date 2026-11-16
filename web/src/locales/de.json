@@ -46,6 +46,26 @@
       "database": "Datenbank",
       "directory": "Benutzerverzeichnis",
       "certificate": "Zertifikat"
+    },
+    "details": {
+      "certificate": {
+        "valid": "Gültig bis {until}",
+        "missing": "Noch kein Zertifikat vorhanden",
+        "expired": "Abgelaufen am {at}"
+      },
+      "proxmox": {
+        "connected": "Proxmox VE {version} über {endpoint}"
+      },
+      "dns": {
+        "bind": "bind9 auf {server}, keine Zonen | bind9 auf {server}, eine Zone | bind9 auf {server}, {count} Zonen",
+        "bindChecked": "bind9 auf {server}, keine Zonen, {checked} OK | bind9 auf {server}, eine Zone, {checked} OK | bind9 auf {server}, {count} Zonen, {checked} OK",
+        "cloudflare": "Cloudflare, keine Zonen | Cloudflare, eine Zone | Cloudflare, {count} Zonen"
+      },
+      "dhcp": {
+        "kea": "Kea {version}",
+        "keaHA": "Kea {version}, HA {ha}",
+        "partnerOutOfTouch": "Keine Verbindung zum HA-Partner {partner}"
+      }
     }
   },
   "login": {

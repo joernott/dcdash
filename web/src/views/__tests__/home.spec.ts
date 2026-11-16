@@ -51,6 +51,59 @@ describe('HomeView', () => {
     expect(directory.classes()).toContain('border-danger')
   })
 
+  it('translates coded details', async () => {
+    api.on('GET /api/v1/status', () => [
+      200,
+      {
+        checkedAt: '2026-11-13T10:00:00Z',
+        components: [
+          {
+            name: 'certificate',
+            kind: 'system',
+            status: 'ok',
+            detail: 'valid until 2027-02-01T12:00:00Z',
+            detailCode: 'certificate.valid',
+            detailParams: { until: '2027-02-01T12:00:00Z' },
+            latencyMs: 0,
+          },
+          {
+            name: 'cf',
+            kind: 'dns',
+            status: 'ok',
+            detail: 'Cloudflare, 1 zones',
+            detailCode: 'dns.cloudflare',
+            detailParams: { count: '1' },
+            latencyMs: 3,
+          },
+          {
+            name: 'kea',
+            kind: 'dhcp',
+            status: 'error',
+            detail: 'HA partner kea-b not in touch',
+            detailCode: 'dhcp.partnerOutOfTouch',
+            detailParams: { partner: 'kea-b' },
+            latencyMs: 3,
+          },
+          {
+            name: 'future',
+            kind: 'dhcp',
+            status: 'ok',
+            detail: 'English fallback',
+            detailCode: 'unknown.code',
+            latencyMs: 3,
+          },
+        ],
+      },
+    ])
+    const w = mountWith(HomeView, { locale: 'de' })
+    await flushPromises()
+    const text = w.text()
+    expect(text).toMatch(/Gültig bis 01\.02\.2027, \d\d:00/)
+    expect(text).toContain('Cloudflare, eine Zone')
+    expect(text).toContain('Keine Verbindung zum HA-Partner kea-b')
+    expect(text).toContain('English fallback')
+  })
+
   it('shows errors and refreshes', async () => {
     api.on('GET /api/v1/status', () => [500, { error: { code: 'internal_error', message: 'x' } }])
     const w = mountWith(HomeView)

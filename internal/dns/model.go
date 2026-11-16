@@ -17,6 +17,8 @@ import (
 	"strings"
 
 	mdns "github.com/miekg/dns"
+
+	"github.com/joernott/dcdash/internal/status"
 )
 
 // EditableTypes are the record types dcdash can create and change. Other
@@ -111,8 +113,9 @@ type Provider interface {
 	// Kind is "cloudflare" or "bind".
 	Kind() string
 	Capabilities() Capabilities
-	// Check tests the connection and returns a short description.
-	Check(ctx context.Context) (string, error)
+	// Check tests the connection and returns a short description for the
+	// status page.
+	Check(ctx context.Context) (status.Detail, error)
 	Zones(ctx context.Context) ([]Zone, error)
 	CreateZone(ctx context.Context, name string) (Zone, error)
 	DeleteZone(ctx context.Context, name string) error

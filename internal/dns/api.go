@@ -46,7 +46,7 @@ func NewService(providers []Provider, auditLog *audit.Log, log zerolog.Logger) *
 func (s *Service) StatusChecks() []status.Check {
 	out := make([]status.Check, 0, len(s.order))
 	for _, n := range s.order {
-		out = append(out, status.Check{Name: n, Kind: Module, Check: s.providers[n].Check})
+		out = append(out, status.Check{Name: n, Kind: Module, Detail: s.providers[n].Check})
 	}
 	return out
 }

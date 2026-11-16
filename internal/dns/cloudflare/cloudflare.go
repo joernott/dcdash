@@ -28,6 +28,7 @@ import (
 
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/dns"
+	"github.com/joernott/dcdash/internal/status"
 )
 
 // Provider manages the zones of one Cloudflare account.
@@ -72,12 +73,13 @@ func (p *Provider) Capabilities() dns.Capabilities {
 }
 
 // Check lists the zones the token can see.
-func (p *Provider) Check(ctx context.Context) (string, error) {
+func (p *Provider) Check(ctx context.Context) (status.Detail, error) {
 	zs, err := p.Zones(ctx)
 	if err != nil {
-		return "", err
+		return status.Detail{}, err
 	}
-	return fmt.Sprintf("Cloudflare, %d zones", len(zs)), nil
+	return status.Detail{Text: fmt.Sprintf("Cloudflare, %d zones", len(zs)), Code: "dns.cloudflare",
+		Params: map[string]string{"count": strconv.Itoa(len(zs))}}, nil
 }
 
 // apiError maps an SDK error to the errors of the dns package.

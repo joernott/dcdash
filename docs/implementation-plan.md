@@ -307,7 +307,7 @@ These apply to every task:
   systemd unit, container image
 - [x] **9.7** Release workflow in CI: build artifacts and checksums when a tag is pushed
 - [ ] **9.8** `CHANGELOG.md`, update the README, tag `v0.1.0`
-- [ ] **9.9** Translatable status details: `/api/v1/status` returns a detail code with parameters
+- [x] **9.9** Translatable status details: `/api/v1/status` returns a detail code with parameters
   (for example the certificate expiry) instead of English text, so that the overview shows
   them in German as well (found in the 5.11 screenshots)
 

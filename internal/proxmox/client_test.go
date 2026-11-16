@@ -62,8 +62,9 @@ func TestVersionAndCheck(t *testing.T) {
 		t.Fatalf("version %+v, %v", v, err)
 	}
 	detail, err := c.Check(t.Context())
-	if err != nil || !strings.Contains(detail, "9.0.11") || !strings.Contains(detail, srv.URL) {
-		t.Errorf("check %q, %v", detail, err)
+	if err != nil || !strings.Contains(detail.Text, "9.0.11") || detail.Code != "proxmox.connected" ||
+		detail.Params["version"] != "9.0.11" || detail.Params["endpoint"] != srv.URL {
+		t.Errorf("check %+v, %v", detail, err)
 	}
 }
 

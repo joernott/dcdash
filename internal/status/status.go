@@ -8,6 +8,7 @@ package status
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -23,8 +24,32 @@ type Check struct {
 	// the module ("proxmox", "dns", "dhcp").
 	Kind string
 	// Check returns a detail on success (e.g. "valid until ...") or an error.
+	// Used if Detail is nil.
 	Check func(ctx context.Context) (string, error)
+	// Detail is like Check, but returns a detail the web interface can
+	// translate. Its errors may be *Error for the same purpose.
+	Detail func(ctx context.Context) (Detail, error)
 }
+
+// Detail is the result of a successful check: English text for logs and API
+// clients, and optionally a code with parameters that the web interface
+// translates (e.g. "certificate.valid" with "until").
+type Detail struct {
+	Text   string
+	Code   string
+	Params map[string]string
+}
+
+// Error is a failed check with a code for the web interface, like Detail.
+type Error struct {
+	Code   string
+	Params map[string]string
+	Err    error
+}
+
+func (e *Error) Error() string { return e.Err.Error() }
+
+func (e *Error) Unwrap() error { return e.Err }
 
 // Component is the state of one component.
 type Component struct {
@@ -32,6 +57,10 @@ type Component struct {
 	Kind   string `json:"kind"`
 	Status string `json:"status"` // "ok" or "error"
 	Detail string `json:"detail"`
+	// DetailCode and DetailParams describe Detail for translation; empty if
+	// there is no translation (e.g. an error message from a backend).
+	DetailCode   string            `json:"detailCode,omitempty"`
+	DetailParams map[string]string `json:"detailParams,omitempty"`
 	// LatencyMS is how long the check took.
 	LatencyMS int64 `json:"latencyMs"`
 }
@@ -62,16 +91,29 @@ func (s *Service) Run(ctx context.Context) Report {
 			cctx, cancel := context.WithTimeout(ctx, Timeout)
 			defer cancel()
 			start := time.Now()
-			detail, err := c.Check(cctx)
-			comp := Component{Name: c.Name, Kind: c.Kind, Status: "ok", Detail: detail, LatencyMS: time.Since(start).Milliseconds()}
+			d, err := c.run(cctx)
+			comp := Component{Name: c.Name, Kind: c.Kind, Status: "ok", Detail: d.Text, DetailCode: d.Code,
+				DetailParams: d.Params, LatencyMS: time.Since(start).Milliseconds()}
 			if err != nil {
-				comp.Status, comp.Detail = "error", err.Error()
+				comp.Status, comp.Detail, comp.DetailCode, comp.DetailParams = "error", err.Error(), "", nil
+				var ce *Error
+				if errors.As(err, &ce) {
+					comp.DetailCode, comp.DetailParams = ce.Code, ce.Params
+				}
 			}
 			res[i] = comp
 		})
 	}
 	wg.Wait()
 	return Report{Components: res, CheckedAt: time.Now().UTC().Truncate(time.Second)}
+}
+
+func (c Check) run(ctx context.Context) (Detail, error) {
+	if c.Detail != nil {
+		return c.Detail(ctx)
+	}
+	text, err := c.Check(ctx)
+	return Detail{Text: text}, err
 }
 
 // Register adds GET /api/v1/status; guard must require a logged-in user.

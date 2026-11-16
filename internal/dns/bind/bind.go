@@ -20,6 +20,7 @@ import (
 
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/dns"
+	"github.com/joernott/dcdash/internal/status"
 )
 
 // Provider manages the zones of one bind9 primary.
@@ -84,30 +85,40 @@ func (p *Provider) RNDC() *RNDC { return p.rndc }
 
 // Check queries the SOA of a managed zone (and the rndc status if
 // configured).
-func (p *Provider) Check(ctx context.Context) (string, error) {
+func (p *Provider) Check(ctx context.Context) (status.Detail, error) {
 	zones, err := p.Zones(ctx)
 	if err != nil {
-		return "", err
+		return status.Detail{}, err
 	}
-	detail := fmt.Sprintf("bind9 at %s, %d zones", p.server, len(zones))
 	if len(zones) > 0 {
 		if _, err := p.soa(ctx, zones[0].Name); err != nil {
-			return "", err
+			return status.Detail{}, err
 		}
 	}
+	var checked []string
 	if p.rndc != nil {
 		if _, err := p.rndc.Status(ctx); err != nil {
-			return "", fmt.Errorf("rndc: %w", err)
+			return status.Detail{}, fmt.Errorf("rndc: %w", err)
 		}
-		detail += ", rndc ok"
+		checked = append(checked, "rndc")
 	}
 	if p.files != nil {
 		if err := p.files.Check(ctx); err != nil {
-			return "", err
+			return status.Detail{}, err
 		}
-		detail += ", sftp ok"
+		checked = append(checked, "SFTP")
 	}
-	return detail, nil
+	d := status.Detail{
+		Text:   fmt.Sprintf("bind9 at %s, %d zones", p.server, len(zones)),
+		Code:   "dns.bind",
+		Params: map[string]string{"server": p.server, "count": strconv.Itoa(len(zones))},
+	}
+	if len(checked) > 0 {
+		d.Text += ", " + strings.Join(checked, " and ") + " ok"
+		d.Code = "dns.bindChecked"
+		d.Params["checked"] = strings.Join(checked, ", ")
+	}
+	return d, nil
 }
 
 // Zones returns the configured zones and the members of the catalog zone.

@@ -46,6 +46,26 @@
       "database": "Database",
       "directory": "User directory",
       "certificate": "Certificate"
+    },
+    "details": {
+      "certificate": {
+        "valid": "Valid until {until}",
+        "missing": "No certificate available yet",
+        "expired": "Expired on {at}"
+      },
+      "proxmox": {
+        "connected": "Proxmox VE {version} via {endpoint}"
+      },
+      "dns": {
+        "bind": "bind9 at {server}, no zones | bind9 at {server}, one zone | bind9 at {server}, {count} zones",
+        "bindChecked": "bind9 at {server}, no zones, {checked} OK | bind9 at {server}, one zone, {checked} OK | bind9 at {server}, {count} zones, {checked} OK",
+        "cloudflare": "Cloudflare, no zones | Cloudflare, one zone | Cloudflare, {count} zones"
+      },
+      "dhcp": {
+        "kea": "Kea {version}",
+        "keaHA": "Kea {version}, HA {ha}",
+        "partnerOutOfTouch": "No connection to the HA partner {partner}"
+      }
     }
   },
   "login": {

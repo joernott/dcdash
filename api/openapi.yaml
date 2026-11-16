@@ -1402,7 +1402,21 @@ components:
           type: string
           description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp).'
         status: { type: string, enum: [ok, error] }
-        detail: { type: string, description: A detail such as "valid until ..." or the error message. }
+        detail: { type: string, description: A detail such as "valid until ..." or the error message, in English. }
+        detailCode:
+          type: string
+          description: |
+            Identifies the detail for translation; missing if there is none, for example for
+            an error message of a backend. Codes: `certificate.valid` (`until`),
+            `certificate.missing`, `certificate.expired` (`at`), `proxmox.connected` (`version`,
+            `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
+            `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
+            (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`). Times are RFC 3339.
+          examples: [certificate.valid]
+        detailParams:
+          type: object
+          description: Parameters of detailCode.
+          additionalProperties: { type: string }
         latencyMs: { type: integer, format: int64 }
 
     HealthStatus:
