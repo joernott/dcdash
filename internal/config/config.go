@@ -38,6 +38,7 @@ type Config struct {
 	Audit    Audit    `yaml:"audit"`
 	Proxmox  Proxmox  `yaml:"proxmox"`
 	DNS      DNS      `yaml:"dns"`
+	DHCP     DHCP     `yaml:"dhcp"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -220,6 +221,7 @@ func (c *Config) Validate() error {
 	c.Audit.validate(add)
 	c.Proxmox.validate(add)
 	c.DNS.validate(add)
+	c.DHCP.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {

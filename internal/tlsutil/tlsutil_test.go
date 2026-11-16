@@ -4,7 +4,10 @@ package tlsutil
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -125,5 +128,43 @@ func TestFingerprintFormat(t *testing.T) {
 	fp := Fingerprint([]byte("x"))
 	if len(fp) != 95 || strings.ToUpper(fp) != fp || strings.Count(fp, ":") != 31 {
 		t.Errorf("unexpected format %q", fp)
+	}
+}
+
+func TestClientCertificate(t *testing.T) {
+	dir := t.TempDir()
+	clientCert, clientKey := testutil.WriteCert(t, dir, testutil.CertOptions{Name: "client"})
+	pemBytes, err := os.ReadFile(clientCert)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clientCAs := x509.NewCertPool()
+	clientCAs.AppendCertsFromPEM(pemBytes)
+
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {}))
+	srv.TLS = &tls.Config{MinVersion: tls.VersionTLS12, ClientAuth: tls.RequireAndVerifyClientCert, ClientCAs: clientCAs}
+	srv.StartTLS()
+	defer srv.Close()
+	fp := Fingerprint(srv.Certificate().Raw)
+
+	get := func(c config.TLSClient) error {
+		cfg, err := ClientConfig(c, "localhost")
+		if err != nil {
+			return err
+		}
+		resp, err := (&http.Client{Transport: &http.Transport{TLSClientConfig: cfg}}).Get(srv.URL)
+		if err != nil {
+			return err
+		}
+		return resp.Body.Close()
+	}
+	if err := get(config.TLSClient{Fingerprint: fp}); err == nil {
+		t.Error("request without client certificate accepted")
+	}
+	if err := get(config.TLSClient{Fingerprint: fp, CertFile: clientCert, KeyFile: clientKey}); err != nil {
+		t.Errorf("request with client certificate: %v", err)
+	}
+	if _, err := ClientConfig(config.TLSClient{CertFile: clientCert, KeyFile: filepath.Join(dir, "missing.pem")}, "x"); err == nil {
+		t.Error("missing key_file accepted")
 	}
 }

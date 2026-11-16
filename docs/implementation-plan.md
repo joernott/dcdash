@@ -261,9 +261,9 @@ These apply to every task:
   needed (`lease_cmds`, `host_cmds` with a host database, `stat_cmds`, and `subnet_cmds` if
   useful); amend this sprint if needed
   (`docs/adr/0003-kea-api.md`)
-- [ ] **8.2** Kea client: HTTP and HTTPS, basic auth, client certificates, command and
+- [x] **8.2** Kea client: HTTP and HTTPS, basic auth, client certificates, command and
   response model, error mapping
-- [ ] **8.3** Capability detection with `list-commands`, `status-get` and `version-get`
+- [x] **8.3** Capability detection with `list-commands`, `status-get` and `version-get`
 - [ ] **8.4** Read API: subnets and pools with utilisation, leases for v4 and v6 (search by
   IP, MAC or DUID, hostname)
   - [ ] **8.4.1** Reservations from the configuration file and the host database

@@ -69,7 +69,9 @@ offers.
 - `lease4-del` and `lease6-del` delete a lease by address.
 - `stat-lease4-get` and `stat-lease6-get` (`stat_cmds`) return a table per subnet with total,
   assigned and declined addresses (v6 also prefixes).
-- `statistic-get-all` has the same numbers per pool (`subnet[1].pool[0].assigned-addresses`).
+- `statistic-get-all` has the same numbers per pool ID (`subnet[1].pool[0].assigned-addresses`).
+  The ID is the pool's `pool-id`. Pools without one count together as pool 0, so per-pool
+  numbers exist only where the configuration sets pool IDs.
 - `subnet4-list` and `subnet6-list` (`subnet_cmds`) return the ID, prefix and shared network.
   Pools and options come from `subnet4-get`.
 
