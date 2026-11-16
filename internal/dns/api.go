@@ -327,6 +327,8 @@ func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
+	// Looked up first so the audit entry shows the previous values.
+	prev, hasPrev := s.findRecord(r, p, zone, id)
 	rec, err := p.UpdateRecord(r.Context(), zone, id, req.record(), req.Version)
 	if err != nil {
 		d := recordDetails(req.record(), id)
@@ -337,6 +339,9 @@ func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	d := recordDetails(rec, rec.ID)
 	d["previousId"] = id
+	if hasPrev {
+		d["previous"] = recordDetails(prev, id)
+	}
 	s.audit.RecordRequest(r, "dns.record.update", recordTarget(p, zone), audit.ResultSuccess, d)
 	httpx.WriteJSON(w, http.StatusOK, rec)
 }
@@ -350,14 +355,9 @@ func (s *Service) handleDeleteRecord(w http.ResponseWriter, r *http.Request) {
 	version := r.URL.Query().Get("version")
 	// The record is looked up first so the audit entry shows what was
 	// deleted.
-	var details map[string]any
-	if rs, err := p.Records(r.Context(), zone); err == nil {
-		if i := slices.IndexFunc(rs.Records, func(x Record) bool { return x.ID == id }); i >= 0 {
-			details = recordDetails(rs.Records[i], id)
-		}
-	}
-	if details == nil {
-		details = map[string]any{"id": id}
+	details := map[string]any{"id": id}
+	if rec, ok := s.findRecord(r, p, zone, id); ok {
+		details = recordDetails(rec, id)
 	}
 	if err := p.DeleteRecord(r.Context(), zone, id, version); err != nil {
 		details["error"] = err.Error()
@@ -367,4 +367,18 @@ func (s *Service) handleDeleteRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	s.audit.RecordRequest(r, "dns.record.delete", recordTarget(p, zone), audit.ResultSuccess, details)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// findRecord looks up a record by ID for the audit log; false if it can't be
+// found (the change itself then reports the error).
+func (s *Service) findRecord(r *http.Request, p Provider, zone, id string) (Record, bool) {
+	rs, err := p.Records(r.Context(), zone)
+	if err != nil {
+		return Record{}, false
+	}
+	i := slices.IndexFunc(rs.Records, func(x Record) bool { return x.ID == id })
+	if i < 0 {
+		return Record{}, false
+	}
+	return rs.Records[i], true
 }

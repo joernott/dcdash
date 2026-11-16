@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
@@ -176,12 +177,22 @@ func (s *Server) ServeRedirect(ctx context.Context, ln net.Listener) error {
 	return s.serve(ctx, hs, func() error { return hs.Serve(ln) })
 }
 
+// Timeouts of all listeners, see newHTTPServer.
+const (
+	readTimeout = time.Minute
+	idleTimeout = 2 * time.Minute
+)
+
 func (s *Server) newHTTPServer(ctx context.Context, h http.Handler) *http.Server {
 	return &http.Server{
 		Handler:           h,
 		ReadHeaderTimeout: s.cfg.Server.ReadHeaderTimeout.D(),
-		ErrorLog:          stdLogger(s.log),
-		BaseContext:       func(net.Listener) context.Context { return ctx },
+		// Limits slow request bodies (at most 1 MiB). Console websockets are
+		// not affected: the upgrade clears the connection deadlines.
+		ReadTimeout: readTimeout,
+		IdleTimeout: idleTimeout,
+		ErrorLog:    stdLogger(s.log),
+		BaseContext: func(net.Listener) context.Context { return ctx },
 	}
 }
 

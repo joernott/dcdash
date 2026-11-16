@@ -274,6 +274,7 @@
     "csrf_failed": "The request was rejected for security reasons. Please reload the page.",
     "invalid_credentials": "The user name or password is wrong.",
     "too_many_attempts": "Too many failed attempts. Please wait a few minutes and try again.",
+    "too_many_consoles": "Too many consoles are being opened at the same time. Please try again in a few seconds.",
     "directory_unavailable": "The user directory is not available. Please try again later.",
     "totp_not_enrolled": "No authenticator app is set up for this account. An administrator must set it up on the server.",
     "invalid_code": "The code is wrong, expired or was already used.",

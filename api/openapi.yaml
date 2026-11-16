@@ -115,6 +115,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SessionInfo" }
+        "400":
+          description: "Malformed request, or a user name that is too long or contains control characters (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
         "401":
           description: "Invalid credentials (code: invalid_credentials)."
           content:
@@ -627,6 +632,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429": { $ref: "#/components/responses/TooManyConsoles" }
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
@@ -657,6 +663,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429": { $ref: "#/components/responses/TooManyConsoles" }
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
@@ -1177,6 +1184,15 @@ components:
         The backend failed. Codes: upstream_unavailable (not reachable), upstream_forbidden
         (the backend denied the request, e.g. missing privileges of the API token), upstream_error
         (message from the backend).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    TooManyConsoles:
+      description: "The session is already preparing 3 consoles that were not opened yet (code: too_many_consoles)."
+      headers:
+        Retry-After:
+          description: Seconds until a console can be prepared again.
+          schema: { type: integer }
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorBody" }

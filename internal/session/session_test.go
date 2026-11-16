@@ -105,6 +105,19 @@ func TestIdleTimeoutAndActivity(t *testing.T) {
 	}
 }
 
+// Peek (e.g. an open console checking its session) is no activity.
+func TestPeekIsNoActivity(t *testing.T) {
+	m, c := newManager(t)
+	token, _ := create(t, m)
+	for range 3 {
+		c.advance(20 * time.Minute)
+		_, _ = m.Peek(context.Background(), token)
+	}
+	if _, err := m.Peek(context.Background(), token); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("session kept alive by Peek: %v", err)
+	}
+}
+
 func TestAbsoluteLifetime(t *testing.T) {
 	m, c := newManager(t)
 	token, _ := create(t, m)

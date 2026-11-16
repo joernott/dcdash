@@ -122,12 +122,13 @@ func requireStage(w http.ResponseWriter, r *http.Request, stages ...string) *ses
 // error response and returns false on failure.
 func (s *Service) checkCode(w http.ResponseWriter, r *http.Request, sess *session.Session, req TOTPRequest, action string) bool {
 	lockKey := "totp:" + strings.ToLower(sess.Username)
-	if ok, wait := s.totpFailures.Allowed(lockKey); !ok {
+	if ok, wait := s.totpFailures.Acquire(lockKey); !ok {
 		s.auditSession(r, sess, action, "", audit.ResultDenied, map[string]any{"reason": "locked"})
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		httpx.WriteError(w, http.StatusTooManyRequests, "too_many_attempts", "too many failed attempts, try again later")
 		return false
 	}
+	defer s.totpFailures.Release(lockKey)
 	method := "totp"
 	var err error
 	switch {
@@ -237,11 +238,12 @@ func (s *Service) handleEnrollConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lockKey := "totp:" + strings.ToLower(sess.Username)
-	if ok, wait := s.totpFailures.Allowed(lockKey); !ok {
+	if ok, wait := s.totpFailures.Acquire(lockKey); !ok {
 		w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 		httpx.WriteError(w, http.StatusTooManyRequests, "too_many_attempts", "too many failed attempts, try again later")
 		return
 	}
+	defer s.totpFailures.Release(lockKey)
 	secret, err := s.keyring.Decrypt(sess.PendingTOTP, totp.PendingAAD(sess.Username))
 	var codes []string
 	if err == nil {

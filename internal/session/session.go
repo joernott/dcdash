@@ -161,6 +161,17 @@ func truncate(s string, n int) string {
 // Get returns the session for a token. Expired and idle sessions are deleted
 // and reported as ErrNotFound. Activity extends the idle timeout.
 func (m *Manager) Get(ctx context.Context, token string) (*Session, error) {
+	return m.get(ctx, token, true)
+}
+
+// Peek is Get without counting as activity: it doesn't extend the idle
+// timeout. It is meant for checks in the background, e.g. whether the session
+// of an open console still exists.
+func (m *Manager) Peek(ctx context.Context, token string) (*Session, error) {
+	return m.get(ctx, token, false)
+}
+
+func (m *Manager) get(ctx context.Context, token string, touch bool) (*Session, error) {
 	if token == "" {
 		return nil, ErrNotFound
 	}
@@ -193,7 +204,7 @@ func (m *Manager) Get(ctx context.Context, token string) (*Session, error) {
 		_ = m.deleteHash(ctx, hash)
 		return nil, ErrNotFound
 	}
-	if now.Sub(s.LastSeenAt) >= touchInterval {
+	if touch && now.Sub(s.LastSeenAt) >= touchInterval {
 		if _, err := m.db.ExecContext(ctx, `UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?`, now.Unix(), hash); err != nil {
 			return nil, fmt.Errorf("update session: %w", err)
 		}

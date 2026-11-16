@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/rs/zerolog"
@@ -165,14 +166,28 @@ func groupName(dn string) string {
 	return parsed.RDNs[0].Attributes[0].Value
 }
 
+// maxUsername is the longest accepted login name (as in ldapauth).
+const maxUsername = 256
+
+// validUsername rejects names that are too long or contain control
+// characters, so that they can't flood the logs and the lockout state.
+func validUsername(n string) bool {
+	return len(n) <= maxUsername && !strings.ContainsFunc(n, unicode.IsControl)
+}
+
 func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := httpx.DecodeJSON(w, r, &req); err != nil {
 		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", err.Error())
 		return
 	}
+	// Checked before the name is logged, audited or used as a lockout key.
+	if !validUsername(req.Username) {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", "invalid user name")
+		return
+	}
 	ip := httpx.RequestIP(r)
-	ipKey := "ip:" + ip.String()
+	ipKey := "ip:" + lockout.IPKey(ip)
 	userKey := "user:" + strings.ToLower(strings.TrimSpace(req.Username))
 	log := hlog.FromRequest(r).With().Str("component", "auth").Str("username", req.Username).Str("client_ip", ip.String()).Logger()
 
@@ -180,13 +195,15 @@ func (s *Service) handleLogin(w http.ResponseWriter, r *http.Request) {
 		l   *lockout.Limiter
 		key string
 	}{{s.ips, ipKey}, {s.users, userKey}} {
-		if ok, wait := check.l.Allowed(check.key); !ok {
+		ok, wait := check.l.Acquire(check.key)
+		if !ok {
 			log.Warn().Str("locked", check.key).Dur("retry_after", wait).Msg("login rejected: locked out")
 			s.auditLogin(r, req.Username, audit.ResultDenied, map[string]any{"reason": "locked", "lock": strings.SplitN(check.key, ":", 2)[0]})
 			w.Header().Set("Retry-After", strconv.Itoa(int(wait.Seconds())+1))
 			httpx.WriteError(w, http.StatusTooManyRequests, "too_many_attempts", "too many failed login attempts, try again later")
 			return
 		}
+		defer check.l.Release(check.key)
 	}
 
 	user, source, err := s.authenticate(r.Context(), req.Username, req.Password)

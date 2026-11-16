@@ -122,6 +122,38 @@ func TestLoadWarnsOnWorldReadable(t *testing.T) {
 	}
 }
 
+func TestLoadWarnsOnReadableSecretFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission check is not applicable on Windows")
+	}
+	dir := t.TempDir()
+	secret := filepath.Join(dir, "metrics.token")
+	if err := os.WriteFile(secret, []byte("a-long-enough-token\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p := filepath.Join(dir, "config.yaml")
+	yml := testKeyYAML + minimal + "metrics: {enabled: true, token: \"file:" + secret + "\"}\n"
+	if err := os.WriteFile(p, []byte(yml), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	warned := func() bool {
+		_, warnings, err := Load(p)
+		if err != nil {
+			t.Fatalf("Load: %v", err)
+		}
+		return slices.ContainsFunc(warnings, func(w string) bool { return strings.Contains(w, "secret file "+secret) })
+	}
+	if !warned() {
+		t.Error("no warning for a secret file with mode 0644")
+	}
+	if err := os.Chmod(secret, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if warned() {
+		t.Error("warning for a secret file with mode 0600")
+	}
+}
+
 func TestLoadWarnsWithoutLoginMethod(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(p, []byte(testKeyYAML+minimal), 0o600); err != nil {

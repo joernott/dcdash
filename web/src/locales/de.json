@@ -274,6 +274,7 @@
     "csrf_failed": "Die Anfrage wurde aus Sicherheitsgründen abgelehnt. Bitte laden Sie die Seite neu.",
     "invalid_credentials": "Benutzername oder Passwort ist falsch.",
     "too_many_attempts": "Zu viele Fehlversuche. Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.",
+    "too_many_consoles": "Es werden zu viele Konsolen gleichzeitig geöffnet. Bitte versuchen Sie es in einigen Sekunden erneut.",
     "directory_unavailable": "Das Benutzerverzeichnis ist nicht erreichbar. Bitte versuchen Sie es später erneut.",
     "totp_not_enrolled": "Für dieses Konto ist keine Authenticator-App eingerichtet. Ein Administrator muss sie auf dem Server einrichten.",
     "invalid_code": "Der Code ist falsch, abgelaufen oder wurde bereits verwendet.",

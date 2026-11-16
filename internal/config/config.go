@@ -119,10 +119,12 @@ func Load(path string) (*Config, []string, error) {
 		warnings = append(warnings, w)
 	}
 
+	takeSecretWarnings() // from earlier parses
 	cfg, err := Parse(f)
 	if err != nil {
 		return nil, warnings, fmt.Errorf("%s: %w", path, err)
 	}
+	warnings = append(warnings, takeSecretWarnings()...)
 	if cfg.Auth.LDAP.URL == "" && !cfg.Auth.Local.Enabled {
 		warnings = append(warnings, "no login method configured (auth.ldap.url or auth.local): nobody can log in")
 	}

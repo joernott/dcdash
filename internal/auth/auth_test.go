@@ -244,7 +244,12 @@ func TestLoginReplacesExistingSession(t *testing.T) {
 
 func TestBadRequests(t *testing.T) {
 	e := newEnv(t)
-	for _, body := range []string{`{"username":"alice"`, `{"user":"alice","password":"secret"}`} {
+	for _, body := range []string{
+		`{"username":"alice"`, `{"user":"alice","password":"secret"}`,
+		// Too long, or with control characters: rejected before logging and lockout.
+		`{"username":"` + strings.Repeat("a", 257) + `","password":"secret"}`,
+		`{"username":"alice\nfake log line","password":"secret"}`,
+	} {
 		c := login("", "")
 		c.body = body
 		if rec := e.do(c); rec.Code != http.StatusBadRequest {

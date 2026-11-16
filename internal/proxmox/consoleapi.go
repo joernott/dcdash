@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -43,15 +44,21 @@ type pendingConsole struct {
 	expires   time.Time
 }
 
+// maxPendingConsoles limits the consoles a session may prepare at the same time
+// (not yet opened). Each one starts a proxy process on a Proxmox node.
+const maxPendingConsoles = 3
+
 // consoleTickets holds one-time console tickets in memory.
 type consoleTickets struct {
 	mu      sync.Mutex
 	pending map[string]*pendingConsole
-	now     func() time.Time
+	// preparing counts the consoles being prepared per session ID.
+	preparing map[string]int
+	now       func() time.Time
 }
 
 func newConsoleTickets() *consoleTickets {
-	return &consoleTickets{pending: map[string]*pendingConsole{}, now: time.Now}
+	return &consoleTickets{pending: map[string]*pendingConsole{}, preparing: map[string]int{}, now: time.Now}
 }
 
 func (t *consoleTickets) add(p *pendingConsole) (string, error) {
@@ -71,6 +78,32 @@ func (t *consoleTickets) add(p *pendingConsole) (string, error) {
 	p.expires = now.Add(consoleTicketTTL)
 	t.pending[id] = p
 	return id, nil
+}
+
+// reserve reports whether the session may prepare another console; if so,
+// the caller must call the returned release when the preparation is over
+// (after add).
+func (t *consoleTickets) reserve(sessionID string) (func(), bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	n := t.preparing[sessionID]
+	now := t.now()
+	for _, p := range t.pending {
+		if p.sessionID == sessionID && !now.After(p.expires) {
+			n++
+		}
+	}
+	if n >= maxPendingConsoles {
+		return nil, false
+	}
+	t.preparing[sessionID]++
+	return func() {
+		t.mu.Lock()
+		defer t.mu.Unlock()
+		if t.preparing[sessionID]--; t.preparing[sessionID] <= 0 {
+			delete(t.preparing, sessionID)
+		}
+	}, true
 }
 
 // take removes and returns a ticket if it exists and has not expired.
@@ -100,6 +133,11 @@ func (s *Service) handleGuestConsole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	target := c.Name() + "/" + guestResource(res.Type, res.VMID)
+	release, ok := s.consoleSlot(w, r)
+	if !ok {
+		return
+	}
+	defer release()
 	con, err := c.OpenGuestConsole(r.Context(), res.Node, res.Type, res.VMID)
 	s.prepared(w, r, c, con, err, target, rbac.P(Module, c.Name(), guestResource(res.Type, res.VMID), rbac.ActionConsole))
 }
@@ -119,8 +157,24 @@ func (s *Service) handleNodeShell(w http.ResponseWriter, r *http.Request) {
 	if !auth.Check(w, r, perm) {
 		return
 	}
+	release, ok := s.consoleSlot(w, r)
+	if !ok {
+		return
+	}
+	defer release()
 	con, err := c.OpenNodeShell(r.Context(), node)
 	s.prepared(w, r, c, con, err, c.Name()+"/"+nodeResource(node), perm)
+}
+
+// consoleSlot reserves the preparation of a console for the session, or
+// answers 429 if the session has too many consoles in preparation.
+func (s *Service) consoleSlot(w http.ResponseWriter, r *http.Request) (func(), bool) {
+	release, ok := s.consoles.reserve(session.FromContext(r.Context()).ID)
+	if !ok {
+		w.Header().Set("Retry-After", strconv.Itoa(int(consoleTicketTTL.Seconds())))
+		httpx.WriteError(w, http.StatusTooManyRequests, "too_many_consoles", "too many consoles are being opened, try again later")
+	}
+	return release, ok
 }
 
 func (s *Service) prepared(w http.ResponseWriter, r *http.Request, c *Cluster, con *Console, err error, target string, perm rbac.Permission) {
@@ -243,7 +297,7 @@ func (s *Service) pipe(ctx context.Context, client, upstream *websocket.Conn, to
 				if s.sessions == nil {
 					continue
 				}
-				sess, err := s.sessions.Get(ctx, token)
+				sess, err := s.sessions.Peek(ctx, token)
 				if errors.Is(err, session.ErrNotFound) || (err == nil && !sess.Authenticated()) {
 					reasons <- "session ended"
 					return

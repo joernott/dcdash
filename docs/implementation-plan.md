@@ -283,12 +283,20 @@ These apply to every task:
 
 ## Sprint 9 — Hardening and Release v0.1.0
 
-- [ ] **9.1** Security review: authentication flows, session handling, CSRF, headers,
+- [x] **9.1** Security review: authentication flows, session handling, CSRF, headers,
   websocket proxy, input validation, secret handling, dependency audit (`govulncheck`,
   `npm audit`)
   - [x] **9.1.1** Strict DNS names: zone and record names allow only letters, digits, `_` and
     `-` per label (`*` as leftmost record label). miekg/dns accepted tabs, `;`, braces and `#`, which
     a zone admin could use to inject options into `rndc addzone` or other record types into updates
+  - [x] **9.1.2** Login and TOTP lockout count attempts in progress (parallel requests got past
+    the limit), IPv6 clients per /64, a hard cap on tracked keys; user names over 256 characters
+    or with control characters are rejected before logging
+  - [x] **9.1.3** Sessions and consoles: an open console no longer extends the idle timeout, at
+    most 3 consoles in preparation per session, a TOTP reset ends the user's sessions; read and
+    idle timeouts for the HTTP server
+  - [x] **9.1.4** Warning for `file:` secrets readable by other users; DNS updates record the
+    previous values in the audit log; review results and known limitations in `security.md`
 - [x] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
 - [ ] **9.3** End-to-end test suite against the full docker compose environment
 - [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
