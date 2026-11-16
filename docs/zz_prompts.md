@@ -120,3 +120,9 @@ yes, please do so
 ## 2026-11-13 — Sprint 7 (DNS)
 
 ok, go ahead
+
+---
+
+## 2026-11-16 — Sprint 7 (DNS)
+
+The VM has been resized (disk and RAM) and restarted

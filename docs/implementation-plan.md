@@ -244,7 +244,7 @@ These apply to every task:
 - [x] **7.7** bind9 zone creation and deletion: create the zone file, `rndc addzone`,
   catalog zone update; and the reverse for deletion, with a safety confirmation
 - [x] **7.8** DNS API for zones and records (per-instance permissions, audited)
-- [ ] **7.9** Frontend: zone list with create and delete, record table with filter, create,
+- [x] **7.9** Frontend: zone list with create and delete, record table with filter, create,
   edit and delete dialogs, provider-specific fields
 - [x] **7.10** Tests: bind9 containers (primary with an SFTP server, and a secondary with a
   catalog zone) for integration tests, HTTP mocks for Cloudflare

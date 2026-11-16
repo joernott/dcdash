@@ -94,8 +94,8 @@ export const useSessionStore = defineStore('session', () => {
     return canPerm(permissions.value, permission)
   }
 
-  function canAny(module: string, action: Action = 'read') {
-    return canAnyPerm(permissions.value, module, action)
+  function canAny(module: string, action: Action = 'read', instance?: string) {
+    return canAnyPerm(permissions.value, module, action, instance)
   }
 
   return {
