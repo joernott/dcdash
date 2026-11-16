@@ -8,7 +8,7 @@ export interface SelectOption {
 }
 
 const model = defineModel<string>({ default: '' })
-const props = defineProps<{ label: string; options: SelectOption[] }>()
+const props = defineProps<{ label: string; options: SelectOption[]; disabled?: boolean }>()
 const id = useId()
 </script>
 
@@ -18,7 +18,8 @@ const id = useId()
     <select
       :id="id"
       v-model="model"
-      class="rounded-md border border-border bg-surface px-3 py-2 text-fg"
+      :disabled="props.disabled"
+      class="rounded-md border border-border bg-surface px-3 py-2 text-fg disabled:opacity-60"
     >
       <option v-for="o in props.options" :key="o.value" :value="o.value">{{ o.label }}</option>
     </select>

@@ -132,3 +132,9 @@ The VM has been resized (disk and RAM) and restarted
 ## 2026-11-16 — Sprint 7 (DNS)
 
 please squash merge sprint 7 into main and continue with sprint 8
+
+---
+
+## 2026-11-16 — Sprint 8 (DHCP)
+
+please squash merge sprint 8 into main and start with sprint 9

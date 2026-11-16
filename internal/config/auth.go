@@ -114,6 +114,10 @@ type TLSClient struct {
 	// colons optional). The certificate is then accepted regardless of issuer
 	// and host name, e.g. for self-signed certificates without SAN.
 	Fingerprint string `yaml:"fingerprint"`
+	// CertFile and KeyFile are an optional client certificate and its key
+	// (PEM), for servers that require one.
+	CertFile string `yaml:"cert_file"`
+	KeyFile  string `yaml:"key_file"`
 }
 
 // NormalizedFingerprint returns the fingerprint as lower-case hex without colons.
@@ -122,6 +126,9 @@ func (t TLSClient) NormalizedFingerprint() string {
 }
 
 func (t TLSClient) validate(prefix string, add func(string, ...any)) {
+	if (t.CertFile == "") != (t.KeyFile == "") {
+		add("%scert_file and key_file: set both or neither", prefix)
+	}
 	if t.Fingerprint == "" {
 		return
 	}

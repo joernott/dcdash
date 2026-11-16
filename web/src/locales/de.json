@@ -23,7 +23,8 @@
     "sessions": "Sitzungen",
     "logout": "Abmelden",
     "backHome": "Zurück zur Übersicht",
-    "dns": "DNS"
+    "dns": "DNS",
+    "dhcp": "DHCP"
   },
   "home": {
     "welcome": "Willkommen, {name}",
@@ -285,10 +286,12 @@
     "upstream_error": "Das Backend hat einen Fehler gemeldet.",
     "conflict": "Die Daten wurden inzwischen geändert. Sie wurden neu geladen; bitte versuchen Sie es noch einmal.",
     "exists": "Dieser Eintrag existiert bereits.",
-    "unsupported": "Dieser DNS-Anbieter unterstützt das nicht.",
-    "rejected": "Der DNS-Server hat die Änderung angenommen, aber nicht übernommen (zum Beispiel ein CNAME neben anderen Einträgen).",
+    "unsupported": "Das wird hier nicht unterstützt: {message}",
+    "rejected": "Der Server hat die Änderung nicht übernommen: {message}",
     "invalid_record": "Ungültiger Eintrag: {message}",
-    "confirmation_required": "Bitte bestätigen Sie mit dem Namen der Zone."
+    "confirmation_required": "Bitte bestätigen Sie mit dem Namen der Zone.",
+    "invalid_reservation": "Ungültige Reservierung: {message}",
+    "read_only": "Diese Reservierung steht in der Kea-Konfigurationsdatei und kann in dcdash nicht geändert werden."
   },
   "dns": {
     "provider": "Anbieter",
@@ -352,5 +355,130 @@
       "NS": "Ein Nameserver der delegierten Zone",
       "CAA": "Flags, Tag und Wert"
     }
+  },
+  "dhcp": {
+    "server": "Server",
+    "families": {
+      "v4": "DHCPv4",
+      "v6": "DHCPv6"
+    },
+    "noServers": "Ihnen steht kein DHCP-Server zur Verfügung.",
+    "status": {
+      "ok": "Verfügbar",
+      "unavailable": "Nicht verfügbar"
+    },
+    "unavailable": "Der Server kann gerade nicht verwendet werden: {error}",
+    "version": "Version",
+    "uptime": "Läuft seit",
+    "uptimeDays": "{d} T. {h} Std.",
+    "uptimeHours": "{h} Std. {m} Min.",
+    "ha": "Hochverfügbarkeit",
+    "haState": "{mode}, {role}: {state}",
+    "haPartner": "Partner {partner}: {state}",
+    "haPartnerLost": "Keine Verbindung zum Partner {partner}",
+    "haGroup": "HA-Gruppe",
+    "haGroupMembers": "{group}, zusammen mit {partners}",
+    "missing": {
+      "leases": "Leases sind nicht verfügbar: Die Hook-Bibliothek lease_cmds ist nicht geladen.",
+      "reservations": "Reservierungen sind nicht verfügbar: Die Hook-Bibliothek host_cmds ist nicht geladen.",
+      "hostDatabase": "Reservierungen sind schreibgeschützt: Der Server hat keine Host-Datenbank für Änderungen.",
+      "subnets": "Pools werden nicht angezeigt: Die Hook-Bibliothek subnet_cmds ist nicht geladen.",
+      "statistics": "Die Auslastung wird nicht angezeigt: Die Hook-Bibliothek stat_cmds ist nicht geladen."
+    },
+    "views": "Ansichten",
+    "tabs": {
+      "subnets": "Subnetze",
+      "leases": "Leases",
+      "reservations": "Reservierungen"
+    },
+    "subnet": "Subnetz",
+    "pools": "Pools",
+    "utilization": "Auslastung",
+    "actionsColumn": "Aktionen",
+    "noSubnets": "Ihnen stehen keine Subnetze zur Verfügung.",
+    "subnetId": "ID {id}",
+    "sharedNetwork": "gemeinsames Netz {name}",
+    "addresses": "Adressen",
+    "prefixes": "Präfixe",
+    "usedOf": "{used} von {total}",
+    "declined": "{n} abgelehnt",
+    "showLeases": "Leases anzeigen",
+    "chooseSubnet": "Subnetz wählen",
+    "searchKeys": {
+      "ip": "IP-Adresse",
+      "hw-address": "MAC-Adresse",
+      "client-id": "Client-ID",
+      "duid": "DUID",
+      "hostname": "Hostname"
+    },
+    "address": "Adresse",
+    "duid": "DUID",
+    "mac": "MAC-Adresse",
+    "hostname": "Hostname",
+    "state": "Zustand",
+    "expires": "Läuft ab",
+    "leaseDeleted": "Lease {address} gelöscht.",
+    "partnerFailed": "Die Lease konnte auf dem HA-Partner {server} nicht gelöscht werden: {error}",
+    "searchBy": "Suchen nach",
+    "searchValue": "Wert",
+    "search": "Suchen",
+    "subnetLeases": "Leases eines Subnetzes",
+    "leaseCount": "Keine Leases | Eine Lease | {n} Leases",
+    "truncated": "nur die ersten werden angezeigt",
+    "noLeases": "Keine Leases gefunden.",
+    "delegatedPrefix": "delegiertes Präfix",
+    "leaseStates": {
+      "assigned": "Vergeben",
+      "declined": "Abgelehnt",
+      "expired": "Abgelaufen",
+      "released": "Freigegeben"
+    },
+    "deleteLeaseFor": "Lease {address} löschen",
+    "delete": "Löschen",
+    "leasesHint": "Suchen Sie nach einer Lease oder wählen Sie ein Subnetz, um seine Leases zu sehen.",
+    "deleteLease": "Lease löschen",
+    "deleteLeaseQuestion": "Die Lease von {address} löschen?",
+    "deleteLeaseHint": "Die Adresse wird frei. Ein Client, der sie noch verwendet, erhält beim Verlängern eine neue Lease.",
+    "deleteLeasePartners": "Die Lease wird auch auf dem HA-Partner {partners} gelöscht.",
+    "allSubnets": "Alle Subnetze",
+    "identifier": "Kennung",
+    "source": "Gespeichert in",
+    "reservationAdded": "Reservierung {name} hinzugefügt.",
+    "reservationSaved": "Reservierung {name} gespeichert.",
+    "reservationDeleted": "Reservierung {name} gelöscht.",
+    "filterReservations": "Filter (Kennung, Adresse, Hostname)",
+    "addReservation": "Reservierung hinzufügen",
+    "editReservation": "Reservierung bearbeiten",
+    "shownOf": "{shown} von {total} angezeigt",
+    "noReservations": "Keine passenden Reservierungen.",
+    "identifierType": "Art der Kennung",
+    "identifierTypes": {
+      "hw-address": "MAC-Adresse",
+      "client-id": "Client-ID",
+      "duid": "DUID",
+      "circuit-id": "Circuit-ID",
+      "flex-id": "Flexible ID"
+    },
+    "identifierHints": {
+      "hw-address": "Zum Beispiel aa:bb:cc:dd:ee:ff",
+      "client-id": "Hex-Bytes, zum Beispiel 01:aa:bb:cc:dd:ee:ff",
+      "duid": "Hex-Bytes, zum Beispiel 00:03:00:01:aa:bb:cc:dd:ee:ff"
+    },
+    "global": "Global",
+    "sources": {
+      "config": "Konfigurationsdatei",
+      "database": "Host-Datenbank"
+    },
+    "actionsFor": "Aktionen für {name}",
+    "edit": "Bearbeiten",
+    "readOnly": "schreibgeschützt",
+    "deleteReservation": "Reservierung löschen",
+    "deleteReservationQuestion": "Die Reservierung {name} löschen?",
+    "ipv4Address": "IPv4-Adresse",
+    "ipv4Hint": "Optional; muss im Subnetz liegen.",
+    "ipv6Addresses": "IPv6-Adressen",
+    "delegatedPrefixes": "Delegierte Präfixe",
+    "listHint": "Optional; mehrere durch Kommas getrennt.",
+    "keptFields": "Client-Klassen und Optionen dieser Reservierung bleiben unverändert."
   }
 }

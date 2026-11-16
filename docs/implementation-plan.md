@@ -39,7 +39,7 @@ These apply to every task:
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | done |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | done |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
-| 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | open |
+| 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | open |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | open |
 
@@ -257,22 +257,29 @@ These apply to every task:
 
 ## Sprint 8 — DHCP (Kea v3)
 
-- [ ] **8.1** Kea 3.x API research: control socket configuration, authentication, hooks
+- [x] **8.1** Kea 3.x API research: control socket configuration, authentication, hooks
   needed (`lease_cmds`, `host_cmds` with a host database, `stat_cmds`, and `subnet_cmds` if
   useful); amend this sprint if needed
-- [ ] **8.2** Kea client: HTTP and HTTPS, basic auth, client certificates, command and
+  (`docs/adr/0003-kea-api.md`)
+- [x] **8.2** Kea client: HTTP and HTTPS, basic auth, client certificates, command and
   response model, error mapping
-- [ ] **8.3** Capability detection with `list-commands`, `status-get` and `version-get`
-- [ ] **8.4** Read API: subnets and pools with utilisation, leases for v4 and v6 (search by
+- [x] **8.3** Capability detection with `list-commands`, `status-get` and `version-get`
+- [x] **8.4** Read API: subnets and pools with utilisation, leases for v4 and v6 (search by
   IP, MAC or DUID, hostname)
-- [ ] **8.5** Write API: delete a lease, host reservation CRUD (`host_cmds`), all checked
+  - [x] **8.4.1** Reservations from the configuration file and the host database
+    (`operation-target`), the configuration ones read-only
+- [x] **8.5** Write API: delete a lease, host reservation CRUD (`host_cmds`), all checked
   for permission and audited
-- [ ] **8.6** HA pair awareness in the config: grouping and choosing the write target
-- [ ] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
+- [x] **8.6** HA pair awareness in the config: grouping and choosing the write target
+  - [x] **8.6.1** Check with an HA pair in containers whether lease changes through
+    `lease_cmds` reach the partner; otherwise delete leases on both partners
+- [x] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
   management, features hidden when the server doesn't support them
-- [ ] **8.8** Tests: Kea 3.x container (DHCPv4 and DHCPv6, with hooks and a host database)
+- [x] **8.8** Tests: Kea 3.x container (DHCPv4 and DHCPv6, with hooks and a host database)
   for integration tests
-- [ ] **8.9** Documentation: Kea prerequisites (control sockets, hooks, host database)
+  - [x] **8.8.1** PostgreSQL image with the Kea schema from the source archive, pinned by
+    SHA-256
+- [x] **8.9** Documentation: Kea prerequisites (control sockets, hooks, host database)
 
 ## Sprint 9 — Hardening and Release v0.1.0
 

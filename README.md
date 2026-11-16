@@ -7,6 +7,7 @@ dcdash is a dashboard for administrators to manage multiple infrastructure compo
 - [Implementation plan](docs/implementation-plan.md)
 - [TLS certificates](docs/certificates.md)
 - [Security](docs/security.md)
+- Modules: [Proxmox VE](docs/proxmox.md), [DNS](docs/dns.md), [DHCP (Kea)](docs/dhcp.md)
 - [Development guide](docs/development.md)
 
 ## License

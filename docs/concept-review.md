@@ -192,7 +192,8 @@ roles:
   - Without hooks, only `status-get`, `config-get`, `statistic-get-all` and the
     `config-set`/`config-write` round trip are available.
   - Kea 3.0 also changed hook licensing. Task 8.1 verifies which hooks are available on
-    the target Kea version.
+    the target Kea version. **(verified, ADR 0003)** All needed hooks are open source
+    in Kea 3.0.
   - **(decided, Q5)** `lease_cmds`, `host_cmds` with a host database, and `stat_cmds` are
     available, and more hooks can be installed if needed. The admin guide documents them as
     prerequisites.

@@ -46,6 +46,14 @@ func ClientConfig(c config.TLSClient, serverName string) (*tls.Config, error) {
 		cfg.RootCAs = pool
 	}
 
+	if c.CertFile != "" || c.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("client certificate: %w", err)
+		}
+		cfg.Certificates = []tls.Certificate{cert}
+	}
+
 	if c.Fingerprint != "" {
 		want, err := hex.DecodeString(c.NormalizedFingerprint())
 		if err != nil || len(want) != sha256.Size {

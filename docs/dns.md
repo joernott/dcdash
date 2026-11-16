@@ -254,6 +254,6 @@ Zones defined in `named.conf` stay untouched.
 | "The backend refused the request" (bind9) | `update-policy` or `allow-transfer` doesn't cover the TSIG key, or the zone isn't on this server. |
 | "The backend refused the request" (Cloudflare) | The token lacks a permission (see the table above) or is expired. |
 | "The data was changed in the meantime" | Someone else changed the zone (bind9) or the record (Cloudflare). dcdash reloaded the records; repeat the change. |
-| "The DNS server accepted the change but did not apply it" | bind9 ignored the update, for example a CNAME next to other records with the same name. |
+| "The server did not accept the change" | bind9 ignored the update, for example a CNAME next to other records with the same name. |
 | A zone is missing in the list (bind9) | It's neither in `zones` nor in the catalog zone, or the catalog can't be transferred with the TSIG key. |
 | "Create zone" is missing | bind9: `rndc`, `sftp`, `new_zones` or `catalog_zone` is not configured. Cloudflare: `account_id` is missing. Or the user lacks `admin`. |

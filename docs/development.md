@@ -38,9 +38,11 @@ make tools-check                       # verifies the installed versions
 | `internal/version/` | Build information (set via `-ldflags`) |
 | `internal/proxmox/` | Proxmox API client (failover, pinning), inventory, power actions, tasks, console proxy; `pvefake/` is an in-memory fake of the Proxmox API for tests |
 | `internal/dns/` | DNS model and API; `bind/` (AXFR, RFC 2136, rndc, SFTP, catalog zone) and `cloudflare/` (SDK, `cffake/` fake of the API for tests) |
+| `internal/dhcp/` | DHCP API (permissions per subnet, HA groups); `kea/` is the Kea 3.x client, `kea/keafake/` an in-memory fake of a Kea control socket for tests |
 | `internal/testutil/` | Helpers shared by tests |
-| `test/integration/` | Integration tests (build tag `integration`) and their container environment; `dns/` holds the bind9 primary (with SFTP) and secondary |
+| `test/integration/` | Integration tests (build tag `integration`) and their container environment; `dns/` holds the bind9 primary (with SFTP) and secondary, `kea/` the Kea configurations and the PostgreSQL image with the Kea schema |
 | `test/pvefake/` | The Proxmox fake as a program, used by the end-to-end tests |
+| `test/cffake/`, `test/keafake/` | The Cloudflare and Kea fakes as programs, used by the end-to-end tests |
 | `api/openapi.yaml` | API specification; source of the TypeScript client types |
 | `web/` | Frontend: Vue 3, TypeScript, Vite, Tailwind CSS v4, Pinia, vue-i18n |
 | `configs/` | Example and development configuration |
@@ -59,7 +61,7 @@ Run `make` to list all targets. The most important ones:
 | `make build` | Build the frontend, then `bin/dcdash` with the frontend embedded |
 | `make build-go` | Build only the binary, with the frontend currently in `internal/ui/dist` |
 | `make test` | Go tests (with race detector) and frontend unit tests |
-| `make test-integration` | Integration tests against containers (bind9 for ACME, a bind9 primary with SFTP and a secondary for the DNS module, OpenLDAP, Pebble, step-ca); needs Docker and `rndc` (`bind9-utils`; `DCDASH_IT_RNDC` may point to another binary). `KEEP=1` keeps the containers running |
+| `make test-integration` | Integration tests against containers (bind9 for ACME, a bind9 primary with SFTP and a secondary for the DNS module, Kea DHCPv4/DHCPv6 with a PostgreSQL host database and a Kea HA pair, OpenLDAP, Pebble, step-ca); needs Docker and `rndc` (`bind9-utils`; `DCDASH_IT_RNDC` may point to another binary). `KEEP=1` keeps the containers running |
 | `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container and the Proxmox fake; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
 | `make fmt` | Format and auto-fix Go and frontend sources |

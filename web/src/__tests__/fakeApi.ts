@@ -3,7 +3,7 @@
 // method and path, e.g. on('POST /api/v1/auth/login', (body) => [200, info]).
 import type { SessionInfo } from '@/api/client'
 
-type Handler = (body: unknown) => [number, unknown]
+type Handler = (body: unknown, params?: Init['params']) => [number, unknown]
 
 /** The request options of openapi-fetch that the fake understands. */
 export interface Init {
@@ -25,7 +25,7 @@ export class FakeApi {
     this.calls.push({ route, body: init?.body })
     const handler = this.handlers.get(route)
     const [status, body] = handler
-      ? handler(init?.body)
+      ? handler(init?.body, init?.params)
       : [404, { error: { code: 'not_found', message: route } }]
     const response = new Response(null, { status })
     return Promise.resolve(status < 400 ? { data: body, response } : { error: body, response })
