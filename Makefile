@@ -115,6 +115,10 @@ dev-backend: dev-cert $(DEV_DIR)/encryption.key ## Run the backend with configs/
 dev-web: web/node_modules dev-cert ## Run the Vite dev server with proxy to the backend (DEV_HOST=0.0.0.0 to expose it)
 	cd web && npm run dev -- --host $(DEV_HOST)
 
+.PHONY: snapshot
+snapshot: ## Build a local release (archives, .deb/.rpm, images) into dist/ with GoReleaser
+	goreleaser release --snapshot --clean
+
 .PHONY: clean
 clean: ## Remove build output
 	rm -rf bin dist

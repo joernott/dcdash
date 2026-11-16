@@ -303,9 +303,9 @@ These apply to every task:
   checked for WCAG AA contrast on all views
 - [ ] **9.5** Documentation: installation, full configuration reference, admin guide, user
   guide, backend prerequisites (Proxmox token, bind, Kea, LDAP)
-- [ ] **9.6** Packaging: goreleaser, Linux amd64 and arm64 binaries, `.deb`/`.rpm` with a
+- [x] **9.6** Packaging: goreleaser, Linux amd64 and arm64 binaries, `.deb`/`.rpm` with a
   systemd unit, container image
-- [ ] **9.7** Release workflow in CI: build artifacts and checksums when a tag is pushed
+- [x] **9.7** Release workflow in CI: build artifacts and checksums when a tag is pushed
 - [ ] **9.8** `CHANGELOG.md`, update the README, tag `v0.1.0`
 - [ ] **9.9** Translatable status details: `/api/v1/status` returns a detail code with parameters
   (for example the certificate expiry) instead of English text, so that the overview shows
