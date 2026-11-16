@@ -248,7 +248,7 @@ These apply to every task:
   edit and delete dialogs, provider-specific fields
 - [x] **7.10** Tests: bind9 containers (primary with an SFTP server, and a secondary with a
   catalog zone) for integration tests, HTTP mocks for Cloudflare
-- [ ] **7.11** Documentation:
+- [x] **7.11** Documentation:
   - Required `named.conf` settings: TSIG key, `update-policy`, `allow-transfer`,
     `allow-new-zones`, catalog zone, rndc
   - SFTP user setup on the primary: chrooted, SFTP only, dedicated key, directory

@@ -167,6 +167,49 @@ proxmox:
 #      username: "dcdash-console@pve"
 #      password: "file:/etc/dcdash/pve-lab-console.password"
 
+# DNS providers (see docs/dns.md). Permissions use the provider name as
+# instance and the zone as resource, e.g. "dns:cloudflare-prod:example.com:write".
+dns:
+  providers: []
+#  - name: cloudflare-prod
+#    type: cloudflare
+#    cloudflare:
+#      # Zone:Read and DNS:Edit; Zone:Edit to create and delete zones. Use a
+#      # different token than for ACME.
+#      api_token: "file:/etc/dcdash/cloudflare-dns.token"
+#      # Needed only to create zones.
+#      account_id: ""
+#  - name: bind-internal
+#    type: bind
+#    timeout: 15s
+#    bind:
+#      # Records: AXFR and RFC 2136 updates, signed with the TSIG key.
+#      nameserver: ns1.example.com
+#      tsig_key: dcdash
+#      tsig_secret: "file:/etc/dcdash/bind-dcdash.tsig"
+#      tsig_algorithm: hmac-sha256
+#      # Zones from named.conf, and the catalog zone (RFC 9432) with the
+#      # zones created by dcdash.
+#      zones: [example.internal]
+#      catalog_zone: catalog.example.internal
+#      # Optional: server operations and zone creation.
+#      rndc:
+#        binary: /usr/sbin/rndc
+#        server: ns1.example.com
+#        port: 953
+#        key_file: /etc/dcdash/dcdash-rndc.key
+#      sftp:
+#        address: ns1.example.com:22
+#        user: dcdash-sftp
+#        private_key_file: /etc/dcdash/bind-sftp.key
+#        host_key: "ssh-ed25519 AAAA..."   # or known_hosts_file
+#        zone_dir: /zones                  # as seen over SFTP
+#      new_zones:
+#        file_dir: /srv/dcdash-zones/zones # as seen by named
+#        ttl: 1h
+#        soa: {mname: ns1.example.com, rname: hostmaster.example.com}
+#        nameservers: [ns1.example.com, ns2.example.com]
+
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
   # Generate one with `dcdash gen-key`. Keep it outside this file, e.g. "file:/etc/dcdash/encryption.key".

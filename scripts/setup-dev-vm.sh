@@ -28,7 +28,7 @@ esac
 echo "==> Base packages"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
-apt-get install -y -q build-essential make git curl ca-certificates gnupg xz-utils unzip jq rsync
+apt-get install -y -q build-essential make git curl ca-certificates gnupg xz-utils unzip jq rsync bind9-utils openssh-client
 
 echo "==> Go ${GO_VERSION}"
 if [[ "$(/usr/local/go/bin/go version 2>/dev/null | awk '{print $3}')" != "go${GO_VERSION}" ]]; then
