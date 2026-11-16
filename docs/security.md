@@ -329,6 +329,25 @@ To create a zone, the user needs `admin` on the new zone's name, so a pattern su
 backend's own credentials limit dcdash in addition: the Cloudflare token and the TSIG key's
 `update-policy`; see [dns.md](dns.md).
 
+### DHCP permissions
+
+The instance is the server name from the configuration. The resource is the subnet prefix as
+Kea reports it, for example `192.0.2.0/24` or `2001:db8:1::/64`, and `global` for global
+reservations:
+
+| Action | Allows |
+|---|---|
+| `read` | Viewing the subnet, its utilization, leases and reservations |
+| `operate` | Deleting leases of the subnet |
+| `write` | Adding, changing and deleting reservations of the subnet |
+
+Examples: `dhcp:dhcp4-a:*:read` (everything on one server, read-only),
+`dhcp:*:192.0.2.0/24:operate` (leases of one subnet on all servers),
+`dhcp:dhcp4-a:10.1.*:write` (reservations in all subnets starting with `10.1.`).
+
+Lease searches return only leases of subnets the user may read. Kea's API user can run every
+command, so dcdash's permissions are the only restriction per user; see [dhcp.md](dhcp.md).
+
 ## Audit log
 
 dcdash records every login attempt and every state-changing action in the audit log, together
@@ -383,3 +402,5 @@ entry can't be stored, it is written to the application log as an error instead.
 | `proxmox.console.start`, `proxmox.console.end` | A console session started and ended; `details` contain the duration, the bytes in both directions and why it ended |
 | `dns.record.create`, `dns.record.update`, `dns.record.delete` | A record change; `target` is `<provider>/<zone>`, `details` contain name, type, TTL, content and record ID (and the error on failure) |
 | `dns.zone.create`, `dns.zone.delete` | A zone was created or deleted; `target` is `<provider>/<zone>` |
+| `dhcp.lease.delete` | A lease was deleted; `target` is `<server>/<subnet>`, `details` contain the address, MAC address or DUID, host name and the result on each HA partner |
+| `dhcp.reservation.create`, `dhcp.reservation.update`, `dhcp.reservation.delete` | A reservation change; `target` is `<server>/<subnet>`, `details` contain the identifier, addresses, host name, the server that stored it, and the previous values for updates |

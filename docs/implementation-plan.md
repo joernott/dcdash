@@ -279,7 +279,7 @@ These apply to every task:
   for integration tests
   - [x] **8.8.1** PostgreSQL image with the Kea schema from the source archive, pinned by
     SHA-256
-- [ ] **8.9** Documentation: Kea prerequisites (control sockets, hooks, host database)
+- [x] **8.9** Documentation: Kea prerequisites (control sockets, hooks, host database)
 
 ## Sprint 9 — Hardening and Release v0.1.0
 

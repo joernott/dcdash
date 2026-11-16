@@ -210,6 +210,26 @@ dns:
 #        soa: {mname: ns1.example.com, rname: hostmaster.example.com}
 #        nameservers: [ns1.example.com, ns2.example.com]
 
+# Kea 3.x DHCP servers (see docs/dhcp.md). dcdash talks to each kea-dhcp4 and
+# kea-dhcp6 daemon over its own HTTP(S) control socket. Permissions use the
+# server name as instance and the subnet as resource, e.g.
+# "dhcp:dhcp4-a:192.0.2.0/24:write".
+dhcp:
+  servers: []
+#  - name: dhcp4-a
+#    family: v4                        # v4 (kea-dhcp4) or v6 (kea-dhcp6)
+#    url: https://kea1.example.com:8000
+#    tls:
+#      ca_file: /etc/dcdash/kea-ca.pem # or fingerprint
+#      # Client certificate for cert-required: true on the Kea side.
+#      cert_file: ""
+#      key_file: ""
+#    username: dcdash
+#    password: "file:/etc/dcdash/kea-dcdash.password"
+#    timeout: 15s
+#    # Servers of a Kea HA pair share a group: leases are deleted on both.
+#    ha_group: site1
+
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
   # Generate one with `dcdash gen-key`. Keep it outside this file, e.g. "file:/etc/dcdash/encryption.key".
