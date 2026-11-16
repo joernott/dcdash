@@ -64,6 +64,7 @@ Run `make` to list all targets. The most important ones:
 | `make test` | Go tests (with race detector) and frontend unit tests |
 | `make test-integration` | Integration tests against containers (bind9 for ACME, a bind9 primary with SFTP and a secondary for the DNS module, Kea DHCPv4/DHCPv6 with a PostgreSQL host database and a Kea HA pair, OpenLDAP, Pebble, step-ca); needs Docker and `rndc` (`bind9-utils`; `DCDASH_IT_RNDC` may point to another binary). `KEEP=1` keeps the containers running |
 | `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container and the Proxmox fake; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
+| `make test-e2e-full` | The end-to-end tests against the full docker compose environment as well: dcdash then also uses the real bind9 primary (zone creation with rndc, SFTP and the catalog zone), Kea with the PostgreSQL host database and the Kea HA pair (`web/e2e/full.spec.ts`). Needs Docker and `rndc`; this is what the CI runs |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
 | `make fmt` | Format and auto-fix Go and frontend sources |
 | `make gen-api` | Regenerate `web/src/api/schema.d.ts` from `api/openapi.yaml` |
@@ -171,7 +172,9 @@ are rejected, so typos are caught early.
    generated API types are current, build
 4. **Build:** builds the binary with the embedded frontend, runs a smoke test and uploads
    the binary as an artifact
-5. **End-to-end:** the Playwright tests against the built binary
+5. **End-to-end:** the Playwright tests against the built binary, with the fakes and the full
+   docker compose environment (`scripts/e2e-full.sh`). Every view is also checked for
+   WCAG 2.1 AA violations (axe-core, light and dark mode)
 6. **Dependency audit:** `govulncheck` (Go, reachable code only) and `npm audit` (all
    frontend dependencies, including build tools)
 

@@ -136,13 +136,14 @@ jobs:
       - name: Install browser
         run: npx playwright install --with-deps --only-shell chromium
         working-directory: web
-      - name: Start test directory
-        run: docker compose -f test/integration/compose.yaml up -d --build --wait openldap
+      - name: Install rndc
+        run: sudo apt-get update -q && sudo apt-get install -y -q bind9-utils
       - name: Build
         run: make build
+      # Against the fakes and the real services of the docker compose environment
+      # (bind9, Kea with PostgreSQL, Kea HA pair, OpenLDAP).
       - name: Run end-to-end tests
-        run: npx playwright test
-        working-directory: web
+        run: scripts/e2e-full.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:

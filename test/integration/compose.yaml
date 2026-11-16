@@ -77,7 +77,9 @@ services:
       it:
         ipv4_address: 10.77.0.66
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "kea", "-d", "kea"]
+      # Over TCP: during initialization (schema import), the image runs a temporary server
+      # that listens only on the Unix socket, so a socket check would pass too early.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "kea", "-d", "kea"]
       interval: 2s
       retries: 30
 

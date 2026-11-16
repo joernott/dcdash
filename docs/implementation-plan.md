@@ -298,7 +298,7 @@ These apply to every task:
   - [x] **9.1.4** Warning for `file:` secrets readable by other users; DNS updates record the
     previous values in the audit log; review results and known limitations in `security.md`
 - [x] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
-- [ ] **9.3** End-to-end test suite against the full docker compose environment
+- [x] **9.3** End-to-end test suite against the full docker compose environment
 - [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
   checked for WCAG AA contrast on all views
   - [x] **9.4.1** Automated WCAG 2.1 AA check (axe-core, including color contrast) of every view
