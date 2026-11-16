@@ -66,6 +66,15 @@
   "overrides": {
     "openapi-typescript": {
       "typescript": "$typescript"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.8"
+    },
+    "editorconfig": {
+      "minimatch": "^11.0.8"
+    },
+    "js-beautify": {
+      "glob": "^14.0.6"
     }
   },
   "engines": {
