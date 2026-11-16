@@ -39,6 +39,13 @@ func TestNormalize(t *testing.T) {
 		{in: Record{Name: "www.example.com.", Type: "A", Content: "192.0.2.1"}, errorMsg: "not in zone"},
 		{in: Record{Name: "a b", Type: "A", Content: "192.0.2.1"}, errorMsg: "invalid name"},
 		{in: Record{Name: "a.*", Type: "A", Content: "192.0.2.1"}, errorMsg: "wildcard"},
+		// Injection through the name: a TAB-separated DNAME record, with a comment hiding the rest.
+		{in: Record{Name: "x.example.org.\t300\tIN\tDNAME\tt.\t;.example.org", Type: "A", Content: "192.0.2.1"}, errorMsg: "invalid name"},
+		{in: Record{Name: "a{b}", Type: "A", Content: "192.0.2.1"}, errorMsg: "invalid name"},
+		{in: Record{Name: "a..b", Type: "A", Content: "192.0.2.1"}, errorMsg: "invalid name"},
+		{in: Record{Name: `a\032b`, Type: "A", Content: "192.0.2.1"}, errorMsg: "invalid name"},
+		// Injection through the content: more fields than the type has.
+		{in: Record{Name: "x", Type: "MX", Content: "10 a.example.org. extra"}, errorMsg: "invalid MX content"},
 		{in: Record{Name: "@", Type: "CNAME", Content: "x.example.net."}, errorMsg: "apex"},
 		{in: Record{Name: "mx", Type: "MX", Content: "10 mail.example.org.", Proxied: &yes}, errorMsg: "proxied"},
 		{in: Record{Name: "x", Type: "A", Content: "192.0.2.1", TTL: 1 << 31}, errorMsg: "TTL"},
@@ -99,6 +106,10 @@ func TestZoneNames(t *testing.T) {
 	for n, ok := range map[string]bool{
 		"example.org": true, "sub.example.org": true, "10.in-addr.arpa": true, "org": true,
 		"": false, "*.example.org": false, "example.org.": false, "a b.org": false, "a:b": false,
+		// rndc addzone injection: TAB-separated zone options, the rest commented out.
+		"x.example.org\t{type\tprimary;file\tx.db;allow-update{any;};};#.example.org": false,
+		"a;b.org": false, "a#b.org": false, "a..b": false, "-": true, "xn--bcher-kva.example": true, "_dmarc.example.org": true,
+		"Example.org": false, "a.'b'": false,
 	} {
 		if ValidZoneName(n) != ok {
 			t.Errorf("ValidZoneName(%q) = %v", n, !ok)

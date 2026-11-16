@@ -130,13 +130,34 @@ func NormalizeName(n string) string {
 	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(n)), ".")
 }
 
-// ValidZoneName reports whether n is a valid zone name (no wildcard).
-func ValidZoneName(n string) bool {
-	if n == "" || strings.HasPrefix(n, "*") || strings.HasSuffix(n, ".") {
+// ValidZoneName reports whether n is a valid zone name: a normalized name
+// (see validName) without wildcard.
+func ValidZoneName(n string) bool { return validName(n, false) }
+
+// validName reports whether n is a normalized domain name (lower case, no
+// trailing dot) whose labels consist only of letters, digits, "_" and "-",
+// 1 to 63 characters each, at most 253 characters in all. With wildcard, the
+// leftmost label may be "*". Anything else (spaces, tabs, quotes, ";", braces,
+// escapes) is refused: names end up in zone files, in rndc addzone and in
+// RFC 2136 updates, where such characters change the meaning.
+func validName(n string, wildcard bool) bool {
+	if n == "" || len(n) > 253 {
 		return false
 	}
-	_, ok := mdns.IsDomainName(n)
-	return ok && !strings.ContainsAny(n, " /\\:@\"'")
+	for i, label := range strings.Split(n, ".") {
+		if label == "*" && i == 0 && wildcard {
+			continue
+		}
+		if label == "" || len(label) > 63 {
+			return false
+		}
+		for _, c := range []byte(label) {
+			if (c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '-' && c != '_' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // InZone reports whether name is the zone apex or below it.
@@ -164,14 +185,14 @@ func Normalize(r Record, zone string) (Record, error) {
 		}
 	}
 	name = NormalizeName(name)
-	if _, ok := mdns.IsDomainName(name); !ok || strings.ContainsAny(name, " /\\:@\"'") {
+	if strings.Contains(name, "*") && !strings.HasPrefix(name, "*.") || strings.Count(name, "*") > 1 {
+		return Record{}, invalid("a wildcard must be the leftmost label: %q", name)
+	}
+	if !validName(name, true) {
 		return Record{}, invalid("invalid name %q", r.Name)
 	}
 	if !InZone(name, zone) {
 		return Record{}, invalid("name %q is not in zone %s", name, zone)
-	}
-	if strings.Contains(name, "*") && !strings.HasPrefix(name, "*.") || strings.Count(name, "*") > 1 {
-		return Record{}, invalid("a wildcard must be the leftmost label: %q", name)
 	}
 	if r.TTL > 1<<31-1 {
 		return Record{}, invalid("TTL %d too large", r.TTL)
@@ -185,6 +206,11 @@ func Normalize(r Record, zone string) (Record, error) {
 	}
 	rr, err := mdns.NewRR(mdns.Fqdn(name) + " 3600 IN " + r.Type + " " + content)
 	if err != nil || rr == nil {
+		return Record{}, invalid("invalid %s content %q", r.Type, r.Content)
+	}
+	// The content must not change what was parsed, e.g. by starting a
+	// comment or adding fields.
+	if !strings.EqualFold(rr.Header().Name, mdns.Fqdn(name)) || mdns.TypeToString[rr.Header().Rrtype] != r.Type {
 		return Record{}, invalid("invalid %s content %q", r.Type, r.Content)
 	}
 	if r.Type == "CNAME" && name == zone {

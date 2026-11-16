@@ -286,6 +286,9 @@ These apply to every task:
 - [ ] **9.1** Security review: authentication flows, session handling, CSRF, headers,
   websocket proxy, input validation, secret handling, dependency audit (`govulncheck`,
   `npm audit`)
+  - [x] **9.1.1** Strict DNS names: zone and record names allow only letters, digits, `_` and
+    `-` per label (`*` as leftmost record label). miekg/dns accepted tabs, `;`, braces and `#`, which
+    a zone admin could use to inject options into `rndc addzone` or other record types into updates
 - [x] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
 - [ ] **9.3** End-to-end test suite against the full docker compose environment
 - [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
