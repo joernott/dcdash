@@ -1,0 +1,47 @@
+{
+  "Dhcp6": {
+    "interfaces-config": { "interfaces": [] },
+    "control-sockets": [
+      {
+        "socket-type": "http",
+        "socket-address": "0.0.0.0",
+        "socket-port": 8000,
+        "authentication": {
+          "type": "basic",
+          "realm": "kea",
+          "directory": "/etc/kea",
+          "clients": [ { "user": "dcdash", "password-file": "dcdash.password" } ]
+        }
+      }
+    ],
+    "lease-database": { "type": "memfile", "persist": false },
+    "hosts-database": {
+      "type": "postgresql",
+      "host": "kea-db",
+      "name": "kea",
+      "user": "kea",
+      "password": "kea-db-test-only",
+      "on-fail": "serve-retry-continue"
+    },
+    "hooks-libraries": [
+      { "library": "libdhcp_pgsql.so" },
+      { "library": "libdhcp_lease_cmds.so" },
+      { "library": "libdhcp_host_cmds.so" },
+      { "library": "libdhcp_stat_cmds.so" },
+      { "library": "libdhcp_subnet_cmds.so" }
+    ],
+    "valid-lifetime": 3600,
+    "subnet6": [
+      {
+        "id": 1,
+        "subnet": "2001:db8:1::/64",
+        "pools": [ { "pool": "2001:db8:1::1000 - 2001:db8:1::1fff" } ],
+        "pd-pools": [ { "prefix": "2001:db8:8000::", "prefix-len": 48, "delegated-len": 56 } ],
+        "reservations": [
+          { "duid": "00:03:00:01:aa:bb:cc:00:00:01", "ip-addresses": [ "2001:db8:1::10" ], "hostname": "printer6" }
+        ]
+      }
+    ],
+    "loggers": [ { "name": "kea-dhcp6", "output-options": [ { "output": "stdout" } ], "severity": "INFO" } ]
+  }
+}

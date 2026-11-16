@@ -275,9 +275,9 @@ These apply to every task:
     `lease_cmds` reach the partner; otherwise delete leases on both partners
 - [ ] **8.7** Frontend: server overview, subnet utilisation, lease search, reservation
   management, features hidden when the server doesn't support them
-- [ ] **8.8** Tests: Kea 3.x container (DHCPv4 and DHCPv6, with hooks and a host database)
+- [x] **8.8** Tests: Kea 3.x container (DHCPv4 and DHCPv6, with hooks and a host database)
   for integration tests
-  - [ ] **8.8.1** PostgreSQL image with the Kea schema from the source archive, pinned by
+  - [x] **8.8.1** PostgreSQL image with the Kea schema from the source archive, pinned by
     SHA-256
 - [ ] **8.9** Documentation: Kea prerequisites (control sockets, hooks, host database)
 
