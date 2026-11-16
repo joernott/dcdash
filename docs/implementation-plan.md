@@ -301,6 +301,8 @@ These apply to every task:
 - [ ] **9.3** End-to-end test suite against the full docker compose environment
 - [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
   checked for WCAG AA contrast on all views
+  - [x] **9.4.1** Automated WCAG 2.1 AA check (axe-core, including color contrast) of every view
+    in the end-to-end tests, in light and dark mode: no violations
 - [ ] **9.5** Documentation: installation, full configuration reference, admin guide, user
   guide, backend prerequisites (Proxmox token, bind, Kea, LDAP)
 - [x] **9.6** Packaging: goreleaser, Linux amd64 and arm64 binaries, `.deb`/`.rpm` with a
