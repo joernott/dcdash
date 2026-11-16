@@ -308,6 +308,27 @@ A node shell is a root shell on the hypervisor, so it needs `admin` on the node,
 `console`. Proxmox checks the privileges of dcdash's API token in addition; see
 [proxmox.md](proxmox.md).
 
+### DNS permissions
+
+The instance is the provider name from the configuration, the resource is the zone name
+without trailing dot:
+
+| Action | Allows |
+|---|---|
+| `read` | Listing the zone and its records |
+| `write` | Creating, changing and deleting records of the zone |
+| `admin` | Creating and deleting the zone |
+
+Examples: `dns:cloudflare-prod:*:read` (all zones of the provider, read-only),
+`dns:bind-internal:example.internal:write` (records of one zone),
+`dns:bind-internal:*.internal:write` (records of all zones ending in `.internal`),
+`dns:*:*:admin` (everything, including zone creation and deletion).
+
+To create a zone, the user needs `admin` on the new zone's name, so a pattern such as
+`dns:cloudflare-prod:*.example.com:admin` allows only zones below `example.com`. The
+backend's own credentials limit dcdash in addition: the Cloudflare token and the TSIG key's
+`update-policy`; see [dns.md](dns.md).
+
 ## Audit log
 
 dcdash records every login attempt and every state-changing action in the audit log, together
@@ -360,3 +381,5 @@ entry can't be stored, it is written to the application log as an error instead.
 | `proxmox.guest.<action>` | A power action (`start`, `shutdown`, `stop`, `reboot`, `suspend`, `resume`); `target` is `<cluster>/<type>/<vmid>`, `details` contain the node and the Proxmox task ID or the error |
 | `proxmox.console.open` | Opening a console or node shell failed (`result` `failure`) |
 | `proxmox.console.start`, `proxmox.console.end` | A console session started and ended; `details` contain the duration, the bytes in both directions and why it ended |
+| `dns.record.create`, `dns.record.update`, `dns.record.delete` | A record change; `target` is `<provider>/<zone>`, `details` contain name, type, TTL, content and record ID (and the error on failure) |
+| `dns.zone.create`, `dns.zone.delete` | A zone was created or deleted; `target` is `<provider>/<zone>` |

@@ -22,6 +22,8 @@ tags:
     description: Administration of sessions and TOTP enrollments
   - name: proxmox
     description: "Proxmox VE clusters: inventory, power actions, tasks and consoles"
+  - name: dns
+    description: "DNS zones and records in Cloudflare and bind9"
 
 paths:
   /healthz:
@@ -680,6 +682,213 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/dns/providers:
+    get:
+      tags: [dns]
+      operationId: listDNSProviders
+      summary: List DNS providers
+      description: Returns the providers on which the user holds at least `read` on any zone.
+      responses:
+        "200":
+          description: Visible providers.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DNSProviderList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dns/providers/{provider}/zones:
+    get:
+      tags: [dns]
+      operationId: listDNSZones
+      summary: List the zones of a provider
+      description: Only zones the user may read are returned (`dns:<provider>:<zone>:read`).
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+      responses:
+        "200":
+          description: Zones.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DNSZoneList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [dns]
+      operationId: createDNSZone
+      summary: Create a zone
+      description: |
+        Requires `admin` on the zone. bind9: uploads the zone file over SFTP, adds the zone with
+        rndc addzone and lists it in the catalog zone. Cloudflare: creates a "pending" zone; the
+        registrar must delegate it to the returned name servers. Audited as `dns.zone.create`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DNSZoneRequest" }
+      responses:
+        "201":
+          description: Zone created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DNSZone" }
+        "400": { $ref: "#/components/responses/DNSInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/DNSConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dns/providers/{provider}/zones/{zone}:
+    delete:
+      tags: [dns]
+      operationId: deleteDNSZone
+      summary: Delete a zone
+      description: |
+        Requires `admin` on the zone and the zone name repeated in `confirm`. bind9 can delete
+        only zones of the catalog zone (zones created by dcdash), not zones from named.conf.
+        Audited as `dns.zone.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+        - $ref: "#/components/parameters/DNSZone"
+        - { name: confirm, in: query, required: true, schema: { type: string }, description: The zone name again. }
+      responses:
+        "204": { description: Zone deleted. }
+        "400":
+          description: "The confirmation is missing or wrong (code: confirmation_required)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DNSConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dns/providers/{provider}/zones/{zone}/records:
+    get:
+      tags: [dns]
+      operationId: listDNSRecords
+      summary: List the records of a zone
+      description: Requires `read` on the zone.
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+        - $ref: "#/components/parameters/DNSZone"
+      responses:
+        "200":
+          description: Records.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DNSRecordSet" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [dns]
+      operationId: createDNSRecord
+      summary: Create a record
+      description: |
+        Requires `write` on the zone. `version` is the version of the record set. Audited as
+        `dns.record.create`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+        - $ref: "#/components/parameters/DNSZone"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DNSRecordRequest" }
+      responses:
+        "201":
+          description: Record created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DNSRecord" }
+        "400": { $ref: "#/components/responses/DNSInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DNSConflict" }
+        "422": { $ref: "#/components/responses/DNSRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/dns/providers/{provider}/zones/{zone}/records/{id}:
+    put:
+      tags: [dns]
+      operationId: updateDNSRecord
+      summary: Replace a record
+      description: |
+        Requires `write` on the zone. `version` is the version of the record as read. For bind9
+        the ID changes when the name, type or content changes. Audited as `dns.record.update`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+        - $ref: "#/components/parameters/DNSZone"
+        - $ref: "#/components/parameters/DNSRecordID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DNSRecordRequest" }
+      responses:
+        "200":
+          description: Record replaced.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DNSRecord" }
+        "400": { $ref: "#/components/responses/DNSInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DNSConflict" }
+        "422": { $ref: "#/components/responses/DNSRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [dns]
+      operationId: deleteDNSRecord
+      summary: Delete a record
+      description: Requires `write` on the zone. Audited as `dns.record.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/DNSProvider"
+        - $ref: "#/components/parameters/DNSZone"
+        - $ref: "#/components/parameters/DNSRecordID"
+        - { name: version, in: query, required: true, schema: { type: string }, description: Version of the record as read. }
+      responses:
+        "204": { description: Record deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DNSConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -700,7 +909,27 @@ components:
     ProxmoxGuestType: { name: type, in: path, required: true, schema: { type: string, enum: [qemu, lxc] } }
     ProxmoxVMID: { name: vmid, in: path, required: true, schema: { type: integer, minimum: 1 } }
 
+    DNSProvider: { name: provider, in: path, required: true, schema: { type: string }, description: Provider name from the configuration. }
+    DNSZone: { name: zone, in: path, required: true, schema: { type: string }, description: Zone name without trailing dot. }
+    DNSRecordID: { name: id, in: path, required: true, schema: { type: string } }
   responses:
+    DNSInvalid:
+      description: "Invalid record or zone (code: invalid_record, with the reason as message) or body (invalid_request)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    DNSConflict:
+      description: |
+        Codes: conflict (changed since it was read, reload and try again), exists (the record or
+        zone exists already), unsupported (the provider can't create or delete zones).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    DNSRejected:
+      description: "The server accepted the update but didn't apply it, e.g. a CNAME next to other records (code: rejected)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     NotFound:
       description: "Not found (code: not_found)."
       content:
@@ -1089,3 +1318,94 @@ components:
         id: { type: string, description: One-time ticket for the websocket. }
         kind: { type: string, enum: [vnc, term] }
         password: { type: string, description: VNC password for noVNC (only for vnc). }
+
+    DNSCapabilities:
+      type: object
+      required: [proxied, comments, autoTtl, zoneCreate]
+      properties:
+        proxied: { type: boolean, description: Records have the Cloudflare proxy flag. }
+        comments: { type: boolean, description: Records have comments. }
+        autoTtl: { type: boolean, description: TTL 1 means automatic. }
+        zoneCreate: { type: boolean, description: Zones can be created and deleted. }
+
+    DNSProviderList:
+      type: object
+      required: [providers]
+      properties:
+        providers:
+          type: array
+          items:
+            type: object
+            required: [name, kind, capabilities]
+            properties:
+              name: { type: string }
+              kind: { type: string, enum: [cloudflare, bind] }
+              capabilities: { $ref: "#/components/schemas/DNSCapabilities" }
+
+    DNSZone:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, description: Zone name without trailing dot. }
+        status: { type: string, description: "Cloudflare: active, pending, ..." }
+        nameServers:
+          type: array
+          items: { type: string }
+          description: Cloudflare name servers to delegate the zone to.
+
+    DNSZoneList:
+      type: object
+      required: [zones]
+      properties:
+        zones:
+          type: array
+          items: { $ref: "#/components/schemas/DNSZone" }
+
+    DNSZoneRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string }
+
+    DNSRecord:
+      type: object
+      required: [id, name, type, ttl, content, version]
+      properties:
+        id: { type: string }
+        name: { type: string, description: Fully qualified name without trailing dot. }
+        type: { type: string, examples: [A, MX, TXT] }
+        ttl: { type: integer, description: Seconds; 1 means automatic (Cloudflare). }
+        content:
+          type: string
+          description: RDATA in zone-file presentation format, e.g. "10 mail.example.org." for MX.
+        proxied: { type: boolean, description: Cloudflare proxy flag (A, AAAA, CNAME). }
+        comment: { type: string }
+        readOnly: { type: boolean, description: SOA, DNSSEC and other types dcdash can't edit. }
+        version: { type: string, description: Send back with an update or delete. }
+
+    DNSRecordSet:
+      type: object
+      required: [records, version]
+      properties:
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/DNSRecord" }
+        version: { type: string, description: "Send with a new record (bind9: SOA serial; empty for Cloudflare)." }
+
+    DNSRecordRequest:
+      type: object
+      required: [name, type, content]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          description: Relative to the zone, "@" for the apex, or fully qualified.
+        type: { type: string, enum: [A, AAAA, CNAME, MX, TXT, SRV, PTR, NS, CAA] }
+        ttl: { type: integer, minimum: 0, description: "0: the default of the provider." }
+        content:
+          type: string
+          description: RDATA in presentation format; plain TXT text is quoted automatically.
+        proxied: { type: boolean }
+        comment: { type: string }
+        version: { type: string }

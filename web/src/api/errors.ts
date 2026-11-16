@@ -11,7 +11,7 @@ import { ApiError } from './client'
 export function errorMessage(i18n: Pick<Composer, 't' | 'te'>, err: unknown): string {
   if (err instanceof ApiError) {
     const key = `errors.${err.code}`
-    if (i18n.te(key)) return i18n.t(key)
+    if (i18n.te(key)) return i18n.t(key, { message: err.message })
     return i18n.t('errors.unknown', { message: err.message })
   }
   return i18n.t('errors.unknown', { message: err instanceof Error ? err.message : String(err) })

@@ -38,7 +38,7 @@ These apply to every task:
 | 4 | `sprint/04-mfa-rbac` | TOTP per role, roles and permissions, audit log, user preferences | v0.1.0 | done |
 | 5 | `sprint/05-ui-shell` | Frontend shell: i18n (en/de), dark mode, login, layout, admin views | v0.1.0 | done |
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | done |
-| 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | open |
+| 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | open |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | open |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | open |
@@ -226,29 +226,29 @@ These apply to every task:
 
 ## Sprint 7 — DNS (Cloudflare and bind9)
 
-- [ ] **7.1** `dns.Provider` interface (zones and records) and a common record model (A,
+- [x] **7.1** `dns.Provider` interface (zones and records) and a common record model (A,
   AAAA, CNAME, MX, TXT, SRV, PTR, NS, CAA) with validation
-- [ ] **7.2** Cloudflare provider (`cloudflare-go`): list, create and delete zones (account
+- [x] **7.2** Cloudflare provider (`cloudflare-go`): list, create and delete zones (account
   ID), record CRUD, `proxied`, TTL, comments
-- [ ] **7.3** bind9 provider, read: AXFR with TSIG
-- [ ] **7.4** bind9 provider, write: RFC 2136 updates with TSIG, prerequisite checks to
+- [x] **7.3** bind9 provider, read: AXFR with TSIG
+- [x] **7.4** bind9 provider, write: RFC 2136 updates with TSIG, prerequisite checks to
   avoid lost updates
-- [ ] **7.5** bind9 server operations through `rndc` (status, reload, `addzone`,
+- [x] **7.5** bind9 server operations through `rndc` (status, reload, `addzone`,
   `delzone`), using a configured key file and binary path
-- [ ] **7.6** bind9 zone file provisioning over SFTP (`x/crypto/ssh`, `pkg/sftp`):
+- [x] **7.6** bind9 zone file provisioning over SFTP (`x/crypto/ssh`, `pkg/sftp`):
   - Per-primary configuration: host, port, user, private key file, pinned host key or
     `known_hosts`, remote zone directory
   - Atomic upload (temporary file, then rename), and removal of the zone file and `.jnl`
   - Zone file rendering from the SOA/NS template in the config
   - Connection health check
-- [ ] **7.7** bind9 zone creation and deletion: create the zone file, `rndc addzone`,
+- [x] **7.7** bind9 zone creation and deletion: create the zone file, `rndc addzone`,
   catalog zone update; and the reverse for deletion, with a safety confirmation
-- [ ] **7.8** DNS API for zones and records (per-instance permissions, audited)
-- [ ] **7.9** Frontend: zone list with create and delete, record table with filter, create,
+- [x] **7.8** DNS API for zones and records (per-instance permissions, audited)
+- [x] **7.9** Frontend: zone list with create and delete, record table with filter, create,
   edit and delete dialogs, provider-specific fields
-- [ ] **7.10** Tests: bind9 containers (primary with an SFTP server, and a secondary with a
+- [x] **7.10** Tests: bind9 containers (primary with an SFTP server, and a secondary with a
   catalog zone) for integration tests, HTTP mocks for Cloudflare
-- [ ] **7.11** Documentation:
+- [x] **7.11** Documentation:
   - Required `named.conf` settings: TSIG key, `update-policy`, `allow-transfer`,
     `allow-new-zones`, catalog zone, rndc
   - SFTP user setup on the primary: chrooted, SFTP only, dedicated key, directory

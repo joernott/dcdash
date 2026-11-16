@@ -28,6 +28,11 @@ go build -o "$DIR/pvefake" ./test/pvefake
 "$DIR/pvefake" -listen "$PVE_LISTEN" -cert "$DIR/cert.pem" -key "$DIR/key.pem" 2>"$DIR/pvefake.log" &
 PVE_FP=$(openssl x509 -in "$DIR/cert.pem" -noout -fingerprint -sha256 | cut -d= -f2)
 
+# Fake Cloudflare API (internal/dns/cloudflare/cffake), plain HTTP on loopback.
+CF_LISTEN="${DCDASH_E2E_CF_LISTEN:-127.0.0.1:18007}"
+go build -o "$DIR/cffake" ./test/cffake
+"$DIR/cffake" -listen "$CF_LISTEN" 2>"$DIR/cffake.log" &
+
 cat > "$DIR/config.yaml" <<EOF
 server:
   listen: "$LISTEN"
@@ -48,6 +53,10 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["proxmox:*:*:console"]
+  - name: dns-editor
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["dns:cf:*:write"]
 proxmox:
   clusters:
     - name: lab
@@ -55,6 +64,13 @@ proxmox:
       token_id: "dcdash@pve!e2e"
       token_secret: "e2e-test-only"
       console: {username: "console@pve", password: "console-e2e"}
+dns:
+  providers:
+    - name: cf
+      type: cloudflare
+      cloudflare:
+        api_token: "cf-e2e-test-only"
+        base_url: "http://$CF_LISTEN/client/v4/"
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}

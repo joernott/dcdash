@@ -12,6 +12,9 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/dns"
+	"github.com/joernott/dcdash/internal/dns/bind"
+	"github.com/joernott/dcdash/internal/dns/cloudflare"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
@@ -88,6 +91,14 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	if pve != nil {
 		a.statusChecks = append(a.statusChecks, pve.StatusChecks()...)
 		a.routes = append(a.routes, pve.Register)
+	}
+	dnsSvc, err := newDNS(cfg.DNS, auditLog, log)
+	if err != nil {
+		return nil, err
+	}
+	if dnsSvc != nil {
+		a.statusChecks = append(a.statusChecks, dnsSvc.StatusChecks()...)
+		a.routes = append(a.routes, dnsSvc.Register)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
@@ -195,4 +206,34 @@ func newProxmox(cfg config.Proxmox, auditLog *audit.Log, sessions *session.Manag
 		log.Info().Str("cluster", c.Name).Int("endpoints", len(c.Endpoints)).Msg("proxmox: cluster configured")
 	}
 	return proxmox.NewService(clusters, auditLog, sessions, log), nil
+}
+
+// newDNS creates the DNS module, or nil if no provider is configured.
+func newDNS(cfg config.DNS, auditLog *audit.Log, log zerolog.Logger) (*dns.Service, error) {
+	if len(cfg.Providers) == 0 {
+		return nil, nil
+	}
+	providers := make([]dns.Provider, 0, len(cfg.Providers))
+	for _, p := range cfg.Providers {
+		switch p.Type {
+		case config.DNSTypeCloudflare:
+			providers = append(providers, cloudflare.New(p, log))
+		case config.DNSTypeBind:
+			var files bind.ZoneFiles
+			if p.Bind.SFTP.Enabled() {
+				sf, err := bind.NewSFTP(p.Bind.SFTP, p.RequestTimeout())
+				if err != nil {
+					return nil, fmt.Errorf("dns provider %s: %w", p.Name, err)
+				}
+				files = sf
+			}
+			bp, err := bind.New(p, files, log)
+			if err != nil {
+				return nil, err
+			}
+			providers = append(providers, bp)
+		}
+		log.Info().Str("provider", p.Name).Str("type", p.Type).Msg("dns: provider configured")
+	}
+	return dns.NewService(providers, auditLog, log), nil
 }

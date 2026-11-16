@@ -56,6 +56,18 @@ export const routes = [
         meta: { title: 'account.title' },
       },
       {
+        path: 'dns/:provider?',
+        name: 'dns',
+        component: () => import('@/views/dns/DnsView.vue'),
+        meta: { title: 'nav.dns', module: 'dns' },
+      },
+      {
+        path: 'dns/:provider/:zone',
+        name: 'dns-zone',
+        component: () => import('@/views/dns/ZoneView.vue'),
+        meta: { title: 'nav.dns', module: 'dns' },
+      },
+      {
         path: 'proxmox/:cluster?',
         name: 'proxmox',
         component: () => import('@/views/proxmox/ProxmoxView.vue'),
