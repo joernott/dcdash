@@ -40,7 +40,7 @@ These apply to every task:
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | done |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
-| 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | open |
+| 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | in progress |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | open |
 
 ---
