@@ -1380,6 +1380,17 @@ export interface components {
         'application/json': components['schemas']['ErrorBody']
       }
     }
+    /** @description The session is already preparing 3 consoles that were not opened yet (code: too_many_consoles). */
+    TooManyConsoles: {
+      headers: {
+        /** @description Seconds until a console can be prepared again. */
+        'Retry-After'?: number
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Too many failed attempts (code: too_many_attempts). */
     TooManyAttempts: {
       headers: {
@@ -1554,6 +1565,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SessionInfo']
+        }
+      }
+      /** @description Malformed request, or a user name that is too long or contains control characters (code: invalid_request). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
       /** @description Invalid credentials (code: invalid_credentials). */
@@ -2218,6 +2238,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      429: components['responses']['TooManyConsoles']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
@@ -2255,6 +2276,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      429: components['responses']['TooManyConsoles']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
