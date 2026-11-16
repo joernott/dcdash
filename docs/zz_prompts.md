@@ -126,3 +126,9 @@ ok, go ahead
 ## 2026-11-16 — Sprint 7 (DNS)
 
 The VM has been resized (disk and RAM) and restarted
+
+---
+
+## 2026-11-16 — Sprint 7 (DNS)
+
+please squash merge sprint 7 into main and continue with sprint 8
