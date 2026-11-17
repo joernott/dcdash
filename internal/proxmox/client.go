@@ -80,6 +80,10 @@ type Cluster struct {
 	ticketMu        sync.Mutex
 	ticket          *ticket
 	now             func() time.Time
+
+	// prov limits creating and deleting guests; provOn is false without it.
+	prov   config.ProxmoxProvisioning
+	provOn bool
 }
 
 // New creates the client of a cluster. It does not connect.
@@ -92,6 +96,8 @@ func New(cfg config.ProxmoxCluster, log zerolog.Logger) (*Cluster, error) {
 		consoleUser:     cfg.Console.Username,
 		consolePassword: cfg.Console.Password.Value(),
 		now:             time.Now,
+		prov:            cfg.Provisioning.WithDefaults(),
+		provOn:          cfg.Provisioning.Enabled(),
 	}
 	for _, e := range cfg.Endpoints {
 		u, err := url.Parse(e.URL)
@@ -124,6 +130,10 @@ func New(cfg config.ProxmoxCluster, log zerolog.Logger) (*Cluster, error) {
 
 // Name returns the cluster name.
 func (c *Cluster) Name() string { return c.name }
+
+// Provisioning returns the provisioning settings and whether creating and
+// deleting guests is enabled.
+func (c *Cluster) Provisioning() (config.ProxmoxProvisioning, bool) { return c.prov, c.provOn }
 
 // HasConsoleUser reports whether a Proxmox user is configured for consoles.
 func (c *Cluster) HasConsoleUser() bool { return c.consoleUser != "" }
@@ -205,6 +215,9 @@ func (c *Cluster) send(ctx context.Context, ep *endpoint, a authFunc, method, pa
 		return fmt.Errorf("proxmox: invalid response: %w", err)
 	}
 	if len(env.Data) == 0 || string(env.Data) == "null" {
+		if _, ok := out.(optionalData); ok {
+			return nil
+		}
 		return fmt.Errorf("proxmox: response without data")
 	}
 	return json.Unmarshal(env.Data, out)

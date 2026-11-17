@@ -9,6 +9,7 @@ package pvefake
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,6 +28,10 @@ type Guest struct {
 	Node   string
 	Status string // running, stopped, paused
 	Tags   string
+	// Template marks a VM template; Config holds further configuration
+	// options (e.g. "scsi0", "net0").
+	Template bool
+	Config   map[string]string
 }
 
 // Settings control the behavior of the fake. Change them with Server.Set.
@@ -41,6 +46,10 @@ type Settings struct {
 	Fail int
 	// Denied lists guests ("qemu/101") the token may not operate or open.
 	Denied map[string]bool
+	// Taken are IDs in use by guests the token can't see.
+	Taken map[int]bool
+	// FailTasks makes new tasks of a type (e.g. "qmclone") fail with this exit status.
+	FailTasks map[string]string
 }
 
 // Server is the fake. Serve it with httptest.NewTLSServer.
@@ -53,6 +62,7 @@ type Server struct {
 	consoles map[string]console
 	seq      int
 	requests int
+	calls    []Call
 }
 
 type task struct {
@@ -97,7 +107,9 @@ func (s *Server) Guest(typ string, vmid int) (Guest, bool) {
 	defer s.mu.Unlock()
 	for _, g := range s.guests {
 		if g.Type == typ && g.VMID == vmid {
-			return *g, true
+			c := *g
+			c.Config = maps.Clone(g.Config)
+			return c, true
 		}
 	}
 	return Guest{}, false
@@ -164,14 +176,26 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeData(w, map[string]string{"version": "9.0.11", "release": "9.0", "repoid": "fake"})
 	case p == "/cluster/resources":
 		s.resources(w)
+	case p == "/cluster/nextid":
+		s.nextID(w, r)
+	case p == "/cluster/sdn/vnets":
+		writeData(w, []any{})
+	case len(parts) == 3 && parts[0] == "nodes" && parts[2] == "storage":
+		s.nodeStorages(w, r)
+	case len(parts) == 5 && parts[0] == "nodes" && parts[2] == "storage" && parts[4] == "content":
+		storageContent(w, r, parts[3])
+	case len(parts) == 3 && parts[0] == "nodes" && parts[2] == "network":
+		network(w)
+	case len(parts) == 3 && parts[0] == "nodes" && (parts[2] == "qemu" || parts[2] == "lxc") && r.Method == http.MethodPost:
+		s.create(w, r, parts[1], parts[2], p, user)
 	case len(parts) == 3 && parts[0] == "nodes" && parts[2] == "termproxy":
 		s.openConsole(w, kind, user, true)
 	case len(parts) == 3 && parts[0] == "nodes" && parts[2] == "vncwebsocket":
 		s.websocket(w, r, set)
 	case len(parts) >= 4 && parts[0] == "nodes" && parts[2] == "tasks":
 		s.task(w, parts)
-	case len(parts) >= 5 && parts[0] == "nodes" && (parts[2] == "qemu" || parts[2] == "lxc"):
-		s.guestRequest(w, r, set, parts, kind, user)
+	case len(parts) >= 4 && parts[0] == "nodes" && (parts[2] == "qemu" || parts[2] == "lxc"):
+		s.guestRequest(w, r, set, p, parts, kind, user)
 	default:
 		fail(w, http.StatusNotImplemented, "Method '"+r.Method+" "+p+"' not implemented")
 	}
@@ -197,7 +221,7 @@ func (s *Server) resources(w http.ResponseWriter) {
 	}
 	for _, g := range s.guests {
 		m := map[string]any{"id": g.Type + "/" + strconv.Itoa(g.VMID), "type": g.Type, "vmid": g.VMID, "name": g.Name,
-			"node": g.Node, "status": g.Status, "tags": g.Tags, "template": 0, "maxcpu": 2, "maxmem": 2 << 30, "maxdisk": 32 << 30}
+			"node": g.Node, "status": g.Status, "tags": g.Tags, "template": map[bool]int{true: 1}[g.Template], "maxcpu": 2, "maxmem": 2 << 30, "maxdisk": 32 << 30}
 		if g.Status == "running" {
 			m["cpu"], m["mem"], m["uptime"] = 0.05, 1<<30, 3600
 		}
@@ -217,12 +241,13 @@ func (s *Server) findGuest(node, typ, id string) *Guest {
 }
 
 // guestRequest handles /nodes/{node}/{type}/{vmid}/...
-func (s *Server) guestRequest(w http.ResponseWriter, r *http.Request, set Settings, parts []string, kind authKind, user string) {
+func (s *Server) guestRequest(w http.ResponseWriter, r *http.Request, set Settings, p string, parts []string, kind authKind, user string) {
 	s.mu.Lock()
 	g := s.findGuest(parts[1], parts[2], parts[3])
 	var gc Guest
 	if g != nil {
 		gc = *g
+		gc.Config = maps.Clone(g.Config)
 	}
 	s.mu.Unlock()
 	if g == nil {
@@ -234,8 +259,21 @@ func (s *Server) guestRequest(w http.ResponseWriter, r *http.Request, set Settin
 	case rest == "status/current" && r.Method == http.MethodGet:
 		writeData(w, map[string]any{"status": gc.Status, "vmid": gc.VMID, "name": gc.Name, "qmpstatus": gc.Status, "ha": map[string]any{"managed": 0}})
 	case rest == "config" && r.Method == http.MethodGet:
-		writeData(w, map[string]any{"name": gc.Name, "cores": 2, "memory": "2048", "net0": "virtio=BC:24:11:00:00:01,bridge=vmbr0",
-			"cipassword": "**********", "digest": "abc", "tags": gc.Tags})
+		cfg := map[string]any{"name": gc.Name, "cores": 2, "memory": "2048", "net0": "virtio=BC:24:11:00:00:01,bridge=vmbr0",
+			"cipassword": "**********", "digest": "abc", "tags": gc.Tags}
+		for k, v := range gc.Config {
+			cfg[k] = v
+		}
+		if gc.Template {
+			cfg["template"] = 1
+		}
+		writeData(w, cfg)
+	case rest == "clone" && r.Method == http.MethodPost:
+		s.clone(w, r, g, p, user)
+	case (rest == "config" || rest == "resize") && r.Method == http.MethodPut:
+		s.update(w, r, g, rest, p, user)
+	case rest == "" && r.Method == http.MethodDelete:
+		s.destroy(w, r, g, p, user)
 	case strings.HasPrefix(rest, "status/") && r.Method == http.MethodPost:
 		s.action(w, set, g, strings.TrimPrefix(rest, "status/"), user)
 	case (rest == "vncproxy" || rest == "termproxy") && r.Method == http.MethodPost:

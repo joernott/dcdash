@@ -49,6 +49,12 @@ const filter = ref<GuestFilter>({ text: '', type: '', status: '', node: '' })
 let timer: ReturnType<typeof setInterval> | undefined
 
 const cluster = computed(() => String(route.params.cluster ?? ''))
+const canCreate = computed(
+  () =>
+    !!cluster.value &&
+    clusterStore.provisioning(cluster.value) &&
+    session.canAny('proxmox', 'admin', cluster.value),
+)
 const guests = computed(() => filterGuests(inventory.value?.guests ?? [], filter.value))
 
 const columns = computed(() => [
@@ -160,6 +166,13 @@ onBeforeUnmount(() => clearInterval(timer))
         <BaseButton variant="secondary" :loading="loading" @click="load">
           {{ t('home.refresh') }}
         </BaseButton>
+        <RouterLink
+          v-if="canCreate"
+          :to="{ name: 'proxmox-create', params: { cluster } }"
+          class="inline-flex items-center rounded-md bg-primary px-4 py-2 font-medium text-primary-fg hover:bg-primary-hover"
+        >
+          {{ t('proxmox.create.button') }}
+        </RouterLink>
       </div>
     </div>
 

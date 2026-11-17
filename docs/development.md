@@ -124,6 +124,36 @@ separation (`PVEAuditor` on `/`, `PVEVMUser` on two test guests) and a console u
 The browser test used a separate dcdash configuration whose role allowed `console` only on
 the two test guests.
 
+### Creating and deleting guests
+
+`TestProxmoxProvisioning` in `test/integration/proxmox_provision_test.go` creates guests
+through dcdash's API and deletes them again (also when it fails). It runs when
+`DCDASH_IT_PVE_PROVISION_VMIDS` is set, for example:
+
+```sh
+DCDASH_IT_PVE_PROVISION_VMIDS=1001-1099 \
+DCDASH_IT_PVE_PROVISION_TEMPLATE=999 \
+DCDASH_IT_PVE_PROVISION_CT_TEMPLATE=vm_data:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
+DCDASH_IT_PVE_PROVISION_STORAGE=vm_data DCDASH_IT_PVE_PROVISION_BRIDGE=kunden0 \
+DCDASH_IT_PVE_PROVISION_VLAN=172 DCDASH_IT_PVE_PROVISION_ISO=local:iso/debian-13.4.0-amd64-netinst.iso \
+go test -tags integration -run TestProxmoxProvisioning -v ./test/integration/
+```
+
+Use an ID range that holds no other guests. The guests are not started.
+
+Last manual test: 2026-11-17, Proxmox VE 9.0.11, single node, API token with privilege
+separation and `PVEVMAdmin`, `PVEDatastoreUser` and `PVESDNUser` (see
+[proxmox.md](proxmox.md#privileges-of-the-api-token)).
+
+| Check | Result |
+|---|---|
+| Options: storages, bridges, templates and container templates of the node | passed |
+| Linked clone of a VM template with cloud-init (user, SSH key, static IPv4, DNS), VLAN tag, disk grown from 64 to 65 GiB, a cloud-init drive added | passed |
+| Container from a template: unprivileged, VLAN tag, SSH key | passed |
+| VM from an ISO image | passed |
+| Delete with purge, typing the name, right after the creation | passed after a fix: `/cluster/resources` lags behind with the name, dcdash now reads it from the configuration |
+| SSH keys with `+` and `/` (encoding of `sshkeys`) | passed |
+
 ## Configuration
 
 See `configs/config.example.yaml` for all options. Check a configuration with:

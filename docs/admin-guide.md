@@ -23,7 +23,7 @@ and keep its secrets in files readable only for dcdash (`file:` in the configura
 | Backend | What dcdash needs | Details |
 |---|---|---|
 | LDAP / Active Directory | A service account that may search users and groups; LDAPS or StartTLS | [security.md](security.md#ldap) |
-| Proxmox VE | An API token with the privileges for the inventory, power actions and consoles; for container terminals and node shells also a console user | [proxmox.md](proxmox.md#create-the-api-token) |
+| Proxmox VE | An API token with the privileges for the inventory, power actions and consoles; for container terminals and node shells also a console user; for creating and deleting guests more privileges | [proxmox.md](proxmox.md#create-the-api-token) |
 | Cloudflare | An API token with Zone:Read and DNS:Edit (Zone:Edit to create zones) | [dns.md](dns.md#cloudflare) |
 | bind9 | A TSIG key allowed to transfer and update the zones; for zone creation also rndc, an SFTP account for zone files and a catalog zone | [dns.md](dns.md#bind9) |
 | Kea 3.0 | An HTTPS control socket with basic authentication on each daemon, the hook libraries, and a host database for changing reservations | [dhcp.md](dhcp.md#prerequisites-on-the-kea-servers) |

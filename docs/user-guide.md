@@ -60,6 +60,14 @@ cluster, choose it at the top.
 - **Console:** VMs open a graphical console (VNC) in the browser. The toolbar sends
   Ctrl+Alt+Del and switches to full screen. Containers open a terminal.
 - **Node shell:** a root shell on a node. It requires administrator rights on the node.
+- **Create:** if your administrator allows it for the cluster, "Create" opens a wizard for
+  a virtual machine from a template, a virtual machine from an ISO image, or a container. You
+  choose the name, the resources, the network and, for templates and containers, the login
+  (password or SSH keys) and IP settings. Leave the ID empty to get the next free one. After
+  "Create", the page shows the progress of each step; it continues if you close the page.
+  If a step fails, check the guest and delete it if necessary.
+- **Delete:** on the guest's page, for stopped guests. You type the name to confirm. The
+  guest and its disks are deleted; this can't be undone.
 
 ## DNS
 

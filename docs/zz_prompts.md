@@ -148,3 +148,23 @@ To answer your questions:
 2. Use Jörn Ott as person and Ott-Consult UG as company
 3. From my experience, these were made public for the last images pushed there, After they have been pushed, I can check and make them public
 4. Yes, please go ahead
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+dcdash shows up in https://github.com/joernott?tab=packages&visibility=public, so I assume it is visible. Please continue with sprint 10
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+The shell snippet in the chapter "Privileges of the API token" didn't work, your user is named dashroot and the token is named dev. also, having a ! in a double quoted string breaks on the standard bash of proxmox, I replaced dcdash with dashroot and the token name with dev and turned the strings into single quoted strings. That has worked now, but I recommend to modify the script into six individual commands and use two variables for who and for the token name. the for loop does not save many lines
+
+You can create and delete test VMs there, using the ID range >1000.
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+yes, please go ahead

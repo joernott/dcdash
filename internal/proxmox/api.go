@@ -36,6 +36,7 @@ type Service struct {
 	audit    *audit.Log
 	sessions *session.Manager
 	consoles *consoleTickets
+	jobs     *jobStore
 	log      zerolog.Logger
 }
 
@@ -44,7 +45,7 @@ type Service struct {
 func NewService(clusters []*Cluster, auditLog *audit.Log, sessions *session.Manager, log zerolog.Logger) *Service {
 	s := &Service{
 		clusters: map[string]*Cluster{}, audit: auditLog, sessions: sessions,
-		consoles: newConsoleTickets(), log: log.With().Str("component", "proxmox").Logger(),
+		consoles: newConsoleTickets(), jobs: newJobStore(), log: log.With().Str("component", "proxmox").Logger(),
 	}
 	for _, c := range clusters {
 		s.clusters[c.Name()] = c
@@ -72,6 +73,10 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+base+"/{cluster}/tasks/{upid}", s.handleTask)
 	mux.HandleFunc("POST "+base+"/{cluster}/guests/{type}/{vmid}/console", s.handleGuestConsole)
 	mux.HandleFunc("POST "+base+"/{cluster}/nodes/{node}/shell", s.handleNodeShell)
+	mux.HandleFunc("GET "+base+"/{cluster}/provisioning", s.handleProvisioningOptions)
+	mux.HandleFunc("POST "+base+"/{cluster}/guests", s.handleCreate)
+	mux.HandleFunc("DELETE "+base+"/{cluster}/guests/{type}/{vmid}", s.handleDelete)
+	mux.HandleFunc("GET "+base+"/{cluster}/jobs/{id}", s.handleJob)
 	mux.HandleFunc("GET /api/v1/proxmox/console/{id}", s.handleConsoleSocket)
 }
 
@@ -82,6 +87,9 @@ type ClusterInfo struct {
 	// They need a console user, because Proxmox does not accept API tokens for
 	// them (see ADR 0001).
 	Terminals bool `json:"terminals"`
+	// Provisioning is true if guests may be created and deleted (the user
+	// also needs admin on them).
+	Provisioning bool `json:"provisioning"`
 }
 
 // ClusterList is the response of GET /api/v1/proxmox/clusters.
@@ -98,7 +106,7 @@ func (s *Service) handleClusters(w http.ResponseWriter, r *http.Request) {
 	out := ClusterList{Clusters: []ClusterInfo{}}
 	for _, n := range s.order {
 		if subj.Permissions.AllowsAny(Module, n, rbac.ActionRead) {
-			out.Clusters = append(out.Clusters, ClusterInfo{Name: n, Terminals: s.clusters[n].Terminals()})
+			out.Clusters = append(out.Clusters, ClusterInfo{Name: n, Terminals: s.clusters[n].Terminals(), Provisioning: s.clusters[n].provOn})
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
@@ -312,6 +320,7 @@ func (s *Service) handleGuest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g := toGuest(res)
+	g.Name = configName(cfg, g.Name)
 	if live := liveStatus(st); live != "" {
 		g.Status = live
 	}
@@ -411,6 +420,18 @@ func (s *Service) handleTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// configName returns the name from a guest's configuration ("name" of VMs,
+// "hostname" of containers), or fallback. /cluster/resources lags behind
+// for some seconds after a guest was created or renamed.
+func configName(cfg map[string]any, fallback string) string {
+	for _, k := range []string{"name", "hostname"} {
+		if s, ok := cfg[k].(string); ok && s != "" {
+			return s
+		}
+	}
+	return fallback
 }
 
 // liveStatus returns the current status from .../status/current. The status in

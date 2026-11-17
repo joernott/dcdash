@@ -41,7 +41,7 @@ These apply to every task:
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
-| 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | open |
+| 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
 
 ---
 
@@ -315,17 +315,23 @@ These apply to every task:
 
 ## Sprint 10 — Proxmox Provisioning and Release v0.1.1
 
-- [ ] **10.1** API research: `qemu` create and clone, `lxc` create, cloud-init parameters,
-  storage and network options; amend this sprint if needed
-- [ ] **10.2** Configuration: provisioning defaults and limits per cluster (allowed
+- [x] **10.1** API research: `qemu` create and clone, `lxc` create, cloud-init parameters,
+  storage and network options; amend this sprint if needed (results and decisions:
+  [ADR 0004](adr/0004-proxmox-provisioning.md))
+- [x] **10.2** Configuration: provisioning defaults and limits per cluster (allowed
   storages, bridges and VLANs, templates, maximum CPU, memory and disk)
-- [ ] **10.3** Create VMs: clone from a template (full or linked), and create from an ISO
-- [ ] **10.4** Cloud-init for VMs: user, SSH keys, IP configuration, DNS settings
-- [ ] **10.5** Create containers from templates: resources, network, root password or SSH
+- [x] **10.3** Create VMs: clone from a template (full or linked), and create from an ISO
+- [x] **10.4** Cloud-init for VMs: user, SSH keys, IP configuration, DNS settings
+- [x] **10.5** Create containers from templates: resources, network, root password or SSH
   keys
-- [ ] **10.6** Delete VMs and containers: the user types the name to confirm, the action is
+- [x] **10.6** Delete VMs and containers: the user types the name to confirm, the action is
   audited, and an optional purge removes them from backup jobs and HA
-- [ ] **10.7** Free VM and container ID allocation, and progress tracking with the task API
-- [ ] **10.8** Frontend: creation wizard for VMs and containers, and the delete dialog
-- [ ] **10.9** Tests: mocked API, manual test against a real cluster documented
-- [ ] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`
+- [x] **10.7** Free VM and container ID allocation, and progress tracking with the task API
+  - [x] **10.7.1** Provisioning jobs: the backend runs the steps of a creation (clone, wait,
+    configure, grow the disk, start) and the browser polls the job
+- [x] **10.8** Frontend: creation wizard for VMs and containers, and the delete dialog
+- [x] **10.9** Tests: mocked API, manual test against a real cluster documented
+  - [x] **10.9.1** Fixes from the test on a real cluster: the guest name is read from the
+    configuration (the inventory lags behind after a creation), all storages of a node are
+    listed, the token commands in `proxmox.md` work in bash
+- [x] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`

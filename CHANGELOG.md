@@ -6,6 +6,20 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-17
+
+Creating and deleting virtual machines and containers in Proxmox VE.
+
+### Added
+
+- **Proxmox provisioning:** create virtual machines from templates (full or linked clones with
+  cloud-init: user, password, SSH keys, IP settings, DNS) or from ISO images, and containers
+  from container templates, in a wizard that shows the progress of each step. Delete stopped
+  guests after typing their name, optionally removing them from backup jobs, replication and
+  HA. A `provisioning` section per cluster limits storages, bridges, VLANs, templates, the ID
+  range and the resources; creating and deleting need `admin` on the guest. Audited as
+  `proxmox.guest.create` and `proxmox.guest.delete`.
+
 ## [0.1.0] - 2026-11-17
 
 The first release: one web interface for Proxmox VE, DNS and DHCP, with directory login,
@@ -52,5 +66,6 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1
 [0.1.0]: https://github.com/joernott/dcdash/releases/tag/v0.1.0
