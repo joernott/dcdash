@@ -41,7 +41,7 @@ These apply to every task:
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
-| 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | open |
+| 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | in progress |
 
 ---
 
@@ -315,8 +315,9 @@ These apply to every task:
 
 ## Sprint 10 — Proxmox Provisioning and Release v0.1.1
 
-- [ ] **10.1** API research: `qemu` create and clone, `lxc` create, cloud-init parameters,
-  storage and network options; amend this sprint if needed
+- [x] **10.1** API research: `qemu` create and clone, `lxc` create, cloud-init parameters,
+  storage and network options; amend this sprint if needed (results and decisions:
+  [ADR 0004](adr/0004-proxmox-provisioning.md))
 - [ ] **10.2** Configuration: provisioning defaults and limits per cluster (allowed
   storages, bridges and VLANs, templates, maximum CPU, memory and disk)
 - [ ] **10.3** Create VMs: clone from a template (full or linked), and create from an ISO
@@ -326,6 +327,8 @@ These apply to every task:
 - [ ] **10.6** Delete VMs and containers: the user types the name to confirm, the action is
   audited, and an optional purge removes them from backup jobs and HA
 - [ ] **10.7** Free VM and container ID allocation, and progress tracking with the task API
+  - [ ] **10.7.1** Provisioning jobs: the backend runs the steps of a creation (clone, wait,
+    configure, grow the disk, start) and the browser polls the job
 - [ ] **10.8** Frontend: creation wizard for VMs and containers, and the delete dialog
 - [ ] **10.9** Tests: mocked API, manual test against a real cluster documented
 - [ ] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`

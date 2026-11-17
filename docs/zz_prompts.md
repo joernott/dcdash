@@ -148,3 +148,9 @@ To answer your questions:
 2. Use Jörn Ott as person and Ott-Consult UG as company
 3. From my experience, these were made public for the last images pushed there, After they have been pushed, I can check and make them public
 4. Yes, please go ahead
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+dcdash shows up in https://github.com/joernott?tab=packages&visibility=public, so I assume it is visible. Please continue with sprint 10
