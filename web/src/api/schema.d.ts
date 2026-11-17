@@ -1632,7 +1632,8 @@ export interface components {
     }
     /**
      * @description Codes: provisioning_disabled (the cluster has no provisioning settings),
-     *     vmid_unavailable (the requested ID is taken, or no free ID in the range may be used),
+     *     vmid_taken (the requested ID is in use), no_free_vmid (no free ID of the range may be
+     *     used by the user),
      *     guest_running (stop the guest before deleting it).
      */
     ProxmoxConflict: {
