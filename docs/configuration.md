@@ -232,6 +232,33 @@ Proxmox VE clusters. Default: no clusters. See [proxmox.md](proxmox.md).
 | `proxmox.clusters[].console.username` | string | empty | Optional Proxmox user (`user@realm`) for container terminals and node shells, which don't accept API tokens. Empty: only VNC consoles. See [proxmox.md](proxmox.md#consoles). |
 | `proxmox.clusters[].console.password` | secret | empty | Password of the console user. Required with `console.username`. |
 
+### proxmox.clusters[].provisioning
+
+Allows creating and deleting virtual machines and containers in the cluster, and limits what
+users may create. Without this section (or without `storages`), creating and deleting is off.
+See [proxmox.md](proxmox.md#creating-and-deleting-guests).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `storages` | list of strings | none | Storages for VM disks and container root file systems. Required for provisioning. |
+| `image_storages` | list of strings | `storages` | Storages that hold ISO images and container templates. |
+| `bridges` | list of strings | none | Bridges or SDN VNets for the network device. Required when the section is set. |
+| `vlans` | ranges | empty | Allowed VLAN tags, e.g. `["100-199", 300]`, between 1 and 4094. Empty: untagged only. |
+| `vmids` | ranges | empty | IDs for new guests, e.g. `["5000-5999"]`, between 100 and 999999999. Without a requested ID, dcdash takes the lowest free one the user may create. Empty: any ID, by default the next free ID of Proxmox. |
+| `templates` | ranges | empty | VM IDs of the templates that may be cloned. Empty: all templates. Users also need `read` on a template. |
+| `pool` | string | empty | Proxmox pool new guests are added to. |
+| `limits.cores` | integer | `16` | Maximum CPU cores of a new guest (at most 512). |
+| `limits.memory` | size | `64G` | Maximum memory. |
+| `limits.disk` | size | `1024G` | Maximum disk size. |
+| `defaults.cores` | integer | `2` | Start value in the creation wizard; at most `limits.cores`. |
+| `defaults.memory` | size | `2G` | Start value for the memory (at least `16M`). |
+| `defaults.disk` | size | `32G` | Start value for the disk (at least `1G`). |
+| `defaults.storage` | string | first of `storages` | Preselected storage; must be in `storages`. |
+| `defaults.bridge` | string | first of `bridges` | Preselected bridge; must be in `bridges`. |
+
+*Ranges* are lists of numbers and ranges `"<from>-<to>"`. *Sizes* are a number with a binary
+unit `K`, `M`, `G` or `T` (also `MiB`, `GiB`): `512M`, `32G`.
+
 ## dns
 
 DNS providers: Cloudflare accounts and bind9 primaries. Default: no providers. See

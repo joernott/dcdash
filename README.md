@@ -7,7 +7,8 @@ and every change is recorded in an audit log.
 
 - **Proxmox VE:** inventory of nodes, VMs and containers across several clusters, power
   actions with task progress, the VNC console, container terminals and node shells in the
-  browser.
+  browser; creating VMs (from templates with cloud-init, or from ISO images) and containers
+  within configured limits, and deleting them.
 - **DNS:** records of Cloudflare and bind9 zones, with protection against concurrent changes;
   creating and deleting zones (bind9 with rndc, SFTP and a catalog zone, and Cloudflare).
 - **DHCP:** Kea 3.0 DHCPv4 and DHCPv6: subnet utilization, lease search and deletion,

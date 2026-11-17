@@ -29,5 +29,10 @@ export const useProxmoxClustersStore = defineStore('proxmoxClusters', () => {
     return clusters.value.find((c) => c.name === name)?.terminals ?? false
   }
 
-  return { clusters, loaded, load, terminals }
+  /** Whether guests can be created and deleted on a cluster (ADR 0004). */
+  function provisioning(name: string): boolean {
+    return clusters.value.find((c) => c.name === name)?.provisioning ?? false
+  }
+
+  return { clusters, loaded, load, terminals, provisioning }
 })

@@ -80,6 +80,12 @@ export const routes = [
         meta: { title: 'nav.proxmox', module: 'proxmox' },
       },
       {
+        path: 'proxmox/:cluster/new',
+        name: 'proxmox-create',
+        component: () => import('@/views/proxmox/CreateGuestView.vue'),
+        meta: { title: 'proxmox.create.title', module: 'proxmox' },
+      },
+      {
         path: 'proxmox/:cluster/:type(qemu|lxc)/:vmid(\\d+)',
         name: 'proxmox-guest',
         component: () => import('@/views/proxmox/GuestView.vue'),

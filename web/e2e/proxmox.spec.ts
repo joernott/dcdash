@@ -20,7 +20,7 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   await expect(page).toHaveURL(/\/proxmox\/lab$/)
   await expect(page.getByRole('heading', { name: 'pve1' })).toBeVisible()
   const guests = page.getByRole('table', { name: 'Virtual machines and containers' })
-  await expect(guests.getByRole('row')).toHaveCount(4) // header + 3 guests
+  await expect(guests.getByRole('row')).toHaveCount(5) // header + 3 guests + 1 template
   // No node shell without admin on the node.
   await expect(page.getByRole('link', { name: 'Shell' })).toHaveCount(0)
   await expectAccessible(page, 'Proxmox inventory')

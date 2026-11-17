@@ -677,8 +677,8 @@ func (s *Service) allocateID(w http.ResponseWriter, r *http.Request, c *Cluster,
 		}
 		return c.IDFree(ctx, id)
 	}
-	conflict := func(msg string) (int, bool) {
-		httpx.WriteError(w, http.StatusConflict, "vmid_unavailable", msg)
+	conflict := func(code, msg string) (int, bool) {
+		httpx.WriteError(w, http.StatusConflict, code, msg)
 		return 0, false
 	}
 	if want != 0 {
@@ -695,7 +695,7 @@ func (s *Service) allocateID(w http.ResponseWriter, r *http.Request, c *Cluster,
 			return 0, false
 		}
 		if !ok || !s.jobs.reserve(c.Name(), want) {
-			return conflict("the ID is already in use")
+			return conflict("vmid_taken", "the ID is already in use")
 		}
 		return want, true
 	}
@@ -743,7 +743,7 @@ func (s *Service) allocateID(w http.ResponseWriter, r *http.Request, c *Cluster,
 			return id, true
 		}
 	}
-	return conflict("no free ID that you may use")
+	return conflict("no_free_vmid", "no free ID that you may use")
 }
 
 func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {

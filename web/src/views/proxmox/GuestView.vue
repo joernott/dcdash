@@ -2,17 +2,21 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import DeleteGuestDialog from '@/components/proxmox/DeleteGuestDialog.vue'
 import GuestActions from '@/components/proxmox/GuestActions.vue'
 import PowerActionDialog from '@/components/proxmox/PowerActionDialog.vue'
 import TaskList from '@/components/proxmox/TaskList.vue'
 import UsageBar from '@/components/proxmox/UsageBar.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatBytes, ratio, statusStyle, uptimeParts, type PowerAction } from '@/proxmox/guests'
+import { guestAdminPermission } from '@/proxmox/provisioning'
 import { useProxmoxClustersStore } from '@/stores/proxmoxClusters'
+import { useSessionStore } from '@/stores/session'
 
 type Detail = Schemas['ProxmoxGuestDetail']
 
@@ -21,8 +25,11 @@ const REFRESH_MS = 10_000
 const i18n = useI18n()
 const { t, locale } = i18n
 const route = useRoute()
+const router = useRouter()
+const session = useSessionStore()
 const clusterStore = useProxmoxClustersStore()
 const dialog = useTemplateRef<InstanceType<typeof PowerActionDialog>>('dialog')
+const deleteDialog = useTemplateRef<InstanceType<typeof DeleteGuestDialog>>('deleteDialog')
 
 const detail = ref<Detail | null>(null)
 const error = ref('')
@@ -32,6 +39,12 @@ const cluster = computed(() => String(route.params.cluster))
 const type = computed(() => String(route.params.type) as 'qemu' | 'lxc')
 const vmid = computed(() => Number(route.params.vmid))
 const guest = computed(() => detail.value?.guest)
+const canDelete = computed(
+  () =>
+    !!guest.value &&
+    clusterStore.provisioning(cluster.value) &&
+    session.can(guestAdminPermission(cluster.value, type.value, vmid.value)),
+)
 
 /** Configuration entries sorted by key, values as text. */
 const config = computed(() =>
@@ -67,6 +80,14 @@ async function load() {
 
 function act(a: PowerAction) {
   if (guest.value) dialog.value?.ask(cluster.value, guest.value, a)
+}
+
+function askDelete() {
+  if (guest.value) deleteDialog.value?.ask(cluster.value, guest.value)
+}
+
+function deleted() {
+  void router.push({ name: 'proxmox', params: { cluster: cluster.value } })
 }
 
 watch([cluster, type, vmid], () => {
@@ -106,8 +127,27 @@ onBeforeUnmount(() => clearInterval(timer))
           <h1 class="text-2xl font-semibold">{{ guest.name || `#${guest.vmid}` }}</h1>
           <StatusBadge :status="statusStyle(guest.status)" :label="statusLabel(guest.status)" />
         </div>
-        <GuestActions :cluster="cluster" :guest="guest" size="md" @action="act" />
+        <div class="flex flex-wrap items-start gap-1.5">
+          <GuestActions :cluster="cluster" :guest="guest" size="md" @action="act" />
+          <BaseButton
+            v-if="canDelete"
+            variant="danger"
+            :disabled="guest.status !== 'stopped'"
+            :aria-describedby="guest.status !== 'stopped' ? 'delete-hint' : undefined"
+            @click="askDelete"
+          >
+            {{ t('proxmox.delete.action') }}
+          </BaseButton>
+        </div>
       </div>
+
+      <p
+        v-if="canDelete && guest.status !== 'stopped'"
+        id="delete-hint"
+        class="-mt-4 text-right text-sm text-fg-muted"
+      >
+        {{ t('proxmox.delete.stopFirst') }}
+      </p>
 
       <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[max-content_1fr]">
         <dt class="text-fg-muted">{{ t('proxmox.vmid') }}</dt>
@@ -181,5 +221,6 @@ onBeforeUnmount(() => clearInterval(timer))
 
     <TaskList :cluster="cluster" />
     <PowerActionDialog ref="dialog" @done="load" />
+    <DeleteGuestDialog ref="deleteDialog" @deleted="deleted" />
   </div>
 </template>

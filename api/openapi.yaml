@@ -544,6 +544,131 @@ paths:
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
+    delete:
+      tags: [proxmox]
+      operationId: deleteProxmoxGuest
+      summary: Delete a guest
+      description: |
+        Requires `admin` on `<type>/<vmid>` and provisioning settings for the cluster. The guest
+        must be stopped, and `confirm` must be its name. Deletes the guest with its disks in a
+        Proxmox task; poll the task for the result. Audited as `proxmox.guest.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxDeleteRequest" }
+      responses:
+        "202":
+          description: Task started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxTaskRef" }
+        "400":
+          description: "Invalid request, or the confirmation doesn't match the name (code: confirmation_mismatch)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/provisioning:
+    get:
+      tags: [proxmox]
+      operationId: getProxmoxProvisioningOptions
+      summary: Choices for creating a guest on a node
+      description: |
+        Requires `admin` on any resource of the cluster and provisioning settings for the
+        cluster. Returns what the configuration allows and the node offers: storages, ISO
+        images, container templates, bridges, templates the user may read, limits and defaults.
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - { name: node, in: query, schema: { type: string }, description: The node; default the first online node. }
+      responses:
+        "200":
+          description: Options.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxProvisioningOptions" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests:
+    post:
+      tags: [proxmox]
+      operationId: createProxmoxGuest
+      summary: Create a VM or container
+      description: |
+        Requires `admin` on the new `<type>/<vmid>`, `read` on a cloned template, and
+        provisioning settings for the cluster, which limit the request. Starts a job that runs
+        the steps (clone, configure, resize, create, start) in the background; poll the job.
+        Audited as `proxmox.guest.create` when the job ends.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxCreateRequest" }
+      responses:
+        "202":
+          description: Job started.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxJob" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxConflict" }
+        "429":
+          description: "The user runs 3 creations, or dcdash 20, already (code: too_many_jobs)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/jobs/{id}:
+    get:
+      tags: [proxmox]
+      operationId: getProxmoxJob
+      summary: State of a creation job
+      description: |
+        Visible to the user who started it and to users with `read` on the new guest. Jobs are
+        kept in memory for an hour after they end.
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Job.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxJob" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
 
   /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/actions/{action}:
     post:
@@ -1179,6 +1304,15 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorBody" }
+    ProxmoxConflict:
+      description: |
+        Codes: provisioning_disabled (the cluster has no provisioning settings),
+        vmid_taken (the requested ID is in use), no_free_vmid (no free ID of the range may be
+        used by the user),
+        guest_running (stop the guest before deleting it).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     Upstream:
       description: |
         The backend failed. Codes: upstream_unavailable (not reachable), upstream_forbidden
@@ -1464,7 +1598,7 @@ components:
           type: array
           items:
             type: object
-            required: [name, terminals]
+            required: [name, terminals, provisioning]
             properties:
               name: { type: string }
               terminals:
@@ -1472,6 +1606,11 @@ components:
                 description: |
                   Container terminals and node shells are available. They need a console user in the
                   cluster configuration, because Proxmox does not accept API tokens for them.
+              provisioning:
+                type: boolean
+                description: |
+                  Guests can be created and deleted (the cluster has provisioning settings). Users
+                  also need `admin` on the guests.
 
     ProxmoxInventory:
       type: object
@@ -1577,6 +1716,161 @@ components:
         log:
           type: array
           items: { type: string }
+
+    ProxmoxProvisioningOptions:
+      type: object
+      required: [node, nodes, storages, isos, containerTemplates, bridges, vlans, vmids, templates, pool, limits, defaults]
+      properties:
+        node: { type: string, description: The node the storages, images and bridges belong to; empty without nodes. }
+        nodes:
+          type: array
+          description: Online nodes the user may read.
+          items: { type: string }
+        storages:
+          type: array
+          items:
+            type: object
+            required: [name, type, shared, avail, total, vm, container]
+            properties:
+              name: { type: string }
+              type: { type: string, description: "Proxmox storage type, e.g. lvmthin, rbd, dir" }
+              shared: { type: boolean }
+              avail: { type: integer, format: int64, description: Free bytes. }
+              total: { type: integer, format: int64 }
+              vm: { type: boolean, description: Holds VM disks. }
+              container: { type: boolean, description: Holds container root file systems. }
+        isos:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxVolume" }
+        containerTemplates:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxVolume" }
+        bridges:
+          type: array
+          items:
+            type: object
+            required: [name, vlanAware]
+            properties:
+              name: { type: string }
+              vlanAware: { type: boolean }
+        vlans:
+          type: array
+          description: Allowed VLAN tags as numbers or ranges ("100-199"); empty means untagged only.
+          items: { type: string }
+        vmids:
+          type: array
+          description: The range of IDs for new guests; empty means any.
+          items: { type: string }
+        templates:
+          type: array
+          description: VM templates the user may clone.
+          items:
+            type: object
+            required: [vmid, name, node]
+            properties:
+              vmid: { type: integer }
+              name: { type: string }
+              node: { type: string }
+        pool: { type: string, description: Proxmox pool new guests are added to. }
+        limits:
+          type: object
+          required: [cores, memory, disk]
+          properties:
+            cores: { type: integer }
+            memory: { type: integer, format: int64, description: MiB. }
+            disk: { type: integer, format: int64, description: GiB. }
+        defaults:
+          type: object
+          required: [cores, memory, disk, storage, bridge]
+          properties:
+            cores: { type: integer }
+            memory: { type: integer, format: int64, description: MiB. }
+            disk: { type: integer, format: int64, description: GiB. }
+            storage: { type: string }
+            bridge: { type: string }
+
+    ProxmoxVolume:
+      type: object
+      required: [volid, size, format]
+      properties:
+        volid: { type: string, description: "e.g. local:iso/debian-13.4.0-amd64-netinst.iso" }
+        size: { type: integer, format: int64 }
+        format: { type: string }
+
+    ProxmoxCreateRequest:
+      type: object
+      required: [type, name, cores, memory, disk, network]
+      properties:
+        type: { type: string, enum: [qemu, lxc] }
+        node: { type: string, description: Node of a new VM from an ISO image or of a container; clones are created on the template's node. }
+        vmid: { type: integer, description: Omit for the next free ID of the range. }
+        name: { type: string, description: Host name. }
+        source: { type: string, enum: [template, iso], description: VMs only. }
+        template: { type: integer, description: VM ID of the template to clone. }
+        full: { type: boolean, description: Full clone (otherwise linked). }
+        iso: { type: string, description: Volume of the ISO image. }
+        osType: { type: string, enum: [linux, windows, other], description: "VMs from an ISO image; windows adds UEFI and a TPM." }
+        osTemplate: { type: string, description: Volume of the container template. }
+        cores: { type: integer }
+        memory: { type: integer, format: int64, description: MiB. }
+        disk: { type: integer, format: int64, description: "GiB; for clones 0 keeps the template's size, a larger value grows the boot disk." }
+        storage: { type: string, description: Storage of the disk; not for linked clones. }
+        network:
+          type: object
+          required: [bridge]
+          properties:
+            bridge: { type: string }
+            vlan: { type: integer }
+            ipv4: { type: string, description: '"dhcp" or an address with prefix length (containers and cloud-init).' }
+            gateway4: { type: string }
+            ipv6: { type: string, description: '"auto", "dhcp" or an address with prefix length.' }
+            gateway6: { type: string }
+            nameservers:
+              type: array
+              maxItems: 3
+              items: { type: string }
+            searchDomain: { type: string }
+        user: { type: string, description: Cloud-init user of a clone. }
+        password: { type: string, writeOnly: true, description: Cloud-init password of a clone, or the root password of a container. }
+        sshKeys: { type: string, description: Public SSH keys, one per line. }
+        start: { type: boolean, description: Start the guest when it's ready. }
+        description: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+
+    ProxmoxJob:
+      type: object
+      required: [id, cluster, type, vmid, node, name, user, state, steps, created]
+      properties:
+        id: { type: string }
+        cluster: { type: string }
+        type: { type: string, enum: [qemu, lxc] }
+        vmid: { type: integer }
+        node: { type: string }
+        name: { type: string }
+        user: { type: string, description: The user who started the job. }
+        state: { type: string, enum: [running, done, failed] }
+        error: { type: string }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [name, state]
+            properties:
+              name: { type: string, enum: [clone, configure, resize, create, start] }
+              state: { type: string, enum: [pending, running, done, failed, skipped] }
+              upid: { type: string, description: The Proxmox task of the step. }
+              error: { type: string }
+        created: { type: string, format: date-time }
+        ended: { type: string, format: date-time }
+
+    ProxmoxDeleteRequest:
+      type: object
+      required: [confirm]
+      properties:
+        confirm: { type: string, description: "The guest's name (or its ID if it has no name), typed by the user." }
+        purge: { type: boolean, description: Also remove the guest from backup jobs, replication and HA. }
 
     ProxmoxConsoleTicket:
       type: object

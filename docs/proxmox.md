@@ -125,6 +125,80 @@ Proxmox checks the console user's privileges for terminals, not the token's. dcd
 checks its own `console` and `admin` permissions first, so the console user doesn't widen what
 a dcdash user can do.
 
+## Creating and deleting guests
+
+Users can create virtual machines and containers, and delete them, in clusters with a
+`provisioning` section. dcdash offers three kinds of guests:
+
+- **A VM from a template**, as a full or linked clone on the template's node. dcdash sets
+  the CPU cores, memory and network device, grows the boot disk if requested, and passes the
+  user, password, SSH keys and IP settings to **cloud-init**. Prepare the templates with an
+  operating system that runs cloud-init (for example the cloud images of Debian or Ubuntu);
+  dcdash adds a cloud-init drive if the template has none.
+- **A VM from an ISO image**, with one disk, the ISO image in a CD-ROM drive and one network
+  device. For Windows, dcdash adds UEFI, an EFI disk and a TPM.
+- **A container** from a container template, unprivileged, with nesting enabled, a root
+  password or SSH keys, and the IP settings.
+
+Deleting a guest requires it to be stopped and the user to type its name. dcdash deletes
+the guest with its disks and, by default, removes it from backup jobs, replication and HA.
+
+### Configure provisioning
+
+The section limits what users may choose (all keys:
+[configuration.md](configuration.md#proxmoxclustersprovisioning)):
+
+```yaml
+      provisioning:
+        vmids: ["5000-5999"]          # IDs of new guests
+        storages: [local-lvm, ceph]   # for disks
+        image_storages: [local]       # ISO images and container templates
+        bridges: [vmbr0]
+        vlans: ["100-199"]            # empty: untagged only
+        templates: ["9000-9099"]      # empty: all templates
+        pool: dcdash                  # optional
+        limits: {cores: 8, memory: 32G, disk: 200G}
+        defaults: {cores: 2, memory: 2G, disk: 32G}
+```
+
+Creating and deleting a guest needs `admin` on the guest in dcdash, for example
+`proxmox:lab:qemu/5*:admin` and `proxmox:lab:lxc/5*:admin` together with `vmids: ["5000-5999"]`.
+Cloning also needs `read` on the template. See [security.md](security.md#proxmox-permissions).
+
+### Privileges of the API token
+
+The API token needs more privileges for provisioning. Grant them to the user and the token
+(privilege separation):
+
+```sh
+for who in "--users dcdash@pve" "--tokens dcdash@pve!dcdash"; do
+  pveum acl modify /vms $who --roles PVEAuditor,PVEVMAdmin
+  pveum acl modify /storage $who --roles PVEAuditor,PVEDatastoreUser
+  pveum acl modify /sdn/zones $who --roles PVEAuditor,PVESDNUser
+done
+```
+
+| Proxmox role | Path | For |
+|---|---|---|
+| `PVEVMAdmin` | `/vms` or a pool | Creating, cloning, configuring and deleting guests (includes the power actions and consoles of `PVEVMUser`) |
+| `PVEDatastoreUser` | `/storage` or single storages | Disks on a storage, ISO images and container templates |
+| `PVESDNUser` | `/sdn/zones` | Attaching the network device to a bridge |
+
+With a `pool`, also grant `PVEVMAdmin` on `/pool/<pool>`. Grant all roles of a path in one
+command (see the note on ACL entries above).
+
+### How a creation runs
+
+dcdash runs the steps of a creation (clone, configure, grow the disk, create, start) in the
+background and shows their progress; closing the browser doesn't stop it. A user can run 3
+creations at a time, dcdash 20. If a step fails, the following steps are skipped and the steps
+that were done are not undone: check the guest in Proxmox and delete it if necessary. A
+restart of dcdash stops running creations (the Proxmox task in progress finishes on its own).
+
+The audit log records `proxmox.guest.create` when a creation ends, with its result, the
+settings and the Proxmox tasks (passwords are not recorded), and `proxmox.guest.delete` when a
+deletion starts.
+
 ## Troubleshooting
 
 | Message in dcdash | Cause |
@@ -137,4 +211,8 @@ a dcdash user can do.
 | "Terminals are not available for this cluster" | Same: the console user is missing. |
 | The status in the list lags behind after a power action | Proxmox updates the cluster resource list about every 10 seconds. The guest page shows the current status. |
 | A terminal shows `[EOF - dtach terminating]` | Proxmox ended an older console session of the container, for example after a restart. Select "Connect again". |
+| No "Create" button | The cluster has no `provisioning` section, or the user lacks `admin` on any guest of the cluster. |
+| "There is no free ID in the range you may use" | All IDs of `vmids` that the user may create are taken, or more than 20 of them are in use by guests the token can't see. Enter an ID. |
+| A clone doesn't get its IP address or SSH keys | The template's operating system doesn't run cloud-init, or its network configuration ignores cloud-init. |
+| `Permission check failed (/sdn/zones/localnetwork/vmbr0, SDN.Use)` | The token lacks `PVESDNUser` (see [Privileges of the API token](#privileges-of-the-api-token)). |
 | `403 Permission check failed (/vms/…, VM.PowerMgmt)` although the token has `PVEVMUser` | With privilege separation, the user needs the privilege too. Check `pveum user token permissions`, and look for a user ACL that hides a group ACL on the same path (see above). |

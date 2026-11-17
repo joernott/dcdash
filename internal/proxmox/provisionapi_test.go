@@ -344,7 +344,7 @@ func TestCreateValidation(t *testing.T) {
 		"template":      {"creator", func(r *CreateRequest) { r.Template = 9001 }, 400, "invalid_request: template 9001"},
 		"not template":  {"admin", func(r *CreateRequest) { r.Template = 101 }, 400, "invalid_request: template 101"},
 		"vmid range":    {"creator", func(r *CreateRequest) { r.VMID = 4000 }, 400, "invalid_request: vmid"},
-		"vmid used":     {"creator", func(r *CreateRequest) { r.VMID = 5100 }, 409, "vmid_unavailable"},
+		"vmid used":     {"creator", func(r *CreateRequest) { r.VMID = 5100 }, 409, "vmid_taken"},
 		"no permission": {"viewer", func(r *CreateRequest) {}, 403, ""},
 		"type":          {"creator", func(r *CreateRequest) { r.Source = "" }, 400, "invalid_request: type"},
 		"iso source":    {"creator", func(r *CreateRequest) { r.Source, r.Node, r.OSType = SourceISO, "pve1", "linux" }, 400, "invalid_request: template, user"},

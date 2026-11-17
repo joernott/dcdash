@@ -93,12 +93,17 @@ auth:
     base_dn: "ou=people,dc=dcdash,dc=test"
     group_base_dn: "ou=groups,dc=dcdash,dc=test"
 roles:
-  # bob: no TOTP required, power actions and consoles (no node shell);
+  # bob: no TOTP required, power actions and consoles (no node shell), creating and
+  # deleting guests with IDs 5000-5999;
   # alice is in dashroot (root, TOTP required).
   - name: vm-operator
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["proxmox:*:*:console"]
+  - name: vm-creator
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["proxmox:lab:qemu/5*:admin", "proxmox:lab:lxc/5*:admin"]
   - name: dns-editor
     groups: [dcdash-vm]
     require_totp: false
@@ -115,6 +120,13 @@ proxmox:
       token_id: "dcdash@pve!e2e"
       token_secret: "e2e-test-only"
       console: {username: "console@pve", password: "console-e2e"}
+      provisioning:
+        vmids: ["5000-5999"]
+        storages: [local-lvm, ceph]
+        image_storages: [local]
+        bridges: [vmbr0]
+        vlans: ["100-199"]
+        limits: {cores: 8, memory: 16G, disk: 200G}
 dns:
   providers:
     - name: cf
