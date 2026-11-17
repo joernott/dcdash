@@ -111,7 +111,7 @@ test('a user without TOTP requirement and admin permissions', async ({ browser }
 
   await login(page, 'bob', 'bob-test-only')
   await expect(page.getByRole('heading', { name: /Willkommen/ })).toBeVisible()
-  const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
+  const nav = page.getByRole('navigation', { name: 'Hauptmenü' })
   await expect(nav.getByRole('link', { name: 'Audit-Log' })).toHaveCount(0)
 
   await page.goto('/admin/audit')

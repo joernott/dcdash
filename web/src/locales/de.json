@@ -14,8 +14,8 @@
     "retry": "Erneut versuchen"
   },
   "nav": {
-    "label": "Hauptnavigation",
-    "toggle": "Navigation ein- oder ausblenden",
+    "label": "Hauptmenü",
+    "toggle": "Menü ein- oder ausblenden",
     "skip": "Zum Inhalt springen",
     "home": "Übersicht",
     "proxmox": "Proxmox",

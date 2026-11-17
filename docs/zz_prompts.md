@@ -138,3 +138,13 @@ please squash merge sprint 7 into main and continue with sprint 8
 ## 2026-11-16 — Sprint 8 (DHCP)
 
 please squash merge sprint 8 into main and start with sprint 9
+
+---
+
+## 2026-11-17 — Sprint 9 (Hardening and Release v0.1.0)
+
+To answer your questions:
+1. I'be reviewed the German translations and found one minor detail that I fixed.
+2. Use Jörn Ott as person and Ott-Consult UG as company
+3. From my experience, these were made public for the last images pushed there, After they have been pushed, I can check and make them public
+4. Yes, please go ahead

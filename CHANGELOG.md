@@ -6,7 +6,7 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
-## [0.1.0]
+## [0.1.0] - 2026-11-17
 
 The first release: one web interface for Proxmox VE, DNS and DHCP, with directory login,
 TOTP, roles and an audit log.

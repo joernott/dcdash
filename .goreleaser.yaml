@@ -45,7 +45,8 @@ nfpms:
   - id: packages
     package_name: dcdash
     homepage: https://github.com/joernott/dcdash
-    maintainer: dcdash <https://github.com/joernott/dcdash>
+    maintainer: Jörn Ott <https://github.com/joernott/dcdash>
+    vendor: Ott-Consult UG
     description: |-
       Dashboard for central data center services.
       Proxmox VE (inventory, power actions, consoles), DNS (bind9, Cloudflare) and
@@ -102,6 +103,8 @@ dockers_v2:
       org.opencontainers.image.description: Dashboard for central data center services
       org.opencontainers.image.source: https://github.com/joernott/dcdash
       org.opencontainers.image.licenses: GPL-3.0-or-later
+      org.opencontainers.image.authors: Jörn Ott
+      org.opencontainers.image.vendor: Ott-Consult UG
       org.opencontainers.image.version: "{{ .Version }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
       org.opencontainers.image.created: "{{ .Date }}"

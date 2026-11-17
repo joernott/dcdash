@@ -40,7 +40,7 @@ These apply to every task:
 | 6 | `sprint/06-proxmox` | Proxmox: inventory, power actions, console | v0.1.0 | done |
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
-| 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | in progress |
+| 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | open |
 
 ---
@@ -299,7 +299,7 @@ These apply to every task:
     previous values in the audit log; review results and known limitations in `security.md`
 - [x] **9.2** Optional Prometheus `/metrics` endpoint, including certificate expiry
 - [x] **9.3** End-to-end test suite against the full docker compose environment
-- [ ] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
+- [x] **9.4** UI review: German translation reviewed by a native speaker, dark and light mode
   checked for WCAG AA contrast on all views
   - [x] **9.4.1** Automated WCAG 2.1 AA check (axe-core, including color contrast) of every view
     in the end-to-end tests, in light and dark mode: no violations
@@ -308,7 +308,7 @@ These apply to every task:
 - [x] **9.6** Packaging: goreleaser, Linux amd64 and arm64 binaries, `.deb`/`.rpm` with a
   systemd unit, container image
 - [x] **9.7** Release workflow in CI: build artifacts and checksums when a tag is pushed
-- [ ] **9.8** `CHANGELOG.md`, update the README, tag `v0.1.0`
+- [x] **9.8** `CHANGELOG.md`, update the README, tag `v0.1.0`
 - [x] **9.9** Translatable status details: `/api/v1/status` returns a detail code with parameters
   (for example the certificate expiry) instead of English text, so that the overview shows
   them in German as well (found in the 5.11 screenshots)
