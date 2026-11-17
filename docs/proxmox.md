@@ -34,11 +34,16 @@ terminal login with tokens. They need a console user (see [Consoles](#consoles))
 For example, read access everywhere and power actions and consoles on all guests:
 
 ```sh
-for who in "--users dcdash@pve" "--tokens dcdash@pve!dcdash"; do
-  pveum acl modify / $who --roles PVEAuditor
-  pveum acl modify /vms $who --roles PVEVMUser
-done
+user='dcdash@pve'
+token='dcdash@pve!dcdash'
+pveum acl modify /    --users "$user"   --roles PVEAuditor
+pveum acl modify /    --tokens "$token" --roles PVEAuditor
+pveum acl modify /vms --users "$user"   --roles PVEVMUser
+pveum acl modify /vms --tokens "$token" --roles PVEVMUser
 ```
+
+Keep the `!` of the token ID in single quotes: in double quotes, interactive bash treats it
+as history expansion. The variables keep it out of the commands.
 
 An ACL entry for a user replaces the entries of the user's groups **on the same path**. For
 example, `PVEAuditor` for `dcdash@pve` on `/` hides a `PVEVMUser` granted to one of its
@@ -171,12 +176,17 @@ The API token needs more privileges for provisioning. Grant them to the user and
 (privilege separation):
 
 ```sh
-for who in "--users dcdash@pve" "--tokens dcdash@pve!dcdash"; do
-  pveum acl modify /vms $who --roles PVEAuditor,PVEVMAdmin
-  pveum acl modify /storage $who --roles PVEAuditor,PVEDatastoreUser
-  pveum acl modify /sdn/zones $who --roles PVEAuditor,PVESDNUser
-done
+user='dcdash@pve'
+token='dcdash@pve!dcdash'
+pveum acl modify /vms       --users "$user"   --roles PVEAuditor,PVEVMAdmin
+pveum acl modify /vms       --tokens "$token" --roles PVEAuditor,PVEVMAdmin
+pveum acl modify /storage   --users "$user"   --roles PVEAuditor,PVEDatastoreUser
+pveum acl modify /storage   --tokens "$token" --roles PVEAuditor,PVEDatastoreUser
+pveum acl modify /sdn/zones --users "$user"   --roles PVEAuditor,PVESDNUser
+pveum acl modify /sdn/zones --tokens "$token" --roles PVEAuditor,PVESDNUser
 ```
+
+Use the names of your dcdash user and token.
 
 | Proxmox role | Path | For |
 |---|---|---|

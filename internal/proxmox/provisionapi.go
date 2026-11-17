@@ -872,6 +872,12 @@ func (s *Service) handleDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	cfg, err := c.GuestConfig(r.Context(), res.Node, res.Type, res.VMID)
+	if err != nil {
+		upstreamError(w, r, err)
+		return
+	}
+	res.Name = configName(cfg, res.Name)
 	want := res.Name
 	if want == "" {
 		want = strconv.Itoa(res.VMID)

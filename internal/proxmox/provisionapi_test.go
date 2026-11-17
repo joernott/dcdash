@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -470,5 +471,22 @@ func TestJobLimits(t *testing.T) {
 	s.release("lab", 1)
 	if s.isReserved("lab", 1) {
 		t.Error("release")
+	}
+}
+
+// /cluster/resources lags behind after a guest was created or renamed: the
+// confirmation and the guest page use the name from the configuration.
+func TestDeleteUsesConfiguredName(t *testing.T) {
+	e := newProvEnv(t)
+	j := e.create(t, "creator", CreateRequest{Type: TypeLXC, Node: "pve1", Name: "fresh", Cores: 1, Memory: 512, Disk: 4,
+		OSTemplate: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst", Storage: "local-lvm",
+		Network: CreateNetwork{Bridge: "vmbr0"}, Password: "rootpw1"})
+	e.fake.Rename("lxc", j.VMID, "") // the inventory doesn't know the name yet
+	var d GuestDetail
+	if st, msg := e.do(t, "creator", http.MethodGet, "/lab/guests/lxc/"+strconv.Itoa(j.VMID), nil, &d); st != http.StatusOK || d.Guest.Name != "fresh" {
+		t.Errorf("detail: %d %s %+v", st, msg, d.Guest)
+	}
+	if st, msg := e.do(t, "creator", http.MethodDelete, "/lab/guests/lxc/"+strconv.Itoa(j.VMID), DeleteRequest{Confirm: "fresh"}, nil); st != http.StatusAccepted {
+		t.Errorf("delete: %d %s", st, msg)
 	}
 }

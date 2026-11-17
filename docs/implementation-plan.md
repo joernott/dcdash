@@ -330,5 +330,8 @@ These apply to every task:
   - [x] **10.7.1** Provisioning jobs: the backend runs the steps of a creation (clone, wait,
     configure, grow the disk, start) and the browser polls the job
 - [x] **10.8** Frontend: creation wizard for VMs and containers, and the delete dialog
-- [ ] **10.9** Tests: mocked API, manual test against a real cluster documented
+- [x] **10.9** Tests: mocked API, manual test against a real cluster documented
+  - [x] **10.9.1** Fixes from the test on a real cluster: the guest name is read from the
+    configuration (the inventory lags behind after a creation), all storages of a node are
+    listed, the token commands in `proxmox.md` work in bash
 - [ ] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`

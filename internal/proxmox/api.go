@@ -320,6 +320,7 @@ func (s *Service) handleGuest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g := toGuest(res)
+	g.Name = configName(cfg, g.Name)
 	if live := liveStatus(st); live != "" {
 		g.Status = live
 	}
@@ -419,6 +420,18 @@ func (s *Service) handleTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// configName returns the name from a guest's configuration ("name" of VMs,
+// "hostname" of containers), or fallback. /cluster/resources lags behind
+// for some seconds after a guest was created or renamed.
+func configName(cfg map[string]any, fallback string) string {
+	for _, k := range []string{"name", "hostname"} {
+		if s, ok := cfg[k].(string); ok && s != "" {
+			return s
+		}
+	}
+	return fallback
 }
 
 // liveStatus returns the current status from .../status/current. The status in

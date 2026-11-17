@@ -231,3 +231,21 @@ func (s *Server) destroy(w http.ResponseWriter, r *http.Request, g *Guest, p, us
 	}
 	writeData(w, s.newTask(g.Node, prefix+"destroy", strconv.Itoa(g.VMID), user, exit))
 }
+
+// Rename changes the name in /cluster/resources only, like the lag of
+// pvestatd after a guest was created or renamed.
+func (s *Server) Rename(typ string, vmid int, name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, g := range s.guests {
+		if g.Type == typ && g.VMID == vmid {
+			if g.Config == nil {
+				g.Config = map[string]string{}
+			}
+			if _, ok := g.Config["name"]; !ok && g.Type == "qemu" {
+				g.Config["name"] = g.Name
+			}
+			g.Name = name
+		}
+	}
+}

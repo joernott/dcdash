@@ -6,6 +6,10 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-17
+
+Creating and deleting virtual machines and containers in Proxmox VE.
+
 ### Added
 
 - **Proxmox provisioning:** create virtual machines from templates (full or linked clones with
@@ -62,5 +66,6 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1
 [0.1.0]: https://github.com/joernott/dcdash/releases/tag/v0.1.0

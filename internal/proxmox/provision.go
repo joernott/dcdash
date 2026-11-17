@@ -58,13 +58,17 @@ type NodeStorage struct {
 }
 
 // NodeStorages returns the enabled storages of a node for a content type
-// (images, rootdir, iso, vztmpl).
+// (images, rootdir, iso, vztmpl; "" for all).
 func (c *Cluster) NodeStorages(ctx context.Context, node, content string) ([]NodeStorage, error) {
 	if !nodeNamePattern.MatchString(node) {
 		return nil, fmt.Errorf("proxmox: invalid node %q", node)
 	}
+	form := url.Values{"enabled": {"1"}}
+	if content != "" {
+		form.Set("content", content)
+	}
 	var v []NodeStorage
-	err := c.do(ctx, http.MethodGet, "/nodes/"+node+"/storage", url.Values{"enabled": {"1"}, "content": {content}}, &v)
+	err := c.do(ctx, http.MethodGet, "/nodes/"+node+"/storage", form, &v)
 	return v, err
 }
 
