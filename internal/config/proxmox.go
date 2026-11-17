@@ -32,6 +32,8 @@ type ProxmoxCluster struct {
 	// Console is an optional Proxmox user for consoles that do not accept
 	// API tokens (see docs/adr/0001-proxmox-console-authentication.md).
 	Console ProxmoxConsole `yaml:"console"`
+	// Provisioning allows creating and deleting guests (optional).
+	Provisioning ProxmoxProvisioning `yaml:"provisioning"`
 }
 
 // ProxmoxEndpoint is the API URL of one node.
@@ -117,5 +119,6 @@ func (p Proxmox) validate(add func(string, ...any)) {
 				add("%s.console.password: required with console.username", pre)
 			}
 		}
+		c.Provisioning.validate(pre+".provisioning", add)
 	}
 }
