@@ -81,7 +81,7 @@ dhcp:
 		"dhcp.servers[0].username: required",
 		"dhcp.servers[0].password: required",
 		"dhcp.servers[0].timeout: must not be negative",
-		`dhcp.servers[1].url "https://kea2.example.com:8000/api": must be https://host:port`,
+		`dhcp.servers[1].url "https://kea2.example.com:8000/api": must be https://host[:port] without a path`,
 		`dhcp.servers[1].ha_group "site1": all servers of a group must have the same family`,
 		`dhcp.servers[2].name "kea6": duplicate`,
 		`dhcp.servers[2].ha_group "Site 2"`,

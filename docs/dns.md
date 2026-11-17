@@ -37,6 +37,11 @@ the dot, dcdash appends the zone name. Plain text for TXT records is quoted auto
 dcdash splits it into strings of 255 bytes. dcdash can create and change A, AAAA, CNAME, MX,
 TXT, SRV, PTR, NS and CAA records. It shows other types, such as SOA, read-only.
 
+Names of zones and records may contain letters, digits, `_` and `-`, at most 63 characters per
+label. Internationalized names use their ASCII form (`xn--...`). A record name may start
+with the wildcard `*.`. RFC 2317 names with `/` (classless reverse delegation) aren't
+supported.
+
 dcdash detects concurrent changes. Each record carries a version: the zone's SOA serial for
 bind9, or the record's modification time for Cloudflare. If the zone or record changed after
 the user loaded it, dcdash rejects the change and reloads the records.

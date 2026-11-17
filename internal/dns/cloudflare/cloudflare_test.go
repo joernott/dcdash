@@ -44,8 +44,8 @@ func TestZonesAndCapabilities(t *testing.T) {
 	if _, err := p.Records(t.Context(), "unknown.org"); !errors.Is(err, dns.ErrNotFound) {
 		t.Errorf("unknown zone: %v", err)
 	}
-	if d, err := p.Check(t.Context()); err != nil || d != "Cloudflare, 2 zones" {
-		t.Errorf("check %q %v", d, err)
+	if d, err := p.Check(t.Context()); err != nil || d.Text != "Cloudflare, 2 zones" || d.Code != "dns.cloudflare" || d.Params["count"] != "2" {
+		t.Errorf("check %+v %v", d, err)
 	}
 }
 

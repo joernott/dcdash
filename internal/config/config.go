@@ -39,6 +39,7 @@ type Config struct {
 	Proxmox  Proxmox  `yaml:"proxmox"`
 	DNS      DNS      `yaml:"dns"`
 	DHCP     DHCP     `yaml:"dhcp"`
+	Metrics  Metrics  `yaml:"metrics"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
 	DataDir  string   `yaml:"data_dir"`
@@ -118,10 +119,12 @@ func Load(path string) (*Config, []string, error) {
 		warnings = append(warnings, w)
 	}
 
+	takeSecretWarnings() // from earlier parses
 	cfg, err := Parse(f)
 	if err != nil {
 		return nil, warnings, fmt.Errorf("%s: %w", path, err)
 	}
+	warnings = append(warnings, takeSecretWarnings()...)
 	if cfg.Auth.LDAP.URL == "" && !cfg.Auth.Local.Enabled {
 		warnings = append(warnings, "no login method configured (auth.ldap.url or auth.local): nobody can log in")
 	}
@@ -222,6 +225,7 @@ func (c *Config) Validate() error {
 	c.Proxmox.validate(add)
 	c.DNS.validate(add)
 	c.DHCP.validate(add)
+	c.Metrics.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
 	} else if _, err := vault.ParseKey(c.Security.EncryptionKey.Value()); err != nil {

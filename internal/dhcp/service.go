@@ -153,19 +153,27 @@ func (s *Service) StatusChecks() []status.Check {
 	out := make([]status.Check, 0, len(s.order))
 	for _, n := range s.order {
 		srv := s.servers[n]
-		out = append(out, status.Check{Name: n, Kind: Module, Check: func(ctx context.Context) (string, error) {
+		out = append(out, status.Check{Name: n, Kind: Module, Detail: func(ctx context.Context) (status.Detail, error) {
 			info, _, err := s.state(ctx, srv, true)
 			if err != nil {
-				return "", err
+				return status.Detail{}, err
 			}
-			detail := "Kea " + info.Version
-			for _, ha := range info.Status.HA {
-				detail += fmt.Sprintf(", HA %s: %s", ha.Mode, ha.Servers.Local.State)
-				if !ha.Servers.Remote.InTouch {
-					return detail, fmt.Errorf("HA partner %s not in touch", ha.Servers.Remote.Name)
+			d := status.Detail{Text: "Kea " + info.Version, Code: "dhcp.kea", Params: map[string]string{"version": info.Version}}
+			var ha []string
+			for _, h := range info.Status.HA {
+				// Mode and state are Kea's terms, e.g. "hot-standby: hot-standby".
+				ha = append(ha, fmt.Sprintf("%s: %s", h.Mode, h.Servers.Local.State))
+				if !h.Servers.Remote.InTouch {
+					partner := h.Servers.Remote.Name
+					return d, &status.Error{Code: "dhcp.partnerOutOfTouch", Params: map[string]string{"partner": partner},
+						Err: fmt.Errorf("HA partner %s not in touch", partner)}
 				}
 			}
-			return detail, nil
+			if len(ha) > 0 {
+				d.Text += ", HA " + strings.Join(ha, ", ")
+				d.Code, d.Params["ha"] = "dhcp.keaHA", strings.Join(ha, ", ")
+			}
+			return d, nil
 		}})
 	}
 	return out

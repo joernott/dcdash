@@ -6,8 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -38,7 +40,7 @@ func TestRun(t *testing.T) {
 	for i, w := range want {
 		got := r.Components[i]
 		got.LatencyMS = 0
-		if got != w {
+		if !reflect.DeepEqual(got, w) {
 			t.Errorf("component %d: %+v, want %+v", i, got, w)
 		}
 	}
@@ -57,5 +59,37 @@ func TestRegister(t *testing.T) {
 	var r Report
 	if err := json.Unmarshal(rec.Body.Bytes(), &r); err != nil || !guarded || len(r.Components) != 1 || r.Components[0].Status != "ok" {
 		t.Errorf("status: %d %s (guarded %v)", rec.Code, rec.Body, guarded)
+	}
+}
+
+func TestCodedDetails(t *testing.T) {
+	s := New(
+		Check{Name: "certificate", Kind: "system", Detail: func(context.Context) (Detail, error) {
+			return Detail{Text: "valid until 2027-01-01T00:00:00Z", Code: "certificate.valid",
+				Params: map[string]string{"until": "2027-01-01T00:00:00Z"}}, nil
+		}},
+		Check{Name: "kea", Kind: "dhcp", Detail: func(context.Context) (Detail, error) {
+			return Detail{Text: "Kea 3.0.4"}, fmt.Errorf("check: %w", &Error{Code: "dhcp.partnerOutOfTouch",
+				Params: map[string]string{"partner": "kea-b"}, Err: errors.New("HA partner kea-b not in touch")})
+		}},
+		Check{Name: "plain", Kind: "dns", Detail: func(context.Context) (Detail, error) {
+			return Detail{Text: "x", Code: "dns.cloudflare"}, errors.New("connection refused")
+		}},
+	)
+	r := s.Run(context.Background())
+	want := []Component{
+		{Name: "certificate", Kind: "system", Status: "ok", Detail: "valid until 2027-01-01T00:00:00Z",
+			DetailCode: "certificate.valid", DetailParams: map[string]string{"until": "2027-01-01T00:00:00Z"}},
+		{Name: "kea", Kind: "dhcp", Status: "error", Detail: "check: HA partner kea-b not in touch",
+			DetailCode: "dhcp.partnerOutOfTouch", DetailParams: map[string]string{"partner": "kea-b"}},
+		// An uncoded error drops the code of the success detail.
+		{Name: "plain", Kind: "dns", Status: "error", Detail: "connection refused"},
+	}
+	for i, w := range want {
+		got := r.Components[i]
+		got.LatencyMS = 0
+		if !reflect.DeepEqual(got, w) {
+			t.Errorf("component %d: %+v, want %+v", i, got, w)
+		}
 	}
 }

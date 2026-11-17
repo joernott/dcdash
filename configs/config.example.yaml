@@ -230,6 +230,16 @@ dhcp:
 #    # Servers of a Kea HA pair share a group: leases are deleted on both.
 #    ha_group: site1
 
+# Prometheus metrics at /metrics (see docs/monitoring.md).
+metrics:
+  enabled: false
+  # Separate plain HTTP listener for /metrics. Empty: /metrics is served on the
+  # main listener and requires the token.
+  listen: "127.0.0.1:9100"
+  # Bearer token Prometheus sends (at least 16 characters); optional on a
+  # separate listener.
+  token: ""
+
 security:
   # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
   # Generate one with `dcdash gen-key`. Keep it outside this file, e.g. "file:/etc/dcdash/encryption.key".

@@ -59,6 +59,10 @@ test-e2e: build ## Run the end-to-end tests (Playwright) against the OpenLDAP te
 	docker compose -f test/integration/compose.yaml up -d --build --wait openldap
 	cd web && npx playwright test
 
+.PHONY: test-e2e-full
+test-e2e-full: build ## Run the end-to-end tests against the fakes and the full docker compose environment (needs Docker and rndc)
+	scripts/e2e-full.sh
+
 .PHONY: test-web
 test-web: web/node_modules ## Run frontend unit tests
 	cd web && npm test
@@ -114,6 +118,10 @@ dev-backend: dev-cert $(DEV_DIR)/encryption.key ## Run the backend with configs/
 .PHONY: dev-web
 dev-web: web/node_modules dev-cert ## Run the Vite dev server with proxy to the backend (DEV_HOST=0.0.0.0 to expose it)
 	cd web && npm run dev -- --host $(DEV_HOST)
+
+.PHONY: snapshot
+snapshot: ## Build a local release (archives, .deb/.rpm, images) into dist/ with GoReleaser
+	goreleaser release --snapshot --clean
 
 .PHONY: clean
 clean: ## Remove build output

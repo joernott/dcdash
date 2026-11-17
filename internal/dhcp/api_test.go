@@ -20,6 +20,7 @@ import (
 	"github.com/joernott/dcdash/internal/dhcp/kea/keafake"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/store"
 )
 
@@ -35,6 +36,7 @@ type apiEnv struct {
 	a, b, v6 *keafake.Server
 	srv      *httptest.Server
 	audit    *audit.Log
+	svc      *dhcp.Service
 }
 
 func subnets4() []keafake.Subnet {
@@ -85,6 +87,7 @@ func newAPIEnv(t *testing.T, setup func(e *apiEnv)) *apiEnv {
 	}
 	mux := http.NewServeMux()
 	svc.Register(mux)
+	e.svc = svc
 	authz := auth.NewAuthorizer(rbac.NewResolver("", nil), e.audit)
 	inject := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if perms, ok := testUsers[r.Header.Get("X-Test-User")]; ok {
@@ -366,5 +369,20 @@ func TestReservationWriteTarget(t *testing.T) {
 	r6 := dhcp.ReservationRequest{SubnetID: 1, IdentifierType: "duid", Identifier: "00:01:02", IPAddresses: []string{"2001:db8:1::11"}}
 	if code, c := e2.do(t, "admin", "POST", base+"/kea6/reservations", r6, nil); code != 409 || c != "unsupported" {
 		t.Errorf("no host database: %d %s", code, c)
+	}
+}
+
+func TestStatusChecks(t *testing.T) {
+	e := newAPIEnv(t, nil)
+	r := status.New(e.svc.StatusChecks()...).Run(t.Context())
+	byName := map[string]status.Component{}
+	for _, c := range r.Components {
+		byName[c.Name] = c
+	}
+	if c := byName["kea4-a"]; c.Status != "ok" || c.DetailCode != "dhcp.kea" || c.DetailParams["version"] == "" {
+		t.Errorf("kea4-a: %+v", c)
+	}
+	if c := byName["kea4-b"]; c.Status != "ok" || c.DetailCode != "dhcp.keaHA" || c.DetailParams["ha"] != "hot-standby: hot-standby" {
+		t.Errorf("kea4-b (HA): %+v", c)
 	}
 }

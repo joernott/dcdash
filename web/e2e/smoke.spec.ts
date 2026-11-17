@@ -4,6 +4,7 @@
 // Runs in order (playwright.config.ts): alice enrolls in the first test.
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectAccessible } from './a11y'
 import { totp } from './totp'
 
 let aliceSecret = ''
@@ -27,34 +28,45 @@ test('root enrolls TOTP at the first login and sees everything', async ({ page }
 
   await expect(page.getByRole('heading', { name: 'Set up an authenticator app' })).toBeVisible()
   await expect(page.getByRole('img', { name: 'QR code for the authenticator app' })).toBeVisible()
+  await expectAccessible(page, 'TOTP enrollment')
   await page.getByRole('button', { name: /Show the key for manual entry/ }).click()
   aliceSecret = (await page.getByTestId('secret').textContent())!.trim()
   expect(aliceSecret).toMatch(/^[A-Z2-7]{32}$/)
 
   await page.getByRole('textbox', { name: 'Code', exact: true }).fill(totp(aliceSecret, step))
   await page.getByRole('button', { name: 'Confirm' }).click()
-  await expect(page.getByRole('list', { name: 'Recovery codes' }).getByRole('listitem')).toHaveCount(10)
-  recoveryCodes = await page.getByRole('list', { name: 'Recovery codes' }).getByRole('listitem').allTextContents()
+  await expect(
+    page.getByRole('list', { name: 'Recovery codes' }).getByRole('listitem'),
+  ).toHaveCount(10)
+  await expectAccessible(page, 'recovery codes')
+  recoveryCodes = await page
+    .getByRole('list', { name: 'Recovery codes' })
+    .getByRole('listitem')
+    .allTextContents()
   await page.getByRole('button', { name: 'Continue' }).click()
 
   // Overview with health tiles.
   await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible()
   await expect(page.getByText('All components are working.')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'User directory' })).toBeVisible()
+  await expectAccessible(page, 'overview')
 
   // Root sees the admin views; the audit log shows the login.
   const nav = page.getByRole('navigation', { name: 'Main navigation' })
   await nav.getByRole('link', { name: 'Audit log' }).click()
   await expect(page.getByRole('cell', { name: 'auth.totp.enroll' }).first()).toBeVisible()
+  await expectAccessible(page, 'audit log')
   await nav.getByRole('link', { name: 'Sessions' }).click()
   await expect(page.getByText('this session')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Reset authenticator app' })).toBeVisible()
+  await expectAccessible(page, 'sessions')
 })
 
 test('theme and language follow the user to the next login', async ({ page }) => {
   step += 1
   await login(page, 'alice', 'alice-test-only')
   await expect(page.getByRole('heading', { name: 'Verification code' })).toBeVisible()
+  await expectAccessible(page, 'TOTP verification')
   await page.getByRole('textbox', { name: 'Code', exact: true }).fill(totp(aliceSecret, step))
   await page.getByRole('button', { name: 'Verify' }).click()
   await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible()
@@ -65,6 +77,7 @@ test('theme and language follow the user to the next login', async ({ page }) =>
   await page.getByLabel('Theme').selectOption('dark')
   await expectTheme(page, true)
   await page.getByLabel('Language').selectOption('de')
+  await expectAccessible(page, 'user menu (German)')
   await expect(page.getByRole('link', { name: 'Übersicht' })).toBeVisible()
   await page.keyboard.press('Escape')
   await page.screenshot({ path: '../.e2e/screenshots/overview-dark-de.png', fullPage: true })
@@ -73,7 +86,10 @@ test('theme and language follow the user to the next login', async ({ page }) =>
   await page.getByRole('button', { name: /Alice|alice/ }).click()
   await page.getByRole('button', { name: 'Abmelden' }).click()
   await expect(page.getByRole('heading', { name: 'Anmelden' })).toBeVisible()
-  const other = await page.context().browser()!.newContext({ ignoreHTTPSErrors: true, locale: 'en-US' })
+  const other = await page
+    .context()
+    .browser()!
+    .newContext({ ignoreHTTPSErrors: true, locale: 'en-US' })
   const page2 = await other.newPage()
   // The next TOTP step is not valid yet, so this login uses a recovery code.
   await login(page2, 'alice', 'alice-test-only')
@@ -91,20 +107,26 @@ test('a user without TOTP requirement and admin permissions', async ({ browser }
 
   await login(page, 'bob', 'wrong-password')
   await expect(page.getByRole('alert')).toHaveText('Benutzername oder Passwort ist falsch.')
+  await expectAccessible(page, 'login with error (German)')
 
   await login(page, 'bob', 'bob-test-only')
   await expect(page.getByRole('heading', { name: /Willkommen/ })).toBeVisible()
-  const nav = page.getByRole('navigation', { name: 'Hauptnavigation' })
+  const nav = page.getByRole('navigation', { name: 'Hauptmenü' })
   await expect(nav.getByRole('link', { name: 'Audit-Log' })).toHaveCount(0)
 
   await page.goto('/admin/audit')
   await expect(page.getByRole('heading', { name: 'Kein Zugriff' })).toBeVisible()
+  await expectAccessible(page, 'forbidden (German)')
   await context.close()
 })
 
 test('pages require a login', async ({ page }) => {
   await page.goto('/admin/sessions')
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fadmin%2Fsessions|\/login\?redirect=\/admin\/sessions/)
+  await expect(page.getByRole('heading', { name: 'Log in' })).toBeVisible()
+  await expectAccessible(page, 'login')
+  await expect(page).toHaveURL(
+    /\/login\?redirect=%2Fadmin%2Fsessions|\/login\?redirect=\/admin\/sessions/,
+  )
   const res = await page.request.get('/api/v1/status')
   expect(res.status()).toBe(401)
 })

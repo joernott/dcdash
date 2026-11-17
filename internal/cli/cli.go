@@ -5,6 +5,7 @@ package cli
 
 import (
 	"bufio"
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	"github.com/joernott/dcdash/internal/certs"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/logging"
+	"github.com/joernott/dcdash/internal/metrics"
 	"github.com/joernott/dcdash/internal/server"
 	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/store"
@@ -127,7 +129,7 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			if mgr != nil {
 				opts.TLSConfig = certs.TLSConfig(mgr)
 				opts.Checks = append(opts.Checks, server.Check{Name: "certificate", Check: mgr.Check})
-				app.statusChecks = append(app.statusChecks, status.Check{Name: "certificate", Kind: "system", Check: mgr.Check})
+				app.statusChecks = append(app.statusChecks, status.Check{Name: "certificate", Kind: "system", Detail: certs.StatusCheck(mgr)})
 				g.Go(func() error { return mgr.Run(gctx) })
 			}
 
@@ -135,6 +137,18 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			statusSvc := status.New(app.statusChecks...)
 			opts.Routes = append(opts.Routes, func(mux *http.ServeMux) { statusSvc.Register(mux, auth.RequireAuthenticated) })
 			opts.Middleware = append(slices.Clone(opts.Middleware), app.middleware...)
+			if cfg.Metrics.Enabled {
+				m := metrics.New()
+				app.audit.OnRecord(m.AuditEvent)
+				m.AddBackends(statusSvc.Run)
+				if mgr != nil {
+					m.AddCertificate(mgr.NotAfter)
+				}
+				opts.Metrics = m.Handler(cfg.Metrics.Token.Value())
+				opts.Router = metrics.Router
+				opts.Middleware = append([]func(http.Handler) http.Handler{m.Middleware}, opts.Middleware...)
+				log.Info().Str("listen", cmp.Or(cfg.Metrics.Listen, cfg.Server.Listen)).Msg("metrics enabled at /metrics")
+			}
 			for _, run := range app.runners {
 				g.Go(func() error { return run(gctx) })
 			}

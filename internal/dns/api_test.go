@@ -198,6 +198,13 @@ func TestRecordAPI(t *testing.T) {
 	if len(del) != 2 || del[1].Details["content"] != "192.0.2.6" || del[1].Result != audit.ResultSuccess {
 		t.Errorf("delete audit: %+v", del)
 	}
+	updAudit := e.entries(t, "dns.record.update")
+	if len(updAudit) == 0 || updAudit[len(updAudit)-1].Result != audit.ResultSuccess {
+		t.Fatalf("update audit: %+v", updAudit)
+	}
+	if prev, _ := updAudit[len(updAudit)-1].Details["previous"].(map[string]any); prev["content"] != "192.0.2.5" {
+		t.Errorf("update audit without previous values: %+v", updAudit[len(updAudit)-1].Details)
+	}
 }
 
 func TestZoneAPI(t *testing.T) {

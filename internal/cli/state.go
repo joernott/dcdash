@@ -16,6 +16,7 @@ import (
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/totp"
 	"github.com/joernott/dcdash/internal/vault"
@@ -190,8 +191,14 @@ func newTOTPResetCommand(configPath *string) *cobra.Command {
 			if !ok {
 				return fmt.Errorf("TOTP is not enrolled for %q", name)
 			}
-			s.record(cmd.Context(), "admin.totp.reset", name, audit.ResultSuccess, nil)
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "TOTP of %s reset\n", name)
+			// Sessions started with the old device end, too.
+			sessions := session.NewManager(s.st.DB(), s.cfg.Auth.Session.Lifetime.D(), s.cfg.Auth.Session.IdleTimeout.D(), zerolog.Nop())
+			ended, err := sessions.DeleteUser(cmd.Context(), name)
+			if err != nil {
+				return err
+			}
+			s.record(cmd.Context(), "admin.totp.reset", name, audit.ResultSuccess, map[string]any{"sessionsEnded": ended})
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "TOTP of %s reset, %d session(s) ended\n", name, ended)
 			return err
 		},
 	}

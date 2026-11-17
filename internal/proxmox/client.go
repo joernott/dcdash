@@ -23,6 +23,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/tlsutil"
 )
 
@@ -252,12 +253,17 @@ func (c *Cluster) Version(ctx context.Context) (Version, error) {
 }
 
 // Check is the status check of the cluster for the dashboard.
-func (c *Cluster) Check(ctx context.Context) (string, error) {
+func (c *Cluster) Check(ctx context.Context) (status.Detail, error) {
 	v, err := c.Version(ctx)
 	if err != nil {
-		return "", err
+		return status.Detail{}, err
 	}
-	return "Proxmox VE " + v.Version + " via " + c.endpoints[c.active.Load()].base, nil
+	endpoint := c.endpoints[c.active.Load()].base
+	return status.Detail{
+		Text:   "Proxmox VE " + v.Version + " via " + endpoint,
+		Code:   "proxmox.connected",
+		Params: map[string]string{"version": v.Version, "endpoint": endpoint},
+	}, nil
 }
 
 // ticket is a Proxmox login ticket of the console user.

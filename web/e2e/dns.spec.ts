@@ -4,6 +4,8 @@
 // dns:cf:*:write (no TOTP), so he sees no zone actions.
 import { expect, test } from '@playwright/test'
 
+import { expectAccessible } from './a11y'
+
 test('zones and records of a Cloudflare provider', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('User name').fill('bob')
@@ -19,6 +21,7 @@ test('zones and records of a Cloudflare provider', async ({ page }) => {
   const zones = page.getByRole('table', { name: 'Zones' })
   await expect(zones.getByRole('row')).toHaveCount(3) // header + 2 zones
   await expect(page.getByRole('button', { name: 'Create zone' })).toHaveCount(0)
+  await expectAccessible(page, 'DNS zones')
   await expect(zones.getByRole('button')).toHaveCount(0)
 
   await zones.getByRole('link', { name: 'example.org' }).click()
@@ -36,6 +39,7 @@ test('zones and records of a Cloudflare provider', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByText('mail (A) saved.')).toBeVisible()
   await expect(records.getByRole('row')).toHaveCount(4)
+  await expectAccessible(page, 'DNS records')
   await page.screenshot({ path: '../.e2e/screenshots/dns-light-en.png', fullPage: true })
 
   // Invalid content is rejected by the server and shown in the dialog.
@@ -45,6 +49,7 @@ test('zones and records of a Cloudflare provider', async ({ page }) => {
   await dialog.getByLabel('Content').fill('not-an-address')
   await dialog.getByRole('button', { name: 'Save' }).click()
   await expect(dialog.getByRole('alert')).toBeVisible()
+  await expectAccessible(page, 'DNS record dialog with error')
   await dialog.getByRole('button', { name: 'Cancel' }).click()
 
   // Delete it again.

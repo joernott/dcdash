@@ -55,6 +55,24 @@ function label(key: string, fallback: string) {
   return te(key) ? t(key) : fallback
 }
 
+// Parameters that hold times (RFC 3339) are shown in the user's locale.
+const TIME_PARAMS = new Set(['until', 'at'])
+
+/**
+ * The detail of a component in the user's language: the translation of
+ * detailCode if there is one, otherwise the English detail from the server
+ * (e.g. an error message of a backend). A "count" parameter selects the plural.
+ */
+function detailText(c: Component): string {
+  const key = `home.details.${c.detailCode}`
+  if (!c.detailCode || !te(key)) return c.detail || t('home.noDetail')
+  const params: Record<string, string> = {}
+  for (const [k, v] of Object.entries(c.detailParams ?? {})) {
+    params[k] = TIME_PARAMS.has(k) ? d(new Date(v), 'short') : v
+  }
+  return params.count === undefined ? t(key, params) : t(key, params, Number(params.count))
+}
+
 onMounted(() => {
   void load()
   timer = setInterval(() => {
@@ -117,7 +135,7 @@ onUnmounted(() => clearInterval(timer))
             class="text-sm break-words"
             :class="c.status === 'ok' ? 'text-fg-muted' : 'text-danger'"
           >
-            {{ c.detail || t('home.noDetail') }}
+            {{ detailText(c) }}
           </p>
           <p class="mt-2 text-xs text-fg-muted">
             {{ t('home.latency', { ms: n(c.latencyMs, 'integer') }) }}

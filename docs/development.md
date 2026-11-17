@@ -31,6 +31,7 @@ make tools-check                       # verifies the installed versions
 | `internal/cli/` | Command line interface (cobra): `serve`, `version`, `config validate` |
 | `internal/config/` | YAML configuration: schema, defaults, validation, secrets |
 | `internal/logging/` | zerolog setup |
+| `internal/metrics/` | Optional Prometheus `/metrics`: HTTP, audit, certificate and backend metrics |
 | `internal/store/` | SQLite state database and schema migrations |
 | `internal/vault/` | AES-256-GCM encryption of secrets at rest, key ring for rotation |
 | `internal/server/` | HTTP(S) server, middleware, health endpoints |
@@ -63,9 +64,11 @@ Run `make` to list all targets. The most important ones:
 | `make test` | Go tests (with race detector) and frontend unit tests |
 | `make test-integration` | Integration tests against containers (bind9 for ACME, a bind9 primary with SFTP and a secondary for the DNS module, Kea DHCPv4/DHCPv6 with a PostgreSQL host database and a Kea HA pair, OpenLDAP, Pebble, step-ca); needs Docker and `rndc` (`bind9-utils`; `DCDASH_IT_RNDC` may point to another binary). `KEEP=1` keeps the containers running |
 | `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container and the Proxmox fake; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
+| `make test-e2e-full` | The end-to-end tests against the full docker compose environment as well: dcdash then also uses the real bind9 primary (zone creation with rndc, SFTP and the catalog zone), Kea with the PostgreSQL host database and the Kea HA pair (`web/e2e/full.spec.ts`). Needs Docker and `rndc`; this is what the CI runs |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
 | `make fmt` | Format and auto-fix Go and frontend sources |
 | `make gen-api` | Regenerate `web/src/api/schema.d.ts` from `api/openapi.yaml` |
+| `make snapshot` | Build a local release into `dist/` with GoReleaser (see [Releases](#releases)) |
 | `make clean` | Remove build output |
 
 ## Running locally
@@ -169,3 +172,34 @@ are rejected, so typos are caught early.
    generated API types are current, build
 4. **Build:** builds the binary with the embedded frontend, runs a smoke test and uploads
    the binary as an artifact
+5. **End-to-end:** the Playwright tests against the built binary, with the fakes and the full
+   docker compose environment (`scripts/e2e-full.sh`). Every view is also checked for
+   WCAG 2.1 AA violations (axe-core, light and dark mode)
+6. **Dependency audit:** `govulncheck` (Go, reachable code only) and `npm audit` (all
+   frontend dependencies, including build tools)
+
+## Releases
+
+Releases are built by [GoReleaser](https://goreleaser.com/) (`.goreleaser.yaml`) when a tag
+`v*` is pushed (`.github/workflows/release.yml`):
+
+- Archives with the binary, the documentation, the example configuration and the systemd
+  unit for Linux amd64 and arm64.
+- `.deb` and `.rpm` packages (`packaging/`): the user `dcdash`, `/etc/dcdash/config.yaml` from
+  the example, an encryption key generated at the first installation, and the hardened
+  systemd unit `packaging/systemd/dcdash.service`. The service is not started automatically.
+- `SHA256SUMS` for all files.
+- The container image `ghcr.io/joernott/dcdash` (`packaging/Dockerfile`, distroless, user
+  `nonroot`) for both architectures, tagged with the version, `<major>.<minor>` and `latest`.
+  Pre-releases (for example `v0.2.0-rc.1`) get only the version tag.
+- The release notes are the version's section in `CHANGELOG.md`
+  (`scripts/release-notes.sh`); the workflow fails if it is missing.
+
+To release:
+
+1. Move the entries under `[Unreleased]` in `CHANGELOG.md` to a new version section and add
+   its link at the bottom. Merge to `main`.
+2. Tag the merge commit and push the tag: `git tag -a v0.1.0 -m v0.1.0 && git push origin v0.1.0`.
+
+`make snapshot` builds the same files locally into `dist/` without publishing anything; it
+needs GoReleaser 2 and Docker with buildx.

@@ -46,6 +46,26 @@
       "database": "Database",
       "directory": "User directory",
       "certificate": "Certificate"
+    },
+    "details": {
+      "certificate": {
+        "valid": "Valid until {until}",
+        "missing": "No certificate available yet",
+        "expired": "Expired on {at}"
+      },
+      "proxmox": {
+        "connected": "Proxmox VE {version} via {endpoint}"
+      },
+      "dns": {
+        "bind": "bind9 at {server}, no zones | bind9 at {server}, one zone | bind9 at {server}, {count} zones",
+        "bindChecked": "bind9 at {server}, no zones, {checked} OK | bind9 at {server}, one zone, {checked} OK | bind9 at {server}, {count} zones, {checked} OK",
+        "cloudflare": "Cloudflare, no zones | Cloudflare, one zone | Cloudflare, {count} zones"
+      },
+      "dhcp": {
+        "kea": "Kea {version}",
+        "keaHA": "Kea {version}, HA {ha}",
+        "partnerOutOfTouch": "No connection to the HA partner {partner}"
+      }
     }
   },
   "login": {
@@ -148,7 +168,7 @@
     "terminatedCount": "No sessions were active. | One session was terminated. | {n} sessions were terminated.",
     "resetTotp": "Reset authenticator app",
     "resetTotpHint": "For users who lost their device and their recovery codes. Directory users set up a new app at their next login; the break-glass account must be set up on the server.",
-    "resetTotpText": "Reset the authenticator app of {user}? The user's recovery codes stop working as well.",
+    "resetTotpText": "Reset the authenticator app of {user}? The user's recovery codes stop working as well, and all their sessions end.",
     "resetDone": "The authenticator app of {user} was reset."
   },
   "forbidden": {
@@ -274,6 +294,7 @@
     "csrf_failed": "The request was rejected for security reasons. Please reload the page.",
     "invalid_credentials": "The user name or password is wrong.",
     "too_many_attempts": "Too many failed attempts. Please wait a few minutes and try again.",
+    "too_many_consoles": "Too many consoles are being opened at the same time. Please try again in a few seconds.",
     "directory_unavailable": "The user directory is not available. Please try again later.",
     "totp_not_enrolled": "No authenticator app is set up for this account. An administrator must set it up on the server.",
     "invalid_code": "The code is wrong, expired or was already used.",

@@ -39,6 +39,46 @@ KEA6_LISTEN="${DCDASH_E2E_KEA6_LISTEN:-127.0.0.1:18011}"
 go build -o "$DIR/keafake" ./test/keafake
 "$DIR/keafake" -listen4 "$KEA4_LISTEN" -listen6 "$KEA6_LISTEN" 2>"$DIR/keafake.log" &
 
+# With DCDASH_E2E_FULL=1 (scripts/e2e-full.sh), dcdash also uses the real services of
+# the docker compose environment: the bind9 primary (records, rndc, SFTP, catalog zone),
+# Kea DHCPv4/DHCPv6 with the PostgreSQL host database, and the Kea HA pair.
+FULL_ROLES="" FULL_DNS="" FULL_DHCP=""
+if [[ "${DCDASH_E2E_FULL:-}" == 1 ]]; then
+  FULL_ROLES='
+  - name: full-e2e
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["dns:bind:static.dcdash.test:write", "dns:bind:*.e2e.dcdash.test:admin", "dhcp:kea4-db:*:write", "dhcp:kea-ha*:*:operate"]'
+  FULL_DNS="
+    - name: bind
+      type: bind
+      timeout: 10s
+      bind:
+        nameserver: $DCDASH_IT_BIND_PRIMARY
+        tsig_key: dcdash.
+        tsig_secret: \"$DCDASH_IT_BIND_TSIG_SECRET\"
+        tsig_algorithm: hmac-sha256
+        zones: [static.dcdash.test]
+        catalog_zone: catalog.dcdash.test
+        rndc: {binary: \"$DCDASH_IT_RNDC\", server: $DCDASH_IT_BIND_PRIMARY, port: 953, key_file: \"$DCDASH_IT_BIND_RNDC_KEY\"}
+        sftp:
+          address: \"$DCDASH_IT_BIND_PRIMARY:22\"
+          user: dcdash
+          private_key_file: \"$DCDASH_IT_BIND_SFTP_KEY\"
+          host_key: \"$DCDASH_IT_BIND_SFTP_HOSTKEY\"
+          zone_dir: /zones
+        new_zones:
+          file_dir: /srv/sftp/zones
+          options: 'update-policy { grant dcdash. zonesub ANY; }; allow-transfer { key dcdash.; 10.77.0.55; }; also-notify { 10.77.0.55; };'
+          ttl: 1h
+          soa: {mname: ns1.dcdash.test, rname: hostmaster.dcdash.test}
+          nameservers: [ns1.dcdash.test]"
+  FULL_DHCP="
+    - {name: kea4-db, family: v4, url: \"$DCDASH_IT_KEA4_URL\", insecure: true, username: dcdash, password: \"$DCDASH_IT_KEA_PASSWORD\"}
+    - {name: kea-ha1, family: v4, url: \"$DCDASH_IT_KEA_HA1_URL\", insecure: true, username: dcdash, password: \"$DCDASH_IT_KEA_PASSWORD\", ha_group: ha}
+    - {name: kea-ha2, family: v4, url: \"$DCDASH_IT_KEA_HA2_URL\", insecure: true, username: dcdash, password: \"$DCDASH_IT_KEA_PASSWORD\", ha_group: ha}"
+fi
+
 cat > "$DIR/config.yaml" <<EOF
 server:
   listen: "$LISTEN"
@@ -67,6 +107,7 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["dhcp:kea4:192.0.2.0/24:write", "dhcp:kea4:*:read", "dhcp:kea6:*:read"]
+$FULL_ROLES
 proxmox:
   clusters:
     - name: lab
@@ -81,10 +122,13 @@ dns:
       cloudflare:
         api_token: "cf-e2e-test-only"
         base_url: "http://$CF_LISTEN/client/v4/"
+$FULL_DNS
 dhcp:
   servers:
     - {name: kea4, family: v4, url: "http://$KEA4_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
     - {name: kea6, family: v6, url: "http://$KEA6_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
+$FULL_DHCP
+metrics: {enabled: true, token: "metrics-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}

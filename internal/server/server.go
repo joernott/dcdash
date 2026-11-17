@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
@@ -36,6 +37,12 @@ type Options struct {
 	// logging, recovery and security headers), in the given order (outermost
 	// first), e.g. session loading and CSRF protection.
 	Middleware []func(http.Handler) http.Handler
+	// Router, if set, wraps the router itself (inside Middleware), e.g. to
+	// read the matched route pattern (http.Request.Pattern) after routing.
+	Router func(http.Handler) http.Handler
+	// Metrics serves /metrics (see config.Metrics): on the main listener, or on
+	// metrics.listen. Nil disables it.
+	Metrics http.Handler
 }
 
 // Server is the dcdash HTTP(S) server.
@@ -66,6 +73,9 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteError(w, http.StatusNotFound, "not_found", "no such API endpoint")
 	})
+	if s.opts.Metrics != nil && s.cfg.Metrics.Listen == "" {
+		mux.Handle("GET /metrics", s.opts.Metrics)
+	}
 	if s.opts.UI != nil {
 		mux.Handle("/", s.opts.UI)
 	}
@@ -73,6 +83,9 @@ func (s *Server) routes() http.Handler {
 		register(mux)
 	}
 	var h http.Handler = mux
+	if s.opts.Router != nil {
+		h = s.opts.Router(h)
+	}
 	for i := len(s.opts.Middleware) - 1; i >= 0; i-- {
 		h = s.opts.Middleware[i](h)
 	}
@@ -95,11 +108,22 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)
 	}
+	var metricsLn net.Listener
+	if s.opts.Metrics != nil && s.cfg.Metrics.Listen != "" {
+		metricsLn, err = lc.Listen(ctx, "tcp", s.cfg.Metrics.Listen)
+		if err != nil {
+			_ = ln.Close()
+			return fmt.Errorf("listen for metrics: %w", err)
+		}
+	}
 	var redirectLn net.Listener
 	if s.opts.TLSConfig != nil && s.cfg.Server.RedirectListen != "" {
 		redirectLn, err = lc.Listen(ctx, "tcp", s.cfg.Server.RedirectListen)
 		if err != nil {
 			_ = ln.Close()
+			if metricsLn != nil {
+				_ = metricsLn.Close()
+			}
 			return fmt.Errorf("listen for redirects: %w", err)
 		}
 	}
@@ -108,6 +132,9 @@ func (s *Server) Run(ctx context.Context) error {
 	g.Go(func() error { return s.Serve(gctx, ln) })
 	if redirectLn != nil {
 		g.Go(func() error { return s.ServeRedirect(gctx, redirectLn) })
+	}
+	if metricsLn != nil {
+		g.Go(func() error { return s.ServeMetrics(gctx, metricsLn) })
 	}
 	return g.Wait()
 }
@@ -128,6 +155,15 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) error {
 	})
 }
 
+// ServeMetrics serves only /metrics on ln (plain HTTP) until ctx is canceled.
+func (s *Server) ServeMetrics(ctx context.Context, ln net.Listener) error {
+	mux := http.NewServeMux()
+	mux.Handle("GET /metrics", s.opts.Metrics)
+	hs := s.newHTTPServer(ctx, chain(mux, s.log, ""))
+	s.log.Info().Str("addr", ln.Addr().String()).Msg("serving metrics")
+	return s.serve(ctx, hs, func() error { return hs.Serve(ln) })
+}
+
 // ServeRedirect answers every request on ln with a permanent redirect to the
 // same URL on the HTTPS listener.
 func (s *Server) ServeRedirect(ctx context.Context, ln net.Listener) error {
@@ -141,12 +177,22 @@ func (s *Server) ServeRedirect(ctx context.Context, ln net.Listener) error {
 	return s.serve(ctx, hs, func() error { return hs.Serve(ln) })
 }
 
+// Timeouts of all listeners, see newHTTPServer.
+const (
+	readTimeout = time.Minute
+	idleTimeout = 2 * time.Minute
+)
+
 func (s *Server) newHTTPServer(ctx context.Context, h http.Handler) *http.Server {
 	return &http.Server{
 		Handler:           h,
 		ReadHeaderTimeout: s.cfg.Server.ReadHeaderTimeout.D(),
-		ErrorLog:          stdLogger(s.log),
-		BaseContext:       func(net.Listener) context.Context { return ctx },
+		// Limits slow request bodies (at most 1 MiB). Console websockets are
+		// not affected: the upgrade clears the connection deadlines.
+		ReadTimeout: readTimeout,
+		IdleTimeout: idleTimeout,
+		ErrorLog:    stdLogger(s.log),
+		BaseContext: func(net.Listener) context.Context { return ctx },
 	}
 }
 

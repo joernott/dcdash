@@ -57,7 +57,7 @@ func NewService(clusters []*Cluster, auditLog *audit.Log, sessions *session.Mana
 func (s *Service) StatusChecks() []status.Check {
 	out := make([]status.Check, 0, len(s.order))
 	for _, n := range s.order {
-		out = append(out, status.Check{Name: n, Kind: Module, Check: s.clusters[n].Check})
+		out = append(out, status.Check{Name: n, Kind: Module, Detail: s.clusters[n].Check})
 	}
 	return out
 }

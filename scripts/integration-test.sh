@@ -52,7 +52,7 @@ cleanup() {
   fi
   if [[ "${KEEP:-0}" != 1 ]]; then
     "${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
-    rm -rf "$WORK/dns-keys"
+    rm -rf "$WORK/dns-keys" "$WORK/env.sh"
   fi
   exit $status
 }
@@ -103,6 +103,13 @@ export DCDASH_IT_KEA_HA1_URL=http://10.77.0.69:8000
 export DCDASH_IT_KEA_HA2_URL=http://10.77.0.70:8000
 export DCDASH_IT_KEA_PASSWORD=kea-api-test-only
 
+# rndc on the host (bind9-utils); DCDASH_IT_RNDC may point elsewhere.
+export DCDASH_IT_RNDC="${DCDASH_IT_RNDC:-$(command -v rndc || true)}"
+
+# The settings of the test environment for other tools (scripts/e2e-full.sh). Written
+# before the private settings below are loaded, so it contains only test values.
+export -p | grep -E ' DCDASH_IT_(DNS|PEBBLE|STEPCA|OPENLDAP|BIND|KEA|RNDC)' > "$WORK/env.sh"
+
 ENV_FILE="${DCDASH_IT_ENV_FILE:-$HOME/.config/dcdash-it.env}"
 if [[ -f "$ENV_FILE" ]]; then
   echo "==> Loading $ENV_FILE (Samba AD tests)"
@@ -111,9 +118,6 @@ if [[ -f "$ENV_FILE" ]]; then
   . "$ENV_FILE"
   set +a
 fi
-
-# rndc on the host (bind9-utils); DCDASH_IT_RNDC may point elsewhere.
-export DCDASH_IT_RNDC="${DCDASH_IT_RNDC:-$(command -v rndc || true)}"
 
 echo "==> Running integration tests"
 go test -tags integration -count=1 -v ./test/integration/... "$@" 2>&1 | tee "$TEST_LOG"

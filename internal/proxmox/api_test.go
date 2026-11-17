@@ -362,6 +362,42 @@ func TestConsoleTicketExpiry(t *testing.T) {
 	}
 }
 
+func TestConsoleReservations(t *testing.T) {
+	ct := newConsoleTickets()
+	now := time.Now()
+	ct.now = func() time.Time { return now }
+	release, ok := ct.reserve("s")
+	if !ok {
+		t.Fatal("first reservation refused")
+	}
+	for range maxPendingConsoles - 1 {
+		if _, err := ct.add(&pendingConsole{sessionID: "s"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, ok := ct.reserve("s"); ok {
+		t.Error("reservation beyond the limit (prepared and preparing consoles)")
+	}
+	if r, ok := ct.reserve("other"); !ok {
+		t.Error("other session affected")
+	} else {
+		r()
+	}
+	release()
+	if r, ok := ct.reserve("s"); !ok {
+		t.Error("released reservation still counted")
+	} else {
+		r()
+	}
+	now = now.Add(consoleTicketTTL + time.Second)
+	_, _ = ct.add(&pendingConsole{sessionID: "s"}) // removes the expired tickets
+	for range maxPendingConsoles - 1 {
+		if _, ok := ct.reserve("s"); !ok {
+			t.Fatal("expired tickets still counted")
+		}
+	}
+}
+
 func waitFor(t *testing.T, cond func() bool) {
 	t.Helper()
 	for range 100 {

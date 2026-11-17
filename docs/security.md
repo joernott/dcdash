@@ -33,6 +33,9 @@ dcdash gen-key > /etc/dcdash/encryption.key
 chown dcdash: /etc/dcdash/encryption.key
 ```
 
+dcdash warns at startup if the configuration file or a file referenced with `file:` (keys,
+tokens, passwords) is accessible by other users (any permission for "others").
+
 **Back up the key separately from the database.** Without it, the encrypted secrets can't be
 recovered. For TOTP this means every user has to enroll again after an administrator reset.
 
@@ -116,6 +119,13 @@ password.
 - When a session advances a step (password, then TOTP), its token is replaced.
 - A session that has passed the password step but not the TOTP step (or the enrollment)
   expires after 10 minutes. Until then it grants no access.
+- An open console (noVNC, terminal, node shell) doesn't count as activity. When the session
+  ends, also through the idle timeout, the console is closed within 30 seconds. Someone who
+  works only in a console for longer than `idle_timeout` is disconnected; raise the timeout if
+  that is a problem.
+- Roles are determined from the groups at login. A user removed from a group in the directory
+  keeps the session's permissions until it ends; terminate their sessions (see
+  [Administration](#administration)) to apply the change right away.
 
 ### TOTP
 
@@ -157,6 +167,8 @@ next login.
 | Reset a user's TOTP | `DELETE /api/v1/admin/users/{username}/totp` | `root` |
 
 Session lists never contain tokens; sessions are addressed by a separate, non-secret ID.
+Resetting a user's TOTP also ends all their sessions, because they may have been started with
+the lost device.
 
 On the server, TOTP can also be reset without logging in, for example for the break-glass
 account or when no root user can log in:
@@ -188,6 +200,14 @@ attempts are refused with HTTP 429 for the lockout duration. Locked attempts don
 directory, which also protects the AD accounts against the domain's own lockout policy. If
 dcdash runs behind a reverse proxy, list the proxy in `server.trusted_proxies`. Otherwise all
 clients share the proxy's address.
+
+- Attempts still in progress count against the limit, so parallel requests can't get more
+  attempts through than allowed. The same applies to the TOTP step.
+- IPv6 clients are counted per /64 network, because a client usually controls the whole /64.
+- User names longer than 256 characters or containing control characters are rejected with
+  HTTP 400 before they are logged or counted.
+- The user lockout counts the name as typed. In AD mode, `jdoe` and `jdoe@example.com` reach
+  the same account but are counted separately; the IP lockout still applies to both.
 
 Lockout state is kept in memory and is reset when dcdash restarts.
 
@@ -400,7 +420,47 @@ entry can't be stored, it is written to the application log as an error instead.
 | `proxmox.guest.<action>` | A power action (`start`, `shutdown`, `stop`, `reboot`, `suspend`, `resume`); `target` is `<cluster>/<type>/<vmid>`, `details` contain the node and the Proxmox task ID or the error |
 | `proxmox.console.open` | Opening a console or node shell failed (`result` `failure`) |
 | `proxmox.console.start`, `proxmox.console.end` | A console session started and ended; `details` contain the duration, the bytes in both directions and why it ended |
-| `dns.record.create`, `dns.record.update`, `dns.record.delete` | A record change; `target` is `<provider>/<zone>`, `details` contain name, type, TTL, content and record ID (and the error on failure) |
+| `dns.record.create`, `dns.record.update`, `dns.record.delete` | A record change; `target` is `<provider>/<zone>`, `details` contain name, type, TTL, content and record ID, the previous values for updates (and the error on failure) |
 | `dns.zone.create`, `dns.zone.delete` | A zone was created or deleted; `target` is `<provider>/<zone>` |
 | `dhcp.lease.delete` | A lease was deleted; `target` is `<server>/<subnet>`, `details` contain the address, MAC address or DUID, host name and the result on each HA partner |
 | `dhcp.reservation.create`, `dhcp.reservation.update`, `dhcp.reservation.delete` | A reservation change; `target` is `<server>/<subnet>`, `details` contain the identifier, addresses, host name, the server that stored it, and the previous values for updates |
+
+## Security review
+
+Before v0.1.0, the code was reviewed for authentication, sessions, CSRF, HTTP headers, the
+console websocket proxy, input validation and secret handling, and the dependencies were
+audited. The continuous integration repeats the dependency audit for every change:
+`govulncheck` for Go (reachable code only) and `npm audit` for the frontend, including the
+build tools.
+
+Fixed in the review:
+
+- DNS zone and record names allow only letters, digits, `_` and `-` per label. Before, a user
+  allowed to create zones below a domain could inject zone options into `rndc addzone`
+  (for example to allow dynamic updates from anyone), and a record name could carry a
+  different record type into a dynamic update.
+- Parallel login or TOTP attempts could exceed the lockout limit (see [Lockout](#lockout)).
+- Overlong user names were logged and stored in the audit log before being rejected.
+- An open console kept the session from reaching its idle timeout.
+- A session could prepare any number of consoles; each starts a proxy process on a Proxmox
+  node. Now at most 3 at a time.
+- A TOTP reset didn't end the user's sessions.
+- The HTTP server had no read and idle timeouts.
+- Secret files readable by other users weren't reported.
+- DNS record updates didn't record the previous values in the audit log.
+
+Known limitations, accepted for now:
+
+- **Group changes** take effect at the next login (see [Sessions](#sessions)).
+- **User enumeration by timing:** the response is the same for unknown and existing users,
+  but a wrong password for an existing user takes longer (a second LDAP connection).
+- **Lockout per typed name:** see [Lockout](#lockout).
+- **Upstream error messages:** errors from Proxmox, Kea and Cloudflare are shown to the user
+  who caused them. They can contain details such as node names or storage paths.
+- **Fingerprint and CA:** if a TLS fingerprint is set, it replaces the CA check (`ca_file`) for
+  that connection; both are not checked together.
+- **HSTS behind a proxy:** dcdash sends `Strict-Transport-Security` only on its own TLS
+  connections. If a reverse proxy terminates TLS, configure the header there.
+- **Concurrent changes:** changes check that the data hasn't changed since it was loaded. For
+  bind this check is part of the update itself. For Cloudflare and Kea, a change made by
+  someone else in the moment between check and write can be overwritten.

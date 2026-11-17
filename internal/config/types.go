@@ -5,8 +5,10 @@ package config
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"go.yaml.in/yaml/v3"
@@ -91,6 +93,7 @@ func resolveSecret(raw string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("secret: %w", err)
 		}
+		checkSecretFile(path)
 		v := strings.TrimSuffix(string(b), "\n")
 		return strings.TrimSuffix(v, "\r"), nil
 	default:
@@ -117,3 +120,35 @@ func (s Secret) MarshalYAML() (any, error) { return s.String(), nil }
 
 // MarshalJSON implements json.Marshaler and never reveals the value.
 func (s Secret) MarshalJSON() ([]byte, error) { return []byte(`"` + s.String() + `"`), nil }
+
+// secretWarnings collects warnings about secret files while a configuration
+// is parsed; Load returns them.
+var secretWarnings struct {
+	mu   sync.Mutex
+	list []string
+}
+
+// checkSecretFile warns if a secret file is accessible by other users, like
+// checkPermissions for the configuration file.
+func checkSecretFile(path string) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+	fi, err := os.Stat(path)
+	if err != nil || fi.Mode().Perm()&0o007 == 0 {
+		return
+	}
+	secretWarnings.mu.Lock()
+	defer secretWarnings.mu.Unlock()
+	secretWarnings.list = append(secretWarnings.list, fmt.Sprintf(
+		"secret file %s is accessible by other users (mode %04o); consider chmod 0640 or 0600", path, fi.Mode().Perm()))
+}
+
+// takeSecretWarnings returns and clears the collected warnings.
+func takeSecretWarnings() []string {
+	secretWarnings.mu.Lock()
+	defer secretWarnings.mu.Unlock()
+	w := secretWarnings.list
+	secretWarnings.list = nil
+	return w
+}

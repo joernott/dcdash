@@ -4,6 +4,8 @@
 // the console websocket proxy. bob holds proxmox:*:*:console (no TOTP).
 import { expect, test } from '@playwright/test'
 
+import { expectAccessible } from './a11y'
+
 test('inventory, power action, container terminal and VNC console', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('User name').fill('bob')
@@ -21,6 +23,7 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   await expect(guests.getByRole('row')).toHaveCount(4) // header + 3 guests
   // No node shell without admin on the node.
   await expect(page.getByRole('link', { name: 'Shell' })).toHaveCount(0)
+  await expectAccessible(page, 'Proxmox inventory')
 
   // Start the stopped VM and follow its task.
   const db = guests.getByRole('row', { name: /db/ })
@@ -33,6 +36,7 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   // Guest details.
   await guests.getByRole('link', { name: 'web' }).click()
   await expect(page.getByRole('heading', { name: 'web', level: 1 })).toBeVisible()
+  await expectAccessible(page, 'Proxmox guest')
   await expect(page.getByText('bridge=vmbr0')).toBeVisible()
 
   // Container terminal: the fake echoes the input.
@@ -41,6 +45,7 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   await page.getByTestId('console-screen').click()
   await page.keyboard.type('hello dcdash')
   await expect(page.locator('.xterm-rows')).toContainText('hello dcdash')
+  await expectAccessible(page, 'Proxmox terminal')
   await page.screenshot({ path: '../.e2e/screenshots/proxmox-terminal.png' })
 
   // VNC console: the fake speaks a minimal RFB server with a gray screen. The
@@ -48,6 +53,7 @@ test('inventory, power action, container terminal and VNC console', async ({ pag
   await page.goto('/proxmox/lab/qemu/101/console')
   await expect(page.getByText('Connected')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Send Ctrl+Alt+Del' })).toBeVisible()
+  await expectAccessible(page, 'Proxmox VNC console')
   const canvas = page.getByTestId('console-screen').locator('canvas')
   await expect.poll(async () => (await canvas.boundingBox())?.height ?? 0).toBeGreaterThan(100)
   await page.screenshot({ path: '../.e2e/screenshots/proxmox-vnc.png' })

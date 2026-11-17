@@ -115,6 +115,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SessionInfo" }
+        "400":
+          description: "Malformed request, or a user name that is too long or contains control characters (code: invalid_request)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
         "401":
           description: "Invalid credentials (code: invalid_credentials)."
           content:
@@ -627,6 +632,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429": { $ref: "#/components/responses/TooManyConsoles" }
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
@@ -657,6 +663,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429": { $ref: "#/components/responses/TooManyConsoles" }
         "502": { $ref: "#/components/responses/Upstream" }
         default:
           $ref: "#/components/responses/Error"
@@ -1180,6 +1187,15 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorBody" }
+    TooManyConsoles:
+      description: "The session is already preparing 3 consoles that were not opened yet (code: too_many_consoles)."
+      headers:
+        Retry-After:
+          description: Seconds until a console can be prepared again.
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     TooManyAttempts:
       description: "Too many failed attempts (code: too_many_attempts)."
       headers:
@@ -1386,7 +1402,21 @@ components:
           type: string
           description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp).'
         status: { type: string, enum: [ok, error] }
-        detail: { type: string, description: A detail such as "valid until ..." or the error message. }
+        detail: { type: string, description: A detail such as "valid until ..." or the error message, in English. }
+        detailCode:
+          type: string
+          description: |
+            Identifies the detail for translation; missing if there is none, for example for
+            an error message of a backend. Codes: `certificate.valid` (`until`),
+            `certificate.missing`, `certificate.expired` (`at`), `proxmox.connected` (`version`,
+            `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
+            `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
+            (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`). Times are RFC 3339.
+          examples: [certificate.valid]
+        detailParams:
+          type: object
+          description: Parameters of detailCode.
+          additionalProperties: { type: string }
         latencyMs: { type: integer, format: int64 }
 
     HealthStatus:

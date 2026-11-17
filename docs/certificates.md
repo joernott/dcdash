@@ -1,6 +1,6 @@
 # TLS Certificates
 
-dcdash serves its UI and API over HTTPS only. It gets its certificate in one of three ways,
+dcdash serves its UI and API over HTTPS. It gets its certificate in one of three ways,
 set with `server.tls.mode`:
 
 | Mode | Certificate source | Typical use |

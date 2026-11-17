@@ -14,8 +14,8 @@
     "retry": "Erneut versuchen"
   },
   "nav": {
-    "label": "Hauptnavigation",
-    "toggle": "Navigation ein- oder ausblenden",
+    "label": "Hauptmenü",
+    "toggle": "Menü ein- oder ausblenden",
     "skip": "Zum Inhalt springen",
     "home": "Übersicht",
     "proxmox": "Proxmox",
@@ -46,6 +46,26 @@
       "database": "Datenbank",
       "directory": "Benutzerverzeichnis",
       "certificate": "Zertifikat"
+    },
+    "details": {
+      "certificate": {
+        "valid": "Gültig bis {until}",
+        "missing": "Noch kein Zertifikat vorhanden",
+        "expired": "Abgelaufen am {at}"
+      },
+      "proxmox": {
+        "connected": "Proxmox VE {version} über {endpoint}"
+      },
+      "dns": {
+        "bind": "bind9 auf {server}, keine Zonen | bind9 auf {server}, eine Zone | bind9 auf {server}, {count} Zonen",
+        "bindChecked": "bind9 auf {server}, keine Zonen, {checked} OK | bind9 auf {server}, eine Zone, {checked} OK | bind9 auf {server}, {count} Zonen, {checked} OK",
+        "cloudflare": "Cloudflare, keine Zonen | Cloudflare, eine Zone | Cloudflare, {count} Zonen"
+      },
+      "dhcp": {
+        "kea": "Kea {version}",
+        "keaHA": "Kea {version}, HA {ha}",
+        "partnerOutOfTouch": "Keine Verbindung zum HA-Partner {partner}"
+      }
     }
   },
   "login": {
@@ -148,7 +168,7 @@
     "terminatedCount": "Es waren keine Sitzungen aktiv. | Eine Sitzung wurde beendet. | {n} Sitzungen wurden beendet.",
     "resetTotp": "Authenticator-App zurücksetzen",
     "resetTotpHint": "Für Benutzer, die ihr Gerät und ihre Wiederherstellungscodes verloren haben. Verzeichnisbenutzer richten bei der nächsten Anmeldung eine neue App ein; das Notfallkonto muss auf dem Server eingerichtet werden.",
-    "resetTotpText": "Die Authenticator-App von {user} zurücksetzen? Auch die Wiederherstellungscodes werden ungültig.",
+    "resetTotpText": "Die Authenticator-App von {user} zurücksetzen? Auch die Wiederherstellungscodes werden ungültig, und alle Sitzungen der Person werden beendet.",
     "resetDone": "Die Authenticator-App von {user} wurde zurückgesetzt."
   },
   "forbidden": {
@@ -274,6 +294,7 @@
     "csrf_failed": "Die Anfrage wurde aus Sicherheitsgründen abgelehnt. Bitte laden Sie die Seite neu.",
     "invalid_credentials": "Benutzername oder Passwort ist falsch.",
     "too_many_attempts": "Zu viele Fehlversuche. Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.",
+    "too_many_consoles": "Es werden zu viele Konsolen gleichzeitig geöffnet. Bitte versuchen Sie es in einigen Sekunden erneut.",
     "directory_unavailable": "Das Benutzerverzeichnis ist nicht erreichbar. Bitte versuchen Sie es später erneut.",
     "totp_not_enrolled": "Für dieses Konto ist keine Authenticator-App eingerichtet. Ein Administrator muss sie auf dem Server einrichten.",
     "invalid_code": "Der Code ist falsch, abgelaufen oder wurde bereits verwendet.",

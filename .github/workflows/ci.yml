@@ -30,6 +30,23 @@ jobs:
       - name: Test
         run: go test -race ./...
 
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: .go-version
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Go vulnerabilities (reachable code only)
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+      - name: npm advisories (all dependencies, including dev tooling)
+        working-directory: web
+        run: npm audit --audit-level=moderate
+
   integration:
     name: Integration tests
     runs-on: ubuntu-latest
@@ -119,13 +136,14 @@ jobs:
       - name: Install browser
         run: npx playwright install --with-deps --only-shell chromium
         working-directory: web
-      - name: Start test directory
-        run: docker compose -f test/integration/compose.yaml up -d --build --wait openldap
+      - name: Install rndc
+        run: sudo apt-get update -q && sudo apt-get install -y -q bind9-utils
       - name: Build
         run: make build
+      # Against the fakes and the real services of the docker compose environment
+      # (bind9, Kea with PostgreSQL, Kea HA pair, OpenLDAP).
       - name: Run end-to-end tests
-        run: npx playwright test
-        working-directory: web
+        run: scripts/e2e-full.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:

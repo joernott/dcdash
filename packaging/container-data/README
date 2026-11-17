@@ -1,0 +1,2 @@
+dcdash data directory (data_dir): the SQLite database and the ACME account and
+certificates. Mount a persistent volume here.

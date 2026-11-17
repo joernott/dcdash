@@ -1,0 +1,118 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Release build (docs/development.md#releases). The release workflow runs
+# `goreleaser release` for a tag v*; locally: goreleaser release --snapshot --clean
+version: 2
+project_name: dcdash
+
+before:
+  hooks:
+    # The frontend is embedded into the binary.
+    - make build-web
+
+builds:
+  - id: dcdash
+    main: ./cmd/dcdash
+    binary: dcdash
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/joernott/dcdash/internal/version.Version={{ .Tag }}
+      - -X github.com/joernott/dcdash/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/joernott/dcdash/internal/version.Date={{ .Date }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: dcdash
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+      - configs/config.example.yaml
+      - packaging/systemd/dcdash.service
+      - docs/*.md
+      - docs/adr/*.md
+
+checksum:
+  name_template: SHA256SUMS
+  algorithm: sha256
+
+nfpms:
+  - id: packages
+    package_name: dcdash
+    homepage: https://github.com/joernott/dcdash
+    maintainer: Jörn Ott <https://github.com/joernott/dcdash>
+    vendor: Ott-Consult UG
+    description: |-
+      Dashboard for central data center services.
+      Proxmox VE (inventory, power actions, consoles), DNS (bind9, Cloudflare) and
+      DHCP (Kea) in one web interface, with LDAP/AD login, TOTP, roles and an audit log.
+    license: GPL-3.0-or-later
+    section: admin
+    formats: [deb, rpm]
+    bindir: /usr/bin
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
+    contents:
+      - dst: /etc/dcdash
+        type: dir
+        file_info: {mode: 0o750, owner: root, group: dcdash}
+      - src: configs/config.example.yaml
+        dst: /etc/dcdash/config.yaml
+        type: config|noreplace
+        file_info: {mode: 0o640, owner: root, group: dcdash}
+      - src: packaging/systemd/dcdash.service
+        dst: /usr/lib/systemd/system/dcdash.service
+        file_info: {mode: 0o644}
+      - src: configs/config.example.yaml
+        dst: /usr/share/doc/dcdash/config.example.yaml
+        file_info: {mode: 0o644}
+      - src: LICENSE
+        dst: /usr/share/doc/dcdash/copyright
+        file_info: {mode: 0o644}
+      - src: README.md
+        dst: /usr/share/doc/dcdash/README.md
+        file_info: {mode: 0o644}
+    scripts:
+      preinstall: packaging/scripts/preinstall.sh
+      postinstall: packaging/scripts/postinstall.sh
+      preremove: packaging/scripts/preremove.sh
+      postremove: packaging/scripts/postremove.sh
+    rpm:
+      group: Applications/System
+    deb:
+      fields:
+        Bugs: https://github.com/joernott/dcdash/issues
+
+dockers_v2:
+  - id: image
+    ids: [dcdash]
+    images: [ghcr.io/joernott/dcdash]
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .Prerelease }}{{ .Major }}.{{ .Minor }}{{ end }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    dockerfile: packaging/Dockerfile
+    platforms: [linux/amd64, linux/arm64]
+    extra_files: [packaging/container-data]
+    labels:
+      org.opencontainers.image.title: dcdash
+      org.opencontainers.image.description: Dashboard for central data center services
+      org.opencontainers.image.source: https://github.com/joernott/dcdash
+      org.opencontainers.image.licenses: GPL-3.0-or-later
+      org.opencontainers.image.authors: Jörn Ott
+      org.opencontainers.image.vendor: Ott-Consult UG
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+
+changelog:
+  # The release notes come from CHANGELOG.md (see the release workflow).
+  disable: true
+
+release:
+  draft: false
+  prerelease: auto

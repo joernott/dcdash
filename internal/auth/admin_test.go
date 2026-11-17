@@ -108,11 +108,19 @@ func TestAdminResetTOTP(t *testing.T) {
 	root := e.rootSession(t)
 	e.enroll(t, "bob")
 	dave := e.login(t, "dave", "secret")
+	bobBefore := e.login(t, "bob", "secret") // in the TOTP step
 	if rec := dave.delete("/api/v1/admin/users/bob/totp"); rec.Code != http.StatusForbidden {
 		t.Errorf("non-root reset: %d", rec.Code)
 	}
 	if rec := root.delete("/api/v1/admin/users/bob/totp"); rec.Code != http.StatusNoContent {
 		t.Fatalf("reset: %d %s", rec.Code, rec.Body)
+	}
+	// The reset ends the sessions started with the old device.
+	if rec := bobBefore.get("/api/v1/auth/me"); rec.Code != http.StatusUnauthorized {
+		t.Errorf("session from before the reset: %d", rec.Code)
+	}
+	if rec := bobBefore.get("/api/v1/auth/me"); rec.Code != http.StatusUnauthorized {
+		t.Errorf("session from before the reset: %d", rec.Code)
 	}
 	if rec := root.delete("/api/v1/admin/users/bob/totp"); rec.Code != http.StatusNotFound {
 		t.Errorf("reset twice: %d", rec.Code)

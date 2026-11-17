@@ -38,6 +38,8 @@ type app struct {
 	closers []func() error
 	// statusChecks are shown on the dashboard (GET /api/v1/status).
 	statusChecks []status.Check
+	// audit is the audit log, e.g. for metrics.
+	audit *audit.Log
 }
 
 // Close releases resources (e.g. the syslog connection).
@@ -64,6 +66,7 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	if err != nil {
 		return nil, err
 	}
+	a.audit = auditLog
 	a.runners = append(a.runners, func(ctx context.Context) error { return auditLog.Run(ctx, cfg.Audit.Retention.D()) })
 
 	authz := auth.NewAuthorizer(rbac.NewResolver(cfg.Auth.RootGroup, cfg.RBACRoles()), auditLog)

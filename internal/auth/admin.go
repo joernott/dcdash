@@ -109,7 +109,13 @@ func (s *Service) handleResetTOTP(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(w, http.StatusNotFound, "not_found", "TOTP is not enrolled for this user")
 		return
 	}
-	s.audit.RecordRequest(r, "admin.totp.reset", username, audit.ResultSuccess, nil)
+	// Sessions started with the old device end, too.
+	ended, err := s.sessions.DeleteUser(r.Context(), username)
+	if err != nil {
+		internalError(w, r, err, "cannot end sessions")
+		return
+	}
+	s.audit.RecordRequest(r, "admin.totp.reset", username, audit.ResultSuccess, map[string]any{"sessionsEnded": ended})
 	hlog.FromRequest(r).Warn().Str("component", "auth").Str("username", username).Msg("TOTP reset")
 	w.WriteHeader(http.StatusNoContent)
 }
