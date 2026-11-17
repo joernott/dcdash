@@ -41,7 +41,7 @@ These apply to every task:
 | 7 | `sprint/07-dns` | DNS: Cloudflare and bind9, zones and records | v0.1.0 | done |
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
-| 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | in progress |
+| 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
 
 ---
 
@@ -334,4 +334,4 @@ These apply to every task:
   - [x] **10.9.1** Fixes from the test on a real cluster: the guest name is read from the
     configuration (the inventory lags behind after a creation), all storages of a node are
     listed, the token commands in `proxmox.md` work in bash
-- [ ] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`
+- [x] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`

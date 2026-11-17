@@ -162,3 +162,9 @@ dcdash shows up in https://github.com/joernott?tab=packages&visibility=public, s
 The shell snippet in the chapter "Privileges of the API token" didn't work, your user is named dashroot and the token is named dev. also, having a ! in a double quoted string breaks on the standard bash of proxmox, I replaced dcdash with dashroot and the token name with dev and turned the strings into single quoted strings. That has worked now, but I recommend to modify the script into six individual commands and use two variables for who and for the token name. the for loop does not save many lines
 
 You can create and delete test VMs there, using the ID range >1000.
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+yes, please go ahead
