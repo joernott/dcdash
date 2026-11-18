@@ -34,12 +34,14 @@ const (
 	jobRetention   = time.Hour
 )
 
-// JobStep is a step of a job: clone, configure, resize, create or start.
+// JobStep is a step of a job: clone, configure, resize, create, dhcp, dns or
+// start. Detail names what a dhcp or dns step creates.
 type JobStep struct {
-	Name  string `json:"name"`
-	State string `json:"state"`
-	UPID  string `json:"upid,omitempty"`
-	Error string `json:"error,omitempty"`
+	Name   string `json:"name"`
+	Detail string `json:"detail,omitempty"`
+	State  string `json:"state"`
+	UPID   string `json:"upid,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 // Job creates a guest in several steps in the background (ADR 0004).
@@ -61,8 +63,9 @@ type Job struct {
 // step is the work of a job step. It reports the ID of a Proxmox task it
 // started with setUPID.
 type step struct {
-	name string
-	run  func(ctx context.Context, setUPID func(string)) error
+	name   string
+	detail string
+	run    func(ctx context.Context, setUPID func(string)) error
 }
 
 // taskStep is a step that starts a task (start returns its ID, or "" if the
@@ -172,7 +175,7 @@ func (s *jobStore) start(j *Job, steps []step, log *audit.Log, entry audit.Entry
 	}
 	j.ID, j.State, j.Created = newJobID(), JobRunning, s.now()
 	for _, st := range steps {
-		j.Steps = append(j.Steps, JobStep{Name: st.name, State: StepPending})
+		j.Steps = append(j.Steps, JobStep{Name: st.name, Detail: st.detail, State: StepPending})
 	}
 	s.jobs[j.ID] = j
 	s.mu.Unlock()

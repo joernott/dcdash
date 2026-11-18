@@ -241,6 +241,10 @@ type CreateRequest struct {
 	// only device of requests without Networks (API of v0.1.1).
 	Networks []CreateNetwork `json:"networks,omitempty"`
 	Network  CreateNetwork   `json:"network"`
+	// Reservations and Records are added after the guest was created and
+	// before it is started.
+	Reservations []CreateReservation `json:"reservations,omitempty"`
+	Records      []CreateRecord      `json:"records,omitempty"`
 	// User (cloud-init only), Password and SSHKeys (one per line) are the
 	// login of a cloned VM (cloud-init) or of root in a container.
 	User        string   `json:"user,omitempty"`
@@ -861,6 +865,12 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeRequestError(w, r, err)
 		return
 	}
+	extra, ok := s.planIntegrations(w, r, subj, &req)
+	if !ok {
+		s.jobs.release(c.Name(), vmid)
+		return
+	}
+	pl.steps = append(pl.steps, extra...)
 	if req.Start {
 		node, typ := pl.node, req.Type
 		pl.steps = append(pl.steps, taskStep(c, "start", func(ctx context.Context) (string, error) {
@@ -876,6 +886,7 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 		nets = append(nets, map[string]any{"bridge": n.Bridge, "vlan": n.VLAN, "mac": n.MAC, "ipv4": n.IPv4, "ipv6": n.IPv6})
 	}
 	maps["networks"] = nets
+	maps["reservations"], maps["records"] = len(req.Reservations), len(req.Records)
 	if req.User != "" {
 		maps["user"] = req.User
 	}

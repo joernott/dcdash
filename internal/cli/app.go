@@ -112,13 +112,17 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		a.statusChecks = append(a.statusChecks, dnsSvc.StatusChecks()...)
 		a.routes = append(a.routes, dnsSvc.Register)
 	}
+	var dhcpSvc *dhcp.Service
 	if len(cfg.DHCP.Servers) > 0 {
-		dhcpSvc, err := dhcp.NewService(cfg.DHCP.Servers, auditLog, log)
-		if err != nil {
+		if dhcpSvc, err = dhcp.NewService(cfg.DHCP.Servers, auditLog, log); err != nil {
 			return nil, err
 		}
 		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
 		a.routes = append(a.routes, dhcpSvc.Register)
+	}
+	if pve != nil {
+		// The creation wizard adds DHCP reservations and DNS records (task 11.14).
+		pve.SetIntegrations(dhcpSvc, dnsSvc)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

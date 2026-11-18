@@ -43,6 +43,7 @@ type provEnv struct {
 	fake  *pvefake.Server
 	srv   *httptest.Server
 	audit *audit.Log
+	svc   *Service
 }
 
 func newProvEnv(t *testing.T) *provEnv {
@@ -94,7 +95,7 @@ func newProvEnv(t *testing.T) *provEnv {
 	})
 	srv := httptest.NewServer(authz.Middleware(inject))
 	t.Cleanup(srv.Close)
-	return &provEnv{fake: fake, srv: srv, audit: auditLog}
+	return &provEnv{fake: fake, srv: srv, audit: auditLog, svc: svc}
 }
 
 // do sends a request with an optional JSON body and decodes a 2xx response
