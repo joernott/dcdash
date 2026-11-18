@@ -361,9 +361,10 @@ These apply to every task:
 - [x] **11.7** Sessions: find out why users are logged out after a few minutes of
   inactivity, fix it, and keep sessions alive for 8 hours (adjust the default of
   `auth.session.idle_timeout` if needed)
-- [ ] **11.8** API research for the VM configuration: changing options, disks and network
+- [x] **11.8** API research for the VM configuration: changing options, disks and network
   devices of VMs (`PUT/POST .../config`, `resize`, `unlink`, pending changes, hot-plug,
-  required privileges); amend this sprint if needed
+  required privileges); amend this sprint if needed (results and decisions:
+  [ADR 0005](adr/0005-proxmox-vm-configuration.md))
 - [ ] **11.9** Change VM options on the guest page, for example `agent`, `boot`, `onboot`,
   CPU and memory, with pending changes (they apply after a restart) shown as such
 - [ ] **11.10** VM disks: create, attach, detach, resize and delete disks, limited to the
