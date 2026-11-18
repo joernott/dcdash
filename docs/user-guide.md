@@ -65,7 +65,7 @@ cluster, choose it at the top.
 - **Node shell:** a root shell on a node. It requires administrator rights on the node.
 - **Create:** if your administrator allows it for the cluster, "Create" opens a wizard for
   a virtual machine from a template, a virtual machine from an ISO image, or a container. You
-  choose the name, the resources, the network and, for templates and containers, the login
+  choose the name, the resources, one or more network devices and, for templates and containers, the login
   (password or SSH keys) and IP settings. Leave the ID empty to get the next free one. After
   "Create", the page shows the progress of each step; it continues if you close the page.
   If a step fails, check the guest and delete it if necessary.

@@ -136,14 +136,18 @@ Users can create virtual machines and containers, and delete them, in clusters w
 `provisioning` section. dcdash offers three kinds of guests:
 
 - **A VM from a template**, as a full or linked clone on the template's node. dcdash sets
-  the CPU cores, memory and network device, grows the boot disk if requested, and passes the
+  the CPU cores, memory and network devices, grows the boot disk if requested, and passes the
   user, password, SSH keys and IP settings to **cloud-init**. Prepare the templates with an
   operating system that runs cloud-init (for example the cloud images of Debian or Ubuntu);
   dcdash adds a cloud-init drive if the template has none.
-- **A VM from an ISO image**, with one disk, the ISO image in a CD-ROM drive and one network
-  device. For Windows, dcdash adds UEFI, an EFI disk and a TPM.
+- **A VM from an ISO image**, with one disk and the ISO image in a CD-ROM drive. For Windows, dcdash adds UEFI, an EFI disk and a TPM.
 - **A container** from a container template, unprivileged, with nesting enabled, a root
   password or SSH keys, and the IP settings.
+
+Every guest gets up to 8 network devices, each on an allowed bridge and VLAN with its own IP
+settings (cloud-init and containers). The name servers and the search domain belong to the
+first device. dcdash generates the MAC addresses (prefix `BC:24:11`) when a device is added in
+the wizard, so they are known before the guest exists; they can be changed.
 
 Deleting a guest requires it to be stopped and the user to type its name. dcdash deletes
 the guest with its disks and, by default, removes it from backup jobs, replication and HA.

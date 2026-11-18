@@ -10,6 +10,20 @@ export type Job = Schemas['ProxmoxJob']
 /** What is created: a clone of a VM template, a VM from an ISO image, or a container. */
 export type Kind = 'clone' | 'iso' | 'lxc'
 
+/** A network device of the form. */
+export interface NetForm {
+  bridge: string
+  vlan: string
+  ipv4Mode: 'none' | 'dhcp' | 'static'
+  ipv4: string
+  gateway4: string
+  ipv6Mode: 'none' | 'auto' | 'dhcp' | 'static'
+  ipv6: string
+  gateway6: string
+  /** Generated when the device is added, so that it is known before the guest exists. */
+  mac: string
+}
+
 export interface CreateForm {
   kind: Kind
   node: string
@@ -27,14 +41,9 @@ export interface CreateForm {
   /** GiB; empty keeps the template's size for clones. */
   disk: string
   storage: string
-  bridge: string
-  vlan: string
-  ipv4Mode: 'none' | 'dhcp' | 'static'
-  ipv4: string
-  gateway4: string
-  ipv6Mode: 'none' | 'auto' | 'dhcp' | 'static'
-  ipv6: string
-  gateway6: string
+  /** Network devices net0, net1, ... */
+  networks: NetForm[]
+  /** Name servers and search domain apply to the first network device. */
   nameservers: string
   searchDomain: string
   user: string
@@ -43,6 +52,37 @@ export interface CreateForm {
   start: boolean
   description: string
   tags: string
+}
+
+/** The most network devices of a new guest (as the server allows). */
+export const MAX_NETWORKS = 8
+
+/** A random unicast MAC address with the prefix Proxmox uses. */
+export function randomMAC(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(3))
+  const hex = Array.from(bytes, (x) => x.toString(16).padStart(2, '0').toUpperCase())
+  return ['BC', '24', '11', ...hex].join(':')
+}
+
+const MAC = /^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/i
+
+export function isUnicastMAC(s: string): boolean {
+  return MAC.test(s) && (parseInt(s.slice(0, 2), 16) & 1) === 0
+}
+
+/** A new network device on the default bridge. */
+export function newNet(o: ProvisioningOptions, kind: Kind): NetForm {
+  return {
+    bridge: o.defaults.bridge,
+    vlan: '',
+    ipv4Mode: kind === 'iso' ? 'none' : 'dhcp',
+    ipv4: '',
+    gateway4: '',
+    ipv6Mode: 'none',
+    ipv6: '',
+    gateway6: '',
+    mac: randomMAC(),
+  }
 }
 
 /** A new form with the defaults of the options. */
@@ -61,14 +101,7 @@ export function newForm(o: ProvisioningOptions, kind: Kind = 'clone'): CreateFor
     memory: String(o.defaults.memory),
     disk: kind === 'clone' ? '' : String(o.defaults.disk),
     storage: o.defaults.storage,
-    bridge: o.defaults.bridge,
-    vlan: '',
-    ipv4Mode: kind === 'iso' ? 'none' : 'dhcp',
-    ipv4: '',
-    gateway4: '',
-    ipv6Mode: 'none',
-    ipv6: '',
-    gateway6: '',
+    networks: [newNet(o, kind)],
     nameservers: '',
     searchDomain: '',
     user: '',
@@ -134,8 +167,38 @@ function words(s: string): string[] {
     .filter((w) => w !== '')
 }
 
-/** Error keys (proxmox.create.errors.<key>) by field. */
-export type FormErrors = Partial<Record<keyof CreateForm, string>>
+/** Error keys (proxmox.create.errors.<key>) by field; network devices by index. */
+export type NetErrors = Partial<Record<keyof NetForm, string>>
+export type FormErrors = Partial<Record<Exclude<keyof CreateForm, 'networks'>, string>> & {
+  networks?: NetErrors[]
+}
+
+/** Validates one network device; macs are the MAC addresses of all devices. */
+function validateNet(
+  n: NetForm,
+  i: number,
+  macs: string[],
+  f: CreateForm,
+  o: ProvisioningOptions,
+): NetErrors {
+  const e: NetErrors = {}
+  if (!o.bridges.some((b) => b.name === n.bridge)) e.bridge = 'required'
+  if (n.vlan.trim() !== '' && !(/^\d+$/.test(n.vlan.trim()) && inRanges(Number(n.vlan), o.vlans)))
+    e.vlan = 'vlan'
+  if (!isUnicastMAC(macs[i]!)) e.mac = 'mac'
+  else if (macs.indexOf(macs[i]!) !== i) e.mac = 'macTwice'
+  if (f.kind !== 'iso') {
+    if (n.ipv4Mode === 'static') {
+      if (!isPrefix(n.ipv4.trim(), false)) e.ipv4 = 'ipv4'
+      if (n.gateway4.trim() !== '' && !isIPv4(n.gateway4.trim())) e.gateway4 = 'ipv4Address'
+    }
+    if (n.ipv6Mode === 'static') {
+      if (!isPrefix(n.ipv6.trim(), true)) e.ipv6 = 'ipv6'
+      if (n.gateway6.trim() !== '' && !isIPv6(n.gateway6.trim())) e.gateway6 = 'ipv6Address'
+    }
+  }
+  return e
+}
 
 /** Validates the form like the server does; returns the errors by field. */
 export function validate(f: CreateForm, o: ProvisioningOptions): FormErrors {
@@ -165,17 +228,10 @@ export function validate(f: CreateForm, o: ProvisioningOptions): FormErrors {
     !o.storages.some((s) => s.name === f.storage && (f.kind === 'lxc' ? s.container : s.vm))
   )
     e.storage = 'required'
-  if (!o.bridges.some((b) => b.name === f.bridge)) e.bridge = 'required'
-  if (f.vlan.trim() !== '' && !inRanges(int(f.vlan), o.vlans)) e.vlan = 'vlan'
+  const macs = f.networks.map((n) => n.mac.trim().toUpperCase())
+  const nets = f.networks.map((n, i) => validateNet(n, i, macs, f, o))
+  if (nets.some((ne) => Object.keys(ne).length > 0)) e.networks = nets
   if (f.kind !== 'iso') {
-    if (f.ipv4Mode === 'static') {
-      if (!isPrefix(f.ipv4.trim(), false)) e.ipv4 = 'ipv4'
-      if (f.gateway4.trim() !== '' && !isIPv4(f.gateway4.trim())) e.gateway4 = 'ipv4Address'
-    }
-    if (f.ipv6Mode === 'static') {
-      if (!isPrefix(f.ipv6.trim(), true)) e.ipv6 = 'ipv6'
-      if (f.gateway6.trim() !== '' && !isIPv6(f.gateway6.trim())) e.gateway6 = 'ipv6Address'
-    }
     const ns = words(f.nameservers)
     if (ns.length > 3 || ns.some((a) => !isIPv4(a) && !isIPv6(a))) e.nameservers = 'nameservers'
     if (f.searchDomain.trim() !== '' && !DNS_NAME.test(f.searchDomain.trim()))
@@ -191,6 +247,35 @@ export function validate(f: CreateForm, o: ProvisioningOptions): FormErrors {
   return e
 }
 
+/** The network devices of the request. */
+function toNetworks(f: CreateForm): NonNullable<CreateRequest['networks']> {
+  const opt = (s: string) => (s.trim() === '' ? undefined : s.trim())
+  return f.networks.map((nf, i) => {
+    const n: NonNullable<CreateRequest['networks']>[number] = {
+      bridge: nf.bridge,
+      vlan: nf.vlan.trim() === '' ? undefined : Number(nf.vlan),
+      mac: nf.mac.trim().toUpperCase(),
+    }
+    if (f.kind === 'iso') return n
+    if (nf.ipv4Mode === 'dhcp') n.ipv4 = 'dhcp'
+    if (nf.ipv4Mode === 'static') {
+      n.ipv4 = nf.ipv4.trim()
+      n.gateway4 = opt(nf.gateway4)
+    }
+    if (nf.ipv6Mode === 'auto' || nf.ipv6Mode === 'dhcp') n.ipv6 = nf.ipv6Mode
+    if (nf.ipv6Mode === 'static') {
+      n.ipv6 = nf.ipv6.trim()
+      n.gateway6 = opt(nf.gateway6)
+    }
+    if (i === 0) {
+      const ns = words(f.nameservers)
+      if (ns.length > 0) n.nameservers = ns
+      n.searchDomain = opt(f.searchDomain)
+    }
+    return n
+  })
+}
+
 /** The request for a valid form. */
 export function toRequest(f: CreateForm): CreateRequest {
   const opt = (s: string) => (s.trim() === '' ? undefined : s.trim())
@@ -202,7 +287,7 @@ export function toRequest(f: CreateForm): CreateRequest {
     cores: Number(f.cores),
     memory: Number(f.memory),
     disk: num(f.disk) ?? 0,
-    network: { bridge: f.bridge, vlan: num(f.vlan) },
+    networks: toNetworks(f),
     start: f.start,
     description: opt(f.description),
   }
@@ -225,20 +310,6 @@ export function toRequest(f: CreateForm): CreateRequest {
     return req
   }
   if (f.kind === 'lxc') req.osTemplate = f.osTemplate
-  const n = req.network
-  if (f.ipv4Mode === 'dhcp') n.ipv4 = 'dhcp'
-  if (f.ipv4Mode === 'static') {
-    n.ipv4 = f.ipv4.trim()
-    n.gateway4 = opt(f.gateway4)
-  }
-  if (f.ipv6Mode === 'auto' || f.ipv6Mode === 'dhcp') n.ipv6 = f.ipv6Mode
-  if (f.ipv6Mode === 'static') {
-    n.ipv6 = f.ipv6.trim()
-    n.gateway6 = opt(f.gateway6)
-  }
-  const ns = words(f.nameservers)
-  if (ns.length > 0) n.nameservers = ns
-  n.searchDomain = opt(f.searchDomain)
   if (f.password !== '') req.password = f.password
   const keys = lines(f.sshKeys)
   if (keys.length > 0) req.sshKeys = keys.join('\n')

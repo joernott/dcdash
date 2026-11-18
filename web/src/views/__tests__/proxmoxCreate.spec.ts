@@ -150,7 +150,7 @@ describe('CreateGuestView', () => {
       disk: 0,
       storage: 'local-lvm',
       sshKeys: 'ssh-ed25519 AAAAC3Nza user@host',
-      network: { bridge: 'vmbr0', ipv4: 'dhcp' },
+      networks: [{ bridge: 'vmbr0', ipv4: 'dhcp' }],
       start: true,
     })
     expect(w.text()).toContain('app1 (5000)')

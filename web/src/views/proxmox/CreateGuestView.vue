@@ -12,13 +12,16 @@ import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatBytes } from '@/proxmox/guests'
 import {
+  MAX_NETWORKS,
   newForm,
+  newNet,
   toRequest,
   validate,
   type CreateForm,
   type FormErrors,
   type Job,
   type Kind,
+  type NetForm,
   type ProvisioningOptions,
 } from '@/proxmox/provisioning'
 
@@ -32,19 +35,7 @@ type Step = (typeof STEPS)[number]
 const STEP_FIELDS: Record<Step, (keyof CreateForm)[]> = {
   source: ['kind', 'node', 'name', 'vmid', 'template', 'iso', 'osTemplate'],
   resources: ['cores', 'memory', 'disk', 'storage'],
-  network: [
-    'bridge',
-    'vlan',
-    'ipv4',
-    'gateway4',
-    'ipv6',
-    'gateway6',
-    'nameservers',
-    'searchDomain',
-    'user',
-    'password',
-    'sshKeys',
-  ],
+  network: ['networks', 'nameservers', 'searchDomain', 'user', 'password', 'sshKeys'],
   review: ['tags', 'description'],
 }
 
@@ -143,7 +134,24 @@ const vlanHint = computed(() =>
     : t('proxmox.create.vlanNone'),
 )
 
-function err(field: keyof CreateForm): string {
+function netErr(i: number, field: keyof NetForm): string {
+  const key = errors.value.networks?.[i]?.[field]
+  return key ? t(`proxmox.create.errors.${key}`) : ''
+}
+
+function addNetwork() {
+  const f = form.value
+  if (f && options.value && f.networks.length < MAX_NETWORKS) {
+    f.networks.push({ ...newNet(options.value, f.kind), ipv4Mode: 'none' })
+  }
+}
+
+function removeNetwork(i: number) {
+  form.value?.networks.splice(i, 1)
+  errors.value = {}
+}
+
+function err(field: Exclude<keyof CreateForm, 'networks'>): string {
   const key = errors.value[field]
   if (!key) return ''
   const o = options.value
@@ -168,7 +176,9 @@ async function loadOptions(node?: string) {
       // Keep the choices that the new node offers.
       const f = form.value
       if (!o.storages.some((s) => s.name === f.storage)) f.storage = o.defaults.storage
-      if (!o.bridges.some((b) => b.name === f.bridge)) f.bridge = o.bridges[0]?.name ?? ''
+      for (const n of f.networks) {
+        if (!o.bridges.some((b) => b.name === n.bridge)) n.bridge = o.bridges[0]?.name ?? ''
+      }
       if (!o.isos.some((v) => v.volid === f.iso)) f.iso = o.isos[0]?.volid ?? ''
       if (!o.containerTemplates.some((v) => v.volid === f.osTemplate))
         f.osTemplate = o.containerTemplates[0]?.volid ?? ''
@@ -191,8 +201,10 @@ function setKind(k: Kind) {
   f.kind = k
   if (k === 'clone') f.disk = ''
   else if (f.disk === '') f.disk = String(o.defaults.disk)
-  if (k === 'iso') f.ipv4Mode = 'none'
-  else if (f.ipv4Mode === 'none') f.ipv4Mode = 'dhcp'
+  for (const n of f.networks) {
+    if (k === 'iso') n.ipv4Mode = 'none'
+    else if (n.ipv4Mode === 'none') n.ipv4Mode = 'dhcp'
+  }
   errors.value = {}
 }
 
@@ -200,7 +212,13 @@ function check(fields: (keyof CreateForm)[]): boolean {
   if (!form.value || !options.value) return false
   const all = validate(form.value, options.value)
   const found: FormErrors = {}
-  for (const f of fields) if (all[f]) found[f] = all[f]
+  for (const f of fields) {
+    if (f === 'networks') {
+      if (all.networks) found.networks = all.networks
+    } else if (all[f]) {
+      found[f] = all[f]
+    }
+  }
   errors.value = found
   return Object.keys(found).length === 0
 }
@@ -307,11 +325,16 @@ const summary = computed(() => {
   rows.push([t('proxmox.create.memory'), `${f.memory} MiB`])
   rows.push([t('proxmox.create.disk'), f.disk ? `${f.disk} GiB` : t('proxmox.create.diskTemplate')])
   if (f.kind !== 'clone' || f.full) rows.push([t('proxmox.create.storage'), f.storage])
-  rows.push([t('proxmox.create.network'), f.vlan ? `${f.bridge}, VLAN ${f.vlan}` : f.bridge])
+  f.networks.forEach((n, i) => {
+    const parts = [n.vlan ? `${n.bridge}, VLAN ${n.vlan}` : n.bridge, n.mac]
+    if (f.kind !== 'iso') {
+      const ip4 = n.ipv4Mode === 'static' ? n.ipv4 : t(`proxmox.create.ipModes.${n.ipv4Mode}`)
+      const ip6 = n.ipv6Mode === 'static' ? n.ipv6 : t(`proxmox.create.ipModes.${n.ipv6Mode}`)
+      parts.push(`IPv4 ${ip4}`, `IPv6 ${ip6}`)
+    }
+    rows.push([t('proxmox.create.networkN', { n: i }), parts.join(' · ')])
+  })
   if (f.kind !== 'iso') {
-    const ip4 = f.ipv4Mode === 'static' ? f.ipv4 : t(`proxmox.create.ipModes.${f.ipv4Mode}`)
-    const ip6 = f.ipv6Mode === 'static' ? f.ipv6 : t(`proxmox.create.ipModes.${f.ipv6Mode}`)
-    rows.push(['IPv4', ip4], ['IPv6', ip6])
     if (f.user) rows.push([t('proxmox.create.user'), f.user])
     rows.push([
       t('proxmox.create.login'),
@@ -531,68 +554,101 @@ onBeforeUnmount(() => clearTimeout(timer))
 
         <!-- 3: network and login -->
         <template v-else-if="step === 'network'">
-          <BaseSelect
-            v-model="form.bridge"
-            :label="t('proxmox.create.bridge')"
-            :options="bridgeOptions"
-          />
-          <p v-if="err('bridge')" class="-mt-3 text-sm text-danger">{{ err('bridge') }}</p>
-          <BaseInput
-            v-model="form.vlan"
-            :label="t('proxmox.create.vlan')"
-            :hint="vlanHint"
-            :error="err('vlan')"
-            inputmode="numeric"
-            :disabled="options.vlans.length === 0"
-          />
           <p v-if="form.kind === 'iso'" class="text-sm text-fg-muted">
             {{ t('proxmox.create.isoNetworkHint') }}
           </p>
-          <template v-else>
-            <p v-if="form.kind === 'clone'" class="text-sm text-fg-muted">
-              {{ t('proxmox.create.cloudInitHint') }}
-            </p>
+          <p v-else-if="form.kind === 'clone'" class="text-sm text-fg-muted">
+            {{ t('proxmox.create.cloudInitHint') }}
+          </p>
+          <fieldset
+            v-for="(n, i) in form.networks"
+            :key="i"
+            class="flex flex-col gap-4 rounded-md border border-border p-4"
+            :data-testid="`network-${i}`"
+          >
+            <legend class="px-1 font-semibold">{{ t('proxmox.create.networkN', { n: i }) }}</legend>
             <div class="grid gap-4 sm:grid-cols-2">
-              <BaseSelect
-                v-model="form.ipv4Mode"
-                :label="t('proxmox.create.ipv4')"
-                :options="ipv4Options"
+              <div class="flex flex-col gap-1">
+                <BaseSelect
+                  v-model="n.bridge"
+                  :label="t('proxmox.create.bridge')"
+                  :options="bridgeOptions"
+                />
+                <p v-if="netErr(i, 'bridge')" class="text-sm text-danger">
+                  {{ netErr(i, 'bridge') }}
+                </p>
+              </div>
+              <BaseInput
+                v-model="n.vlan"
+                :label="t('proxmox.create.vlan')"
+                :hint="vlanHint"
+                :error="netErr(i, 'vlan')"
+                inputmode="numeric"
+                :disabled="options.vlans.length === 0"
+              />
+              <BaseInput
+                v-model="n.mac"
+                :label="t('proxmox.create.mac')"
+                :hint="t('proxmox.create.macHint')"
+                :error="netErr(i, 'mac')"
               />
               <div />
-              <template v-if="form.ipv4Mode === 'static'">
-                <BaseInput
-                  v-model="form.ipv4"
-                  :label="t('proxmox.create.address')"
-                  placeholder="192.0.2.10/24"
-                  :error="err('ipv4')"
+              <template v-if="form.kind !== 'iso'">
+                <BaseSelect
+                  v-model="n.ipv4Mode"
+                  :label="t('proxmox.create.ipv4')"
+                  :options="ipv4Options"
                 />
-                <BaseInput
-                  v-model="form.gateway4"
-                  :label="t('proxmox.create.gateway')"
-                  placeholder="192.0.2.1"
-                  :error="err('gateway4')"
+                <div />
+                <template v-if="n.ipv4Mode === 'static'">
+                  <BaseInput
+                    v-model="n.ipv4"
+                    :label="t('proxmox.create.address')"
+                    placeholder="192.0.2.10/24"
+                    :error="netErr(i, 'ipv4')"
+                  />
+                  <BaseInput
+                    v-model="n.gateway4"
+                    :label="t('proxmox.create.gateway')"
+                    placeholder="192.0.2.1"
+                    :error="netErr(i, 'gateway4')"
+                  />
+                </template>
+                <BaseSelect
+                  v-model="n.ipv6Mode"
+                  :label="t('proxmox.create.ipv6')"
+                  :options="ipv6Options"
                 />
+                <div />
+                <template v-if="n.ipv6Mode === 'static'">
+                  <BaseInput
+                    v-model="n.ipv6"
+                    :label="t('proxmox.create.address')"
+                    placeholder="2001:db8::10/64"
+                    :error="netErr(i, 'ipv6')"
+                  />
+                  <BaseInput
+                    v-model="n.gateway6"
+                    :label="t('proxmox.create.gateway')"
+                    placeholder="2001:db8::1"
+                    :error="netErr(i, 'gateway6')"
+                  />
+                </template>
               </template>
-              <BaseSelect
-                v-model="form.ipv6Mode"
-                :label="t('proxmox.create.ipv6')"
-                :options="ipv6Options"
-              />
-              <div />
-              <template v-if="form.ipv6Mode === 'static'">
-                <BaseInput
-                  v-model="form.ipv6"
-                  :label="t('proxmox.create.address')"
-                  placeholder="2001:db8::10/64"
-                  :error="err('ipv6')"
-                />
-                <BaseInput
-                  v-model="form.gateway6"
-                  :label="t('proxmox.create.gateway')"
-                  placeholder="2001:db8::1"
-                  :error="err('gateway6')"
-                />
-              </template>
+            </div>
+            <div v-if="form.networks.length > 1">
+              <BaseButton variant="secondary" size="sm" @click="removeNetwork(i)">
+                {{ t('proxmox.create.removeNetwork', { n: i }) }}
+              </BaseButton>
+            </div>
+          </fieldset>
+          <div v-if="form.networks.length < MAX_NETWORKS">
+            <BaseButton variant="secondary" @click="addNetwork">
+              {{ t('proxmox.create.addNetwork') }}
+            </BaseButton>
+          </div>
+          <template v-if="form.kind !== 'iso'">
+            <div class="grid gap-4 sm:grid-cols-2">
               <BaseInput
                 v-model="form.nameservers"
                 :label="t('proxmox.create.nameservers')"

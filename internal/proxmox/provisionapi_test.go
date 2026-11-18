@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -236,7 +237,7 @@ func TestCreateClone(t *testing.T) {
 	}
 	conf := e.lastCall(t, http.MethodPut, "/qemu/5001/config")
 	keys, _ := url.QueryUnescape(conf.Get("sshkeys"))
-	if conf.Get("net0") != "virtio,bridge=vmbr0,tag=100" || conf.Get("ciuser") != "ops" || conf.Get("cipassword") != "s3cret-pw" ||
+	if noMAC(conf.Get("net0")) != "virtio,bridge=vmbr0,tag=100" || conf.Get("ciuser") != "ops" || conf.Get("cipassword") != "s3cret-pw" ||
 		strings.TrimSpace(keys) != sshKey || strings.Contains(conf.Get("sshkeys"), "+") && !strings.Contains(conf.Get("sshkeys"), "%2B") ||
 		conf.Get("ipconfig0") != "ip=10.0.0.5/24,gw=10.0.0.1,ip6=auto" || conf.Get("nameserver") != "10.0.0.53" ||
 		conf.Get("searchdomain") != "example.internal" || conf.Get("cores") != "2" || conf.Get("memory") != "2048" ||
@@ -282,7 +283,7 @@ func TestCreateCloneAddsCloudInitDrive(t *testing.T) {
 		t.Fatalf("job: %+v", j)
 	}
 	conf := e.lastCall(t, http.MethodPut, "/config")
-	if conf.Get("ide0") != "ceph:cloudinit" || conf.Get("net0") != "e1000,bridge=vmbr0,tag=100" || conf.Get("ipconfig0") != "ip=dhcp" {
+	if conf.Get("ide0") != "ceph:cloudinit" || noMAC(conf.Get("net0")) != "e1000,bridge=vmbr0,tag=100" || conf.Get("ipconfig0") != "ip=dhcp" {
 		t.Errorf("config: %v", conf)
 	}
 }
@@ -299,7 +300,7 @@ func TestCreateISOAndContainer(t *testing.T) {
 	for k, v := range map[string]string{"vmid": "5500", "scsi0": "ceph:64,iothread=1", "ide2": "local:iso/virtio-win.iso,media=cdrom",
 		"ostype": "win11", "bios": "ovmf", "efidisk0": "ceph:1,efitype=4m,pre-enrolled-keys=1", "tpmstate0": "ceph:1,version=v2.0",
 		"net0": "virtio,bridge=vmbr0", "pool": "dev", "description": "test", "memory": "8192"} {
-		if f.Get(k) != v {
+		if noMAC(f.Get(k)) != v {
 			t.Errorf("%s = %q, want %q", k, f.Get(k), v)
 		}
 	}
@@ -312,7 +313,7 @@ func TestCreateISOAndContainer(t *testing.T) {
 	f = e.lastCall(t, http.MethodPost, "/nodes/pve2/lxc")
 	for k, v := range map[string]string{"hostname": "ct1", "rootfs": "local-lvm:8", "unprivileged": "1", "password": "rootpw1",
 		"ssh-public-keys": sshKey + "\n", "net0": "name=eth0,bridge=vmbr0,ip=dhcp,ip6=2001:db8::5/64,gw6=2001:db8::1"} {
-		if f.Get(k) != v {
+		if noMAC(f.Get(k)) != v {
 			t.Errorf("%s = %q, want %q", k, f.Get(k), v)
 		}
 	}
@@ -332,10 +333,10 @@ func TestCreateValidation(t *testing.T) {
 	}{
 		"cores":         {"creator", func(r *CreateRequest) { r.Cores = 9 }, 400, "invalid_request: cores"},
 		"memory":        {"creator", func(r *CreateRequest) { r.Memory = 20000 }, 400, "invalid_request: memory"},
-		"bridge":        {"creator", func(r *CreateRequest) { r.Network.Bridge = "vmbr1" }, 400, "invalid_request: network.bridge"},
-		"vlan":          {"creator", func(r *CreateRequest) { r.Network.VLAN = 300 }, 400, "invalid_request: network.vlan"},
-		"ipv4":          {"creator", func(r *CreateRequest) { r.Network.IPv4 = "10.0.0.5" }, 400, "invalid_request: network.ipv4"},
-		"gateway":       {"creator", func(r *CreateRequest) { r.Network.IPv4 = "dhcp" }, 400, "invalid_request: network.gateway4"},
+		"bridge":        {"creator", func(r *CreateRequest) { r.Network.Bridge = "vmbr1" }, 400, "invalid_request: networks[0].bridge"},
+		"vlan":          {"creator", func(r *CreateRequest) { r.Network.VLAN = 300 }, 400, "invalid_request: networks[0].vlan"},
+		"ipv4":          {"creator", func(r *CreateRequest) { r.Network.IPv4 = "10.0.0.5" }, 400, "invalid_request: networks[0].ipv4"},
+		"gateway":       {"creator", func(r *CreateRequest) { r.Network.IPv4 = "dhcp" }, 400, "invalid_request: networks[0].gateway4"},
 		"name":          {"creator", func(r *CreateRequest) { r.Name = "bad name;" }, 400, "invalid_request: name"},
 		"tag":           {"creator", func(r *CreateRequest) { r.Tags = []string{"A B"} }, 400, "invalid_request: tags"},
 		"ssh key":       {"creator", func(r *CreateRequest) { r.SSHKeys = "not a key" }, 400, "invalid_request: sshKeys"},
@@ -488,5 +489,74 @@ func TestDeleteUsesConfiguredName(t *testing.T) {
 	}
 	if st, msg := e.do(t, "creator", http.MethodDelete, "/lab/guests/lxc/"+strconv.Itoa(j.VMID), DeleteRequest{Confirm: "fresh"}, nil); st != http.StatusAccepted {
 		t.Errorf("delete: %d %s", st, msg)
+	}
+}
+
+var (
+	genMAC = regexp.MustCompile(`=BC:24:11(:[0-9A-F]{2}){3}`)
+	genHW  = regexp.MustCompile(`hwaddr=BC:24:11(:[0-9A-F]{2}){3},`)
+)
+
+// noMAC removes a generated MAC address from a network device value.
+func noMAC(v string) string { return genMAC.ReplaceAllString(genHW.ReplaceAllString(v, ""), "") }
+
+// Several network devices, each with its own settings; MAC addresses are
+// generated unless given.
+func TestCreateSeveralNetworks(t *testing.T) {
+	e := newProvEnv(t)
+	req := cloneRequest()
+	req.Network = CreateNetwork{}
+	req.Networks = []CreateNetwork{
+		{Bridge: "vmbr0", VLAN: 100, IPv4: "10.0.0.5/24", Gateway4: "10.0.0.1", Nameservers: []string{"10.0.0.53"}},
+		{Bridge: "vmbr0", VLAN: 150, IPv6: "auto", MAC: "bc:24:11:aa:bb:cc"},
+	}
+	if j := e.create(t, "creator", req); j.State != JobDone {
+		t.Fatalf("job: %+v", j)
+	}
+	conf := e.lastCall(t, http.MethodPut, "/qemu/5000/config")
+	if !regexp.MustCompile(`^virtio=BC:24:11(:[0-9A-F]{2}){3},bridge=vmbr0,tag=100$`).MatchString(conf.Get("net0")) ||
+		conf.Get("net1") != "virtio=BC:24:11:AA:BB:CC,bridge=vmbr0,tag=150" ||
+		conf.Get("ipconfig0") != "ip=10.0.0.5/24,gw=10.0.0.1" || conf.Get("ipconfig1") != "ip6=auto" {
+		t.Errorf("config: %v", conf)
+	}
+	l := e.entries(t, "proxmox.guest.create")
+	if nets, _ := l[0].Details["networks"].([]any); len(nets) != 2 {
+		t.Errorf("audit networks: %+v", l[0].Details)
+	}
+
+	ct := CreateRequest{Type: TypeLXC, Node: "pve2", Name: "ct2", OSTemplate: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst",
+		Cores: 1, Memory: 512, Disk: 4, Storage: "local-lvm", Password: "rootpw1",
+		Networks: []CreateNetwork{{Bridge: "vmbr0", IPv4: "dhcp"}, {Bridge: "vmbr0", VLAN: 120, IPv4: "192.0.2.7/24", MAC: "BC:24:11:00:00:77"}}}
+	if j := e.create(t, "creator", ct); j.State != JobDone {
+		t.Fatalf("container: %+v", j)
+	}
+	f := e.lastCall(t, http.MethodPost, "/nodes/pve2/lxc")
+	if f.Get("net1") != "name=eth1,hwaddr=BC:24:11:00:00:77,bridge=vmbr0,tag=120,ip=192.0.2.7/24" || noMAC(f.Get("net0")) != "name=eth0,bridge=vmbr0,ip=dhcp" {
+		t.Errorf("container networks: %v", f)
+	}
+
+	nets := func(ns ...CreateNetwork) CreateRequest {
+		r := cloneRequest()
+		r.Network, r.Networks = CreateNetwork{}, ns
+		return r
+	}
+	nine := make([]CreateNetwork, 9)
+	for i := range nine {
+		nine[i] = CreateNetwork{Bridge: "vmbr0"}
+	}
+	for name, tc := range map[string]struct {
+		req  CreateRequest
+		want string
+	}{
+		"too many":      {nets(nine...), "at most 8"},
+		"second bridge": {nets(CreateNetwork{Bridge: "vmbr0"}, CreateNetwork{Bridge: "vmbr9"}), "networks[1].bridge"},
+		"nameserver":    {nets(CreateNetwork{Bridge: "vmbr0"}, CreateNetwork{Bridge: "vmbr0", Nameservers: []string{"10.0.0.53"}}), "only on the first"},
+		"multicast mac": {nets(CreateNetwork{Bridge: "vmbr0", MAC: "01:00:5E:00:00:01"}), "networks[0].mac"},
+		"duplicate mac": {nets(CreateNetwork{Bridge: "vmbr0", MAC: "BC:24:11:00:00:01"}, CreateNetwork{Bridge: "vmbr0", MAC: "bc:24:11:00:00:01"}), "used twice"},
+		"second ip":     {nets(CreateNetwork{Bridge: "vmbr0"}, CreateNetwork{Bridge: "vmbr0", IPv4: "10.0.0.300/24"}), "networks[1].ipv4"},
+	} {
+		if st, msg := e.do(t, "creator", http.MethodPost, "/lab/guests", tc.req, nil); st != http.StatusBadRequest || !strings.Contains(msg, tc.want) {
+			t.Errorf("%s: %d %q, want %q", name, st, msg, tc.want)
+		}
 	}
 }

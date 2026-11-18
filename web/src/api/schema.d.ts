@@ -1465,6 +1465,22 @@ export interface components {
       size: number
       format: string
     }
+    ProxmoxCreateNetwork: {
+      bridge: string
+      vlan?: number
+      /** @description "dhcp" or an address with prefix length (containers and cloud-init). */
+      ipv4?: string
+      gateway4?: string
+      /** @description "auto", "dhcp" or an address with prefix length. */
+      ipv6?: string
+      gateway6?: string
+      /** @description Only on the first network device. */
+      nameservers?: string[]
+      /** @description Only on the first network device. */
+      searchDomain?: string
+      /** @description MAC address; empty generates one (prefix BC:24:11). */
+      mac?: string
+    }
     ProxmoxCreateRequest: {
       /** @enum {string} */
       type: 'qemu' | 'lxc'
@@ -1505,18 +1521,10 @@ export interface components {
       disk: number
       /** @description Storage of the disk; not for linked clones. */
       storage?: string
-      network: {
-        bridge: string
-        vlan?: number
-        /** @description "dhcp" or an address with prefix length (containers and cloud-init). */
-        ipv4?: string
-        gateway4?: string
-        /** @description "auto", "dhcp" or an address with prefix length. */
-        ipv6?: string
-        gateway6?: string
-        nameservers?: string[]
-        searchDomain?: string
-      }
+      /** @description The network devices net0, net1, ...; replaces network. */
+      networks?: components['schemas']['ProxmoxCreateNetwork'][]
+      /** @description The only network device, for requests without networks (API of v0.1.1). */
+      network?: components['schemas']['ProxmoxCreateNetwork']
       /** @description Cloud-init user of a clone. */
       user?: string
       /** @description Cloud-init password of a clone */

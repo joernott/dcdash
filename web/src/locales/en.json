@@ -421,8 +421,15 @@
         "password": "5 to 128 characters.",
         "login": "Set a password or SSH keys for root.",
         "sshKeys": "One public key per line in OpenSSH format.",
-        "tags": "Lower-case letters, digits, '-', '_', '+' and '.'."
-      }
+        "tags": "Lower-case letters, digits, '-', '_', '+' and '.'.",
+        "mac": "A unicast MAC address like BC:24:11:12:34:56.",
+        "macTwice": "This MAC address is used twice."
+      },
+      "networkN": "Network device net{n}",
+      "mac": "MAC address",
+      "macHint": "Generated; change it only if the guest needs a specific address.",
+      "addNetwork": "Add network device",
+      "removeNetwork": "Remove net{n}"
     },
     "delete": {
       "action": "Delete",

@@ -421,8 +421,15 @@
         "password": "5 bis 128 Zeichen.",
         "login": "Setzen Sie ein Passwort oder SSH-Schlüssel für root.",
         "sshKeys": "Ein öffentlicher Schlüssel pro Zeile im OpenSSH-Format.",
-        "tags": "Kleinbuchstaben, Ziffern, '-', '_', '+' und '.'."
-      }
+        "tags": "Kleinbuchstaben, Ziffern, '-', '_', '+' und '.'.",
+        "mac": "Eine Unicast-MAC-Adresse wie BC:24:11:12:34:56.",
+        "macTwice": "Diese MAC-Adresse wird doppelt verwendet."
+      },
+      "networkN": "Netzwerkgerät net{n}",
+      "mac": "MAC-Adresse",
+      "macHint": "Erzeugt; ändern Sie sie nur, wenn der Gast eine bestimmte Adresse braucht.",
+      "addNetwork": "Netzwerkgerät hinzufügen",
+      "removeNetwork": "net{n} entfernen"
     },
     "delete": {
       "action": "Löschen",

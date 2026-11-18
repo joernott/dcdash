@@ -2196,9 +2196,26 @@ components:
         size: { type: integer, format: int64 }
         format: { type: string }
 
+    ProxmoxCreateNetwork:
+      type: object
+      required: [bridge]
+      properties:
+        bridge: { type: string }
+        vlan: { type: integer }
+        ipv4: { type: string, description: '"dhcp" or an address with prefix length (containers and cloud-init).' }
+        gateway4: { type: string }
+        ipv6: { type: string, description: '"auto", "dhcp" or an address with prefix length.' }
+        gateway6: { type: string }
+        nameservers:
+          type: array
+          maxItems: 3
+          items: { type: string }
+          description: Only on the first network device.
+        searchDomain: { type: string, description: Only on the first network device. }
+        mac: { type: string, description: "MAC address; empty generates one (prefix BC:24:11)." }
     ProxmoxCreateRequest:
       type: object
-      required: [type, name, cores, memory, disk, network]
+      required: [type, name, cores, memory, disk]
       properties:
         type: { type: string, enum: [qemu, lxc] }
         node: { type: string, description: Node of a new VM from an ISO image or of a container; clones are created on the template's node. }
@@ -2214,21 +2231,14 @@ components:
         memory: { type: integer, format: int64, description: MiB. }
         disk: { type: integer, format: int64, description: "GiB; for clones 0 keeps the template's size, a larger value grows the boot disk." }
         storage: { type: string, description: Storage of the disk; not for linked clones. }
+        networks:
+          type: array
+          maxItems: 8
+          description: The network devices net0, net1, ...; replaces network.
+          items: { $ref: "#/components/schemas/ProxmoxCreateNetwork" }
         network:
-          type: object
-          required: [bridge]
-          properties:
-            bridge: { type: string }
-            vlan: { type: integer }
-            ipv4: { type: string, description: '"dhcp" or an address with prefix length (containers and cloud-init).' }
-            gateway4: { type: string }
-            ipv6: { type: string, description: '"auto", "dhcp" or an address with prefix length.' }
-            gateway6: { type: string }
-            nameservers:
-              type: array
-              maxItems: 3
-              items: { type: string }
-            searchDomain: { type: string }
+          $ref: "#/components/schemas/ProxmoxCreateNetwork"
+          description: The only network device, for requests without networks (API of v0.1.1).
         user: { type: string, description: Cloud-init user of a clone. }
         password: { type: string, writeOnly: true, description: Cloud-init password of a clone, or the root password of a container. }
         sshKeys: { type: string, description: Public SSH keys, one per line. }
