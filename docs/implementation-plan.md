@@ -372,6 +372,8 @@ These apply to every task:
 - [x] **11.11** VM network devices: add, edit and remove, limited to the allowed bridges and
   VLANs
 - [ ] **11.12** Tests (mocked API, manual test against a real cluster) and documentation
+  - [x] **11.12.1** Hardware changes against a real cluster; fix: a stale digest is reported
+    by Proxmox as "checksum mismatch"
 - [ ] **11.13** Creation wizard: several network devices on the "Network and login" step (VMs
   and containers), each limited to the allowed bridges and VLANs, with its own IP
   configuration

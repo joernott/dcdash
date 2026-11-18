@@ -21,7 +21,7 @@ against stopped test VMs on a real cluster (task 11.12).
 | Purpose | Call | Notes |
 |---|---|---|
 | Configuration with pending changes | `GET /nodes/{node}/qemu/{vmid}/pending` | A list of `{key, value, pending, delete}`: `value` is the active value, `pending` a change waiting for a restart, `delete: 1` a pending removal (`2` if forced). Includes `digest`. |
-| Change options, add or change disks and network devices | `POST /nodes/{node}/qemu/{vmid}/config` | Like `PUT`, but returns a task, which matters for disk allocation. `delete=key1,key2` removes keys, `revert=key1,key2` drops pending changes, `digest` rejects the change if the configuration changed in the meantime. |
+| Change options, add or change disks and network devices | `POST /nodes/{node}/qemu/{vmid}/config` | Like `PUT`, but returns a task, which matters for disk allocation. `delete=key1,key2` removes keys, `revert=key1,key2` drops pending changes, `digest` rejects the change if the configuration changed in the meantime (synchronously, HTTP 500 "checksum mismatch (file change by other user?)"). |
 | Grow a disk | `PUT /nodes/{node}/qemu/{vmid}/resize` | `disk=scsi1`, `size=+8G` or an absolute size; it can't shrink. Works on running VMs. Returns a task. |
 
 Disks and network devices are configuration keys:

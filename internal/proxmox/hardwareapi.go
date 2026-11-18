@@ -173,7 +173,7 @@ func writeConfigError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.As(err, &pe):
 		msg = pe.Message
 	}
-	if strings.Contains(msg, "modified configuration") || strings.Contains(msg, "digest") {
+	if strings.Contains(msg, "checksum mismatch") || strings.Contains(msg, "modified configuration") || strings.Contains(msg, "digest") {
 		httpx.WriteError(w, http.StatusConflict, "config_changed", "the configuration was changed in the meantime; reload it and try again")
 		return
 	}

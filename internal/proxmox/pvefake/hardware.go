@@ -144,7 +144,8 @@ func (s *Server) configure(w http.ResponseWriter, r *http.Request, g *Guest, p, 
 	defer s.mu.Unlock()
 	id := strconv.Itoa(g.VMID)
 	if d := f.Get("digest"); d != "" && d != digest(g) {
-		writeData(w, s.newTask(g.Node, "qmconfig", id, user, "detected modified configuration - file changed by other user? Try again."))
+		// Proxmox checks the digest before it starts the task.
+		fail(w, http.StatusInternalServerError, "checksum mismatch (file change by other user?)")
 		return
 	}
 	exit := s.taskExit("qmconfig")

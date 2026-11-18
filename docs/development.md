@@ -154,6 +154,28 @@ separation and `PVEVMAdmin`, `PVEDatastoreUser` and `PVESDNUser` (see
 | Delete with purge, typing the name, right after the creation | passed after a fix: `/cluster/resources` lags behind with the name, dcdash now reads it from the configuration |
 | SSH keys with `+` and `/` (encoding of `sshkeys`) | passed |
 
+### Changing VMs
+
+`TestProxmoxHardware` in `test/integration/proxmox_hardware_test.go` creates an empty VM with
+the Proxmox API in the same ID range, changes it through dcdash's API and deletes it. It needs
+`DCDASH_IT_PVE_PROVISION_VMIDS`, `_STORAGE` and `_BRIDGE` (optionally `_VLAN`), no template:
+
+```sh
+DCDASH_IT_PVE_PROVISION_VMIDS=1001-1099 DCDASH_IT_PVE_PROVISION_STORAGE=vm_data \
+DCDASH_IT_PVE_PROVISION_BRIDGE=kunden0 DCDASH_IT_PVE_PROVISION_VLAN=44 \
+go test -tags integration -run TestProxmoxHardware -v ./test/integration/
+```
+
+Last manual test: 2026-11-18, Proxmox VE 9, same token. The VM is never started, so pending
+changes of running VMs are only covered by the fake API.
+
+| Check | Result |
+|---|---|
+| Change and remove options (cores, memory, agent, boot order, description) | passed |
+| A change with an outdated digest is refused | passed after a fix: Proxmox answers synchronously with "checksum mismatch (file change by other user?)", which dcdash now reports as `config_changed` |
+| Disk: create, grow from 1 to 2 GiB, detach, attach to another bus, delete | passed |
+| Network device: add with VLAN and firewall, change model and link state (the MAC stays), remove | passed |
+
 ## Configuration
 
 See `configs/config.example.yaml` for all options. Check a configuration with:

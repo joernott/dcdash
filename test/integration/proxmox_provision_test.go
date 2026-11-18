@@ -74,6 +74,37 @@ func (a provAPI) call(method, path string, body, out any) int {
 	return res.StatusCode
 }
 
+// startProvAPI serves dcdash's Proxmox API for the test cluster with the
+// provisioning settings prov, for a user with admin on everything.
+func startProvAPI(t *testing.T, prov config.ProxmoxProvisioning) provAPI {
+	t.Helper()
+	cfg := config.ProxmoxCluster{
+		Name: "it", Endpoints: []config.ProxmoxEndpoint{{URL: requireEnv(t, "DCDASH_IT_PVE_URL"),
+			Fingerprint: requireEnv(t, "DCDASH_IT_PVE_FINGERPRINT")}},
+		TokenID: requireEnv(t, "DCDASH_IT_PVE_TOKEN_ID"), TokenSecret: config.NewSecret(requireEnv(t, "DCDASH_IT_PVE_TOKEN_SECRET")),
+		Timeout: config.Duration(30 * time.Second), Provisioning: prov,
+	}
+	pc, err := proxmox.New(cfg, zerolog.New(zerolog.NewTestWriter(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(context.Background(), t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	svc := proxmox.NewService([]*proxmox.Cluster{pc}, audit.New(st.DB(), zerolog.Nop()), nil, zerolog.Nop())
+	mux := http.NewServeMux()
+	svc.Register(mux)
+	perms, _ := rbac.ParseSet([]string{"proxmox:it:*:admin"})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := session.WithSession(r.Context(), &session.Session{ID: "it", Username: "it", Source: "ldap", Stage: session.StageAuthenticated})
+		mux.ServeHTTP(w, r.WithContext(auth.WithSubject(ctx, &rbac.Subject{Username: "it", Permissions: perms})))
+	}))
+	t.Cleanup(srv.Close)
+	return provAPI{t: t, srv: srv}
+}
+
 func TestProxmoxProvisioning(t *testing.T) {
 	vmids := os.Getenv("DCDASH_IT_PVE_PROVISION_VMIDS")
 	if vmids == "" {
@@ -103,31 +134,7 @@ func TestProxmoxProvisioning(t *testing.T) {
 	if vlan != 0 {
 		prov.VLANs = config.IDRanges{{Min: vlan, Max: vlan}}
 	}
-	cfg := config.ProxmoxCluster{
-		Name: "it", Endpoints: []config.ProxmoxEndpoint{{URL: requireEnv(t, "DCDASH_IT_PVE_URL"),
-			Fingerprint: requireEnv(t, "DCDASH_IT_PVE_FINGERPRINT")}},
-		TokenID: requireEnv(t, "DCDASH_IT_PVE_TOKEN_ID"), TokenSecret: config.NewSecret(requireEnv(t, "DCDASH_IT_PVE_TOKEN_SECRET")),
-		Timeout: config.Duration(30 * time.Second), Provisioning: prov,
-	}
-	pc, err := proxmox.New(cfg, zerolog.New(zerolog.NewTestWriter(t)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	st, err := store.Open(context.Background(), t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = st.Close() })
-	svc := proxmox.NewService([]*proxmox.Cluster{pc}, audit.New(st.DB(), zerolog.Nop()), nil, zerolog.Nop())
-	mux := http.NewServeMux()
-	svc.Register(mux)
-	perms, _ := rbac.ParseSet([]string{"proxmox:it:*:admin"})
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := session.WithSession(r.Context(), &session.Session{ID: "it", Username: "it", Source: "ldap", Stage: session.StageAuthenticated})
-		mux.ServeHTTP(w, r.WithContext(auth.WithSubject(ctx, &rbac.Subject{Username: "it", Permissions: perms})))
-	}))
-	t.Cleanup(srv.Close)
-	api := provAPI{t: t, srv: srv}
+	api := startProvAPI(t, prov)
 
 	// Whatever happens, guests created in the range by this test are deleted.
 	var created []proxmox.Job
