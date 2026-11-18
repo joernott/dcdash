@@ -67,6 +67,8 @@ cluster, choose it at the top.
   a virtual machine from a template, a virtual machine from an ISO image, or a container. You
   choose the name, the resources, one or more network devices and, for templates and containers, the login
   (password or SSH keys) and IP settings. Leave the ID empty to get the next free one. After
+  If you may add DHCP reservations or DNS records, two more steps add them for the new
+  guest.
   "Create", the page shows the progress of each step; it continues if you close the page.
   If a step fails, check the guest and delete it if necessary.
 - **Delete:** on the guest's page, for stopped guests. You type the name to confirm. The

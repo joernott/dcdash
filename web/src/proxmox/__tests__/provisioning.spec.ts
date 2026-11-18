@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from 'vitest'
 
-import { inRanges, isIPv4, isIPv6, newForm, newNet, toRequest, validate } from '../provisioning'
+import {
+  inRanges,
+  isIPv4,
+  isIPv6,
+  newForm,
+  newNet,
+  ptrName,
+  toRequest,
+  validate,
+} from '../provisioning'
 import { options } from './fixtures'
 
 const KEY = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample+/= user@host'
@@ -169,5 +178,79 @@ describe('provisioning helpers', () => {
     f.networks[1]!.mac = f.networks[0]!.mac.toLowerCase()
     f.networks.push({ ...newNet(options, 'lxc'), mac: '01:00:5E:00:00:01' })
     expect(validate(f, options).networks).toEqual([{}, { mac: 'macTwice' }, { mac: 'mac' }])
+  })
+})
+
+describe('reservations and records', () => {
+  it('validates and maps them', () => {
+    const f = { ...newForm(options, 'lxc'), name: 'ct1', password: 'rootpw' }
+    f.reservations.push({
+      network: 0,
+      server: 'kea4',
+      subnetId: '1',
+      ipAddress: '192.0.2.5',
+      hostname: 'ct1',
+    })
+    f.records.push({
+      provider: 'cf',
+      zone: 'example.org',
+      name: 'ct1',
+      type: 'A',
+      content: '192.0.2.5',
+      ttl: '',
+    })
+    expect(validate(f, options)).toEqual({})
+    const req = toRequest(f)
+    expect(req.reservations).toEqual([
+      { network: 0, server: 'kea4', subnetId: 1, ipAddress: '192.0.2.5', hostname: 'ct1' },
+    ])
+    expect(req.records).toEqual([
+      {
+        provider: 'cf',
+        zone: 'example.org',
+        name: 'ct1',
+        type: 'A',
+        content: '192.0.2.5',
+        ttl: undefined,
+      },
+    ])
+
+    f.reservations.push({
+      network: 2,
+      server: '',
+      subnetId: '',
+      ipAddress: 'x',
+      hostname: 'bad name',
+    })
+    f.records.push({
+      provider: 'cf',
+      zone: 'example.org',
+      name: 'a b',
+      type: 'AAAA',
+      content: '192.0.2.5',
+      ttl: 'x',
+    })
+    const e = validate(f, options)
+    expect(e.reservations).toEqual([
+      {},
+      {
+        network: 'required',
+        server: 'required',
+        subnetId: 'required',
+        ipAddress: 'ipAddress',
+        hostname: 'name',
+      },
+    ])
+    expect(e.records).toEqual([{}, { name: 'name', content: 'contentAAAA', ttl: 'ttl' }])
+  })
+
+  it('finds the PTR name of an address in a reverse zone', () => {
+    expect(ptrName('192.0.2.50', '2.0.192.in-addr.arpa')).toBe('50')
+    expect(ptrName('192.0.2.50', '192.in-addr.arpa.')).toBe('50.2.0')
+    expect(ptrName('192.0.2.50', '3.0.192.in-addr.arpa')).toBeUndefined()
+    expect(ptrName('2001:db8::1', '8.b.d.0.1.0.0.2.ip6.arpa')).toBe(
+      '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0',
+    )
+    expect(ptrName('not an address', 'example.org')).toBeUndefined()
   })
 })

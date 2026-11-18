@@ -10,11 +10,15 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import type { DhcpServer, DhcpSubnet } from '@/dhcp/dhcp'
 import { formatBytes } from '@/proxmox/guests'
 import {
+  MAX_ENTRIES,
   MAX_NETWORKS,
   newForm,
   newNet,
+  ptrName,
+  staticAddress,
   toRequest,
   validate,
   type CreateForm,
@@ -23,25 +27,32 @@ import {
   type Kind,
   type NetForm,
   type ProvisioningOptions,
+  type RecForm,
+  type RecordType,
+  type ResForm,
 } from '@/proxmox/provisioning'
+import { useSessionStore } from '@/stores/session'
 
 /** Poll interval of a running job. */
 const POLL_MS = 1000
 
-const STEPS = ['source', 'resources', 'network', 'review'] as const
-type Step = (typeof STEPS)[number]
+const ALL_STEPS = ['source', 'resources', 'network', 'dhcp', 'dns', 'review'] as const
+type Step = (typeof ALL_STEPS)[number]
 
 /** The fields of each step, for validating one step at a time. */
 const STEP_FIELDS: Record<Step, (keyof CreateForm)[]> = {
   source: ['kind', 'node', 'name', 'vmid', 'template', 'iso', 'osTemplate'],
   resources: ['cores', 'memory', 'disk', 'storage'],
   network: ['networks', 'nameservers', 'searchDomain', 'user', 'password', 'sshKeys'],
+  dhcp: ['reservations'],
+  dns: ['records'],
   review: ['tags', 'description'],
 }
 
 const i18n = useI18n()
 const { t, locale } = i18n
 const route = useRoute()
+const session = useSessionStore()
 const id = useId()
 
 const cluster = computed(() => String(route.params.cluster))
@@ -55,7 +66,21 @@ const busy = ref(false)
 const job = ref<Job | null>(null)
 let timer: ReturnType<typeof setTimeout> | undefined
 
-const stepIndex = computed(() => STEPS.indexOf(step.value))
+/** DHCP servers and DNS providers the user may add entries to (optional steps). */
+const dhcpServers = ref<DhcpServer[]>([])
+const dhcpSubnets = ref<Record<string, DhcpSubnet[]>>({})
+const dnsProviders = ref<string[]>([])
+const dnsZones = ref<Record<string, string[]>>({})
+
+/** The steps of the wizard; DHCP and DNS only if the user can use them. */
+const STEPS = computed<Step[]>(() =>
+  ALL_STEPS.filter(
+    (s) =>
+      (s !== 'dhcp' || dhcpServers.value.length > 0) &&
+      (s !== 'dns' || dnsProviders.value.length > 0),
+  ),
+)
+const stepIndex = computed(() => STEPS.value.indexOf(step.value))
 
 const kinds = computed<Kind[]>(() => {
   const o = options.value
@@ -213,8 +238,8 @@ function check(fields: (keyof CreateForm)[]): boolean {
   const all = validate(form.value, options.value)
   const found: FormErrors = {}
   for (const f of fields) {
-    if (f === 'networks') {
-      if (all.networks) found.networks = all.networks
+    if (f === 'networks' || f === 'reservations' || f === 'records') {
+      if (all[f]) Object.assign(found, { [f]: all[f] })
     } else if (all[f]) {
       found[f] = all[f]
     }
@@ -223,14 +248,139 @@ function check(fields: (keyof CreateForm)[]): boolean {
   return Object.keys(found).length === 0
 }
 
+/** Loads the DHCP servers and DNS providers the user may write to. */
+async function loadIntegrations() {
+  if (session.canAny('dhcp', 'write')) {
+    try {
+      const { servers } = await unwrap(api.GET('/api/v1/dhcp/servers'))
+      const usable = servers.filter(
+        (s) =>
+          s.status === 'ok' &&
+          (s.capabilities.reservationWrite || (s.partners?.length ?? 0) > 0) &&
+          session.canAny('dhcp', 'write', s.name),
+      )
+      for (const s of usable) {
+        const { subnets } = await unwrap(
+          api.GET('/api/v1/dhcp/servers/{server}/subnets', {
+            params: { path: { server: s.name } },
+          }),
+        )
+        dhcpSubnets.value[s.name] = subnets.filter((sn) =>
+          session.can(`dhcp:${s.name}:${sn.prefix}:write`),
+        )
+      }
+      dhcpServers.value = usable.filter((s) => (dhcpSubnets.value[s.name] ?? []).length > 0)
+    } catch {
+      // Without DHCP data the step is not shown.
+    }
+  }
+  if (session.canAny('dns', 'write')) {
+    try {
+      const { providers } = await unwrap(api.GET('/api/v1/dns/providers'))
+      for (const p of providers.filter((x) => session.canAny('dns', 'write', x.name))) {
+        const { zones } = await unwrap(
+          api.GET('/api/v1/dns/providers/{provider}/zones', {
+            params: { path: { provider: p.name } },
+          }),
+        )
+        const names = zones
+          .map((z) => z.name)
+          .filter((z) => session.can(`dns:${p.name}:${z}:write`))
+        if (names.length > 0) {
+          dnsZones.value[p.name] = names
+          dnsProviders.value.push(p.name)
+        }
+      }
+    } catch {
+      // Without DNS data the step is not shown.
+    }
+  }
+}
+
+function resErr(i: number, field: keyof ResForm): string {
+  const key = errors.value.reservations?.[i]?.[field]
+  return key ? t(`proxmox.create.errors.${key}`) : ''
+}
+
+function recErr(i: number, field: keyof RecForm): string {
+  const key = errors.value.records?.[i]?.[field]
+  return key ? t(`proxmox.create.errors.${key}`) : ''
+}
+
+const entryCount = computed(() =>
+  form.value ? form.value.reservations.length + form.value.records.length : 0,
+)
+
+/** The family ("v4" or "v6") of a DHCP server. */
+function family(server: string): string {
+  return dhcpServers.value.find((s) => s.name === server)?.family ?? 'v4'
+}
+
+/** Adds a reservation for the first device on a server of the family, with its static address. */
+function addReservation(fam: 'v4' | 'v6') {
+  const f = form.value
+  const server = dhcpServers.value.find((s) => s.family === fam)
+  if (!f || !server || entryCount.value >= MAX_ENTRIES) return
+  const net = f.networks[0]!
+  const subnets = dhcpSubnets.value[server.name] ?? []
+  const ip = staticAddress(net, fam === 'v6')
+  f.reservations.push({
+    network: 0,
+    server: server.name,
+    subnetId: String(subnets[0]?.id ?? ''),
+    ipAddress: ip,
+    hostname: f.name.trim(),
+  })
+}
+
+/** The addresses known so far: reservations and static addresses. */
+function knownAddress(v6: boolean): string {
+  const f = form.value
+  if (!f) return ''
+  const r = f.reservations.find((x) => x.ipAddress && x.ipAddress.includes(':') === v6)
+  return r?.ipAddress ?? f.networks.map((n) => staticAddress(n, v6)).find(Boolean) ?? ''
+}
+
+/** Adds an A/AAAA record for the guest's name, or the PTR record for its address. */
+function addRecord(type: RecordType) {
+  const f = form.value
+  const provider = dnsProviders.value[0]
+  if (!f || !provider || entryCount.value >= MAX_ENTRIES) return
+  const zones = dnsZones.value[provider] ?? []
+  if (type === 'PTR') {
+    const addr = knownAddress(false) || knownAddress(true)
+    for (const p of dnsProviders.value) {
+      for (const z of dnsZones.value[p] ?? []) {
+        const name = ptrName(addr, z)
+        if (name) {
+          const fwd = f.records.find((r) => r.type !== 'PTR')
+          const host = fwd ? `${fwd.name === '@' ? fwd.zone : `${fwd.name}.${fwd.zone}`}.` : ''
+          f.records.push({ provider: p, zone: z, name, type, content: host, ttl: '' })
+          return
+        }
+      }
+    }
+    f.records.push({ provider, zone: zones[0] ?? '', name: '', type, content: '', ttl: '' })
+    return
+  }
+  f.records.push({
+    provider,
+    zone: zones[0] ?? '',
+    name: f.name.trim().split('.')[0] ?? '',
+    type,
+    content: knownAddress(type === 'AAAA'),
+    ttl: '',
+  })
+}
+
 function next() {
   if (!check(STEP_FIELDS[step.value])) return
-  step.value = STEPS[stepIndex.value + 1] ?? step.value
+  step.value = STEPS.value[stepIndex.value + 1] ?? step.value
 }
 
 function back() {
   errors.value = {}
-  step.value = STEPS[stepIndex.value - 1] ?? step.value
+  step.value = STEPS.value[stepIndex.value - 1] ?? step.value
 }
 
 async function poll() {
@@ -255,7 +405,8 @@ async function submit() {
   const all = validate(f, o)
   if (Object.keys(all).length > 0) {
     // Go to the first step with an error.
-    const s = STEPS.find((x) => STEP_FIELDS[x].some((k) => all[k])) ?? 'review'
+    const s =
+      STEPS.value.find((x) => STEP_FIELDS[x].some((k) => all[k as keyof FormErrors])) ?? 'review'
     step.value = s
     check(STEP_FIELDS[s])
     return
@@ -348,10 +499,40 @@ const summary = computed(() => {
         .join(', ') || '–',
     ])
   }
+  f.reservations.forEach((r, i) => {
+    rows.push([
+      t('proxmox.create.reservationN', { n: i + 1 }),
+      [r.ipAddress || t('proxmox.create.anyAddress'), r.server, `net${r.network}`, r.hostname]
+        .filter(Boolean)
+        .join(' · '),
+    ])
+  })
+  f.records.forEach((r, i) => {
+    const owner = r.name.endsWith('.')
+      ? r.name.slice(0, -1)
+      : r.name === '@'
+        ? r.zone
+        : `${r.name}.${r.zone}`
+    rows.push([
+      t('proxmox.create.recordN', { n: i + 1 }),
+      `${owner} ${r.type} ${r.content} (${r.provider})`,
+    ])
+  })
   return rows
 })
 
 onMounted(() => loadOptions())
+// The optional steps depend on the permissions, loaded with the session.
+let integrationsLoaded = false
+watch(
+  () => session.permissions,
+  (p) => {
+    if (integrationsLoaded || p.length === 0) return
+    integrationsLoaded = true
+    void loadIntegrations()
+  },
+  { immediate: true },
+)
 onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
@@ -385,8 +566,8 @@ onBeforeUnmount(() => clearTimeout(timer))
       </div>
       <ol class="flex flex-col gap-2" aria-live="polite">
         <li
-          v-for="s in job.steps"
-          :key="s.name"
+          v-for="(s, i) in job.steps"
+          :key="i"
           class="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-raised p-3 text-sm"
         >
           <StatusBadge
@@ -394,6 +575,7 @@ onBeforeUnmount(() => clearTimeout(timer))
             :label="t(`proxmox.create.stepStates.${s.state}`)"
           />
           <span class="font-medium">{{ t(`proxmox.create.jobSteps.${s.name}`) }}</span>
+          <span v-if="s.detail" class="font-mono text-xs">{{ s.detail }}</span>
           <p v-if="s.error" class="w-full text-danger">{{ s.error }}</p>
         </li>
       </ol>
@@ -703,6 +885,156 @@ onBeforeUnmount(() => clearTimeout(timer))
               </p>
             </div>
           </template>
+        </template>
+
+        <!-- DHCP reservations (only with write on a DHCP server) -->
+        <template v-else-if="step === 'dhcp'">
+          <p class="text-sm text-fg-muted">{{ t('proxmox.create.dhcpHint') }}</p>
+          <p v-if="form.reservations.length === 0" class="text-sm">
+            {{ t('proxmox.create.noReservations') }}
+          </p>
+          <fieldset
+            v-for="(r, i) in form.reservations"
+            :key="i"
+            class="flex flex-col gap-4 rounded-md border border-border p-4"
+            :data-testid="`reservation-${i}`"
+          >
+            <legend class="px-1 font-semibold">
+              {{ t('proxmox.create.reservationN', { n: i + 1 }) }} · DHCP{{
+                family(r.server) === 'v6' ? 'v6' : 'v4'
+              }}
+            </legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <BaseSelect
+                :model-value="String(r.network)"
+                :label="t('proxmox.create.networkDevice')"
+                :options="
+                  form.networks.map((n, j) => ({ value: String(j), label: `net${j} · ${n.mac}` }))
+                "
+                @update:model-value="(v) => (r.network = Number(v))"
+              />
+              <BaseSelect
+                v-model="r.server"
+                :label="t('proxmox.create.dhcpServer')"
+                :options="
+                  dhcpServers.map((s) => ({ value: s.name, label: `${s.name} (${s.family})` }))
+                "
+                @update:model-value="r.subnetId = String(dhcpSubnets[r.server]?.[0]?.id ?? '')"
+              />
+              <BaseSelect
+                v-model="r.subnetId"
+                :label="t('proxmox.create.subnet')"
+                :options="
+                  (dhcpSubnets[r.server] ?? []).map((s) => ({
+                    value: String(s.id),
+                    label: s.prefix,
+                  }))
+                "
+              />
+              <BaseInput
+                v-model="r.ipAddress"
+                :label="t('proxmox.create.reservedAddress')"
+                :hint="t('proxmox.create.reservedAddressHint')"
+                :error="resErr(i, 'ipAddress')"
+              />
+              <BaseInput
+                v-model="r.hostname"
+                :label="t('proxmox.create.hostname')"
+                :error="resErr(i, 'hostname')"
+              />
+            </div>
+            <div>
+              <BaseButton variant="secondary" size="sm" @click="form.reservations.splice(i, 1)">
+                {{ t('proxmox.create.removeEntry') }}
+              </BaseButton>
+            </div>
+          </fieldset>
+          <div v-if="entryCount < MAX_ENTRIES" class="flex flex-wrap gap-2">
+            <BaseButton
+              v-if="dhcpServers.some((s) => s.family === 'v4')"
+              variant="secondary"
+              @click="addReservation('v4')"
+            >
+              {{ t('proxmox.create.addReservation4') }}
+            </BaseButton>
+            <BaseButton
+              v-if="dhcpServers.some((s) => s.family === 'v6')"
+              variant="secondary"
+              @click="addReservation('v6')"
+            >
+              {{ t('proxmox.create.addReservation6') }}
+            </BaseButton>
+          </div>
+        </template>
+
+        <!-- DNS records (only with write on a DNS zone) -->
+        <template v-else-if="step === 'dns'">
+          <p class="text-sm text-fg-muted">{{ t('proxmox.create.dnsHint') }}</p>
+          <p v-if="form.records.length === 0" class="text-sm">
+            {{ t('proxmox.create.noRecords') }}
+          </p>
+          <fieldset
+            v-for="(r, i) in form.records"
+            :key="i"
+            class="flex flex-col gap-4 rounded-md border border-border p-4"
+            :data-testid="`record-${i}`"
+          >
+            <legend class="px-1 font-semibold">
+              {{ t('proxmox.create.recordN', { n: i + 1 }) }} · {{ r.type }}
+            </legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <BaseSelect
+                v-model="r.provider"
+                :label="t('proxmox.create.dnsProvider')"
+                :options="dnsProviders.map((p) => ({ value: p, label: p }))"
+                @update:model-value="r.zone = dnsZones[r.provider]?.[0] ?? ''"
+              />
+              <BaseSelect
+                v-model="r.zone"
+                :label="t('proxmox.create.zone')"
+                :options="(dnsZones[r.provider] ?? []).map((z) => ({ value: z, label: z }))"
+              />
+              <BaseInput
+                v-model="r.name"
+                :label="t('proxmox.create.recordName')"
+                :hint="t('proxmox.create.recordNameHint')"
+                :error="recErr(i, 'name')"
+              />
+              <BaseSelect
+                v-model="r.type"
+                :label="t('proxmox.create.recordType')"
+                :options="(['A', 'AAAA', 'PTR'] as const).map((x) => ({ value: x, label: x }))"
+              />
+              <BaseInput
+                v-model="r.content"
+                :label="t('proxmox.create.recordContent')"
+                :error="recErr(i, 'content')"
+              />
+              <BaseInput
+                v-model="r.ttl"
+                :label="t('proxmox.create.ttl')"
+                inputmode="numeric"
+                placeholder="3600"
+                :error="recErr(i, 'ttl')"
+              />
+            </div>
+            <div>
+              <BaseButton variant="secondary" size="sm" @click="form.records.splice(i, 1)">
+                {{ t('proxmox.create.removeEntry') }}
+              </BaseButton>
+            </div>
+          </fieldset>
+          <div v-if="entryCount < MAX_ENTRIES" class="flex flex-wrap gap-2">
+            <BaseButton variant="secondary" @click="addRecord('A')">
+              {{ t('proxmox.create.addRecordA') }}
+            </BaseButton>
+            <BaseButton variant="secondary" @click="addRecord('AAAA')">
+              {{ t('proxmox.create.addRecordAAAA') }}
+            </BaseButton>
+            <BaseButton variant="secondary" @click="addRecord('PTR')">
+              {{ t('proxmox.create.addRecordPTR') }}
+            </BaseButton>
+          </div>
         </template>
 
         <!-- 4: review -->

@@ -377,7 +377,7 @@ These apply to every task:
 - [x] **11.13** Creation wizard: several network devices on the "Network and login" step (VMs
   and containers), each limited to the allowed bridges and VLANs, with its own IP
   configuration
-- [ ] **11.14** Creation wizard: steps after "Network and login" for DHCP reservations (IPv4
+- [x] **11.14** Creation wizard: steps after "Network and login" for DHCP reservations (IPv4
   and IPv6, per network device) and DNS records (A, AAAA and optionally PTR). The MAC
   addresses are fixed before the creation so that reservations can be made. The steps are
   shown only with the matching DHCP and DNS permissions; the creation job adds the entries

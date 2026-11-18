@@ -52,7 +52,36 @@ export interface CreateForm {
   start: boolean
   description: string
   tags: string
+  /** DHCP reservations and DNS records added after the creation (optional steps). */
+  reservations: ResForm[]
+  records: RecForm[]
 }
+
+/** A DHCP reservation for a network device (its MAC address). */
+export interface ResForm {
+  /** Index of the network device. */
+  network: number
+  server: string
+  subnetId: string
+  ipAddress: string
+  hostname: string
+}
+
+export type RecordType = 'A' | 'AAAA' | 'PTR'
+
+/** A DNS record of the new guest. */
+export interface RecForm {
+  provider: string
+  zone: string
+  name: string
+  type: RecordType
+  content: string
+  /** Seconds; empty: 3600. */
+  ttl: string
+}
+
+/** Reservations and records together (as the server allows). */
+export const MAX_ENTRIES = 16
 
 /** The most network devices of a new guest (as the server allows). */
 export const MAX_NETWORKS = 8
@@ -110,7 +139,45 @@ export function newForm(o: ProvisioningOptions, kind: Kind = 'clone'): CreateFor
     start: true,
     description: '',
     tags: '',
+    reservations: [],
+    records: [],
   }
+}
+
+/** The static address of a network device, without prefix length. */
+export function staticAddress(n: NetForm, v6: boolean): string {
+  const mode = v6 ? n.ipv6Mode : n.ipv4Mode
+  return mode === 'static' ? ((v6 ? n.ipv6 : n.ipv4).trim().split('/')[0] ?? '') : ''
+}
+
+/**
+ * The reverse zone name and the relative owner name of a PTR record for an
+ * address in a zone, or undefined if the address is not in the zone.
+ */
+export function ptrName(address: string, zone: string): string | undefined {
+  let labels: string[]
+  if (isIPv4(address)) {
+    labels = address.split('.').reverse()
+    labels.push('in-addr', 'arpa')
+  } else if (isIPv6(address)) {
+    labels = expandIPv6(address).split('').reverse()
+    labels.push('ip6', 'arpa')
+  } else {
+    return undefined
+  }
+  const full = labels.join('.')
+  const z = zone.toLowerCase().replace(/\.$/, '')
+  if (!full.endsWith(`.${z}`)) return undefined
+  return full.slice(0, -(z.length + 1))
+}
+
+/** The 32 hex digits of an IPv6 address. */
+function expandIPv6(a: string): string {
+  const [head, tail = ''] = a.toLowerCase().split('::')
+  const h = head ? head.split(':') : []
+  const t = tail ? tail.split(':') : []
+  const groups = a.includes('::') ? [...h, ...Array(8 - h.length - t.length).fill('0'), ...t] : h
+  return groups.map((g) => g.padStart(4, '0')).join('')
 }
 
 /** Parses ranges like ["100-199", "300"]. */
@@ -169,8 +236,45 @@ function words(s: string): string[] {
 
 /** Error keys (proxmox.create.errors.<key>) by field; network devices by index. */
 export type NetErrors = Partial<Record<keyof NetForm, string>>
-export type FormErrors = Partial<Record<Exclude<keyof CreateForm, 'networks'>, string>> & {
+export type ResErrors = Partial<Record<keyof ResForm, string>>
+export type RecErrors = Partial<Record<keyof RecForm, string>>
+type ListField = 'networks' | 'reservations' | 'records'
+export type FormErrors = Partial<Record<Exclude<keyof CreateForm, ListField>, string>> & {
   networks?: NetErrors[]
+  reservations?: ResErrors[]
+  records?: RecErrors[]
+}
+
+function validateReservation(r: ResForm, f: CreateForm): ResErrors {
+  const e: ResErrors = {}
+  if (r.network < 0 || r.network >= f.networks.length) e.network = 'required'
+  if (!r.server) e.server = 'required'
+  if (!r.subnetId) e.subnetId = 'required'
+  const ip = r.ipAddress.trim()
+  if (ip !== '' && !isIPv4(ip) && !isIPv6(ip)) e.ipAddress = 'ipAddress'
+  if (r.hostname.trim() !== '' && !DNS_NAME.test(r.hostname.trim())) e.hostname = 'name'
+  return e
+}
+
+function validateRecord(r: RecForm): RecErrors {
+  const e: RecErrors = {}
+  if (!r.provider || !r.zone) e.zone = 'required'
+  const name = r.name.trim().replace(/\.$/, '')
+  if (name !== '@' && !DNS_NAME.test(name)) e.name = 'name'
+  const c = r.content.trim()
+  if (
+    (r.type === 'A' && !isIPv4(c)) ||
+    (r.type === 'AAAA' && !isIPv6(c)) ||
+    (r.type === 'PTR' && !DNS_NAME.test(c.replace(/\.$/, '')))
+  )
+    e.content = `content${r.type}`
+  if (r.ttl.trim() !== '' && !/^\d{1,7}$/.test(r.ttl.trim())) e.ttl = 'ttl'
+  return e
+}
+
+/** The errors of one list, or undefined if there are none. */
+function listErrors<T extends object>(errs: T[]): T[] | undefined {
+  return errs.some((x) => Object.keys(x).length > 0) ? errs : undefined
 }
 
 /** Validates one network device; macs are the MAC addresses of all devices. */
@@ -244,6 +348,10 @@ export function validate(f: CreateForm, o: ProvisioningOptions): FormErrors {
     if (f.kind === 'lxc' && f.password === '' && lines(f.sshKeys).length === 0) e.password = 'login'
   }
   if (words(f.tags).some((t) => !TAG.test(t))) e.tags = 'tags'
+  const res = listErrors(f.reservations.map((r) => validateReservation(r, f)))
+  if (res) e.reservations = res
+  const recs = listErrors(f.records.map(validateRecord))
+  if (recs) e.records = recs
   return e
 }
 
@@ -293,6 +401,25 @@ export function toRequest(f: CreateForm): CreateRequest {
   }
   const tags = words(f.tags)
   if (tags.length > 0) req.tags = tags
+  if (f.reservations.length > 0) {
+    req.reservations = f.reservations.map((r) => ({
+      network: r.network,
+      server: r.server,
+      subnetId: Number(r.subnetId),
+      ipAddress: opt(r.ipAddress),
+      hostname: opt(r.hostname),
+    }))
+  }
+  if (f.records.length > 0) {
+    req.records = f.records.map((r) => ({
+      provider: r.provider,
+      zone: r.zone,
+      name: r.name.trim(),
+      type: r.type,
+      content: r.content.trim(),
+      ttl: num(r.ttl),
+    }))
+  }
   if (f.kind === 'clone') {
     req.source = 'template'
     req.template = Number(f.template)

@@ -1525,6 +1525,34 @@ export interface components {
       networks?: components['schemas']['ProxmoxCreateNetwork'][]
       /** @description The only network device, for requests without networks (API of v0.1.1). */
       network?: components['schemas']['ProxmoxCreateNetwork']
+      /**
+       * @description DHCP reservations for the MAC addresses of the network devices, added after the guest
+       *     was created and before it is started. Requires write on the subnet of the DHCP server;
+       *     checked when the request arrives. Audited as dhcp.reservation.create.
+       */
+      reservations?: {
+        /** @description Index of the network device in networks. */
+        network: number
+        server: string
+        subnetId: number
+        ipAddress?: string
+        hostname?: string
+      }[]
+      /**
+       * @description DNS records, added like the reservations. Requires write on the zone. Audited as
+       *     dns.record.create. Reservations and records together are at most 16.
+       */
+      records?: {
+        provider: string
+        zone: string
+        /** @description Relative to the zone or fully qualified with a trailing dot. */
+        name: string
+        /** @enum {string} */
+        type: 'A' | 'AAAA' | 'PTR'
+        content: string
+        /** @description Seconds; 0 or omitted uses 3600. */
+        ttl?: number
+      }[]
       /** @description Cloud-init user of a clone. */
       user?: string
       /** @description Cloud-init password of a clone */
@@ -1551,7 +1579,9 @@ export interface components {
       error?: string
       steps: {
         /** @enum {string} */
-        name: 'clone' | 'configure' | 'resize' | 'create' | 'start'
+        name: 'clone' | 'configure' | 'resize' | 'create' | 'dhcp' | 'dns' | 'start'
+        /** @description What a dhcp or dns step adds */
+        detail?: string
         /** @enum {string} */
         state: 'pending' | 'running' | 'done' | 'failed' | 'skipped'
         /** @description The Proxmox task of the step. */

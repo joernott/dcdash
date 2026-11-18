@@ -298,7 +298,9 @@
         "source": "Source",
         "resources": "Resources",
         "network": "Network and login",
-        "review": "Review"
+        "review": "Review",
+        "dhcp": "DHCP",
+        "dns": "DNS"
       },
       "kind": "What do you want to create?",
       "kinds": {
@@ -391,7 +393,9 @@
         "configure": "Apply the settings",
         "resize": "Grow the disk",
         "create": "Create",
-        "start": "Start"
+        "start": "Start",
+        "dhcp": "Add the DHCP reservation",
+        "dns": "Add the DNS record"
       },
       "stepStates": {
         "pending": "Waiting",
@@ -423,13 +427,43 @@
         "sshKeys": "One public key per line in OpenSSH format.",
         "tags": "Lower-case letters, digits, '-', '_', '+' and '.'.",
         "mac": "A unicast MAC address like BC:24:11:12:34:56.",
-        "macTwice": "This MAC address is used twice."
+        "macTwice": "This MAC address is used twice.",
+        "ipAddress": "An IPv4 or IPv6 address.",
+        "contentA": "An IPv4 address.",
+        "contentAAAA": "An IPv6 address.",
+        "contentPTR": "A host name, e.g. app1.example.org.",
+        "ttl": "A number of seconds."
       },
       "networkN": "Network device net{n}",
       "mac": "MAC address",
       "macHint": "Generated; change it only if the guest needs a specific address.",
       "addNetwork": "Add network device",
-      "removeNetwork": "Remove net{n}"
+      "removeNetwork": "Remove net{n}",
+      "dhcpHint": "Reservations are made for the MAC address of a network device and added after the guest was created, before it starts. DHCPv6 servers have to accept the MAC address as identifier (host-reservation-identifiers with hw-address). This step is optional.",
+      "noReservations": "No reservations.",
+      "reservationN": "Reservation {n}",
+      "networkDevice": "Network device",
+      "dhcpServer": "DHCP server",
+      "subnet": "Subnet",
+      "reservedAddress": "Reserved address",
+      "reservedAddressHint": "Empty: only the host name is reserved.",
+      "removeEntry": "Remove",
+      "addReservation4": "Add DHCPv4 reservation",
+      "addReservation6": "Add DHCPv6 reservation",
+      "anyAddress": "no address",
+      "dnsHint": "Records are added after the guest was created, before it starts. A PTR record needs the reverse zone of the address. This step is optional.",
+      "noRecords": "No records.",
+      "recordN": "DNS record {n}",
+      "dnsProvider": "DNS provider",
+      "zone": "Zone",
+      "recordName": "Name",
+      "recordNameHint": "Relative to the zone, {'@'} for the zone itself, or fully qualified with a trailing dot.",
+      "recordType": "Type",
+      "recordContent": "Content",
+      "ttl": "TTL (seconds)",
+      "addRecordA": "Add A record",
+      "addRecordAAAA": "Add AAAA record",
+      "addRecordPTR": "Add PTR record"
     },
     "delete": {
       "action": "Delete",

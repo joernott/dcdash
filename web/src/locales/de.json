@@ -298,7 +298,9 @@
         "source": "Quelle",
         "resources": "Ressourcen",
         "network": "Netzwerk und Anmeldung",
-        "review": "Prüfen"
+        "review": "Prüfen",
+        "dhcp": "DHCP",
+        "dns": "DNS"
       },
       "kind": "Was möchten Sie erstellen?",
       "kinds": {
@@ -391,7 +393,9 @@
         "configure": "Einstellungen übernehmen",
         "resize": "Festplatte vergrößern",
         "create": "Erstellen",
-        "start": "Starten"
+        "start": "Starten",
+        "dhcp": "DHCP-Reservierung anlegen",
+        "dns": "DNS-Eintrag anlegen"
       },
       "stepStates": {
         "pending": "Wartet",
@@ -423,13 +427,43 @@
         "sshKeys": "Ein öffentlicher Schlüssel pro Zeile im OpenSSH-Format.",
         "tags": "Kleinbuchstaben, Ziffern, '-', '_', '+' und '.'.",
         "mac": "Eine Unicast-MAC-Adresse wie BC:24:11:12:34:56.",
-        "macTwice": "Diese MAC-Adresse wird doppelt verwendet."
+        "macTwice": "Diese MAC-Adresse wird doppelt verwendet.",
+        "ipAddress": "Eine IPv4- oder IPv6-Adresse.",
+        "contentA": "Eine IPv4-Adresse.",
+        "contentAAAA": "Eine IPv6-Adresse.",
+        "contentPTR": "Ein Hostname, z. B. app1.example.org.",
+        "ttl": "Eine Anzahl Sekunden."
       },
       "networkN": "Netzwerkgerät net{n}",
       "mac": "MAC-Adresse",
       "macHint": "Erzeugt; ändern Sie sie nur, wenn der Gast eine bestimmte Adresse braucht.",
       "addNetwork": "Netzwerkgerät hinzufügen",
-      "removeNetwork": "net{n} entfernen"
+      "removeNetwork": "net{n} entfernen",
+      "dhcpHint": "Reservierungen gelten für die MAC-Adresse eines Netzwerkgeräts und werden angelegt, nachdem der Gast erstellt wurde und bevor er startet. DHCPv6-Server müssen die MAC-Adresse als Kennung akzeptieren (host-reservation-identifiers mit hw-address). Dieser Schritt ist optional.",
+      "noReservations": "Keine Reservierungen.",
+      "reservationN": "Reservierung {n}",
+      "networkDevice": "Netzwerkgerät",
+      "dhcpServer": "DHCP-Server",
+      "subnet": "Subnetz",
+      "reservedAddress": "Reservierte Adresse",
+      "reservedAddressHint": "Leer: Nur der Hostname wird reserviert.",
+      "removeEntry": "Entfernen",
+      "addReservation4": "DHCPv4-Reservierung hinzufügen",
+      "addReservation6": "DHCPv6-Reservierung hinzufügen",
+      "anyAddress": "keine Adresse",
+      "dnsHint": "Einträge werden angelegt, nachdem der Gast erstellt wurde und bevor er startet. Ein PTR-Eintrag braucht die Reverse-Zone der Adresse. Dieser Schritt ist optional.",
+      "noRecords": "Keine Einträge.",
+      "recordN": "DNS-Eintrag {n}",
+      "dnsProvider": "DNS-Anbieter",
+      "zone": "Zone",
+      "recordName": "Name",
+      "recordNameHint": "Relativ zur Zone, {'@'} für die Zone selbst oder vollständig mit abschließendem Punkt.",
+      "recordType": "Typ",
+      "recordContent": "Inhalt",
+      "ttl": "TTL (Sekunden)",
+      "addRecordA": "A-Eintrag hinzufügen",
+      "addRecordAAAA": "AAAA-Eintrag hinzufügen",
+      "addRecordPTR": "PTR-Eintrag hinzufügen"
     },
     "delete": {
       "action": "Löschen",

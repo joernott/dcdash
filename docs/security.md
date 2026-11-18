@@ -429,7 +429,7 @@ entry can't be stored, it is written to the application log as an error instead.
 | `auth.logout` | Logout |
 | `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |
 | `proxmox.guest.<action>` | A power action (`start`, `shutdown`, `stop`, `reboot`, `suspend`, `resume`); `target` is `<cluster>/<type>/<vmid>`, `details` contain the node and the Proxmox task ID or the error |
-| `proxmox.guest.create` | A creation ended; `target` is `<cluster>/<type>/<vmid>`, `result` is its outcome, `details` contain the node, name, source, resources, network, whether a password and how many SSH keys were set (never the password), the Proxmox task IDs and the error |
+| `proxmox.guest.create` | A creation ended; `target` is `<cluster>/<type>/<vmid>`, `result` is its outcome, `details` contain the node, name, source, resources, network devices (bridge, VLAN, MAC, IP settings), the number of DHCP reservations and DNS records (each also audited as `dhcp.reservation.create` and `dns.record.create`), whether a password and how many SSH keys were set (never the password), the Proxmox task IDs and the error |
 | `proxmox.guest.delete` | A guest was deleted (the Proxmox task was started); `details` contain the node, name, `purge` and the task ID or the error |
 | `proxmox.guest.configure` | Options of a VM were changed, removed or reverted; `details` contain the node, the keys (`set`, `delete`, `revert`, not the values) and the Proxmox task ID or the error |
 | `proxmox.disk.create`, `.update`, `.resize`, `.attach`, `.detach`, `.delete` | A disk of a VM was added, changed, grown, attached, detached or deleted; `details` contain the node, the disk key, the volume or storage and size, and the task ID or the error |

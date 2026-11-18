@@ -201,6 +201,26 @@ Use the names of your dcdash user and token.
 With a `pool`, also grant `PVEVMAdmin` on `/pool/<pool>`. Grant all roles of a path in one
 command (see the note on ACL entries above).
 
+### DHCP reservations and DNS records
+
+If dcdash also manages DHCP servers or DNS zones, the wizard has two more, optional steps
+after "Network and login":
+
+- **DHCP:** reservations for the MAC address of a network device, on DHCPv4 and DHCPv6
+  servers, with the static address of the device filled in. The user needs `write` on the
+  subnet (`dhcp:<server>:<prefix>:write`). DHCPv6 servers identify the guest by its MAC
+  address, so Kea needs `hw-address` in `host-reservation-identifiers` for DHCPv6.
+- **DNS:** A, AAAA and PTR records, with the guest's name and the reserved or static address
+  filled in. "Add PTR record" picks the reverse zone of the address among the zones the user
+  may change. The user needs `write` on the zone (`dns:<provider>:<zone>:write`).
+
+The steps are only shown to users who may add reservations or records. dcdash checks the
+permissions and the entries when the creation is submitted, so a mistake is reported before
+the guest is created. The job adds the entries after the guest exists and before it is
+started, one step each; they are audited as `dhcp.reservation.create` and `dns.record.create`
+like changes on the DHCP and DNS pages. If an entry fails, the following steps are skipped
+and nothing is undone.
+
 ### How a creation runs
 
 dcdash runs the steps of a creation (clone, configure, grow the disk, create, start) in the

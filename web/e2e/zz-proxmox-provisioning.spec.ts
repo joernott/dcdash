@@ -38,6 +38,19 @@ test('create a VM from a template and delete it', async ({ page }) => {
   await expectAccessible(page, 'Create guest: network')
   await page.getByRole('button', { name: 'Next' }).click()
 
+  // bob may add reservations in 192.0.2.0/24 of kea4 and records in the zones of cf.
+  await page.getByRole('button', { name: 'Add DHCPv4 reservation' }).click()
+  await expect(page.getByTestId('reservation-0').getByLabel('Reserved address')).toHaveValue(
+    '192.0.2.50',
+  )
+  await expectAccessible(page, 'Create guest: DHCP')
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Add A record' }).click()
+  await expect(page.getByTestId('record-0').getByLabel('Content')).toHaveValue('192.0.2.50')
+  await expectAccessible(page, 'Create guest: DNS')
+  await page.getByRole('button', { name: 'Next' }).click()
+
+  await expect(page.getByText('192.0.2.50 · kea4 · net0 · e2e-app')).toBeVisible()
   await expect(page.getByText('192.0.2.50/24')).toBeVisible()
   await expect(page.getByText('vmbr0, VLAN 100')).toBeVisible()
   await expect(page.getByText('vmbr0, VLAN 150')).toBeVisible()
@@ -46,7 +59,14 @@ test('create a VM from a template and delete it', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'e2e-app (5000)' })).toBeVisible()
   await expect(page.getByText('Done', { exact: true }).first()).toBeVisible()
-  for (const step of ['Clone the template', 'Apply the settings', 'Grow the disk', 'Start'])
+  for (const step of [
+    'Clone the template',
+    'Apply the settings',
+    'Grow the disk',
+    'Add the DHCP reservation',
+    'Add the DNS record',
+    'Start',
+  ])
     await expect(page.getByText(step, { exact: true })).toBeVisible()
   await expectAccessible(page, 'Create guest: job')
   await page.screenshot({ path: '../.e2e/screenshots/proxmox-create.png', fullPage: true })

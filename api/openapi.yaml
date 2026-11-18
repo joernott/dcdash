@@ -2239,6 +2239,38 @@ components:
         network:
           $ref: "#/components/schemas/ProxmoxCreateNetwork"
           description: The only network device, for requests without networks (API of v0.1.1).
+        reservations:
+          type: array
+          maxItems: 16
+          description: |
+            DHCP reservations for the MAC addresses of the network devices, added after the guest
+            was created and before it is started. Requires write on the subnet of the DHCP server;
+            checked when the request arrives. Audited as dhcp.reservation.create.
+          items:
+            type: object
+            required: [network, server, subnetId]
+            properties:
+              network: { type: integer, minimum: 0, description: Index of the network device in networks. }
+              server: { type: string }
+              subnetId: { type: integer }
+              ipAddress: { type: string }
+              hostname: { type: string }
+        records:
+          type: array
+          maxItems: 16
+          description: |
+            DNS records, added like the reservations. Requires write on the zone. Audited as
+            dns.record.create. Reservations and records together are at most 16.
+          items:
+            type: object
+            required: [provider, zone, name, type, content]
+            properties:
+              provider: { type: string }
+              zone: { type: string }
+              name: { type: string, description: Relative to the zone or fully qualified with a trailing dot. }
+              type: { type: string, enum: [A, AAAA, PTR] }
+              content: { type: string }
+              ttl: { type: integer, description: Seconds; 0 or omitted uses 3600. }
         user: { type: string, description: Cloud-init user of a clone. }
         password: { type: string, writeOnly: true, description: Cloud-init password of a clone, or the root password of a container. }
         sshKeys: { type: string, description: Public SSH keys, one per line. }
@@ -2267,7 +2299,8 @@ components:
             type: object
             required: [name, state]
             properties:
-              name: { type: string, enum: [clone, configure, resize, create, start] }
+              name: { type: string, enum: [clone, configure, resize, create, dhcp, dns, start] }
+              detail: { type: string, description: What a dhcp or dns step adds, e.g. "192.0.2.50 (kea4)". }
               state: { type: string, enum: [pending, running, done, failed, skipped] }
               upid: { type: string, description: The Proxmox task of the step. }
               error: { type: string }
