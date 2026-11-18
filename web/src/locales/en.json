@@ -534,21 +534,7 @@
       "v6": "DHCPv6"
     },
     "noServers": "No DHCP server is available to you.",
-    "status": {
-      "ok": "Available",
-      "unavailable": "Unavailable"
-    },
     "unavailable": "The server cannot be used right now: {error}",
-    "version": "Version",
-    "uptime": "Running for",
-    "uptimeDays": "{d} d {h} h",
-    "uptimeHours": "{h} h {m} min",
-    "ha": "High availability",
-    "haState": "{mode}, {role}: {state}",
-    "haPartner": "Partner {partner}: {state}",
-    "haPartnerLost": "No contact to partner {partner}",
-    "haGroup": "HA group",
-    "haGroupMembers": "{group}, together with {partners}",
     "missing": {
       "leases": "Leases are not available: the lease_cmds hook library is not loaded.",
       "reservations": "Reservations are not available: the host_cmds hook library is not loaded.",

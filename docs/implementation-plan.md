@@ -349,14 +349,14 @@ These apply to every task:
 - [ ] **11.2** Built-in documentation: a "Documentation" menu in the top bar shows the
   documentation from `docs/` (embedded in the binary, in the language of the user where
   available), with working links between the pages
-- [ ] **11.3** Wider layout: the content uses more of wide screens (for example 1920 pixels)
+- [x] **11.3** Wider layout: the content uses more of wide screens (for example 1920 pixels)
   instead of a narrow centered column
-- [ ] **11.4** Proxmox guest list: the "Actions" column gets about 20% more width, so that
+- [x] **11.4** Proxmox guest list: the "Actions" column gets about 20% more width, so that
   all buttons fit in one line in English and German; the German label "Arbeitsspeicher"
   in the "Usage" column becomes "RAM"
-- [ ] **11.5** DNS zone view: the "Edit" and "Delete" buttons fit into the "Actions" column
+- [x] **11.5** DNS zone view: the "Edit" and "Delete" buttons fit into the "Actions" column
   in English and German
-- [ ] **11.6** DHCP view: remove the status box of the DHCP server and move the server
+- [x] **11.6** DHCP view: remove the status box of the DHCP server and move the server
   selection below the "DHCP" heading
 - [x] **11.7** Sessions: find out why users are logged out after a few minutes of
   inactivity, fix it, and keep sessions alive for 8 hours (adjust the default of

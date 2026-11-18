@@ -18,7 +18,7 @@ test('subnets, leases and reservations of a Kea server', async ({ page }) => {
     .getByRole('link', { name: 'DHCP' })
     .click()
   await expect(page).toHaveURL(/\/dhcp\/kea4$/)
-  await expect(page.getByText('Kea 3.0.4')).toBeVisible()
+  await expect(page.getByRole('combobox', { name: 'Server' })).toHaveValue('kea4')
   const subnets = page.getByRole('table', { name: 'Subnets' })
   await expect(subnets.getByRole('row')).toHaveCount(3) // header + 2 subnets
   await expect(subnets.getByRole('row', { name: /192\.0\.2\.0\/24/ })).toContainText('2 of 100')

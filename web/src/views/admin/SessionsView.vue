@@ -44,7 +44,9 @@ const columns = computed(() => [
   { key: 'createdAt', label: t('sessions.created'), class: 'whitespace-nowrap' },
   { key: 'lastSeenAt', label: t('sessions.lastSeen'), class: 'whitespace-nowrap' },
   { key: 'remoteAddr', label: t('sessions.client') },
-  ...(canWrite.value ? [{ key: 'actions', label: t('sessions.actions') }] : []),
+  ...(canWrite.value
+    ? [{ key: 'actions', label: t('sessions.actions'), class: 'w-px whitespace-nowrap' }]
+    : []),
 ])
 
 async function load() {

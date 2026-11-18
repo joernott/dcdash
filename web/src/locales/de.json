@@ -217,7 +217,7 @@
     "lock": "Sperre",
     "cpu": "CPU",
     "cores": "CPUs: {n}",
-    "memory": "Arbeitsspeicher",
+    "memory": "RAM",
     "disk": "Festplatte",
     "uptime": "Laufzeit",
     "uptimeValue": "{days} T. {hours} Std. {minutes} Min.",
@@ -534,21 +534,7 @@
       "v6": "DHCPv6"
     },
     "noServers": "Ihnen steht kein DHCP-Server zur Verfügung.",
-    "status": {
-      "ok": "Verfügbar",
-      "unavailable": "Nicht verfügbar"
-    },
     "unavailable": "Der Server kann gerade nicht verwendet werden: {error}",
-    "version": "Version",
-    "uptime": "Läuft seit",
-    "uptimeDays": "{d} T. {h} Std.",
-    "uptimeHours": "{h} Std. {m} Min.",
-    "ha": "Hochverfügbarkeit",
-    "haState": "{mode}, {role}: {state}",
-    "haPartner": "Partner {partner}: {state}",
-    "haPartnerLost": "Keine Verbindung zum Partner {partner}",
-    "haGroup": "HA-Gruppe",
-    "haGroupMembers": "{group}, zusammen mit {partners}",
     "missing": {
       "leases": "Leases sind nicht verfügbar: Die Hook-Bibliothek lease_cmds ist nicht geladen.",
       "reservations": "Reservierungen sind nicht verfügbar: Die Hook-Bibliothek host_cmds ist nicht geladen.",
