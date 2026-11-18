@@ -77,6 +77,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+base+"/{cluster}/guests", s.handleCreate)
 	mux.HandleFunc("DELETE "+base+"/{cluster}/guests/{type}/{vmid}", s.handleDelete)
 	mux.HandleFunc("GET "+base+"/{cluster}/jobs/{id}", s.handleJob)
+	s.registerHardware(mux, base)
 	mux.HandleFunc("GET /api/v1/proxmox/console/{id}", s.handleConsoleSocket)
 }
 
