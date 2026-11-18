@@ -214,3 +214,9 @@ Sprint 12 will then be a new minor version 0.2.0. In that sprint, I want to:
 - add support for netbox as common data source. Changes made in dcdash should update the respective entries in netbox
 - add Support for Aruba CX 6x00 switches: Configuring VLANs, ports, finding devices by MAC across multiple switches, get an overview over port statuses across multiple switches
 - add support for OPNSense firewall: health check, VPN status check, en-/disabling Wireguard peers, restarting IPSEC tunnels, Managing aliases and rules
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+please split sprint 12 into one sprint per application, push the branch and start with sprint 11. There is no need to rewrite main and "dashroot" can remain in the prompts.

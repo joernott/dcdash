@@ -43,7 +43,9 @@ These apply to every task:
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
 | 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | in progress |
-| 12 | `sprint/12-netbox-aruba-opnsense` | NetBox as data source, Aruba CX switches, OPNsense firewalls, **v0.2.0** | v0.2.0 | planned |
+| 12 | `sprint/12-netbox` | NetBox as common data source with write-back | v0.2.0 | planned |
+| 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | planned |
+| 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | planned |
 
 ---
 
@@ -379,9 +381,7 @@ These apply to every task:
   and reports each one
 - [ ] **11.15** `CHANGELOG.md`, tag `v0.1.2`
 
-## Sprint 12 — NetBox, Aruba CX, OPNsense and Release v0.2.0
-
-NetBox:
+## Sprint 12 — NetBox
 
 - [ ] **12.1** API research: NetBox REST API (devices, virtual machines, interfaces, IP
   addresses, prefixes, VLANs, MAC addresses), token permissions, and the mapping between
@@ -389,41 +389,43 @@ NetBox:
 - [ ] **12.2** Configuration and client; NetBox as a common data source, for example VLAN
   names, prefixes and free IP addresses in the creation wizard
 - [ ] **12.3** Write-back: changes in dcdash update NetBox (creating, changing and deleting
-  guests, disks and network devices; DHCP reservations; DNS names; switch VLANs and ports).
-  A failed NetBox update does not undo the change itself, but it is shown to the user and
-  written to the audit log
+  guests, disks and network devices; DHCP reservations; DNS names). A failed NetBox update
+  does not undo the change itself, but it is shown to the user and written to the audit log
 - [ ] **12.4** Comparison view: differences between NetBox and the actual state of the
   connected systems
+- [ ] **12.5** Permissions and audit actions, navigation entry
+- [ ] **12.6** Tests: fake NetBox server, manual test against a real NetBox documented
+- [ ] **12.7** Documentation
 
-Aruba CX 6x00 switches:
+## Sprint 13 — Aruba CX 6x00 Switches
 
-- [ ] **12.5** API research: AOS-CX REST API (sessions, VLANs, interfaces, MAC address
+- [ ] **13.1** API research: AOS-CX REST API (sessions, VLANs, interfaces, MAC address
   table, LLDP, saving the configuration); results in an ADR, amend this sprint if needed
-- [ ] **12.6** Configuration and client for several switches, inventory and health status
-- [ ] **12.7** Port overview across all switches: status, speed, VLANs, PoE, LLDP neighbor
-- [ ] **12.8** Find devices by MAC address across all switches, telling access ports from
+- [ ] **13.2** Configuration and client for several switches, inventory and health status
+- [ ] **13.3** Port overview across all switches: status, speed, VLANs, PoE, LLDP neighbor
+- [ ] **13.4** Find devices by MAC address across all switches, telling access ports from
   uplinks
-- [ ] **12.9** Manage VLANs: create, rename and delete, on one or several switches
-- [ ] **12.10** Configure ports: enable and disable, description, access VLAN, trunk VLANs;
+- [ ] **13.5** Manage VLANs: create, rename and delete, on one or several switches
+- [ ] **13.6** Configure ports: enable and disable, description, access VLAN, trunk VLANs;
   the change is saved to the startup configuration
+- [ ] **13.7** NetBox write-back for switch VLANs and ports (see 12.3)
+- [ ] **13.8** Permissions and audit actions, navigation entry
+- [ ] **13.9** Tests: fake AOS-CX server, manual test against a real switch documented
+- [ ] **13.10** Documentation
 
-OPNsense firewalls:
+## Sprint 14 — OPNsense Firewalls and Release v0.2.0
 
-- [ ] **12.11** API research: OPNsense API (system status, gateways, services, WireGuard,
+- [ ] **14.1** API research: OPNsense API (system status, gateways, services, WireGuard,
   IPsec, aliases, filter rules with savepoint and rollback); results in an ADR, amend this
   sprint if needed
-- [ ] **12.12** Configuration and client, health check (system, gateways, services) on the
+- [ ] **14.2** Configuration and client, health check (system, gateways, services) on the
   overview page
-- [ ] **12.13** VPN status: WireGuard peers (last handshake, traffic) and IPsec tunnels
+- [ ] **14.3** VPN status: WireGuard peers (last handshake, traffic) and IPsec tunnels
   (phase 1 and phase 2)
-- [ ] **12.14** Enable and disable WireGuard peers, restart IPsec tunnels
-- [ ] **12.15** Manage aliases
-- [ ] **12.16** Manage filter rules, applied with a savepoint so that a rule that cuts off
+- [ ] **14.4** Enable and disable WireGuard peers, restart IPsec tunnels
+- [ ] **14.5** Manage aliases
+- [ ] **14.6** Manage filter rules, applied with a savepoint so that a rule that cuts off
   access is rolled back automatically
-
-Common:
-
-- [ ] **12.17** Permissions and audit actions for the new modules, navigation entries
-- [ ] **12.18** Tests: fake servers for NetBox, AOS-CX and OPNsense, manual test against
-  real devices documented
-- [ ] **12.19** Documentation, `CHANGELOG.md`, tag `v0.2.0`
+- [ ] **14.7** Permissions and audit actions, navigation entry
+- [ ] **14.8** Tests: fake OPNsense server, manual test against a real firewall documented
+- [ ] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`
