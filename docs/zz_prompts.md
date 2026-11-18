@@ -168,3 +168,39 @@ You can create and delete test VMs there, using the ID range >1000.
 ## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
 
 yes, please go ahead
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+the workflow finished
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+I have deployed dcdash on a dedicated VM an configured it our test network now. The LDAP login fails with
+Nov 18 11:10:40 dcdash dcdash[5852]: {"level":"error","req_id":"dbunj85eg6itak5qqj50","ip":"[REDACTED]","component":"auth","username":"[REDACTED]","client_ip":"[REDACTED]","error":"directory unavailable: connect to ldaps://[REDACTED]:636: LDAP Result Code 200 \"Network Error\": tls: failed to verify certificate: x509: certificate relies on legacy Common Name field, use SANs instead","time":"2026-11-18T11:10:40.099732619+01:00","message":"login failed: directory unavailable"}
+
+As this is the certificate, SAMBA creates for itself, not using the SAN is a quirk we need to be able to work with. Is there a way to get this working?
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+For the next sprint, please add the folowing tasks:
+- add support for multiple LDAP URLs for failover
+- Integrate the documentation as a separate menu "Documentation" in the top bar
+- The Width of the column "Actions" in the German translation is insufficient to display all buttons in one line, the same goes for the "Usage" column. The latter can be fixed by changing the translation from "Arbeitsspeicher" to "RAM", but for the buttons, I'd like to have a wider column. Currently, the dashboard is centerd in the browser and wastes a lot of real estate of the 1920 wide screen. Please make it wider and add around 20% more space to the actions column.
+- When viewing a VM, I would like to reconfigure Settings like "agent", boot", etc. I would also like to be able to resize, detach, attach, create and delete disks as well as add, edit and remove network devices
+- Also, I seem to get kicked out after a few minutes of inactivity. I would prefer to stay logged in for 8 hours
+- When looking at the DNS zone, the Edit and Delete buttons don't fit into the Actions column in both languages, that should be fixed, too
+- On the DHCP-Page, remove the status box for the dhcp server and move the server selection under the DHCP headline
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+Please redact the prompts before pushing. 
+When creating a VM, on tab 3 "Network and login", there should be the option to add multiple nics
+When creating a VM, after tab 3, the user should have tabs for adding DHCP reservations (IPv4 and v6) and adding  DNS names.

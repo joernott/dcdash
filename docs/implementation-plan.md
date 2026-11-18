@@ -1,4 +1,4 @@
-# Implementation Plan — dcdash v0.1.0 and v0.1.1
+# Implementation Plan — dcdash
 
 Based on [concept.md](concept.md) and the decisions in [concept-review.md](concept-review.md).
 
@@ -42,6 +42,7 @@ These apply to every task:
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
+| 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes | – | in progress |
 
 ---
 
@@ -335,3 +336,43 @@ These apply to every task:
     configuration (the inventory lags behind after a creation), all storages of a node are
     listed, the token commands in `proxmox.md` work in bash
 - [x] **10.10** Documentation, `CHANGELOG.md`, tag `v0.1.1`
+
+## Sprint 11 — LDAP Failover, VM Configuration and UI Fixes
+
+- [ ] **11.1** LDAP failover: `auth.ldap` accepts several URLs, which are tried in order
+  until one answers (connection or TLS errors move on to the next one, wrong credentials do
+  not). TLS settings, including a fingerprint per URL, the status check and the
+  documentation are adapted
+- [ ] **11.2** Built-in documentation: a "Documentation" menu in the top bar shows the
+  documentation from `docs/` (embedded in the binary, in the language of the user where
+  available), with working links between the pages
+- [ ] **11.3** Wider layout: the content uses more of wide screens (for example 1920 pixels)
+  instead of a narrow centered column
+- [ ] **11.4** Proxmox guest list: the "Actions" column gets about 20% more width, so that
+  all buttons fit in one line in English and German; the German label "Arbeitsspeicher"
+  in the "Usage" column becomes "RAM"
+- [ ] **11.5** DNS zone view: the "Edit" and "Delete" buttons fit into the "Actions" column
+  in English and German
+- [ ] **11.6** DHCP view: remove the status box of the DHCP server and move the server
+  selection below the "DHCP" heading
+- [ ] **11.7** Sessions: find out why users are logged out after a few minutes of
+  inactivity, fix it, and keep sessions alive for 8 hours (adjust the default of
+  `auth.session.idle_timeout` if needed)
+- [ ] **11.8** API research for the VM configuration: changing options, disks and network
+  devices of VMs (`PUT/POST .../config`, `resize`, `unlink`, pending changes, hot-plug,
+  required privileges); amend this sprint if needed
+- [ ] **11.9** Change VM options on the guest page, for example `agent`, `boot`, `onboot`,
+  CPU and memory, with pending changes (they apply after a restart) shown as such
+- [ ] **11.10** VM disks: create, attach, detach, resize and delete disks, limited to the
+  storages and limits of the provisioning configuration
+- [ ] **11.11** VM network devices: add, edit and remove, limited to the allowed bridges and
+  VLANs
+- [ ] **11.12** Tests (mocked API, manual test against a real cluster) and documentation
+- [ ] **11.13** Creation wizard: several network devices on the "Network and login" step (VMs
+  and containers), each limited to the allowed bridges and VLANs, with its own IP
+  configuration
+- [ ] **11.14** Creation wizard: steps after "Network and login" for DHCP reservations (IPv4
+  and IPv6, per network device) and DNS records (A, AAAA and optionally PTR). The MAC
+  addresses are fixed before the creation so that reservations can be made. The steps are
+  shown only with the matching DHCP and DNS permissions; the creation job adds the entries
+  and reports each one
