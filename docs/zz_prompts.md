@@ -45,7 +45,7 @@ yes, please go ahead
 
 ## 2026-11-12 — Sprint 1 (Foundation)
 
-I set up a dedicated development vm for you: dev.vm.test.sf.thse.net where you have a user "claude" with password "[REDACTED]" and sudo rights, so you can install software as needed. You can use ssh using the ssh key /c/Users/ext-se-jo/.ssh/id_ed25519_claude to connect to it. You can install whatever software you need on that. I've also added that key as a deploy key with write access to github.
+I set up a dedicated development vm for you: [REDACTED] where you have a user "claude" with password "[REDACTED]" and sudo rights, so you can install software as needed. You can use ssh using the ssh key /c/Users/[REDACTED]/.ssh/id_ed25519_claude to connect to it. You can install whatever software you need on that. I've also added that key as a deploy key with write access to github.
 
 ---
 
@@ -63,7 +63,7 @@ Please squas-merge sprint 1 into main, push theit and start with sprint 2
 
 ## 2026-11-12 — Sprint 2 (TLS)
 
-Please continue with the next sprint. You can use the ldap bind user "ssp-service@windows.test.sf.thse.net" with password "[REDACTED]" to connect to the domain controller "ldaps://DC1.windows.test.sf.thse.net:636"
+Please continue with the next sprint. You can use the ldap bind user "[REDACTED]" with password "[REDACTED]" to connect to the domain controller "ldaps://[REDACTED]:636"
 
 ---
 
@@ -94,7 +94,7 @@ please continue
 ## 2026-11-13 — Sprint 6 (Proxmox)
 
 You do have sudo on the VM, use the password "[REDACTED]". You can install whatever you need on the vm as its only purpose is to develop this app. Please install the test browser and notify me if you need assistance. Afterwards, please continue with Sprint 6.
-I have created a user "dashroot" with password "[REDACTED]" on the Proxmox server https://proxtester2.wan.kunden.sf.thse.net:8006 and created the API token "[REDACTED]" for that user. I've granted PVEVMUser rights on / to the users group.
+I have created a user "dashroot" with password "[REDACTED]" on the Proxmox server https://[REDACTED]:8006 and created the API token "[REDACTED]" for that user. I've granted PVEVMUser rights on / to the users group.
 
 ---
 
@@ -204,3 +204,13 @@ For the next sprint, please add the folowing tasks:
 Please redact the prompts before pushing. 
 When creating a VM, on tab 3 "Network and login", there should be the option to add multiple nics
 When creating a VM, after tab 3, the user should have tabs for adding DHCP reservations (IPv4 and v6) and adding  DNS names.
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+redact these names anyway. Sprint 11 should end with v0.1.1 as we are just polishing v0.1.0.
+Sprint 12 will then be a new minor version 0.2.0. In that sprint, I want to:
+- add support for netbox as common data source. Changes made in dcdash should update the respective entries in netbox
+- add Support for Aruba CX 6x00 switches: Configuring VLANs, ports, finding devices by MAC across multiple switches, get an overview over port statuses across multiple switches
+- add support for OPNSense firewall: health check, VPN status check, en-/disabling Wireguard peers, restarting IPSEC tunnels, Managing aliases and rules
