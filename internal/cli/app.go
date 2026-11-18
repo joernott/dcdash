@@ -79,7 +79,7 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	}
 	a.statusChecks = append(a.statusChecks, status.Check{Name: "database", Kind: "system", Check: st.Check})
 	if directory != nil {
-		a.statusChecks = append(a.statusChecks, status.Check{Name: "directory", Kind: "system", Check: directory.Check})
+		a.statusChecks = append(a.statusChecks, status.Check{Name: "directory", Kind: "system", Detail: directory.Status})
 	}
 	a.routes = append(a.routes,
 		authSvc.Register,
@@ -185,15 +185,19 @@ func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Author
 		opts.Local = local
 		log.Warn().Str("username", a.Local.Username).Msg("break-glass account enabled (always requires TOTP)")
 	}
-	if a.LDAP.URL != "" {
+	if a.LDAP.Enabled() {
 		client, err := ldapauth.New(a.LDAP, log)
 		if err != nil {
 			return nil, nil, err
 		}
 		opts.LDAP = client
-		log.Info().Str("url", a.LDAP.URL).Str("mode", a.LDAP.Mode).Msg("LDAP authentication enabled")
+		urls := make([]string, 0, len(a.LDAP.Endpoints()))
+		for _, s := range a.LDAP.Endpoints() {
+			urls = append(urls, s.URL)
+		}
+		log.Info().Strs("urls", urls).Str("mode", a.LDAP.Mode).Msg("LDAP authentication enabled")
 	} else {
-		log.Warn().Msg("auth.ldap.url is not set: LDAP login is disabled")
+		log.Warn().Msg("auth.ldap.url and auth.ldap.servers are not set: LDAP login is disabled")
 	}
 	client, _ := opts.LDAP.(*ldapauth.Client)
 	return auth.New(opts), client, nil

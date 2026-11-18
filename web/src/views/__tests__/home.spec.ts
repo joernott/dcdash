@@ -85,6 +85,24 @@ describe('HomeView', () => {
             latencyMs: 3,
           },
           {
+            name: 'directory',
+            kind: 'system',
+            status: 'ok',
+            detail: 'connected to dc1:636; not reachable: ...',
+            detailCode: 'directory.degraded',
+            detailParams: { server: 'dc1:636', down: 'dc2:636' },
+            latencyMs: 3,
+          },
+          {
+            name: 'directory2',
+            kind: 'system',
+            status: 'ok',
+            detail: 'connected to dc1:636',
+            detailCode: 'directory.connected',
+            detailParams: { server: 'dc1:636', count: '2' },
+            latencyMs: 3,
+          },
+          {
             name: 'future',
             kind: 'dhcp',
             status: 'ok',
@@ -102,6 +120,8 @@ describe('HomeView', () => {
     expect(text).toContain('Cloudflare, eine Zone')
     expect(text).toContain('Keine Verbindung zum HA-Partner kea-b')
     expect(text).toContain('English fallback')
+    expect(text).toContain('Verbunden mit dc1:636; nicht erreichbar: dc2:636')
+    expect(text).toContain('Verbunden mit dc1:636, alle 2 Server erreichbar')
   })
 
   it('shows errors and refreshes', async () => {

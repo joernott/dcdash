@@ -65,6 +65,10 @@
         "kea": "Kea {version}",
         "keaHA": "Kea {version}, HA {ha}",
         "partnerOutOfTouch": "No connection to the HA partner {partner}"
+      },
+      "directory": {
+        "connected": "Connected to {server} | Connected to {server}, all {count} servers reachable",
+        "degraded": "Connected to {server}; not reachable: {down}"
       }
     }
   },

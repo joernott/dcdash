@@ -125,8 +125,8 @@ func Load(path string) (*Config, []string, error) {
 		return nil, warnings, fmt.Errorf("%s: %w", path, err)
 	}
 	warnings = append(warnings, takeSecretWarnings()...)
-	if cfg.Auth.LDAP.URL == "" && !cfg.Auth.Local.Enabled {
-		warnings = append(warnings, "no login method configured (auth.ldap.url or auth.local): nobody can log in")
+	if !cfg.Auth.LDAP.Enabled() && !cfg.Auth.Local.Enabled {
+		warnings = append(warnings, "no login method configured (auth.ldap.url, auth.ldap.servers or auth.local): nobody can log in")
 	}
 	if cfg.Server.TLS.Mode == TLSModeNone {
 		warnings = append(warnings, "server.tls.mode is \"none\": serving plain HTTP, use only for development or behind a TLS-terminating proxy")
@@ -209,7 +209,7 @@ func (c *Config) Validate() error {
 	if c.DataDir == "" {
 		add("data_dir: required")
 	}
-	if c.Auth.LDAP.URL != "" {
+	if c.Auth.LDAP.Enabled() {
 		c.Auth.LDAP.validate(add)
 	}
 	c.Auth.Session.validate(add)

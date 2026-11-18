@@ -342,7 +342,7 @@ These apply to every task:
 
 ## Sprint 11 — LDAP Failover, VM Configuration, UI Fixes and Release v0.1.2
 
-- [ ] **11.1** LDAP failover: `auth.ldap` accepts several URLs, which are tried in order
+- [x] **11.1** LDAP failover: `auth.ldap` accepts several URLs, which are tried in order
   until one answers (connection or TLS errors move on to the next one, wrong credentials do
   not). TLS settings, including a fingerprint per URL, the status check and the
   documentation are adapted

@@ -67,6 +67,13 @@ auth:
   ldap:
     # ldaps://host:636, or ldap://host:389 with start_tls: true. Empty disables LDAP login.
     url: ldaps://dc1.example.com:636
+    # Several servers for failover, instead of url. A fingerprint pins the certificate
+    # of that server and overrides tls.fingerprint.
+    # servers:
+    #   - url: ldaps://dc1.example.com:636
+    #     fingerprint: ""
+    #   - url: ldaps://dc2.example.com:636
+    #     fingerprint: ""
     start_tls: false
     tls:
       # Additional trusted root certificates (PEM).

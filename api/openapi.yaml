@@ -1545,7 +1545,8 @@ components:
             `certificate.missing`, `certificate.expired` (`at`), `proxmox.connected` (`version`,
             `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
             `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
-            (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`). Times are RFC 3339.
+            (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
+            `count`), `directory.degraded` (`server`, `down`). Times are RFC 3339.
           examples: [certificate.valid]
         detailParams:
           type: object

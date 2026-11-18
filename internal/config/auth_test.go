@@ -53,6 +53,10 @@ func TestLDAPValidation(t *testing.T) {
 		"bad mode":         {"url: ldaps://dc1\n    mode: novell\n    bind_dn: a\n    bind_password: b\n    base_dn: c", "mode"},
 		"bad fingerprint":  {"url: ldaps://dc1\n    bind_dn: a\n    bind_password: b\n    base_dn: c\n    tls: {fingerprint: abc}", "fingerprint"},
 		"filter":           {"url: ldaps://dc1\n    bind_dn: a\n    bind_password: b\n    base_dn: c\n    user_filter: (uid=x)", "{username}"},
+		"url and servers":  {"url: ldaps://dc1\n    servers: [{url: ldaps://dc2}]\n    bind_dn: a\n    bind_password: b\n    base_dn: c", "set only one"},
+		"bad server url":   {"servers: [{url: ldaps://dc1}, {url: http://dc2}]\n    bind_dn: a\n    bind_password: b\n    base_dn: c", "servers[1].url"},
+		"server fp":        {"servers: [{url: ldaps://dc1, fingerprint: abc}]\n    bind_dn: a\n    bind_password: b\n    base_dn: c", "servers[0].fingerprint"},
+		"empty server url": {"servers: [{fingerprint: abc}]\n    bind_dn: a\n    bind_password: b\n    base_dn: c", "servers[0].url: required"},
 	}
 	for name, tc := range tests {
 		_, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nauth:\n  ldap:\n    " + tc.yaml + "\n"))
@@ -108,5 +112,30 @@ func TestLocalAccountConfig(t *testing.T) {
 	cfg, err := Parse(strings.NewReader(base + "    username: breakglass\n    password_hash: \"$argon2id$v=19$m=65536,t=3,p=4$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNoaGFzaA\"\n"))
 	if err != nil || !cfg.Auth.Local.Enabled || cfg.Auth.Local.Username != "breakglass" {
 		t.Errorf("valid local account: %v", err)
+	}
+}
+
+func TestLDAPServers(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nauth:\n  ldap:\n" +
+		"    servers:\n      - url: ldaps://dc1.example.com\n        fingerprint: \"" + strings.Repeat("AB:", 31) + "AB\"\n" +
+		"      - url: ldaps://dc2.example.com\n" +
+		"    tls: {ca_file: \"\"}\n    bind_dn: a\n    bind_password: b\n    base_dn: c\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := cfg.Auth.LDAP
+	if !l.Enabled() || len(l.Endpoints()) != 2 || l.Endpoints()[1].URL != "ldaps://dc2.example.com" {
+		t.Errorf("endpoints: %+v", l.Endpoints())
+	}
+	if l.TLSFor(l.Endpoints()[0]).Fingerprint == "" || l.TLSFor(l.Endpoints()[1]).Fingerprint != "" {
+		t.Error("server fingerprint must apply to its server only")
+	}
+
+	single := LDAP{URL: "ldaps://dc1"}
+	if e := single.Endpoints(); len(e) != 1 || e[0].URL != "ldaps://dc1" {
+		t.Errorf("url as single server: %+v", e)
+	}
+	if (LDAP{}).Enabled() {
+		t.Error("LDAP without url and servers must be disabled")
 	}
 }

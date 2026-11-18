@@ -97,6 +97,11 @@ password.
   Compare the fingerprint with the certificate on the domain controller
   (`/var/lib/samba/private/tls/cert.pem`) before trusting it. A pin has to be updated when the
   certificate is renewed.
+- **Several servers:** with `auth.ldap.servers`, each domain controller can have its own
+  fingerprint. A connection fails over to the next server only on network and TLS errors,
+  so a certificate that doesn't match moves on to the next server instead of being accepted.
+  Directory answers (wrong password, unknown user) are final and never tried on another
+  server.
 - **Credential handling:**
   - Empty passwords never reach the directory, because LDAP treats them as an anonymous bind,
     which succeeds.
