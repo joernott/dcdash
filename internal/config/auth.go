@@ -92,7 +92,7 @@ type Session struct {
 }
 
 func defaultSession() Session {
-	return Session{Lifetime: Duration(8 * time.Hour), IdleTimeout: Duration(30 * time.Minute)}
+	return Session{Lifetime: Duration(8 * time.Hour), IdleTimeout: Duration(8 * time.Hour)}
 }
 
 func (s Session) validate(add func(string, ...any)) {

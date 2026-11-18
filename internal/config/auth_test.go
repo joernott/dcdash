@@ -76,7 +76,7 @@ func TestSessionConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Auth.Session.Lifetime.D().Hours() != 8 || cfg.Auth.Session.IdleTimeout.D().Minutes() != 30 {
+	if cfg.Auth.Session.Lifetime.D().Hours() != 8 || cfg.Auth.Session.IdleTimeout.D().Hours() != 8 {
 		t.Errorf("session defaults: %+v", cfg.Auth.Session)
 	}
 	_, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nauth:\n  session: {lifetime: 1h, idle_timeout: 2h}\n"))

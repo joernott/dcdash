@@ -358,7 +358,7 @@ These apply to every task:
   in English and German
 - [ ] **11.6** DHCP view: remove the status box of the DHCP server and move the server
   selection below the "DHCP" heading
-- [ ] **11.7** Sessions: find out why users are logged out after a few minutes of
+- [x] **11.7** Sessions: find out why users are logged out after a few minutes of
   inactivity, fix it, and keep sessions alive for 8 hours (adjust the default of
   `auth.session.idle_timeout` if needed)
 - [ ] **11.8** API research for the VM configuration: changing options, disks and network

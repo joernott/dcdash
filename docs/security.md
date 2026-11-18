@@ -114,7 +114,9 @@ password.
   `Secure`, `HttpOnly` and `SameSite=Strict`. The database stores only the token's SHA-256
   hash.
 - A session ends after `auth.session.lifetime` (default 8 hours) or after `idle_timeout`
-  (default 30 minutes) without requests, whichever comes first. Logging in again always
+  (default 8 hours) without requests, whichever comes first. Open pages poll only while they
+  are visible, so a tab in the background counts as inactive. Each end of a session is
+  logged with its reason. Logging in again always
   creates a new session, so a session can't be fixed in advance (session fixation).
 - When a session advances a step (password, then TOTP), its token is replaced.
 - A session that has passed the password step but not the TOTP step (or the enrollment)

@@ -199,8 +199,9 @@ func (m *Manager) get(ctx context.Context, token string, touch bool) (*Session, 
 	}
 
 	now := m.now().UTC()
-	if !now.Before(s.ExpiresAt) || !now.Before(s.LastSeenAt.Add(m.idle)) ||
-		(!s.Authenticated() && !now.Before(s.CreatedAt.Add(PendingTimeout))) {
+	if reason := m.endReason(&s, now); reason != "" {
+		m.log.Info().Str("username", s.Username).Str("session_id", s.ID).Str("reason", reason).
+			Time("last_seen", s.LastSeenAt).Msg("session ended")
 		_ = m.deleteHash(ctx, hash)
 		return nil, ErrNotFound
 	}
@@ -211,6 +212,20 @@ func (m *Manager) get(ctx context.Context, token string, touch bool) (*Session, 
 		s.LastSeenAt = now.Truncate(time.Second)
 	}
 	return &s, nil
+}
+
+// endReason returns why a session is no longer valid at now ("lifetime",
+// "idle" or "pending"), or "" if it is still valid.
+func (m *Manager) endReason(s *Session, now time.Time) string {
+	switch {
+	case !now.Before(s.ExpiresAt):
+		return "lifetime"
+	case !now.Before(s.LastSeenAt.Add(m.idle)):
+		return "idle"
+	case !s.Authenticated() && !now.Before(s.CreatedAt.Add(PendingTimeout)):
+		return "pending"
+	}
+	return ""
 }
 
 // SetStage changes the stage of a session (e.g. after the TOTP step) and

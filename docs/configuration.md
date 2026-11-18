@@ -153,7 +153,7 @@ See [security.md](security.md#sessions).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `auth.session.lifetime` | duration | `8h` | Maximum duration of a session, regardless of activity. Must be positive. |
-| `auth.session.idle_timeout` | duration | `30m` | Ends a session after this time without requests. Must be positive and not longer than `lifetime`. |
+| `auth.session.idle_timeout` | duration | `8h` | Ends a session after this time without requests. Open dcdash pages poll only while they are visible, so a tab in the background counts as inactive. Must be positive and not longer than `lifetime`. |
 
 ### auth.lockout
 

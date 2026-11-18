@@ -88,9 +88,10 @@ auth:
     # group_filter: ""    # generic mode only, e.g. "(&(objectClass=groupOfNames)(member={dn}))"
     timeout: 10s
   session:
-    # Maximum session duration and inactivity timeout.
+    # Maximum session duration and inactivity timeout. A shorter idle_timeout logs
+    # users out sooner, e.g. when the dcdash tab stays in the background.
     lifetime: 8h
-    idle_timeout: 30m
+    idle_timeout: 8h
   lockout:
     # Failed logins before a user name or client IP address is locked.
     user: {max_failures: 5, window: 15m, duration: 15m}
