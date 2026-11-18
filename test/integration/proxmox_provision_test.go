@@ -192,9 +192,13 @@ func TestProxmoxProvisioning(t *testing.T) {
 	}
 	net := proxmox.CreateNetwork{Bridge: bridge, VLAN: vlan}
 
+	// Two network devices (task 11.13): the first with a given MAC address and a static
+	// address, the second with SLAAC.
 	clone := run("clone", proxmox.CreateRequest{Type: proxmox.TypeQEMU, Source: proxmox.SourceTemplate, Template: tpl,
-		Name: "dcdash-it-clone", Cores: 1, Memory: 1024, Disk: 65, Network: proxmox.CreateNetwork{Bridge: bridge, VLAN: vlan,
-			IPv4: "192.0.2.10/24", Gateway4: "192.0.2.1", Nameservers: []string{"192.0.2.53"}},
+		Name: "dcdash-it-clone", Cores: 1, Memory: 1024, Disk: 65, Networks: []proxmox.CreateNetwork{
+			{Bridge: bridge, VLAN: vlan, IPv4: "192.0.2.10/24", Gateway4: "192.0.2.1", Nameservers: []string{"192.0.2.53"}, MAC: "BC:24:11:1D:C0:01"},
+			{Bridge: bridge, VLAN: vlan, IPv6: "auto"},
+		},
 		User: "it", SSHKeys: itSSHKey, Description: "dcdash integration test", Tags: []string{"dcdash-it"}})
 	cfgVM, err := c.GuestConfig(t.Context(), clone.Node, proxmox.TypeQEMU, clone.VMID)
 	if err != nil {
@@ -211,14 +215,24 @@ func TestProxmoxProvisioning(t *testing.T) {
 	if vlan != 0 && !strings.Contains(cfgVM["net0"].(string), "tag="+strconv.Itoa(vlan)) {
 		t.Errorf("clone net0: %v", cfgVM["net0"])
 	}
+	t.Logf("clone net1=%v ipconfig1=%v", cfgVM["net1"], cfgVM["ipconfig1"])
+	if n0, _ := cfgVM["net0"].(string); !strings.Contains(n0, "=BC:24:11:1D:C0:01,") {
+		t.Errorf("clone net0 without the given MAC: %v", n0)
+	}
+	if n1, _ := cfgVM["net1"].(string); !strings.Contains(n1, "=BC:24:11:") || cfgVM["ipconfig1"] != "ip6=auto" {
+		t.Errorf("clone net1: %v, ipconfig1 %v", n1, cfgVM["ipconfig1"])
+	}
 
 	ct := run("container", proxmox.CreateRequest{Type: proxmox.TypeLXC, Node: node, Name: "dcdash-it-ct", OSTemplate: ctTemplate,
-		Cores: 1, Memory: 512, Disk: 2, Storage: storage, Network: net, SSHKeys: itSSHKey})
+		Cores: 1, Memory: 512, Disk: 2, Storage: storage, Networks: []proxmox.CreateNetwork{net, {Bridge: bridge}}, SSHKeys: itSSHKey})
 	cfgCT, err := c.GuestConfig(t.Context(), ct.Node, proxmox.TypeLXC, ct.VMID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("container %d config: net0=%v rootfs=%v unprivileged=%v", ct.VMID, cfgCT["net0"], cfgCT["rootfs"], cfgCT["unprivileged"])
+	t.Logf("container %d config: net0=%v net1=%v rootfs=%v unprivileged=%v", ct.VMID, cfgCT["net0"], cfgCT["net1"], cfgCT["rootfs"], cfgCT["unprivileged"])
+	if n1, _ := cfgCT["net1"].(string); !strings.Contains(n1, "name=eth1") || !strings.Contains(n1, "hwaddr=BC:24:11:") {
+		t.Errorf("container net1: %v", n1)
+	}
 
 	jobs := []proxmox.Job{clone, ct}
 	if iso != "" {

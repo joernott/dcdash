@@ -135,13 +135,13 @@ DCDASH_IT_PVE_PROVISION_VMIDS=1001-1099 \
 DCDASH_IT_PVE_PROVISION_TEMPLATE=999 \
 DCDASH_IT_PVE_PROVISION_CT_TEMPLATE=vm_data:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst \
 DCDASH_IT_PVE_PROVISION_STORAGE=vm_data DCDASH_IT_PVE_PROVISION_BRIDGE=kunden0 \
-DCDASH_IT_PVE_PROVISION_VLAN=172 DCDASH_IT_PVE_PROVISION_ISO=local:iso/debian-13.4.0-amd64-netinst.iso \
+DCDASH_IT_PVE_PROVISION_VLAN=172 DCDASH_IT_PVE_PROVISION_ISO=vm_data:iso/debian-13.7.0-amd64-netinst.iso \
 go test -tags integration -run TestProxmoxProvisioning -v ./test/integration/
 ```
 
 Use an ID range that holds no other guests. The guests are not started.
 
-Last manual test: 2026-11-17, Proxmox VE 9.0.11, single node, API token with privilege
+Last manual test: 2026-11-18 (first on 2026-11-17), Proxmox VE 9, single node, API token with privilege
 separation and `PVEVMAdmin`, `PVEDatastoreUser` and `PVESDNUser` (see
 [proxmox.md](proxmox.md#privileges-of-the-api-token)).
 
@@ -153,6 +153,7 @@ separation and `PVEVMAdmin`, `PVEDatastoreUser` and `PVESDNUser` (see
 | VM from an ISO image | passed |
 | Delete with purge, typing the name, right after the creation | passed after a fix: `/cluster/resources` lags behind with the name, dcdash now reads it from the configuration |
 | SSH keys with `+` and `/` (encoding of `sshkeys`) | passed |
+| Two network devices (2026-11-18): the clone keeps a given MAC on `net0` and gets `net1` with a generated MAC and `ipconfig1=ip6=auto`; the container gets `eth1` with `hwaddr` | passed |
 
 ### Changing VMs
 
