@@ -6,6 +6,42 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-18
+
+Polish of v0.1.0: changing virtual machines, LDAP failover, the built-in documentation and
+fixes from the first deployment.
+
+### Added
+
+- **Changing VMs:** the page of a VM shows its options, disks and network devices. Users with
+  `write` on the VM change options (for example memory, cores, boot order, guest agent), add,
+  grow, detach, attach and delete disks, and add, change and remove network devices, within
+  the limits of the cluster's `provisioning` section. Changes Proxmox can't apply to a running
+  VM are shown as pending and can be discarded. Deleting a disk needs `admin` and the disk name.
+  Audited as `proxmox.guest.configure`, `proxmox.disk.*` and `proxmox.network.*`.
+- **Creation wizard:** up to 8 network devices per guest, each with bridge, VLAN, IP settings
+  and a MAC address that is generated when the device is added. Optional steps add DHCPv4 and
+  DHCPv6 reservations for the devices and A, AAAA and PTR records; the job adds them before
+  the guest starts.
+- **LDAP failover:** `auth.ldap.servers` lists several directory servers, each with an optional
+  certificate fingerprint. dcdash fails over on network and TLS errors; the overview names
+  servers that are not reachable.
+- **Documentation menu:** the user documentation is built into the binary and shown in the
+  web interface, with working links between the pages.
+
+### Changed
+
+- **Sessions** end after 8 hours without requests instead of 30 minutes
+  (`auth.session.idle_timeout`). A tab in the background no longer logs the user out after half
+  an hour. The end of a session is logged with its reason.
+- **Layout:** the pages use more of wide screens, and action columns size to their buttons, so
+  that they fit in one line in English and German (Proxmox guests, DNS zones and records, DHCP,
+  sessions). The German "Usage" column says "RAM".
+- **DHCP page:** the server selection is below the heading; the server status is shown on the
+  overview page only.
+- **API:** a create request takes `networks` (a list) instead of `network`; `network` still
+  works.
+
 ## [0.1.1] - 2026-11-17
 
 Creating and deleting virtual machines and containers in Proxmox VE.
@@ -66,6 +102,7 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/joernott/dcdash/releases/tag/v0.1.2
 [0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1
 [0.1.0]: https://github.com/joernott/dcdash/releases/tag/v0.1.0

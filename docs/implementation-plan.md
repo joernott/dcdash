@@ -42,7 +42,7 @@ These apply to every task:
 | 8 | `sprint/08-dhcp` | DHCP: Kea v3 DHCPv4 and DHCPv6 | v0.1.0 | done |
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
-| 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | in progress |
+| 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | done |
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back | v0.2.0 | planned |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | planned |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | planned |
@@ -382,7 +382,7 @@ These apply to every task:
   addresses are fixed before the creation so that reservations can be made. The steps are
   shown only with the matching DHCP and DNS permissions; the creation job adds the entries
   and reports each one
-- [ ] **11.15** `CHANGELOG.md`, tag `v0.1.2`
+- [x] **11.15** `CHANGELOG.md`, tag `v0.1.2`
 
 ## Sprint 12 — NetBox
 
