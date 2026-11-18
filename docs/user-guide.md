@@ -71,6 +71,11 @@ cluster, choose it at the top.
   If a step fails, check the guest and delete it if necessary.
 - **Delete:** on the guest's page, for stopped guests. You type the name to confirm. The
   guest and its disks are deleted; this can't be undone.
+- **Hardware:** on the page of a VM, change its options (for example memory, cores, boot
+  order, guest agent), add, grow, detach, attach and delete disks, and add, change and remove
+  network devices, if you may change the VM. Changes Proxmox can't apply to a running VM are
+  marked as pending and take effect when the VM is started again. See
+  [proxmox.md](proxmox.md#changing-virtual-machines).
 
 ## DNS
 

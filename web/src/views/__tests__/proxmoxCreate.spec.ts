@@ -301,7 +301,7 @@ describe('Deleting a guest', () => {
     const del = pageButtons(w).find((b) => b.text() === 'Delete')!
     expect(del.attributes('disabled')).toBeUndefined()
     await del.trigger('click')
-    const dialog = w.findAll('dialog')[1]!
+    const dialog = w.findAll('dialog').find((d) => d.text().includes('Delete guest'))!
     expect(dialog.text()).toContain('app1 (5000) is deleted with all its disks.')
     const submit = dialog.findAll('button').find((b) => b.text() === 'Delete')!
     expect(submit.attributes('disabled')).toBeDefined()

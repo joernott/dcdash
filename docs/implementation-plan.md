@@ -365,11 +365,11 @@ These apply to every task:
   devices of VMs (`PUT/POST .../config`, `resize`, `unlink`, pending changes, hot-plug,
   required privileges); amend this sprint if needed (results and decisions:
   [ADR 0005](adr/0005-proxmox-vm-configuration.md))
-- [ ] **11.9** Change VM options on the guest page, for example `agent`, `boot`, `onboot`,
+- [x] **11.9** Change VM options on the guest page, for example `agent`, `boot`, `onboot`,
   CPU and memory, with pending changes (they apply after a restart) shown as such
-- [ ] **11.10** VM disks: create, attach, detach, resize and delete disks, limited to the
+- [x] **11.10** VM disks: create, attach, detach, resize and delete disks, limited to the
   storages and limits of the provisioning configuration
-- [ ] **11.11** VM network devices: add, edit and remove, limited to the allowed bridges and
+- [x] **11.11** VM network devices: add, edit and remove, limited to the allowed bridges and
   VLANs
 - [ ] **11.12** Tests (mocked API, manual test against a real cluster) and documentation
 - [ ] **11.13** Creation wizard: several network devices on the "Network and login" step (VMs

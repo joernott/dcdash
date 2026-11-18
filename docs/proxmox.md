@@ -209,6 +209,41 @@ The audit log records `proxmox.guest.create` when a creation ends, with its resu
 settings and the Proxmox tasks (passwords are not recorded), and `proxmox.guest.delete` when a
 deletion starts.
 
+## Changing virtual machines
+
+The page of a VM shows its options, disks and network devices under **Hardware**. Users with
+`write` on the VM (`proxmox:<cluster>:qemu/<vmid>:write`) can change them on clusters with a
+`provisioning` section, which sets the limits:
+
+- **Options:** name, description, tags, start at boot, protection, QEMU guest agent, boot
+  order, cores, sockets, memory, ballooning, CPU type, NUMA, operating system and hot-plug.
+  Cores × sockets and the memory stay within `limits`. Options that could run code on the
+  host (such as `args` or `hookscript`) are not offered.
+- **Disks:** add a disk on one of the `storages` (up to `limits.disk`), grow a disk, change
+  discard, SSD emulation, IO thread and backup, detach a disk (it stays as an unused disk) and
+  attach an unused one. Deleting a disk destroys its data and needs `admin` on the VM; the user
+  types the disk name (for example `scsi1`) to confirm. An attached disk can only be deleted
+  while the VM is stopped.
+- **Network devices:** add, change and remove devices on the allowed `bridges` and `vlans`.
+  dcdash generates the MAC address of a new device (prefix `BC:24:11`) unless one is given;
+  a change keeps the MAC address.
+
+On a running VM, Proxmox hot-plugs disks and network devices (with the default `hotplug`
+setting). Other changes, such as memory, CPU, boot order and the guest agent, are **pending**:
+the page shows them and they take effect when the VM is started again, after a stop and start
+or a reboot through Proxmox (not after a reboot from inside the guest). "Discard pending
+changes" drops them.
+
+Every change carries a digest of the configuration it was made on. If the VM was changed in
+the meantime, for example in the Proxmox web interface, the change is refused ("The
+configuration was changed in the meantime") and the page has to be reloaded. A change waits up
+to 60 seconds for its Proxmox task; longer tasks continue in the task list.
+
+The API token needs no further privileges: `PVEVMAdmin` contains the `VM.Config.*`
+privileges, `PVEDatastoreUser` allows new disks and `PVESDNUser` the bridges (see
+[Privileges of the API token](#privileges-of-the-api-token)). Containers can't be changed yet.
+See [ADR 0005](adr/0005-proxmox-vm-configuration.md) for the details.
+
 ## Troubleshooting
 
 | Message in dcdash | Cause |

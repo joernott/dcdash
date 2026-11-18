@@ -628,6 +628,321 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware:
+    get:
+      tags: [proxmox]
+      operationId: getProxmoxHardware
+      summary: Options, disks and network devices of a VM
+      description: |
+        Requires `read` on `qemu/<vmid>`; VMs only. Includes pending changes (they take effect at
+        the next start of the VM) and the digest that changes send back. `configurable` is true if
+        the cluster has provisioning settings; changes need `write` on the VM. See
+        docs/adr/0005-proxmox-vm-configuration.md.
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      responses:
+        "200":
+          description: The hardware of the VM.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxmoxHardware" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/options:
+    post:
+      tags: [proxmox]
+      operationId: changeProxmoxOptions
+      summary: Change, remove or revert options of a VM
+      description: |
+        Requires `write` on `qemu/<vmid>` and provisioning settings. Only the options listed in
+        `ProxmoxOptionSetting.key` can be set or removed; cores, sockets and memory are limited by
+        the provisioning settings. `revert` drops pending changes of any key. Audited as
+        `proxmox.guest.configure`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxOptionsRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks:
+    post:
+      tags: [proxmox]
+      operationId: createProxmoxDisk
+      summary: Add a new disk to a VM
+      description: |
+        Requires `write` on `qemu/<vmid>` and provisioning settings: the storage must be allowed and
+        the size within the disk limit. The disk gets the first free slot of the bus, returned as
+        `key`. Audited as `proxmox.disk.create`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxDiskRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks/{disk}:
+    put:
+      tags: [proxmox]
+      operationId: updateProxmoxDisk
+      summary: Grow a disk or change its options
+      description: |
+        Requires `write` on `qemu/<vmid>`. Disks can only grow, up to the disk limit. Audited as
+        `proxmox.disk.resize` (size only) or `proxmox.disk.update`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - $ref: "#/components/parameters/ProxmoxDisk"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxDiskUpdate" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [proxmox]
+      operationId: deleteProxmoxDisk
+      summary: Delete a disk and its data
+      description: |
+        Requires `admin` on `qemu/<vmid>`; `confirm` must be the disk key. An unused disk is
+        destroyed; an attached disk is detached and destroyed, which is only possible while the VM is
+        stopped (code guest_running otherwise). Audited as `proxmox.disk.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - $ref: "#/components/parameters/ProxmoxDisk"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxDiskAction" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400":
+          description: "Invalid request, or the confirmation doesn't match the disk (code: confirmation_mismatch)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks/{disk}/detach:
+    post:
+      tags: [proxmox]
+      operationId: detachProxmoxDisk
+      summary: Detach a disk; it stays as an unused disk
+      description: |
+        Requires `write` on `qemu/<vmid>`. Audited as `proxmox.disk.detach`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - $ref: "#/components/parameters/ProxmoxDisk"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxDiskAction" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks/{disk}/attach:
+    post:
+      tags: [proxmox]
+      operationId: attachProxmoxDisk
+      summary: Attach an unused disk
+      description: |
+        Requires `write` on `qemu/<vmid>`; `disk` is an unused disk (`unusedN`). It gets the first
+        free slot of `bus`, returned as `key`. Audited as `proxmox.disk.attach`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - $ref: "#/components/parameters/ProxmoxDisk"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxDiskAction" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/networks:
+    post:
+      tags: [proxmox]
+      operationId: createProxmoxNetwork
+      summary: Add a network device to a VM
+      description: |
+        Requires `write` on `qemu/<vmid>`; bridge and VLAN must be allowed by the provisioning
+        settings. Without `mac` dcdash generates one (prefix BC:24:11). The device gets the first
+        free `netN`, returned as `key`. Audited as `proxmox.network.create`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxNetworkRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/networks/{net}:
+    put:
+      tags: [proxmox]
+      operationId: updateProxmoxNetwork
+      summary: Change a network device; the MAC address stays
+      description: |
+        Requires `write` on `qemu/<vmid>`. `mac` is ignored. Audited as `proxmox.network.update`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - $ref: "#/components/parameters/ProxmoxNet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxNetworkRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [proxmox]
+      operationId: deleteProxmoxNetwork
+      summary: Remove a network device
+      description: |
+        Requires `write` on `qemu/<vmid>`. Audited as `proxmox.network.delete`.
+      security:
+        - { session: [], csrf: [] }
+      parameters:
+        - $ref: "#/components/parameters/ProxmoxCluster"
+        - $ref: "#/components/parameters/ProxmoxGuestType"
+        - $ref: "#/components/parameters/ProxmoxVMID"
+        - $ref: "#/components/parameters/ProxmoxNet"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxmoxNetworkAction" }
+      responses:
+        "200": { $ref: "#/components/responses/ProxmoxChangeDone" }
+        "202": { $ref: "#/components/responses/ProxmoxChangeRunning" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/proxmox/clusters/{cluster}/provisioning:
     get:
       tags: [proxmox]
@@ -1302,6 +1617,8 @@ components:
     ProxmoxCluster: { name: cluster, in: path, required: true, schema: { type: string }, description: Cluster name from the configuration. }
     ProxmoxGuestType: { name: type, in: path, required: true, schema: { type: string, enum: [qemu, lxc] } }
     ProxmoxVMID: { name: vmid, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    ProxmoxDisk: { name: disk, in: path, required: true, schema: { type: string, pattern: "^(scsi|virtio|sata|ide|unused)[0-9]+$" }, description: "Disk key, e.g. scsi1 or unused0." }
+    ProxmoxNet: { name: net, in: path, required: true, schema: { type: string, pattern: "^net[0-9]+$" }, description: "Network device key, e.g. net1." }
 
     DNSProvider: { name: provider, in: path, required: true, schema: { type: string }, description: Provider name from the configuration. }
     DNSZone: { name: zone, in: path, required: true, schema: { type: string }, description: Zone name without trailing dot. }
@@ -1347,6 +1664,24 @@ components:
           schema: { $ref: "#/components/schemas/ErrorBody" }
     NotFound:
       description: "Not found (code: not_found)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    ProxmoxChangeDone:
+      description: The change is done.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ProxmoxConfigResult" }
+    ProxmoxChangeRunning:
+      description: The Proxmox task was still running after 60 seconds; the task list shows its end.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ProxmoxConfigResult" }
+    ProxmoxChangeConflict:
+      description: |
+        Codes: provisioning_disabled (the cluster has no provisioning settings), config_changed
+        (the configuration changed since it was read: reload and try again), no_free_slot (no free
+        slot on the bus), guest_running (stop the VM or detach the disk first).
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorBody" }
@@ -1929,6 +2264,132 @@ components:
         created: { type: string, format: date-time }
         ended: { type: string, format: date-time }
 
+    ProxmoxHardware:
+      type: object
+      required: [digest, running, options, disks, networks, configurable, storages, bridges, vlans, limits]
+      properties:
+        digest: { type: string, description: Identifies the configuration; changes send it back. }
+        running: { type: boolean }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxOptionSetting" }
+        disks:
+          type: array
+          description: Attached and unused disks, without CD-ROM drives.
+          items: { $ref: "#/components/schemas/ProxmoxHardwareDisk" }
+        networks:
+          type: array
+          items: { $ref: "#/components/schemas/ProxmoxNetworkDevice" }
+        configurable: { type: boolean, description: The cluster has provisioning settings. }
+        storages: { type: array, items: { type: string }, description: Storages for new disks. }
+        bridges: { type: array, items: { type: string } }
+        vlans: { type: array, items: { type: string }, description: "Allowed VLAN ranges, e.g. 100-199." }
+        limits:
+          type: object
+          required: [cores, memory, disk]
+          properties:
+            cores: { type: integer }
+            memory: { type: integer, description: MiB }
+            disk: { type: integer, description: GiB }
+    ProxmoxOptionSetting:
+      type: object
+      required: [key, value, set]
+      properties:
+        key:
+          type: string
+          enum: [name, description, tags, onboot, protection, agent, boot, cores, sockets, memory, balloon, cpu, numa, ostype, hotplug]
+        value: { type: string, description: The active value. }
+        set: { type: boolean, description: False if the option is not set (Proxmox uses its default). }
+        pending: { type: string, description: A change that takes effect at the next start. }
+        delete: { type: boolean, description: The removal is pending. }
+    ProxmoxHardwareDisk:
+      type: object
+      required: [key, bus, volume, storage, size, sizeBytes, discard, ssd, iothread, backup, active]
+      properties:
+        key: { type: string, examples: [scsi0] }
+        bus: { type: string, enum: [scsi, virtio, sata, ide, unused] }
+        volume: { type: string, examples: ["local-lvm:vm-101-disk-0"] }
+        storage: { type: string }
+        size: { type: string, examples: [32G] }
+        sizeBytes: { type: integer, format: int64 }
+        discard: { type: boolean }
+        ssd: { type: boolean }
+        iothread: { type: boolean }
+        backup: { type: boolean, description: False if the disk is excluded from backups. }
+        active: { type: boolean, description: False if the addition of the disk is pending. }
+        pending: { type: string, description: Pending value. }
+        delete: { type: boolean }
+    ProxmoxNetworkDevice:
+      type: object
+      required: [key, model, mac, bridge, firewall, linkDown, active]
+      properties:
+        key: { type: string, examples: [net0] }
+        model: { type: string, enum: [virtio, e1000, e1000e, vmxnet3, rtl8139] }
+        mac: { type: string, examples: ["BC:24:11:12:34:56"] }
+        bridge: { type: string }
+        vlan: { type: integer }
+        firewall: { type: boolean }
+        linkDown: { type: boolean }
+        active: { type: boolean }
+        pending: { type: string }
+        delete: { type: boolean }
+    ProxmoxOptionsRequest:
+      type: object
+      properties:
+        digest: { type: string }
+        set: { type: object, additionalProperties: { type: string } }
+        delete: { type: array, items: { type: string } }
+        revert: { type: array, items: { type: string }, description: Keys whose pending changes are dropped. }
+    ProxmoxDiskRequest:
+      type: object
+      required: [bus, storage, sizeGiB]
+      properties:
+        digest: { type: string }
+        bus: { type: string, enum: [scsi, virtio, sata, ide] }
+        storage: { type: string }
+        sizeGiB: { type: integer, minimum: 1 }
+        discard: { type: boolean }
+        ssd: { type: boolean, description: Not on virtio. }
+        iothread: { type: boolean, description: Only on scsi and virtio. }
+        noBackup: { type: boolean }
+    ProxmoxDiskUpdate:
+      type: object
+      properties:
+        digest: { type: string }
+        sizeGiB: { type: integer, description: New size; larger than the current one. Omit to keep it. }
+        discard: { type: boolean }
+        ssd: { type: boolean }
+        iothread: { type: boolean }
+        noBackup: { type: boolean }
+    ProxmoxDiskAction:
+      type: object
+      properties:
+        digest: { type: string }
+        bus: { type: string, enum: [scsi, virtio, sata, ide], description: For attach. }
+        confirm: { type: string, description: For delete, the disk key. }
+    ProxmoxNetworkRequest:
+      type: object
+      required: [model, bridge]
+      properties:
+        digest: { type: string }
+        model: { type: string, enum: [virtio, e1000, e1000e, vmxnet3, rtl8139] }
+        bridge: { type: string }
+        vlan: { type: integer }
+        firewall: { type: boolean }
+        linkDown: { type: boolean }
+        mac: { type: string, description: For new devices; empty generates one. }
+    ProxmoxNetworkAction:
+      type: object
+      properties:
+        digest: { type: string }
+    ProxmoxConfigResult:
+      type: object
+      required: [node, done]
+      properties:
+        key: { type: string, description: The disk or network device that was created or attached. }
+        upid: { type: string }
+        node: { type: string }
+        done: { type: boolean, description: False if the task was still running. }
     ProxmoxDeleteRequest:
       type: object
       required: [confirm]
