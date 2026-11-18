@@ -18,6 +18,7 @@
     "toggle": "Show or hide the navigation",
     "skip": "Skip to content",
     "home": "Overview",
+    "docs": "Documentation",
     "proxmox": "Proxmox",
     "audit": "Audit log",
     "sessions": "Sessions",
@@ -178,6 +179,10 @@
   "forbidden": {
     "title": "No access",
     "text": "You don't have permission to open this page."
+  },
+  "docs": {
+    "pages": "Documentation pages",
+    "englishOnly": "The documentation is only available in English."
   },
   "notFound": {
     "title": "Page not found",

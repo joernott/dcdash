@@ -346,9 +346,9 @@ These apply to every task:
   until one answers (connection or TLS errors move on to the next one, wrong credentials do
   not). TLS settings, including a fingerprint per URL, the status check and the
   documentation are adapted
-- [ ] **11.2** Built-in documentation: a "Documentation" menu in the top bar shows the
+- [x] **11.2** Built-in documentation: a "Documentation" menu in the top bar shows the
   documentation from `docs/` (embedded in the binary, in the language of the user where
-  available), with working links between the pages
+  available; currently English only), with working links between the pages
 - [x] **11.3** Wider layout: the content uses more of wide screens (for example 1920 pixels)
   instead of a narrow centered column
 - [x] **11.4** Proxmox guest list: the "Actions" column gets about 20% more width, so that

@@ -91,6 +91,52 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/docs:
+    get:
+      tags: [system]
+      operationId: listDocs
+      summary: Pages of the built-in documentation
+      description: |
+        The documentation is embedded in the binary; requires a logged-in user. The list is in
+        menu order and contains no page content.
+      responses:
+        "200":
+          description: The documentation pages.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pages]
+                properties:
+                  pages:
+                    type: array
+                    items: { $ref: "#/components/schemas/DocsPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/docs/{page}:
+    get:
+      tags: [system]
+      operationId: getDoc
+      summary: One page of the built-in documentation, rendered to HTML
+      parameters:
+        - name: page
+          in: path
+          required: true
+          schema: { type: string }
+          example: security
+      responses:
+        "200":
+          description: The page with its HTML.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocsPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/auth/login:
     post:
       tags: [auth]
@@ -1518,6 +1564,23 @@ components:
         details: { type: object, additionalProperties: true }
         requestId: { type: string }
 
+    DocsPage:
+      type: object
+      required: [name, title]
+      properties:
+        name:
+          type: string
+          description: Page name, the Markdown file name without ".md".
+          examples: [security]
+        title:
+          type: string
+          description: Text of the first heading.
+        html:
+          type: string
+          description: |
+            The page as HTML, only in GET /api/v1/docs/{page}. Raw HTML of the Markdown is not
+            rendered. Links between pages point to /docs/<page>, other links point to GitHub
+            and have target="_blank". Heading IDs and link fragments have the prefix "doc-".
     StatusReport:
       type: object
       required: [components, checkedAt]

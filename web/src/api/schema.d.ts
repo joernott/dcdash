@@ -80,6 +80,44 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/docs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Pages of the built-in documentation
+     * @description The documentation is embedded in the binary; requires a logged-in user. The list is in
+     *     menu order and contains no page content.
+     */
+    get: operations['listDocs']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/docs/{page}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One page of the built-in documentation, rendered to HTML */
+    get: operations['getDoc']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/auth/login': {
     parameters: {
       query?: never
@@ -977,6 +1015,21 @@ export interface components {
       }
       requestId: string
     }
+    DocsPage: {
+      /**
+       * @description Page name, the Markdown file name without ".md".
+       * @example security
+       */
+      name: string
+      /** @description Text of the first heading. */
+      title: string
+      /**
+       * @description The page as HTML, only in GET /api/v1/docs/{page}. Raw HTML of the Markdown is not
+       *     rendered. Links between pages point to /docs/<page>, other links point to GitHub
+       *     and have target="_blank". Heading IDs and link fragments have the prefix "doc-".
+       */
+      html?: string
+    }
     StatusReport: {
       components: components['schemas']['StatusComponent'][]
       /** Format: date-time */
@@ -1818,6 +1871,56 @@ export interface operations {
         }
       }
       401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  listDocs: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The documentation pages. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            pages: components['schemas']['DocsPage'][]
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  getDoc: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @example security */
+        page: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The page with its HTML. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DocsPage']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
       default: components['responses']['Error']
     }
   }

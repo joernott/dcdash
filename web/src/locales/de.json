@@ -18,6 +18,7 @@
     "toggle": "Menü ein- oder ausblenden",
     "skip": "Zum Inhalt springen",
     "home": "Übersicht",
+    "docs": "Dokumentation",
     "proxmox": "Proxmox",
     "audit": "Audit-Log",
     "sessions": "Sitzungen",
@@ -178,6 +179,10 @@
   "forbidden": {
     "title": "Kein Zugriff",
     "text": "Sie haben keine Berechtigung, diese Seite zu öffnen."
+  },
+  "docs": {
+    "pages": "Seiten der Dokumentation",
+    "englishOnly": "Die Dokumentation ist nur auf Englisch verfügbar."
   },
   "notFound": {
     "title": "Seite nicht gefunden",

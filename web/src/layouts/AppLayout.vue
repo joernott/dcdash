@@ -101,7 +101,15 @@ function onKeydown(e: KeyboardEvent) {
           </ul>
         </nav>
 
-        <div class="relative ms-auto">
+        <RouterLink
+          :to="{ name: 'docs' }"
+          class="ms-auto rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
+          active-class="bg-surface-sunken font-medium"
+        >
+          {{ t('nav.docs') }}
+        </RouterLink>
+
+        <div class="relative">
           <button
             type="button"
             class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"

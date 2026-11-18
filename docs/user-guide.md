@@ -33,6 +33,9 @@ user directory, the certificate, each Proxmox cluster, DNS provider and DHCP ser
 tile names the problem; the response time shows how long the check took. The page refreshes
 every 30 seconds.
 
+The **Documentation** link in the top bar opens this documentation inside dcdash, in the
+version that matches the running release. It is available in English only.
+
 ## Your account and settings
 
 Open the menu with your name in the top right corner:

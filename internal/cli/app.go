@@ -9,6 +9,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/joernott/dcdash/docs"
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
@@ -16,6 +17,7 @@ import (
 	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/dns/bind"
 	"github.com/joernott/dcdash/internal/dns/cloudflare"
+	"github.com/joernott/dcdash/internal/help"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
@@ -27,6 +29,7 @@ import (
 	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/totp"
 	"github.com/joernott/dcdash/internal/vault"
+	"github.com/joernott/dcdash/internal/version"
 )
 
 // app holds the services of a running server and what they add to it.
@@ -88,6 +91,11 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		},
 		func(mux *http.ServeMux) { prefs.NewStore(st.DB()).Register(mux, auditLog, auth.RequireAuthenticated) },
 	)
+	docsSvc, err := help.New(docs.FS, version.Version)
+	if err != nil {
+		return nil, err
+	}
+	a.routes = append(a.routes, func(mux *http.ServeMux) { docsSvc.Register(mux, auth.RequireAuthenticated) })
 	pve, err := newProxmox(cfg.Proxmox, auditLog, sessions, log)
 	if err != nil {
 		return nil, err
