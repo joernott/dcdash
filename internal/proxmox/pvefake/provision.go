@@ -197,7 +197,13 @@ func (s *Server) update(w http.ResponseWriter, r *http.Request, g *Guest, rest, 
 	}
 	if rest == "config" {
 		for k := range f {
-			g.Config[k] = f.Get(k)
+			switch k {
+			case "tags":
+				g.Tags = f.Get(k)
+			case "digest":
+			default:
+				g.Config[k] = f.Get(k)
+			}
 		}
 		if n := f.Get("name"); n != "" {
 			g.Name = n

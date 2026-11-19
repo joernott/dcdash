@@ -21,7 +21,9 @@ import (
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/prefs"
+	"github.com/joernott/dcdash/internal/project"
 	"github.com/joernott/dcdash/internal/proxmox"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
@@ -123,6 +125,50 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	if pve != nil {
 		// The creation wizard adds DHCP reservations and DNS records (task 11.14).
 		pve.SetIntegrations(dhcpSvc, dnsSvc)
+	}
+	var nb *netbox.Service
+	if cfg.NetBox.Enabled() {
+		if nb, err = netbox.NewService(cfg.NetBox, auditLog, log); err != nil {
+			return nil, err
+		}
+		a.statusChecks = append(a.statusChecks, nb.StatusChecks()...)
+		a.routes = append(a.routes, nb.Register)
+		// Changes of guests, DHCP reservations and DNS records are written to
+		// NetBox (task 12.3).
+		if pve != nil {
+			pve.SetNetBox(nb)
+		}
+		if dhcpSvc != nil {
+			dhcpSvc.SetNetBox(nb)
+		}
+		if dnsSvc != nil {
+			dnsSvc.SetNetBox(nb)
+		}
+		// The comparison view (task 12.4) reads the state of the modules.
+		var (
+			gs netbox.GuestSource
+			rs netbox.ReservationSource
+			ds netbox.RecordSource
+		)
+		if pve != nil {
+			gs = pve
+		}
+		if dhcpSvc != nil {
+			rs = dhcpSvc
+		}
+		if dnsSvc != nil {
+			ds = dnsSvc
+		}
+		nb.SetSources(gs, rs, ds)
+	}
+	// Projects (task 12.8): groups of objects with the tag project-<name>.
+	projects := project.New(ctx, cfg.Projects, nb, auditLog, log)
+	a.runners = append(a.runners, projects.Run)
+	a.statusChecks = append(a.statusChecks, projects.StatusChecks()...)
+	a.routes = append(a.routes, projects.Register)
+	if pve != nil {
+		pve.SetProjects(projects)
+		projects.SetGuestSource(pve)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

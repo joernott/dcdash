@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# NetBox 4.7 for the NetBox integration test (scripts/netbox-test.sh). Not part of
+# test/integration/compose.yaml: the first start runs the database migrations, which takes
+# several minutes. All passwords and keys here are test-only.
+name: dcdash-netbox
+services:
+  netbox:
+    image: docker.io/netboxcommunity/netbox:v4.7
+    depends_on: [postgres, valkey]
+    environment:
+      DB_HOST: postgres
+      DB_NAME: netbox
+      DB_USER: netbox
+      DB_PASSWORD: netbox-test-only
+      REDIS_HOST: valkey
+      REDIS_CACHE_HOST: valkey
+      SECRET_KEY: netbox-test-only-0123456789012345678901234567890123456789012345
+      API_TOKEN_PEPPER_1: netbox-test-only-pepper-0123456789012345678901234567890
+      SKIP_SUPERUSER: "false"
+      SUPERUSER_NAME: admin
+      SUPERUSER_EMAIL: admin@example.org
+      SUPERUSER_PASSWORD: netbox-test-only
+    ports: ["127.0.0.1:18080:8080"]
+  postgres:
+    image: docker.io/postgres:17-alpine
+    environment:
+      POSTGRES_DB: netbox
+      POSTGRES_USER: netbox
+      POSTGRES_PASSWORD: netbox-test-only
+    volumes: [netbox-db:/var/lib/postgresql/data]
+  valkey:
+    image: docker.io/valkey/valkey:8-alpine
+volumes:
+  netbox-db:

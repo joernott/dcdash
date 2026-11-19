@@ -25,7 +25,9 @@
     "logout": "Log out",
     "backHome": "Back to the overview",
     "dns": "DNS",
-    "dhcp": "DHCP"
+    "dhcp": "DHCP",
+    "netbox": "NetBox",
+    "projects": "Projects"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -41,12 +43,14 @@
       "system": "dcdash",
       "proxmox": "Proxmox",
       "dns": "DNS",
-      "dhcp": "DHCP"
+      "dhcp": "DHCP",
+      "netbox": "NetBox"
     },
     "components": {
       "database": "Database",
       "directory": "User directory",
-      "certificate": "Certificate"
+      "certificate": "Certificate",
+      "projects": "Projects"
     },
     "details": {
       "certificate": {
@@ -66,6 +70,13 @@
         "kea": "Kea {version}",
         "keaHA": "Kea {version}, HA {ha}",
         "partnerOutOfTouch": "No connection to the HA partner {partner}"
+      },
+      "netbox": {
+        "connected": "NetBox {version}"
+      },
+      "projects": {
+        "loaded": "No projects | One project | {count} projects",
+        "invalid": "One invalid project file: {first} | {count} invalid project files, the first: {first}"
       },
       "directory": {
         "connected": "Connected to {server} | Connected to {server}, all {count} servers reachable",
@@ -350,6 +361,9 @@
       "vlan": "VLAN (optional)",
       "vlanRange": "Allowed: {ranges}",
       "vlanNone": "Only untagged networks are allowed.",
+      "netboxVlan": "NetBox: {name}",
+      "netboxVlanUnknown": "This VLAN is not in NetBox.",
+      "netboxFree": "Use the free address {address} from NetBox",
       "isoNetworkHint": "You configure the network during the installation.",
       "cloudInitHint": "These settings take effect through cloud-init if the template supports it.",
       "ipv4": "IPv4",
@@ -395,7 +409,8 @@
         "create": "Create",
         "start": "Start",
         "dhcp": "Add the DHCP reservation",
-        "dns": "Add the DNS record"
+        "dns": "Add the DNS record",
+        "netbox": "Update NetBox"
       },
       "stepStates": {
         "pending": "Waiting",
@@ -821,5 +836,115 @@
     "delegatedPrefixes": "Delegated prefixes",
     "listHint": "Optional; several separated by commas.",
     "keptFields": "Client classes and options of this reservation are kept unchanged."
+  },
+  "netbox": {
+    "writeBackFailed": "The change was made, but NetBox could not be updated: {error}",
+    "notConfigured": "NetBox is not configured.",
+    "noCompare": "You do not have permission to compare NetBox with the connected systems.",
+    "noClusters": "No Proxmox cluster is mapped to a NetBox cluster (netbox.clusters).",
+    "cluster": "Proxmox cluster",
+    "guests": "Virtual machines and containers",
+    "counts": "{ok} match, {differs} differ, {missing} missing in NetBox, {extra} only in NetBox",
+    "onlyDifferences": "Only differences",
+    "refresh": "Refresh",
+    "noDifferences": "No differences.",
+    "onlyInNetBox": "only in NetBox",
+    "actual": "Actual",
+    "inNetBox": "NetBox",
+    "apply": "Update NetBox",
+    "applied": "NetBox was updated for {name}.",
+    "delete": "Delete from NetBox",
+    "deleted": "{name} was deleted from NetBox.",
+    "deleteTitle": "Delete from NetBox",
+    "deleteText": "{name} exists only in NetBox. Delete the virtual machine with its interfaces, disks and addresses from NetBox?",
+    "addresses": "Reserved addresses and DNS names",
+    "addressesHint": "Compares the DHCP reservations and the A and AAAA records with the IP addresses in NetBox. This reads all reservations and records and can take a while.",
+    "compareAddresses": "Compare",
+    "addressMissing": "Missing in NetBox",
+    "dnsNameDiffers": "DNS name in NetBox: {name}",
+    "sourceError": "Could not be read: {error}",
+    "sources": {
+      "dhcp": "DHCP reservation ({server})",
+      "dns": "DNS record {name}"
+    },
+    "columns": {
+      "guest": "Guest",
+      "state": "State",
+      "differences": "Differences",
+      "actions": "Actions",
+      "address": "Address",
+      "source": "Source"
+    },
+    "states": {
+      "ok": "Matches",
+      "differs": "Differs",
+      "missing": "Missing in NetBox",
+      "extra": "Only in NetBox"
+    },
+    "fields": {
+      "name": "Name",
+      "vcpus": "vCPUs",
+      "memory": "Memory (MiB)",
+      "disks": "Disks (MiB)",
+      "interfaces": "Interfaces",
+      "addresses": "Addresses"
+    }
+  },
+  "projects": {
+    "label": "Projects",
+    "pickerHint": "Projects group objects with the tag project-<name> in Proxmox and NetBox.",
+    "none": "No projects. Projects are defined as files in the project directory.",
+    "state": "Project files and tags",
+    "stateHint": "Shown to users with access to all projects.",
+    "stateOk": "All project files are valid and their tags are in NetBox.",
+    "invalidFile": "Invalid project file: {error}",
+    "tagError": "The tags could not be synchronized to NetBox: {error}",
+    "orphaned": "The NetBox tag {tag} has no project file.",
+    "breadcrumb": "Path",
+    "sourceError": "Could not be read: {error}",
+    "empty": "Nothing belongs to this project yet.",
+    "guests": "Virtual machines and containers",
+    "remove": "Remove",
+    "add": "Add NetBox objects",
+    "addHint": "Search for VLANs, prefixes, IP addresses, IP ranges, switch ports or virtual machines in NetBox and add them to the project. Guests in Proxmox are added on their pages.",
+    "type": "Object type",
+    "search": "Search",
+    "searchButton": "Search",
+    "noResults": "Nothing found.",
+    "addButton": "Add",
+    "alreadyAdded": "already in the project",
+    "added": "{object} was added to the project.",
+    "removed": "{object} was removed from the project.",
+    "guestSaved": "The projects were saved.",
+    "noneAssigned": "none",
+    "edit": "Change projects",
+    "editTitle": "Projects",
+    "columns": {
+      "project": "Project",
+      "tag": "Tag",
+      "description": "Description",
+      "guest": "Guest",
+      "cluster": "Cluster",
+      "status": "Status",
+      "object": "Object",
+      "detail": "Details",
+      "actions": "Actions"
+    },
+    "sections": {
+      "vm": "Virtual machines in NetBox",
+      "ip": "IP addresses",
+      "iprange": "IP ranges",
+      "prefix": "Prefixes",
+      "vlan": "VLANs",
+      "interface": "Switch ports"
+    },
+    "types": {
+      "vm": "Virtual machine",
+      "ip": "IP address",
+      "iprange": "IP range",
+      "prefix": "Prefix",
+      "vlan": "VLAN",
+      "interface": "Switch port"
+    }
   }
 }

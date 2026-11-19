@@ -20,6 +20,7 @@ import {
   type OptionSetting,
 } from '@/proxmox/hardware'
 import { useProxmoxTasksStore } from '@/stores/proxmoxTasks'
+import { netboxFailure } from '@/netbox/netbox'
 import { useToastStore } from '@/stores/toast'
 
 /**
@@ -100,6 +101,8 @@ async function finish(
     toast.info(t('proxmox.taskStarted', { task }))
     void tasks.track(props.cluster, res.upid, task, () => void load())
   }
+  const nb = netboxFailure(res.netbox, t)
+  if (nb) toast.error(nb)
   await load()
   emit('changed')
 }

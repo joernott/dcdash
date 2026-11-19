@@ -18,6 +18,7 @@ import (
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
 )
 
@@ -253,6 +254,9 @@ type CreateRequest struct {
 	Start       bool     `json:"start,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+	// Projects are added as tags project-<name>; each needs write on the
+	// project.
+	Projects []string `json:"projects,omitempty"`
 }
 
 // requestError is a validation error of a create request.
@@ -833,6 +837,16 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeRequestError(w, r, err)
 		return
 	}
+	// Projects are tags project-<name> (task 12.8.3); also project tags given
+	// as tags need the project permission.
+	for _, p := range req.Projects {
+		if !slices.Contains(req.Tags, ProjectPrefix+p) {
+			req.Tags = append(req.Tags, ProjectPrefix+p)
+		}
+	}
+	if !s.checkProjects(w, r, projectsOfTags(req.Tags)) {
+		return
+	}
 	ctx := r.Context()
 	rs, err := c.Resources(ctx)
 	if err != nil {
@@ -869,6 +883,11 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		s.jobs.release(c.Name(), vmid)
 		return
+	}
+	// The guest is written to NetBox before the reservations and records, so
+	// that they find its interfaces by MAC address.
+	if s.netbox.Applies(c.Name()) {
+		pl.steps = append(pl.steps, s.netboxStep(netbox.Base(r), c, pl.node, req.Type, vmid))
 	}
 	pl.steps = append(pl.steps, extra...)
 	if req.Start {
@@ -981,5 +1000,48 @@ func (s *Service) handleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	details["upid"] = upid
 	s.audit.RecordRequest(r, "proxmox.guest.delete", target, audit.ResultSuccess, details)
-	httpx.WriteJSON(w, http.StatusAccepted, TaskRef{UPID: upid, Node: res.Node})
+	out := DeleteResult{TaskRef: TaskRef{UPID: upid, Node: res.Node}}
+	if s.netbox.Applies(c.Name()) {
+		out.NetBox = s.deleteFromNetBox(r, c, res, upid)
+	}
+	httpx.WriteJSON(w, http.StatusAccepted, out)
+}
+
+// DeleteResult is the response of DELETE .../guests/{type}/{vmid}.
+type DeleteResult struct {
+	TaskRef
+	// NetBox is the result of the write-back to NetBox; missing if the
+	// cluster isn't written to NetBox or the deletion took too long (it is
+	// then written when the task ends).
+	NetBox *netbox.Result `json:"netbox,omitempty"`
+}
+
+// deleteFromNetBox waits for the deletion task and updates NetBox. If the task
+// takes longer than configTimeout, NetBox is updated in the background when it
+// ends, and nil is returned.
+func (s *Service) deleteFromNetBox(r *http.Request, c *Cluster, res Resource, upid string) *netbox.Result {
+	base := netbox.Base(r)
+	update := func(ctx context.Context) *netbox.Result {
+		return s.netbox.DeleteGuest(ctx, base, c.Name(), res.Type == TypeLXC, res.VMID, res.Name)
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), configTimeout)
+	defer cancel()
+	err := c.WaitTask(ctx, upid)
+	switch {
+	case err == nil:
+		return update(r.Context())
+	case errors.Is(err, context.DeadlineExceeded):
+		s.jobs.wg.Add(1)
+		go func() {
+			defer s.jobs.wg.Done()
+			ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), jobTimeout)
+			defer cancel()
+			if err := c.WaitTask(ctx, upid); err == nil {
+				update(ctx)
+			}
+		}()
+		return nil
+	}
+	// The deletion failed: the guest still exists.
+	return nil
 }

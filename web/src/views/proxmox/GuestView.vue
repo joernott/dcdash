@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import GuestProjects from '@/components/projects/GuestProjects.vue'
 import DeleteGuestDialog from '@/components/proxmox/DeleteGuestDialog.vue'
 import GuestActions from '@/components/proxmox/GuestActions.vue'
 import HardwarePanel from '@/components/proxmox/HardwarePanel.vue'
@@ -169,6 +170,19 @@ onBeforeUnmount(() => clearInterval(timer))
         <template v-if="guest.tags.length">
           <dt class="text-fg-muted">{{ t('proxmox.tags') }}</dt>
           <dd>{{ guest.tags.join(', ') }}</dd>
+        </template>
+        <template v-if="session.canAny('project', 'read')">
+          <dt class="text-fg-muted">{{ t('projects.label') }}</dt>
+          <dd>
+            <GuestProjects
+              :cluster="cluster"
+              :type="type"
+              :vmid="vmid"
+              :tags="guest.tags"
+              :can-write="session.can(`proxmox:${cluster}:${type}/${vmid}:write`)"
+              @changed="load"
+            />
+          </dd>
         </template>
         <template v-if="guest.pool">
           <dt class="text-fg-muted">{{ t('proxmox.pool') }}</dt>

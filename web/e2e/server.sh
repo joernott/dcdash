@@ -20,6 +20,13 @@ openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 1 \
   -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
   -keyout "$DIR/key.pem" -out "$DIR/cert.pem" 2>/dev/null
 "$BIN" gen-key > "$DIR/encryption.key"
+# A project (task 12.8); its tag is created in the NetBox fake at startup.
+mkdir -p "$DIR/projects"
+cat > "$DIR/projects/webshop.yaml" <<'PROJECT'
+title: Webshop
+color: 2196f3
+description: The new web shop
+PROJECT
 
 # Fake Proxmox API (internal/proxmox/pvefake) with the same certificate, pinned
 # by its fingerprint. Playwright stops the whole process group at the end.
@@ -38,6 +45,11 @@ KEA4_LISTEN="${DCDASH_E2E_KEA4_LISTEN:-127.0.0.1:18010}"
 KEA6_LISTEN="${DCDASH_E2E_KEA6_LISTEN:-127.0.0.1:18011}"
 go build -o "$DIR/keafake" ./test/keafake
 "$DIR/keafake" -listen4 "$KEA4_LISTEN" -listen6 "$KEA6_LISTEN" 2>"$DIR/keafake.log" &
+
+# Fake NetBox (internal/netbox/nbfake), plain HTTP on loopback.
+NB_LISTEN="${DCDASH_E2E_NB_LISTEN:-127.0.0.1:18020}"
+go build -o "$DIR/nbfake" ./test/nbfake
+"$DIR/nbfake" -listen "$NB_LISTEN" 2>"$DIR/nbfake.log" &
 
 # With DCDASH_E2E_FULL=1 (scripts/e2e-full.sh), dcdash also uses the real services of
 # the docker compose environment: the bind9 primary (records, rndc, SFTP, catalog zone),
@@ -112,6 +124,10 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["dhcp:kea4:192.0.2.0/24:write", "dhcp:kea4:*:read", "dhcp:kea6:*:read"]
+  - name: netbox-user
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["netbox:netbox:*:write", "project:*:objects:write", "proxmox:lab:lxc/200:write"]
 $FULL_ROLES
 proxmox:
   clusters:
@@ -140,6 +156,13 @@ dhcp:
     - {name: kea4, family: v4, url: "http://$KEA4_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
     - {name: kea6, family: v6, url: "http://$KEA6_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
 $FULL_DHCP
+netbox:
+  url: "http://$NB_LISTEN"
+  insecure: true
+  token: "nbt_e2e.netbox-e2e-test-only"
+  clusters: {lab: "Lab"}
+projects:
+  dir: "$DIR/projects"
 metrics: {enabled: true, token: "metrics-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"

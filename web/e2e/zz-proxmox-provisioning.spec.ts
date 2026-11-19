@@ -8,6 +8,8 @@ import { expect, test } from '@playwright/test'
 import { expectAccessible } from './a11y'
 
 test('create a VM from a template and delete it', async ({ page }) => {
+  // The longest flow of the suite: creation, hardware changes, stop and deletion.
+  test.setTimeout(60_000)
   await page.goto('/')
   await page.getByLabel('User name').fill('bob')
   await page.getByLabel(/^Password$/).fill('bob-test-only')
@@ -30,7 +32,12 @@ test('create a VM from a template and delete it', async ({ page }) => {
   await page.getByRole('button', { name: 'Next' }).click()
 
   await page.getByLabel('VLAN (optional)').fill('100')
+  // VLAN name and free addresses from the NetBox fake (192.0.2.1 and .2 are taken).
+  await expect(page.getByText('NetBox: servers')).toBeVisible()
   await page.getByLabel('IPv4').selectOption('static')
+  await expect(
+    page.getByRole('button', { name: 'Use the free address 192.0.2.3/24 from NetBox' }),
+  ).toBeVisible()
   await page.getByLabel('Address with prefix length').fill('192.0.2.50/24')
   await page.getByRole('button', { name: 'Add network device' }).click()
   await page.getByTestId('network-1').getByLabel('VLAN (optional)').fill('150')

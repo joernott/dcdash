@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+package dns
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/joernott/dcdash/internal/audit"
+	"github.com/joernott/dcdash/internal/netbox"
+)
+
+// Write-back of A and AAAA records to NetBox (task 12.3.3,
+// docs/adr/0006-netbox.md): the record's name is the DNS name of the address.
+
+// SetNetBox connects the NetBox module; nil if not configured.
+func (s *Service) SetNetBox(nb *netbox.Service) { s.netbox = nb }
+
+// RecordResult is the response of creating or changing a record.
+type RecordResult struct {
+	Record
+	// NetBox is the result of the write-back to NetBox; missing if the
+	// record isn't an A or AAAA record or changes aren't written to NetBox.
+	NetBox *netbox.Result `json:"netbox,omitempty"`
+}
+
+// DeleteResult is the response of deleting an A or AAAA record if the change
+// was written to NetBox (otherwise the response is empty, 204).
+type DeleteResult struct {
+	NetBox *netbox.Result `json:"netbox"`
+}
+
+// addressRecord returns an A or AAAA record as NetBox sees it.
+func addressRecord(rec Record) (netbox.DNSRecord, bool) {
+	if rec.Type != "A" && rec.Type != "AAAA" {
+		return netbox.DNSRecord{}, false
+	}
+	return netbox.DNSRecord{Name: rec.Name, Address: rec.Content}, true
+}
+
+// recordChanged writes a new or changed record to NetBox; prev is the record
+// before a change, projects replace the projects of the address (nil keeps
+// them).
+func (s *Service) recordChanged(ctx context.Context, base audit.Entry, target string, rec Record, prev *Record, projects *[]string) *netbox.Result {
+	var before *netbox.DNSRecord
+	if prev != nil {
+		if b, ok := addressRecord(*prev); ok {
+			before = &b
+		}
+	}
+	now, ok := addressRecord(rec)
+	now.Projects = projects
+	switch {
+	case ok:
+		return s.netbox.SyncDNSName(ctx, base, target, now, before)
+	case before != nil:
+		return s.netbox.ClearDNSName(ctx, base, target, *before)
+	}
+	return nil
+}
+
+// recordDeleted clears the DNS name of a deleted A or AAAA record in NetBox.
+func (s *Service) recordDeleted(ctx context.Context, base audit.Entry, target string, rec Record) *netbox.Result {
+	if r, ok := addressRecord(rec); ok {
+		return s.netbox.ClearDNSName(ctx, base, target, r)
+	}
+	return nil
+}
+
+// NetBoxRecords implements netbox.RecordSource: the A and AAAA records of all
+// zones of all providers.
+func (s *Service) NetBoxRecords(ctx context.Context) ([]netbox.DNSRecord, error) {
+	var (
+		out  []netbox.DNSRecord
+		errs []error
+	)
+	for _, name := range s.order {
+		p := s.providers[name]
+		zones, err := p.Zones(ctx)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", name, err))
+			continue
+		}
+		for _, z := range zones {
+			set, err := p.Records(ctx, z.Name)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s/%s: %w", name, z.Name, err))
+				continue
+			}
+			for _, r := range set.Records {
+				if a, ok := addressRecord(r); ok {
+					out = append(out, a)
+				}
+			}
+		}
+	}
+	return out, errors.Join(errs...)
+}

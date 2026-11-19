@@ -177,6 +177,29 @@ changes of running VMs are only covered by the fake API.
 | Disk: create, grow from 1 to 2 GiB, detach, attach to another bus, delete | passed |
 | Network device: add with VLAN and firewall, change model and link state (the MAC stays), remove | passed |
 
+## Tests against a real NetBox
+
+The unit and end-to-end tests use the NetBox fake (`internal/netbox/nbfake`). `TestNetBox` in
+`test/integration/netbox_test.go` runs against a real NetBox when `DCDASH_IT_NETBOX_URL` and
+`DCDASH_IT_NETBOX_TOKEN` are set. `scripts/netbox-test.sh` starts NetBox 4.7 in a container
+(`test/integration/netbox/compose.yaml`), provisions a token and runs the test. The first
+start runs the database migrations and takes about 15 minutes on a small VM, which is why the
+test is not part of the CI; the database volume is kept for later runs (`DOWN=1` removes it,
+`KEEP=1` keeps NetBox running).
+
+The test creates its own tag, cluster, VLAN group, VLAN and prefix and deletes them at the
+end. Last run: 2026-11-19, NetBox 4.7.5.
+
+| Check | Result |
+|---|---|
+| Status check (token, tag, cluster), VLAN with prefix and free addresses | passed |
+| Guest written: VM, virtual disk, interfaces with MAC address and VLAN, static address as primary address | passed |
+| Guest changed: renamed, more memory, disk grown and added, interface removed, new MAC address (the old one is deleted) | passed |
+| DHCP reservation assigned to the interface by MAC address; DNS name set and cleared | passed |
+| Comparison finds a changed value | passed |
+| Guest deleted: VM with interfaces and addresses removed | passed |
+| Projects: tag created, prefix found by search, tagged, listed by tag and untagged | passed |
+
 ## Configuration
 
 See `configs/config.example.yaml` for all options. Check a configuration with:

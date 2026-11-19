@@ -21,6 +21,7 @@ import {
   type DhcpSubnet,
 } from '@/dhcp/dhcp'
 import { useSessionStore } from '@/stores/session'
+import { netboxFailure } from '@/netbox/netbox'
 import { useToastStore } from '@/stores/toast'
 
 /** The reservations of a server: list, filter, add, edit and delete. */
@@ -90,6 +91,8 @@ function label(r: DhcpReservation): string {
 
 async function saved(r: DhcpReservation, created: boolean) {
   toast.success(t(created ? 'dhcp.reservationAdded' : 'dhcp.reservationSaved', { name: label(r) }))
+  const nb = netboxFailure(r.netbox, t)
+  if (nb) toast.error(nb)
   await load()
 }
 
@@ -114,13 +117,15 @@ async function remove() {
   if (!r) return
   busy.value = true
   try {
-    await unwrap(
+    const res = await unwrap(
       api.DELETE('/api/v1/dhcp/servers/{server}/reservations/{id}', {
         params: { path: { server: props.server.name, id: r.id }, query: { version: r.version } },
       }),
     )
     deleting.value = null
     toast.success(t('dhcp.reservationDeleted', { name: label(r) }))
+    const nb = netboxFailure(res?.netbox, t)
+    if (nb) toast.error(nb)
     await load()
   } catch (e) {
     deleteError.value = errorMessage(i18n, e)

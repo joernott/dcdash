@@ -283,7 +283,7 @@ A permission has four segments, `module:instance:resource:action`:
 
 | Segment | Meaning | Examples |
 |---|---|---|
-| module | The service family | `proxmox`, `dns`, `dhcp`, `system` |
+| module | The service family | `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `system` |
 | instance | A configured backend, by name | `cluster-a`, `cloudflare-prod`; always `core` for `system` |
 | resource | An object of the backend | a VM, a zone, a subnet; `audit` or `sessions` for `system` |
 | action | The level of access | see below |
@@ -379,6 +379,35 @@ Examples: `dhcp:dhcp4-a:*:read` (everything on one server, read-only),
 Lease searches return only leases of subnets the user may read. Kea's API user can run every
 command, so dcdash's permissions are the only restriction per user; see [dhcp.md](dhcp.md).
 
+### NetBox permissions
+
+The instance is `netbox.name` from the configuration (`netbox` by default). Resources:
+
+| Resource | Actions used |
+|---|---|
+| `ipam` | `read`: VLAN names and free addresses in the creation wizard |
+| `sync` | `read`: the comparison view; `write`: updating NetBox from it and deleting VMs that exist only in NetBox (with the dcdash tag) |
+
+The comparison view lists only guests the user may read in the Proxmox module. Writing
+changes back to NetBox needs no NetBox permission: it follows a change that the user was
+allowed to make, and the audit log names the user. The NetBox token limits what dcdash can
+change in NetBox; see [netbox.md](netbox.md).
+
+Example: `netbox:netbox:*:write` (everything), `netbox:netbox:ipam:read` (wizard only).
+
+### Project permissions
+
+The instance is the project name; the resource is always `objects`:
+
+| Permission | Allows |
+|---|---|
+| `project:<name>:objects:read` | Seeing the project and its page |
+| `project:<name>:objects:write` | Assigning objects to the project and removing them |
+
+Assigning also needs the right to change the object: `write` on a guest, on the subnet of a
+reservation or on the zone of a record. Project tags in a VM's options and in creation
+requests need the project permission too. See [projects.md](projects.md).
+
 ## Audit log
 
 dcdash records every login attempt and every state-changing action in the audit log, together
@@ -440,6 +469,10 @@ entry can't be stored, it is written to the application log as an error instead.
 | `dns.zone.create`, `dns.zone.delete` | A zone was created or deleted; `target` is `<provider>/<zone>` |
 | `dhcp.lease.delete` | A lease was deleted; `target` is `<server>/<subnet>`, `details` contain the address, MAC address or DUID, host name and the result on each HA partner |
 | `dhcp.reservation.create`, `dhcp.reservation.update`, `dhcp.reservation.delete` | A reservation change; `target` is `<server>/<subnet>`, `details` contain the identifier, addresses, host name, the server that stored it, and the previous values for updates |
+| `netbox.sync` | A change was written back to NetBox; `target` is the target of the change (`<cluster>/<type>/<vmid>`, `<server>/<subnet>`, `<provider>/<zone>`), `result` is the outcome of the write-back, `details` contain the changed NetBox objects and the error |
+| `netbox.apply` | NetBox was updated from the comparison view; `target` is `<cluster>/<type>/<vmid>`, or `<cluster>/netbox/<id>` for a deleted NetBox VM; `details` as for `netbox.sync` |
+| `project.assign`, `project.unassign` | A guest or a NetBox object was added to or removed from a project; `target` is the project, `details` name the object (guest or NetBox type and ID) and the error |
+| `project.tags` | dcdash created or changed project tags in NetBox; actor `dcdash`, `details` list the created, changed and orphaned tags |
 
 ## Security review
 

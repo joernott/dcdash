@@ -1,10 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import ProjectPicker from '@/components/projects/ProjectPicker.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -16,6 +17,7 @@ import {
   type DhcpServer,
   type IdentifierType,
 } from '@/dhcp/dhcp'
+import { useProjectsStore } from '@/stores/projects'
 
 /** Adds or edits a reservation. Open it with create() or edit(). */
 const props = defineProps<{
@@ -62,6 +64,28 @@ const typeOptions = computed(() =>
 )
 const title = computed(() => (editing.value ? t('dhcp.editReservation') : t('dhcp.addReservation')))
 
+// Projects of the reserved addresses in NetBox (task 12.8).
+const projectsStore = useProjectsStore()
+const projects = ref<string[]>([])
+const withProjects = computed(
+  () => projectsStore.addressProjects && projectsStore.projects.length > 0,
+)
+
+async function loadProjects(address: string | undefined) {
+  projects.value = []
+  if (!withProjects.value || !address) return
+  try {
+    const res = await unwrap(
+      api.GET('/api/v1/netbox/addresses/{address}/projects', { params: { path: { address } } }),
+    )
+    projects.value = res.projects
+  } catch {
+    // Without NetBox data the address has no projects.
+  }
+}
+
+onMounted(() => void projectsStore.load())
+
 function create() {
   error.value = ''
   editing.value = null
@@ -74,6 +98,7 @@ function create() {
     prefixes: '',
     hostname: '',
   }
+  projects.value = []
   open.value = true
 }
 
@@ -88,6 +113,7 @@ function edit(r: DhcpReservation) {
     prefixes: (r.prefixes ?? []).join(', '),
     hostname: r.hostname ?? '',
   }
+  void loadProjects(r.ipAddresses[0])
   open.value = true
 }
 
@@ -102,6 +128,7 @@ async function save() {
     prefixes: v6.value ? splitList(form.value.prefixes) : undefined,
     hostname: form.value.hostname.trim() || undefined,
     version: editing.value?.version,
+    projects: withProjects.value ? projects.value : undefined,
   }
   const server = props.server.name
   try {
@@ -170,6 +197,7 @@ defineExpose({ create, edit })
         autocomplete="off"
       />
       <BaseInput v-model="form.hostname" :label="t('dhcp.hostname')" autocomplete="off" />
+      <ProjectPicker v-if="withProjects" v-model="projects" />
       <p
         v-if="editing && (editing.clientClasses?.length || editing.options)"
         class="text-sm text-fg-muted"

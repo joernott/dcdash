@@ -6,11 +6,13 @@ import { useRoute } from 'vue-router'
 
 import { api, ApiError, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import ProjectPicker from '@/components/projects/ProjectPicker.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import type { DhcpServer, DhcpSubnet } from '@/dhcp/dhcp'
+import { freeAddress, ipamPermission, parseVid, type NetBoxVlan } from '@/netbox/netbox'
 import { formatBytes } from '@/proxmox/guests'
 import {
   MAX_ENTRIES,
@@ -158,6 +160,70 @@ const vlanHint = computed(() =>
     ? t('proxmox.create.vlanRange', { ranges: options.value.vlans.join(', ') })
     : t('proxmox.create.vlanNone'),
 )
+
+/** NetBox, if the user may read VLANs and free addresses there. */
+const netbox = ref<string | null>(null)
+/** VLANs looked up in NetBox by VLAN ID; null: not in NetBox. */
+const netboxVlans = ref<Record<number, NetBoxVlan | null>>({})
+let vlanTimer: ReturnType<typeof setTimeout> | undefined
+
+async function loadNetBox() {
+  try {
+    const info = await unwrap(api.GET('/api/v1/netbox'))
+    if (session.can(ipamPermission(info.name))) netbox.value = info.name
+  } catch {
+    // NetBox is not configured or not reachable: no lookups.
+  }
+}
+
+/** Looks up the VLANs of the network devices that aren't known yet. */
+async function lookupVlans() {
+  if (!netbox.value || !form.value) return
+  const vids = new Set(
+    form.value.networks.map((n) => parseVid(n.vlan)).filter((v): v is number => v !== null),
+  )
+  for (const vid of vids) {
+    if (vid in netboxVlans.value) continue
+    try {
+      netboxVlans.value[vid] = await unwrap(
+        api.GET('/api/v1/netbox/vlans/{vid}', { params: { path: { vid } } }),
+      )
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) netboxVlans.value[vid] = null
+    }
+  }
+}
+
+watch(
+  () => [netbox.value, form.value?.networks.map((n) => n.vlan).join(',')],
+  () => {
+    clearTimeout(vlanTimer)
+    vlanTimer = setTimeout(() => void lookupVlans(), 400)
+  },
+)
+
+/** The VLAN of a network device in NetBox; undefined if unknown or not looked up. */
+function vlanOf(n: NetForm): NetBoxVlan | null | undefined {
+  const vid = parseVid(n.vlan)
+  return netbox.value && vid !== null ? netboxVlans.value[vid] : undefined
+}
+
+function vlanHintFor(n: NetForm): string {
+  const v = vlanOf(n)
+  if (v === null) return t('proxmox.create.netboxVlanUnknown')
+  if (v) return t('proxmox.create.netboxVlan', { name: v.name })
+  return vlanHint.value
+}
+
+/** A free address from NetBox for a network device, not used by the other devices. */
+function freeFor(i: number, family: 4 | 6): string | null {
+  const f = form.value
+  const n = f?.networks[i]
+  const v = n && vlanOf(n)
+  if (!f || !v) return null
+  const used = f.networks.flatMap((x, j) => (j === i ? [] : [x.ipv4, x.ipv6]))
+  return freeAddress(v, family, used)
+}
 
 function netErr(i: number, field: keyof NetForm): string {
   const key = errors.value.networks?.[i]?.[field]
@@ -530,10 +596,14 @@ watch(
     if (integrationsLoaded || p.length === 0) return
     integrationsLoaded = true
     void loadIntegrations()
+    void loadNetBox()
   },
   { immediate: true },
 )
-onBeforeUnmount(() => clearTimeout(timer))
+onBeforeUnmount(() => {
+  clearTimeout(timer)
+  clearTimeout(vlanTimer)
+})
 </script>
 
 <template>
@@ -763,7 +833,7 @@ onBeforeUnmount(() => clearTimeout(timer))
               <BaseInput
                 v-model="n.vlan"
                 :label="t('proxmox.create.vlan')"
-                :hint="vlanHint"
+                :hint="vlanHintFor(n)"
                 :error="netErr(i, 'vlan')"
                 inputmode="numeric"
                 :disabled="options.vlans.length === 0"
@@ -795,6 +865,11 @@ onBeforeUnmount(() => clearTimeout(timer))
                     placeholder="192.0.2.1"
                     :error="netErr(i, 'gateway4')"
                   />
+                  <div v-if="freeFor(i, 4) && n.ipv4 !== freeFor(i, 4)" class="sm:col-span-2">
+                    <BaseButton variant="secondary" size="sm" @click="n.ipv4 = freeFor(i, 4) ?? ''">
+                      {{ t('proxmox.create.netboxFree', { address: freeFor(i, 4) }) }}
+                    </BaseButton>
+                  </div>
                 </template>
                 <BaseSelect
                   v-model="n.ipv6Mode"
@@ -815,6 +890,11 @@ onBeforeUnmount(() => clearTimeout(timer))
                     placeholder="2001:db8::1"
                     :error="netErr(i, 'gateway6')"
                   />
+                  <div v-if="freeFor(i, 6) && n.ipv6 !== freeFor(i, 6)" class="sm:col-span-2">
+                    <BaseButton variant="secondary" size="sm" @click="n.ipv6 = freeFor(i, 6) ?? ''">
+                      {{ t('proxmox.create.netboxFree', { address: freeFor(i, 6) }) }}
+                    </BaseButton>
+                  </div>
                 </template>
               </template>
             </div>
@@ -1051,6 +1131,7 @@ onBeforeUnmount(() => clearTimeout(timer))
             :hint="t('proxmox.create.tagsHint')"
             :error="err('tags')"
           />
+          <ProjectPicker v-model="form.projects" />
           <BaseInput v-model="form.description" :label="t('proxmox.create.description')" />
           <label class="flex items-center gap-2 text-sm">
             <input v-model="form.start" type="checkbox" class="size-4" />

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"time"
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/dhcp/kea"
@@ -89,5 +90,10 @@ func (p *PlannedReservation) Create(ctx context.Context, entry audit.Entry) erro
 		entry.Result = audit.ResultFailure
 	}
 	_ = p.s.audit.Record(ctx, entry)
+	if err == nil {
+		base := entry
+		base.Time, base.Action = time.Time{}, ""
+		p.s.netbox.SyncReservation(ctx, base, p.Target, nbReservation(p.q.name, p.res), nil)
+	}
 	return err
 }

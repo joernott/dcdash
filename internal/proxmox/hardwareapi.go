@@ -5,6 +5,7 @@ package proxmox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
@@ -13,8 +14,10 @@ import (
 	"time"
 
 	"github.com/joernott/dcdash/internal/audit"
+	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
 )
 
@@ -100,6 +103,9 @@ type ConfigResult struct {
 	// Done is false if the last task was still running after the waiting
 	// time; the task list shows its end.
 	Done bool `json:"done"`
+	// NetBox is the result of the write-back to NetBox; missing if the
+	// cluster isn't written to NetBox or the change is still running.
+	NetBox *netbox.Result `json:"netbox,omitempty"`
 }
 
 // taskFn starts one Proxmox task and returns its ID ("" if it ran
@@ -150,6 +156,8 @@ func (s *Service) run(w http.ResponseWriter, r *http.Request, c *Cluster, res Re
 	status := http.StatusOK
 	if !out.Done {
 		status = http.StatusAccepted
+	} else {
+		out.NetBox = s.syncNetBox(r.Context(), netbox.Base(r), c, res.Node, res.Type, res.VMID, res.Name)
 	}
 	httpx.WriteJSON(w, status, out)
 }
@@ -256,6 +264,26 @@ func (s *Service) handleOptions(w http.ResponseWriter, r *http.Request) {
 	if err := checkResources(req, entries, p); err != nil {
 		writeRequestError(w, r, err)
 		return
+	}
+	// Project tags need the project permission (task 12.8.3).
+	if nv, set := req.Set["tags"]; set || slices.Contains(req.Delete, "tags") {
+		var cur []string
+		for _, e := range entries {
+			if e.Key == "tags" && e.Value != nil {
+				cur = projectsOfTags(splitTags(fmt.Sprint(e.Value)))
+			}
+		}
+		next := projectsOfTags(splitTags(nv))
+		added := slices.DeleteFunc(slices.Clone(next), func(p string) bool { return slices.Contains(cur, p) })
+		removed := slices.DeleteFunc(slices.Clone(cur), func(p string) bool { return slices.Contains(next, p) })
+		if !s.checkProjects(w, r, added) {
+			return
+		}
+		for _, p := range removed {
+			if !auth.Check(w, r, projectPermission(p)) {
+				return
+			}
+		}
 	}
 
 	form := url.Values{}

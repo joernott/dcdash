@@ -65,7 +65,10 @@ type Job struct {
 type step struct {
 	name   string
 	detail string
-	run    func(ctx context.Context, setUPID func(string)) error
+	// optional steps can fail without failing the job (the NetBox
+	// write-back).
+	optional bool
+	run      func(ctx context.Context, setUPID func(string)) error
 }
 
 // taskStep is a step that starts a task (start returns its ID, or "" if the
@@ -214,14 +217,9 @@ func (s *jobStore) run(j *Job, steps []step, log *audit.Log, entry audit.Entry) 
 				x.State = StepDone
 			}
 		})
-		failed = err
-	}
-	s.mu.Lock()
-	j.Ended = s.now()
-	if failed != nil {
-		j.State, j.Error = JobFailed, failed.Error()
-	} else {
-		j.State = JobDone
+		if !st.optional {
+			failed = err
+		}
 	}
 	result := audit.ResultSuccess
 	if failed != nil {
@@ -229,6 +227,7 @@ func (s *jobStore) run(j *Job, steps []step, log *audit.Log, entry audit.Entry) 
 		entry.Details["error"] = failed.Error()
 	}
 	var tasks []string
+	s.mu.Lock()
 	for _, st := range j.Steps {
 		if st.UPID != "" {
 			tasks = append(tasks, st.UPID)
@@ -237,7 +236,17 @@ func (s *jobStore) run(j *Job, steps []step, log *audit.Log, entry audit.Entry) 
 	s.mu.Unlock()
 	entry.Result = result
 	entry.Details["tasks"] = tasks
+	// The audit entry is written before the job ends, so that it exists when
+	// a client sees the job done.
 	if log != nil {
 		_ = log.Record(context.Background(), entry)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	j.Ended = s.now()
+	if failed != nil {
+		j.State, j.Error = JobFailed, failed.Error()
+	} else {
+		j.State = JobDone
 	}
 }

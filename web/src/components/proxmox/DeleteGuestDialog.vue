@@ -10,6 +10,7 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import type { Guest } from '@/proxmox/guests'
 import { useProxmoxTasksStore } from '@/stores/proxmoxTasks'
+import { netboxFailure } from '@/netbox/netbox'
 import { useToastStore } from '@/stores/toast'
 
 /**
@@ -63,6 +64,8 @@ async function remove() {
     )
     open.value = false
     toast.info(t('proxmox.taskStarted', { task: label }))
+    const nb = netboxFailure(ref.netbox, t)
+    if (nb) toast.error(nb)
     void tasks.track(cluster.value, ref.upid, label, (task) => {
       if (task.state === 'ok') {
         toast.success(t('proxmox.delete.done', { name: g.name || g.vmid }))
