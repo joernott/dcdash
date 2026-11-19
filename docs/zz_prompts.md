@@ -251,3 +251,10 @@ Answers:
 4. Yes, they should also show up in proxmox
 5. Yes to all.
 6. Ideally, we will have a folder /etc/dcdash/projects where a yaml file for every project exists and we can define metadata for it. At the moment, that will be the tag name and color, later on, we might have more informations in that file. A page listing all projects and a page per project, allowing access to all related objects.
+
+---
+
+## 2026-11-19 — Sprint 12 (NetBox)
+
+To answer your open question: Solution 1 would be my preferred solution.
+And yes, merge sprint 12 and start sprint 13
