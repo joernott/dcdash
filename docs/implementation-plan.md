@@ -43,7 +43,7 @@ These apply to every task:
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
 | 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | done |
-| 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | in progress |
+| 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | planned |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | planned |
 
@@ -408,7 +408,7 @@ These apply to every task:
 - [x] **12.5** Permissions and audit actions, navigation entry
 - [x] **12.6** Tests: fake NetBox server, manual test against a real NetBox documented
 - [x] **12.7** Documentation
-- [ ] **12.8** Projects: tags `project-<name>` group the objects of a project. Projects are
+- [x] **12.8** Projects: tags `project-<name>` group the objects of a project. Projects are
   defined in YAML files in `/etc/dcdash/projects` (one file per project: tag name, color;
   more metadata later); dcdash synchronizes their tags to NetBox
   - [x] **12.8.1** Design: project files, tag synchronization, which objects carry project
@@ -420,7 +420,7 @@ These apply to every task:
     VLANs, prefixes, IP addresses and ranges, and switch ports (device interfaces) in NetBox
   - [x] **12.8.4** Project pages: a list of all projects and a page per project with all
     related objects and links to them in dcdash
-  - [ ] **12.8.5** Permissions and audit, tests, OpenAPI, documentation
+  - [x] **12.8.5** Permissions and audit, tests, OpenAPI, documentation
 
 ## Sprint 13 — Aruba CX 6x00 Switches
 

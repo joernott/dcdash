@@ -15,6 +15,13 @@ All notable changes to dcdash are listed here. The format follows
   `netbox.sync`. A NetBox page compares NetBox with Proxmox, Kea and DNS and updates NetBox
   on request (`netbox.apply`). Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
+- **Projects:** projects are defined as YAML files in `/etc/dcdash/projects` (`projects`
+  section) and mark their objects with the tag `project-<name>`, synchronized to NetBox.
+  Guests (Proxmox tags, set in the wizard and on the guest page), DHCP reservations and DNS
+  records (their NetBox addresses), VLANs, prefixes, IP addresses and ranges and switch ports
+  are assigned to projects; a projects page and a page per project list all their objects.
+  Permissions `project:<name>:objects:read`/`write`, audited as `project.assign`,
+  `project.unassign` and `project.tags`.
 
 ### Changed
 

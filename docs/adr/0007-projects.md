@@ -67,9 +67,10 @@ their NetBox addresses. Without NetBox, projects group only guests.
   objects to it and removes them. `*` as name covers all projects.
 - Assigning a guest also needs `write` on the guest, a reservation `write` on its subnet, a
   record `write` on its zone. NetBox-only objects need only the project permission.
-- Audit: `project.assign` and `project.unassign` (target `<project>`, details: object type,
-  object, result), `project.tags` (tag synchronization to NetBox, with the created and
-  changed tags).
+- Audit: `project.assign` and `project.unassign` for guests and NetBox objects (target
+  `<project>`, details: object type, object, result), `project.tags` (tag synchronization to
+  NetBox, with the created and changed tags). Projects of reservation and record addresses
+  are part of their `netbox.sync` entry.
 
 ## Consequences
 

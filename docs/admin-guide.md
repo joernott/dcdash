@@ -13,6 +13,7 @@ documents.
 | DNS: Cloudflare and bind9 | [dns.md](dns.md) |
 | DHCP: Kea | [dhcp.md](dhcp.md) |
 | NetBox as a common data source | [netbox.md](netbox.md) |
+| Projects: grouping objects with tags | [projects.md](projects.md) |
 | Health endpoints and Prometheus metrics | [monitoring.md](monitoring.md) |
 | Using the web interface | [user-guide.md](user-guide.md) |
 

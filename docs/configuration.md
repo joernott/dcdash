@@ -356,6 +356,15 @@ NetBox as a common data source with write-back. Disabled without `url`. See
 | `netbox.vlan_group`, `netbox.site` | string | empty | Slugs that restrict the VLAN lookup by VLAN ID. |
 | `netbox.vrf` | string | empty (global table) | Name of the VRF of the IP addresses and prefixes. |
 
+## projects
+
+Projects group objects with the tag `project-<name>`. See [projects.md](projects.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `projects.dir` | string | `/etc/dcdash/projects` | Directory with one file `<name>.yaml` per project. A missing directory means no projects. |
+| `projects.reload_interval` | duration | `1m` | How often the directory is read again. `0` reads it only at startup. Must not be negative. |
+
 ## metrics
 
 The optional Prometheus endpoint `/metrics`. The other keys are validated only when

@@ -17,6 +17,9 @@ and every change is recorded in an audit log.
 - **NetBox:** VLAN names and free addresses in the creation wizard; changes of guests, DHCP
   reservations and DNS records are written back to NetBox; a comparison of NetBox with
   Proxmox, Kea and DNS.
+- **Projects:** project files in `/etc/dcdash/projects`; guests, addresses, DHCP
+  reservations, DNS names, VLANs, prefixes, IP ranges and switch ports are grouped with the
+  tag `project-<name>` in Proxmox and NetBox; a page per project with all its objects.
 - **Security:** LDAP and Active Directory login with failover between servers, TOTP per role
   with recovery codes, a break-glass account, permissions per cluster, zone and subnet, an
   audit log (also to a file or syslog), HTTPS with certificates from files or ACME.
@@ -50,7 +53,7 @@ For administrators:
 - [TLS certificates](docs/certificates.md)
 - [Security](docs/security.md): login, TOTP, sessions, roles and permissions, audit log
 - Modules: [Proxmox VE](docs/proxmox.md), [DNS](docs/dns.md), [DHCP (Kea)](docs/dhcp.md),
-  [NetBox](docs/netbox.md)
+  [NetBox](docs/netbox.md), [Projects](docs/projects.md)
 - [Monitoring](docs/monitoring.md): health endpoints and Prometheus metrics
 
 For users: the [user guide](docs/user-guide.md).

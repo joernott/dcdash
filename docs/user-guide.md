@@ -126,6 +126,21 @@ virtual machine that exists only in NetBox (only those dcdash created). "Compare
 DHCP reservations and DNS records against the addresses in NetBox. See
 [netbox.md](netbox.md).
 
+## Projects
+
+A project groups what belongs together: guests, addresses, DHCP reservations, DNS names,
+VLANs, prefixes, IP ranges and switch ports. Projects are defined by the administrators.
+
+- **Assigning:** choose projects in the last step of the creation wizard, with "Change
+  projects" on the page of a guest, or in the dialogs of DHCP reservations and DNS records.
+  You can only assign projects you have permission for.
+- **Projects page:** "Projects" in the menu lists your projects. The page of a project shows
+  its guests and its objects in NetBox. "Add NetBox objects" searches NetBox for VLANs,
+  prefixes, addresses, ranges and switch ports and adds them; "Remove" takes them out of the
+  project again.
+
+See [projects.md](projects.md).
+
 ## Administration
 
 Users with the corresponding permissions see two more pages:
