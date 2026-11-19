@@ -289,3 +289,9 @@ BIOS Version       : PL.02.0002
 4. Yes, you can run write memory, this switch is exclusively for you
 
 I have configured the firewall to allow https access from your dev machine to the switch network
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+We will add the mac addresses in netbox to facilitate the matching. Please keep the database dump for testing: Please continue with the write test
