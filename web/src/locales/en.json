@@ -25,7 +25,8 @@
     "logout": "Log out",
     "backHome": "Back to the overview",
     "dns": "DNS",
-    "dhcp": "DHCP"
+    "dhcp": "DHCP",
+    "netbox": "NetBox"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -831,6 +832,56 @@
     "keptFields": "Client classes and options of this reservation are kept unchanged."
   },
   "netbox": {
-    "writeBackFailed": "The change was made, but NetBox could not be updated: {error}"
+    "writeBackFailed": "The change was made, but NetBox could not be updated: {error}",
+    "notConfigured": "NetBox is not configured.",
+    "noCompare": "You do not have permission to compare NetBox with the connected systems.",
+    "noClusters": "No Proxmox cluster is mapped to a NetBox cluster (netbox.clusters).",
+    "cluster": "Proxmox cluster",
+    "guests": "Virtual machines and containers",
+    "counts": "{ok} match, {differs} differ, {missing} missing in NetBox, {extra} only in NetBox",
+    "onlyDifferences": "Only differences",
+    "refresh": "Refresh",
+    "noDifferences": "No differences.",
+    "onlyInNetBox": "only in NetBox",
+    "actual": "Actual",
+    "inNetBox": "NetBox",
+    "apply": "Update NetBox",
+    "applied": "NetBox was updated for {name}.",
+    "delete": "Delete from NetBox",
+    "deleted": "{name} was deleted from NetBox.",
+    "deleteTitle": "Delete from NetBox",
+    "deleteText": "{name} exists only in NetBox. Delete the virtual machine with its interfaces, disks and addresses from NetBox?",
+    "addresses": "Reserved addresses and DNS names",
+    "addressesHint": "Compares the DHCP reservations and the A and AAAA records with the IP addresses in NetBox. This reads all reservations and records and can take a while.",
+    "compareAddresses": "Compare",
+    "addressMissing": "Missing in NetBox",
+    "dnsNameDiffers": "DNS name in NetBox: {name}",
+    "sourceError": "Could not be read: {error}",
+    "sources": {
+      "dhcp": "DHCP reservation ({server})",
+      "dns": "DNS record {name}"
+    },
+    "columns": {
+      "guest": "Guest",
+      "state": "State",
+      "differences": "Differences",
+      "actions": "Actions",
+      "address": "Address",
+      "source": "Source"
+    },
+    "states": {
+      "ok": "Matches",
+      "differs": "Differs",
+      "missing": "Missing in NetBox",
+      "extra": "Only in NetBox"
+    },
+    "fields": {
+      "name": "Name",
+      "vcpus": "vCPUs",
+      "memory": "Memory (MiB)",
+      "disks": "Disks (MiB)",
+      "interfaces": "Interfaces",
+      "addresses": "Addresses"
+    }
   }
 }

@@ -26,6 +26,11 @@ type Service struct {
 
 	mu  sync.Mutex
 	ids map[string]int64 // resolved IDs, see lookup
+
+	// Sources of the comparison view; nil if the module isn't configured.
+	guests       GuestSource
+	reservations ReservationSource
+	records      RecordSource
 }
 
 // NewService creates the module.

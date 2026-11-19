@@ -102,7 +102,10 @@ func message(base audit.Entry, what string) string {
 // finish audits a write-back and returns its result.
 func (s *Service) finish(ctx context.Context, base audit.Entry, target string, details map[string]any, err error) *Result {
 	e := base
-	e.Action, e.Target, e.Result = AuditSync, target, audit.ResultSuccess
+	if e.Action == "" {
+		e.Action = AuditSync
+	}
+	e.Target, e.Result = target, audit.ResultSuccess
 	e.Details = details
 	res := &Result{Status: StatusOK}
 	if err != nil {

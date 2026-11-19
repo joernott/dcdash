@@ -4,6 +4,8 @@ package dns
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/netbox"
@@ -62,4 +64,34 @@ func (s *Service) recordDeleted(ctx context.Context, base audit.Entry, target st
 		return s.netbox.ClearDNSName(ctx, base, target, r)
 	}
 	return nil
+}
+
+// NetBoxRecords implements netbox.RecordSource: the A and AAAA records of all
+// zones of all providers.
+func (s *Service) NetBoxRecords(ctx context.Context) ([]netbox.DNSRecord, error) {
+	var (
+		out  []netbox.DNSRecord
+		errs []error
+	)
+	for _, name := range s.order {
+		p := s.providers[name]
+		zones, err := p.Zones(ctx)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", name, err))
+			continue
+		}
+		for _, z := range zones {
+			set, err := p.Records(ctx, z.Name)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s/%s: %w", name, z.Name, err))
+				continue
+			}
+			for _, r := range set.Records {
+				if a, ok := addressRecord(r); ok {
+					out = append(out, a)
+				}
+			}
+		}
+	}
+	return out, errors.Join(errs...)
 }

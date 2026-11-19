@@ -34,6 +34,10 @@ const (
 func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/netbox", s.handleInfo)
 	mux.HandleFunc("GET /api/v1/netbox/vlans/{vid}", s.handleVLAN)
+	mux.HandleFunc("GET /api/v1/netbox/compare/guests/{cluster}", s.handleCompareGuests)
+	mux.HandleFunc("POST /api/v1/netbox/compare/guests/{cluster}/{type}/{vmid}", s.handleApplyGuest)
+	mux.HandleFunc("DELETE /api/v1/netbox/compare/guests/{cluster}/vms/{id}", s.handleDeleteVM)
+	mux.HandleFunc("GET /api/v1/netbox/compare/addresses", s.handleCompareAddresses)
 }
 
 // Info describes the NetBox connection in GET /api/v1/netbox.
@@ -153,4 +157,106 @@ func (s *Service) writeError(w http.ResponseWriter, r *http.Request, err error) 
 	default:
 		httpx.WriteError(w, http.StatusBadGateway, "upstream_error", strings.TrimPrefix(err.Error(), "NetBox: "))
 	}
+}
+
+// The comparison view (task 12.4). It needs netbox:<name>:sync:read, updates
+// need sync:write. Guests are shown only if the user may read them in the
+// Proxmox module (proxmox:<cluster>:<type>/<vmid>:read).
+
+func (s *Service) syncPermission(action rbac.Action) rbac.Permission {
+	return rbac.P(Module, s.cfg.Name, ResourceSync, action)
+}
+
+// canReadGuest reports whether the user may read a guest in the Proxmox
+// module.
+func canReadGuest(subj *rbac.Subject, cluster string, container bool, vmid int) bool {
+	return subj.Can(rbac.P("proxmox", cluster, guestType(container)+"/"+strconv.Itoa(vmid), rbac.ActionRead))
+}
+
+func (s *Service) handleCompareGuests(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionRead)) {
+		return
+	}
+	subj := auth.SubjectFromContext(r.Context())
+	cluster := r.PathValue("cluster")
+	if _, ok := s.cfg.Clusters[cluster]; !ok {
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "the cluster isn't mapped to NetBox")
+		return
+	}
+	out, err := s.CompareGuests(r.Context(), cluster, func(container bool, vmid int) bool {
+		return canReadGuest(subj, cluster, container, vmid)
+	})
+	if err != nil {
+		s.writeError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+func (s *Service) handleApplyGuest(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionWrite)) {
+		return
+	}
+	subj := auth.SubjectFromContext(r.Context())
+	cluster, typ := r.PathValue("cluster"), r.PathValue("type")
+	vmid, err := strconv.Atoi(r.PathValue("vmid"))
+	if err != nil || (typ != "qemu" && typ != "lxc") {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", "type qemu or lxc and a numeric VMID")
+		return
+	}
+	if _, ok := s.cfg.Clusters[cluster]; !ok || !canReadGuest(subj, cluster, typ == "lxc", vmid) {
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "unknown guest")
+		return
+	}
+	res, err := s.ApplyGuest(r.Context(), Base(r), cluster, typ == "lxc", vmid)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "unknown guest")
+	case err != nil:
+		s.writeError(w, r, err)
+	default:
+		httpx.WriteJSON(w, http.StatusOK, WriteBack{NetBox: res})
+	}
+}
+
+// WriteBack is the response of an update from the comparison view.
+type WriteBack struct {
+	NetBox *Result `json:"netbox"`
+}
+
+func (s *Service) handleDeleteVM(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionWrite)) {
+		return
+	}
+	cluster := r.PathValue("cluster")
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", "numeric ID required")
+		return
+	}
+	res, err := s.DeleteVM(r.Context(), Base(r), cluster, id)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "unknown NetBox VM")
+	case errors.Is(err, ErrNotTagged):
+		httpx.WriteError(w, http.StatusConflict, "not_tagged", err.Error())
+	case errors.Is(err, ErrGuestExists):
+		httpx.WriteError(w, http.StatusConflict, "guest_exists", err.Error())
+	case err != nil:
+		s.writeError(w, r, err)
+	default:
+		httpx.WriteJSON(w, http.StatusOK, WriteBack{NetBox: res})
+	}
+}
+
+func (s *Service) handleCompareAddresses(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionRead)) {
+		return
+	}
+	out, err := s.CompareAddresses(r.Context())
+	if err != nil {
+		s.writeError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
 }

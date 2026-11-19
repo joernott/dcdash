@@ -92,7 +92,7 @@ func (p *PlannedReservation) Create(ctx context.Context, entry audit.Entry) erro
 	_ = p.s.audit.Record(ctx, entry)
 	if err == nil {
 		base := entry
-		base.Time = time.Time{}
+		base.Time, base.Action = time.Time{}, ""
 		p.s.netbox.SyncReservation(ctx, base, p.Target, nbReservation(p.q.name, p.res), nil)
 	}
 	return err

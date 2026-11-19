@@ -25,7 +25,8 @@
     "logout": "Abmelden",
     "backHome": "Zurück zur Übersicht",
     "dns": "DNS",
-    "dhcp": "DHCP"
+    "dhcp": "DHCP",
+    "netbox": "NetBox"
   },
   "home": {
     "welcome": "Willkommen, {name}",
@@ -831,6 +832,56 @@
     "keptFields": "Client-Klassen und Optionen dieser Reservierung bleiben unverändert."
   },
   "netbox": {
-    "writeBackFailed": "Die Änderung wurde durchgeführt, aber NetBox konnte nicht aktualisiert werden: {error}"
+    "writeBackFailed": "Die Änderung wurde durchgeführt, aber NetBox konnte nicht aktualisiert werden: {error}",
+    "notConfigured": "NetBox ist nicht konfiguriert.",
+    "noCompare": "Sie haben keine Berechtigung, NetBox mit den angebundenen Systemen zu vergleichen.",
+    "noClusters": "Kein Proxmox-Cluster ist einem NetBox-Cluster zugeordnet (netbox.clusters).",
+    "cluster": "Proxmox-Cluster",
+    "guests": "Virtuelle Maschinen und Container",
+    "counts": "{ok} stimmen überein, {differs} weichen ab, {missing} fehlen in NetBox, {extra} nur in NetBox",
+    "onlyDifferences": "Nur Abweichungen",
+    "refresh": "Aktualisieren",
+    "noDifferences": "Keine Abweichungen.",
+    "onlyInNetBox": "nur in NetBox",
+    "actual": "Ist",
+    "inNetBox": "NetBox",
+    "apply": "NetBox aktualisieren",
+    "applied": "NetBox wurde für {name} aktualisiert.",
+    "delete": "Aus NetBox löschen",
+    "deleted": "{name} wurde aus NetBox gelöscht.",
+    "deleteTitle": "Aus NetBox löschen",
+    "deleteText": "{name} gibt es nur in NetBox. Möchten Sie die virtuelle Maschine mit ihren Schnittstellen, Festplatten und Adressen aus NetBox löschen?",
+    "addresses": "Reservierte Adressen und DNS-Namen",
+    "addressesHint": "Vergleicht die DHCP-Reservierungen und die A- und AAAA-Einträge mit den IP-Adressen in NetBox. Dabei werden alle Reservierungen und Einträge gelesen; das kann etwas dauern.",
+    "compareAddresses": "Vergleichen",
+    "addressMissing": "Fehlt in NetBox",
+    "dnsNameDiffers": "DNS-Name in NetBox: {name}",
+    "sourceError": "Konnte nicht gelesen werden: {error}",
+    "sources": {
+      "dhcp": "DHCP-Reservierung ({server})",
+      "dns": "DNS-Eintrag {name}"
+    },
+    "columns": {
+      "guest": "Gast",
+      "state": "Zustand",
+      "differences": "Abweichungen",
+      "actions": "Aktionen",
+      "address": "Adresse",
+      "source": "Quelle"
+    },
+    "states": {
+      "ok": "Stimmt überein",
+      "differs": "Weicht ab",
+      "missing": "Fehlt in NetBox",
+      "extra": "Nur in NetBox"
+    },
+    "fields": {
+      "name": "Name",
+      "vcpus": "vCPUs",
+      "memory": "Arbeitsspeicher (MiB)",
+      "disks": "Festplatten (MiB)",
+      "interfaces": "Schnittstellen",
+      "addresses": "Adressen"
+    }
   }
 }

@@ -403,7 +403,7 @@ These apply to every task:
   - [x] **12.3.2** Changing options, disks and network devices of VMs
   - [x] **12.3.3** DHCP reservations and DNS `A`/`AAAA` records
   - [x] **12.3.4** Web interface: NetBox results and errors after changes
-- [ ] **12.4** Comparison view: differences between NetBox and the actual state of the
+- [x] **12.4** Comparison view: differences between NetBox and the actual state of the
   connected systems
 - [ ] **12.5** Permissions and audit actions, navigation entry
 - [ ] **12.6** Tests: fake NetBox server, manual test against a real NetBox documented

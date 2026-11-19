@@ -1107,6 +1107,95 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/netbox/compare/guests/{cluster}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Compare the guests of a cluster with NetBox
+     * @description Compares the guests of a Proxmox cluster with the VMs of the mapped NetBox cluster:
+     *     name, vCPUs, memory, disks, interfaces (MAC address, VLAN) and static addresses. Needs
+     *     `netbox:<name>:sync:read`; guests are listed only if the user may read them in the
+     *     Proxmox module. VMs that exist only in NetBox are listed with the state `extra`.
+     */
+    get: operations['compareNetBoxGuests']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/compare/guests/{cluster}/{type}/{vmid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Write a guest to NetBox
+     * @description Writes the current state of a guest to NetBox (creates or updates the VM, its disks,
+     *     interfaces and addresses). Needs `netbox:<name>:sync:write` and read access to the
+     *     guest. Audited as `netbox.apply`.
+     */
+    post: operations['applyNetBoxGuest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/compare/guests/{cluster}/vms/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete a VM that exists only in NetBox
+     * @description Deletes a NetBox VM of the mapped cluster that has the dcdash tag and no guest in
+     *     Proxmox (codes `not_tagged`, `guest_exists` otherwise). Needs `netbox:<name>:sync:write`.
+     *     Audited as `netbox.apply`.
+     */
+    delete: operations['deleteNetBoxVM']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/compare/addresses': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Compare DHCP reservations and DNS records with NetBox
+     * @description Lists reserved addresses that are missing in NetBox, and A/AAAA records whose address
+     *     is missing in NetBox or has another DNS name there. Needs `netbox:<name>:sync:read`.
+     *     Sources that couldn't be read are listed in `errors`.
+     */
+    get: operations['compareNetBoxAddresses']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1292,6 +1381,57 @@ export interface components {
       }
       /** Format: int64 */
       latencyMs: number
+    }
+    NetBoxGuestComparison: {
+      cluster: string
+      netboxCluster: string
+      guests: components['schemas']['NetBoxGuestDiff'][]
+    }
+    NetBoxGuestDiff: {
+      /**
+       * @description Missing for VMs that exist only in NetBox.
+       * @enum {string}
+       */
+      type?: 'qemu' | 'lxc'
+      vmid?: number
+      name: string
+      /** @enum {string} */
+      state: 'ok' | 'missing' | 'extra' | 'differs'
+      differences: components['schemas']['NetBoxDifference'][]
+      /**
+       * Format: int64
+       * @description ID of the NetBox VM; missing if there is none.
+       */
+      netboxId?: number
+      /** @description The NetBox VM has the dcdash tag. */
+      tagged: boolean
+    }
+    NetBoxDifference: {
+      /** @enum {string} */
+      field: 'name' | 'vcpus' | 'memory' | 'disks' | 'interfaces' | 'addresses'
+      /** @description The value in Proxmox. */
+      actual: string
+      /** @description The value in NetBox. */
+      netbox: string
+    }
+    NetBoxAddressComparison: {
+      addresses: components['schemas']['NetBoxAddressDiff'][]
+      errors: string[]
+    }
+    NetBoxAddressDiff: {
+      address: string
+      /**
+       * @description "dhcp:<server>" or "dns".
+       * @example dhcp:kea4
+       * @example dns
+       */
+      source: string
+      /** @description Name of the DNS record. */
+      name?: string
+      /** @enum {string} */
+      state: 'missing' | 'differs'
+      /** @description The DNS name in NetBox if it differs. */
+      netbox?: string
     }
     /**
      * @description Result of the write-back to NetBox after a change (missing if the change isn't written
@@ -4230,6 +4370,115 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  compareNetBoxGuests: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        cluster: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The comparison. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxGuestComparison']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  applyNetBoxGuest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        cluster: string
+        type: 'qemu' | 'lxc'
+        vmid: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The result; a failed write-back has the status `failed`. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxWriteBack']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteNetBoxVM: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        cluster: string
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The result. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxWriteBack']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Error']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  compareNetBoxAddresses: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The comparison. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxAddressComparison']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }

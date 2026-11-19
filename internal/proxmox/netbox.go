@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/config"
@@ -127,4 +128,65 @@ func (s *Service) netboxStep(base audit.Entry, c *Cluster, node, typ string, vmi
 		}
 		return nil
 	}}
+}
+
+// NetBoxGuests implements netbox.GuestSource: the guests of a cluster
+// (without templates) with their configuration. The configurations are read
+// with limited concurrency.
+func (s *Service) NetBoxGuests(ctx context.Context, cluster string) ([]netbox.Guest, error) {
+	c, ok := s.clusters[cluster]
+	if !ok {
+		return nil, fmt.Errorf("unknown cluster %q", cluster)
+	}
+	rs, err := c.Resources(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rs = slices.DeleteFunc(rs, func(r Resource) bool { return (r.Type != TypeQEMU && r.Type != TypeLXC) || r.Template != 0 })
+	out := make([]netbox.Guest, len(rs))
+	errs := make([]error, len(rs))
+	sem := make(chan struct{}, 8)
+	var wg sync.WaitGroup
+	for i, r := range rs {
+		wg.Go(func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			cfg, err := c.GuestConfig(ctx, r.Node, r.Type, r.VMID)
+			if err != nil {
+				errs[i] = fmt.Errorf("%s/%d: %w", r.Type, r.VMID, err)
+				return
+			}
+			out[i] = netboxGuest(cluster, r.Type, r.VMID, cfg)
+		})
+	}
+	wg.Wait()
+	if err := errors.Join(errs...); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// NetBoxGuest implements netbox.GuestSource.
+func (s *Service) NetBoxGuest(ctx context.Context, cluster string, container bool, vmid int) (netbox.Guest, error) {
+	c, ok := s.clusters[cluster]
+	if !ok {
+		return netbox.Guest{}, fmt.Errorf("unknown cluster %q", cluster)
+	}
+	typ := TypeQEMU
+	if container {
+		typ = TypeLXC
+	}
+	rs, err := c.Resources(ctx)
+	if err != nil {
+		return netbox.Guest{}, err
+	}
+	i := slices.IndexFunc(rs, func(r Resource) bool { return r.Type == typ && r.VMID == vmid })
+	if i < 0 {
+		return netbox.Guest{}, fmt.Errorf("%w: guest %s/%d", netbox.ErrNotFound, typ, vmid)
+	}
+	cfg, err := c.GuestConfig(ctx, rs[i].Node, typ, vmid)
+	if err != nil {
+		return netbox.Guest{}, err
+	}
+	return netboxGuest(cluster, typ, vmid, cfg), nil
 }

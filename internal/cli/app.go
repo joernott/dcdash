@@ -143,6 +143,22 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		if dnsSvc != nil {
 			dnsSvc.SetNetBox(nb)
 		}
+		// The comparison view (task 12.4) reads the state of the modules.
+		var (
+			gs netbox.GuestSource
+			rs netbox.ReservationSource
+			ds netbox.RecordSource
+		)
+		if pve != nil {
+			gs = pve
+		}
+		if dhcpSvc != nil {
+			rs = dhcpSvc
+		}
+		if dnsSvc != nil {
+			ds = dnsSvc
+		}
+		nb.SetSources(gs, rs, ds)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

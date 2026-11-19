@@ -1659,6 +1659,104 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/netbox/compare/guests/{cluster}:
+    get:
+      tags: [netbox]
+      operationId: compareNetBoxGuests
+      summary: Compare the guests of a cluster with NetBox
+      description: |
+        Compares the guests of a Proxmox cluster with the VMs of the mapped NetBox cluster:
+        name, vCPUs, memory, disks, interfaces (MAC address, VLAN) and static addresses. Needs
+        `netbox:<name>:sync:read`; guests are listed only if the user may read them in the
+        Proxmox module. VMs that exist only in NetBox are listed with the state `extra`.
+      parameters:
+        - { name: cluster, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The comparison.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxGuestComparison" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/compare/guests/{cluster}/{type}/{vmid}:
+    post:
+      tags: [netbox]
+      operationId: applyNetBoxGuest
+      summary: Write a guest to NetBox
+      description: |
+        Writes the current state of a guest to NetBox (creates or updates the VM, its disks,
+        interfaces and addresses). Needs `netbox:<name>:sync:write` and read access to the
+        guest. Audited as `netbox.apply`.
+      parameters:
+        - { name: cluster, in: path, required: true, schema: { type: string } }
+        - { name: type, in: path, required: true, schema: { type: string, enum: [qemu, lxc] } }
+        - { name: vmid, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: The result; a failed write-back has the status `failed`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxWriteBack" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/compare/guests/{cluster}/vms/{id}:
+    delete:
+      tags: [netbox]
+      operationId: deleteNetBoxVM
+      summary: Delete a VM that exists only in NetBox
+      description: |
+        Deletes a NetBox VM of the mapped cluster that has the dcdash tag and no guest in
+        Proxmox (codes `not_tagged`, `guest_exists` otherwise). Needs `netbox:<name>:sync:write`.
+        Audited as `netbox.apply`.
+      parameters:
+        - { name: cluster, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        "200":
+          description: The result.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxWriteBack" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/compare/addresses:
+    get:
+      tags: [netbox]
+      operationId: compareNetBoxAddresses
+      summary: Compare DHCP reservations and DNS records with NetBox
+      description: |
+        Lists reserved addresses that are missing in NetBox, and A/AAAA records whose address
+        is missing in NetBox or has another DNS name there. Needs `netbox:<name>:sync:read`.
+        Sources that couldn't be read are listed in `errors`.
+      responses:
+        "200":
+          description: The comparison.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxAddressComparison" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -2012,6 +2110,57 @@ components:
           description: Parameters of detailCode.
           additionalProperties: { type: string }
         latencyMs: { type: integer, format: int64 }
+
+    NetBoxGuestComparison:
+      type: object
+      required: [cluster, netboxCluster, guests]
+      properties:
+        cluster: { type: string }
+        netboxCluster: { type: string }
+        guests:
+          type: array
+          items: { $ref: "#/components/schemas/NetBoxGuestDiff" }
+
+    NetBoxGuestDiff:
+      type: object
+      required: [name, state, differences, tagged]
+      properties:
+        type: { type: string, enum: [qemu, lxc], description: Missing for VMs that exist only in NetBox. }
+        vmid: { type: integer }
+        name: { type: string }
+        state: { type: string, enum: [ok, missing, extra, differs] }
+        differences:
+          type: array
+          items: { $ref: "#/components/schemas/NetBoxDifference" }
+        netboxId: { type: integer, format: int64, description: ID of the NetBox VM; missing if there is none. }
+        tagged: { type: boolean, description: The NetBox VM has the dcdash tag. }
+
+    NetBoxDifference:
+      type: object
+      required: [field, actual, netbox]
+      properties:
+        field: { type: string, enum: [name, vcpus, memory, disks, interfaces, addresses] }
+        actual: { type: string, description: The value in Proxmox. }
+        netbox: { type: string, description: The value in NetBox. }
+
+    NetBoxAddressComparison:
+      type: object
+      required: [addresses, errors]
+      properties:
+        addresses:
+          type: array
+          items: { $ref: "#/components/schemas/NetBoxAddressDiff" }
+        errors: { type: array, items: { type: string } }
+
+    NetBoxAddressDiff:
+      type: object
+      required: [address, source, state]
+      properties:
+        address: { type: string }
+        source: { type: string, description: '"dhcp:<server>" or "dns".', examples: ["dhcp:kea4", dns] }
+        name: { type: string, description: Name of the DNS record. }
+        state: { type: string, enum: [missing, differs] }
+        netbox: { type: string, description: The DNS name in NetBox if it differs. }
 
     NetBoxResult:
       type: object
