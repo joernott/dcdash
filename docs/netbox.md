@@ -22,6 +22,8 @@ dcdash works with NetBox 4.2 and later (MAC addresses as objects); it is tested 
      tags (`extras`).
    - **Add, change, delete:** virtual machines, VM interfaces, virtual disks; IP addresses; MAC
      addresses. Not needed with `write_back: false`.
+   - **For switches** (`switches[].netbox_device`): view devices; change interfaces (`dcim`);
+     add, change and delete VLANs (`ipam`).
 2. **A tag** for the objects dcdash creates, `dcdash` by default (`netbox.tag`). dcdash
    doesn't create it.
 3. **A cluster for each Proxmox cluster** whose guests are written to NetBox, mapped in
@@ -56,10 +58,11 @@ clusters exist.
 | Change in dcdash | NetBox |
 |---|---|
 | A guest is created | A virtual machine in the mapped cluster with the tag, status `active`, vCPUs (sockets × cores), memory, the VMID custom field; a virtual disk per disk; an interface per network device (`netN`, for containers the name inside, for example `eth0`) with the MAC address as primary MAC address and the VLAN as untagged VLAN; the static addresses on the interfaces, the first ones as primary addresses |
-| Options, disks or network devices of a VM are changed | The same objects are updated: renamed, resized, created and deleted to match the guest |
+| Options, disks or network devices of a VM are changed | The same objects are updated: renamed, resized, created and deleted to match the guest. Existing interfaces are found by name or by their primary MAC address and keep their name (for example `ens18` maintained by hand). New interfaces get the tag; an interface without the tag is never deleted, so interfaces and addresses maintained by hand stay |
 | A guest is deleted | The virtual machine is deleted if it has the tag, otherwise set to `decommissioning` (`netbox.on_delete`). NetBox deletes its interfaces, disks and addresses with it |
 | A DHCP reservation is added or changed | An IP address with the description `DHCP reservation (<server>)`, assigned to the VM interface with the reservation's MAC address if NetBox has one |
 | A DHCP reservation is deleted | Its address is deleted if dcdash created it (tag, not assigned, no DNS name); otherwise only the description is cleared |
+| A switch port or VLAN is changed | The device interface or the VLAN, see [switches.md](switches.md#netbox) |
 | An `A` or `AAAA` record is added or changed | The DNS name of the IP address; the address is created if needed |
 | An `A` or `AAAA` record is deleted | The DNS name is cleared; the address stays |
 
@@ -87,7 +90,8 @@ from NetBox when the task ends.
 
 The NetBox page (menu "NetBox") compares, per mapped cluster, the guests with the virtual
 machines in NetBox: name, vCPUs, memory, disks, interfaces with MAC address and VLAN, and the
-static addresses. Each guest is:
+static addresses. Interfaces are matched like the write-back does; interfaces without the tag that
+match no network device are not compared. Each guest is:
 
 - **Matches**: no differences.
 - **Differs**: the differences are listed, Proxmox ("Actual") and NetBox side by side.

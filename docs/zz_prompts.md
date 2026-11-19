@@ -258,3 +258,60 @@ Answers:
 
 To answer your open question: Solution 1 would be my preferred solution.
 And yes, merge sprint 12 and start sprint 13
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+The dump is on the dev VM in the file /home/claude/netbox_prod.dump. We are using NetBox Community v4.7.5-Docker-5.1.1 
+
+To answer your questionsfor the aruba switches:
+1: 
+
+```
+DCDASH-SW33(config)# show version
+-----------------------------------------------------------------------------
+ArubaOS-CX
+(c) Copyright 2017-2021 Hewlett Packard Enterprise Development LP
+-----------------------------------------------------------------------------
+Version      : PL.10.08.1010
+Build Date   : 2021-09-21 14:53:08 UTC
+Build ID     : ArubaOS-CX:PL.10.08.1010:51920eb359ca:202109211429
+Build SHA    : 51920eb359caf6584f995926dea7a99242bab059
+Active Image : primary
+
+Service OS Version : PL.01.09.0003
+BIOS Version       : PL.02.0002
+```
+
+2. 10.15.34.33. Currently there are no variables for the switch config. I have added DCDASH_IT_ARUBA_USER containing the user name and DCDASH_IT_ARUBA_PASSWORD containing the password to dcdash-it.env
+3. You can use all ports except for port 1/1/1 which is the upstream port and VLANS in the range >=4000
+4. Yes, you can run write memory, this switch is exclusively for you
+
+I have configured the firewall to allow https access from your dev machine to the switch network
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+We will add the mac addresses in netbox to facilitate the matching. Please keep the database dump for testing: Please continue with the write test
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+yes, continue with 13.2
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+yes, continue with the rest of sprint 13 until you need input from me
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+1: yes, merge sprint 13 and start sprint 14. Please complete as many tasks as possible without a real OPNSense. Tomorrow I will try to provide you with one just for testing. We are mostly using OPNsense 26.4.2p4 or 26.4.2p5 versions.
+2: yes, please. Ideally a compact view with one column spanning 2 rows containing the switch name, a https and a ssh link to it and then 12 columns where you have port1 in the first row, port 2 below, then in the next column port 3 and 4 and so on and then 2 columns at the end with the sfp-ports 49-52. Each cell just shows either a green UP or red DOWN arrow and the vlan number below. If a switch has less than 24+4 ports, some columns are left blank. If it is one of the more rare 48 port switches, it'll take 4 rows.
+3: Please create the switch in the copy as it is only here for testing and won't be used in that configuration in the data center.

@@ -356,6 +356,24 @@ NetBox as a common data source with write-back. Disabled without `url`. See
 | `netbox.vlan_group`, `netbox.site` | string | empty | Slugs that restrict the VLAN lookup by VLAN ID. |
 | `netbox.vrf` | string | empty (global table) | Name of the VRF of the IP addresses and prefixes. |
 
+## switches
+
+Aruba CX switches, reached over their REST API. Default: no switches. See
+[switches.md](switches.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `switches[].name` | string | none | Unique name, used in the UI and in permissions (`switch:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
+| `switches[].type` | string | `aoscx` | Type of the switch API. Only `aoscx` (Aruba CX, AOS-CX 10.x) so far. |
+| `switches[].url` | string | none | URL of the switch, `https://host[:port]` without a path. Required. |
+| `switches[].insecure` | bool | `false` | Allows an `http://` URL, which sends the password in clear text. For tests only. |
+| `switches[].tls.*` | | | TLS client settings, see [General rules](#general-rules). The factory certificates are self-signed: use `fingerprint`, see [switches.md](switches.md#certificate). |
+| `switches[].username` | string | none | Switch account. The role `administrators` allows changes, `operators` only reading. Required. |
+| `switches[].password` | secret | none | Password of the account. Required. |
+| `switches[].api_version` | string | empty (newest) | REST API version, for example `v10.08`. Empty uses the newest version the switch offers. |
+| `switches[].netbox_device` | string | empty | Name of the switch's device in NetBox. With it and `netbox`, port and VLAN changes are written to NetBox and ports show their projects. See [switches.md](switches.md#netbox). |
+| `switches[].timeout` | duration | `20s` | Timeout of a single request. `0` uses the default. Must not be negative. |
+
 ## projects
 
 Projects group objects with the tag `project-<name>`. See [projects.md](projects.md).

@@ -44,6 +44,7 @@ the changes as `project.tags`.
 | DHCP reservation | Reservation dialog | Tag on the NetBox addresses of the reservation |
 | DNS `A`/`AAAA` record | Record dialog | Tag on the NetBox address of the record |
 | VLAN, prefix, IP address, IP range, switch port, NetBox VM without guest | Project page, "Add NetBox objects" | Tag on the NetBox object |
+| Switch port | Switches page, "Change projects" in the port list (with `switches[].netbox_device`) | Tag on the NetBox interface of the device |
 
 An object can belong to several projects. The project tag of a guest is a normal Proxmox tag
 and appears in the Proxmox web interface; dcdash checks the project permission also when the

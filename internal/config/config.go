@@ -40,6 +40,7 @@ type Config struct {
 	DNS      DNS      `yaml:"dns"`
 	DHCP     DHCP     `yaml:"dhcp"`
 	NetBox   NetBox   `yaml:"netbox"`
+	Switches Switches `yaml:"switches"`
 	Projects Projects `yaml:"projects"`
 	Metrics  Metrics  `yaml:"metrics"`
 	Security Security `yaml:"security"`
@@ -153,6 +154,7 @@ func Parse(r io.Reader) (*Config, error) {
 	}
 	cfg.Auth.LDAP.ApplyDefaults()
 	cfg.DNS.applyDefaults()
+	cfg.Switches.applyDefaults()
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -229,6 +231,7 @@ func (c *Config) Validate() error {
 	c.Proxmox.validate(add)
 	c.DNS.validate(add)
 	c.DHCP.validate(add)
+	c.Switches.validate(add)
 	c.NetBox.validate(c.Proxmox, add)
 	c.Projects.validate(add)
 	c.Metrics.validate(add)

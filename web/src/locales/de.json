@@ -27,7 +27,8 @@
     "dns": "DNS",
     "dhcp": "DHCP",
     "netbox": "NetBox",
-    "projects": "Projekte"
+    "projects": "Projekte",
+    "switches": "Switches"
   },
   "home": {
     "welcome": "Willkommen, {name}",
@@ -44,7 +45,8 @@
       "proxmox": "Proxmox",
       "dns": "DNS",
       "dhcp": "DHCP",
-      "netbox": "NetBox"
+      "netbox": "NetBox",
+      "switch": "Switches"
     },
     "components": {
       "database": "Datenbank",
@@ -73,6 +75,12 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "switch": {
+        "aoscx": "{model} {hostname}, AOS-CX {firmware}",
+        "unauthorized": "Der Switch hat die Anmeldedaten von dcdash abgelehnt",
+        "sessionLimit": "Auf dem Switch sind zu viele Sitzungen offen; schließen Sie Sitzungen anderer Werkzeuge oder warten Sie 20 Minuten",
+        "unavailable": "Der Switch ist nicht erreichbar"
       },
       "projects": {
         "loaded": "Keine Projekte | Ein Projekt | {count} Projekte",
@@ -623,6 +631,116 @@
       "done": "{name}: {change} erledigt."
     }
   },
+  "switches": {
+    "switch": "Switch",
+    "none": "Es sind keine Switches eingerichtet, oder Sie dürfen keine sehen.",
+    "views": "Ansichten des Switches",
+    "unavailable": "Der Switch ist nicht verfügbar: {error}",
+    "tabs": {
+      "overview": "Übersicht",
+      "ports": "Ports",
+      "vlans": "VLANs",
+      "macs": "Gerät finden"
+    },
+    "overview": {
+      "hint": "Alle Switches wie ihre Frontseite: ungerade Ports oben, gerade Ports unten, die SFP-Ports rechts.",
+      "legend": "▲ aktiv, ▼ keine Verbindung oder abgeschaltet; die Zahl ist das VLAN, unterstrichen und kursiv beim nativen VLAN eines Trunks.",
+      "vlan": "VLAN {vlan}",
+      "trunk": "Trunk, natives VLAN {vlan}",
+      "column": "Ports Spalte {n}",
+      "sfpColumn": "SFP-Ports Spalte {n}"
+    },
+    "info": {
+      "model": "Modell",
+      "firmware": "Firmware",
+      "member": "Mitglied {n}",
+      "serial": "Seriennummer",
+      "uptime": "Laufzeit",
+      "days": "weniger als ein Tag | ein Tag | {n} Tage"
+    },
+    "filter": "Filter",
+    "filterHint": "Port, Beschreibung, VLAN oder Nachbar",
+    "noPorts": "Keine Ports",
+    "netboxError": "Die NetBox-Schnittstellen konnten nicht gelesen werden: {error}",
+    "uplink": "Uplink",
+    "allVlans": "alle",
+    "columns": {
+      "port": "Port",
+      "state": "Zustand",
+      "vlans": "VLANs",
+      "description": "Beschreibung",
+      "neighbor": "LLDP-Nachbar",
+      "projects": "Projekte",
+      "actions": "Aktionen"
+    },
+    "states": {
+      "up": "Aktiv",
+      "down": "Keine Verbindung",
+      "disabled": "Abgeschaltet"
+    },
+    "modes": {
+      "access": "Access",
+      "trunk": "Trunk"
+    },
+    "edit": "Ändern",
+    "editPort": "Port {port} ändern",
+    "editProjects": "Projekte ändern (Port {port})",
+    "projectsTitle": "Projekte von Port {port}",
+    "projectsSaved": "Die Projekte von Port {port} wurden gespeichert.",
+    "notSaved": "Die Änderung ist aktiv, konnte aber nicht in der Startkonfiguration gespeichert werden: {error}",
+    "savedHint": "Änderungen wirken sofort und werden in der Startkonfiguration gespeichert.",
+    "port": {
+      "title": "Port {port}",
+      "enabled": "Eingeschaltet",
+      "description": "Beschreibung",
+      "descriptionHint": "Bis zu 64 Zeichen, Buchstaben ohne Umlaute",
+      "inLag": "Der Port gehört zu {lag}. Ändern Sie die VLANs des LAG.",
+      "mode": "Modus",
+      "accessVlan": "VLAN",
+      "nativeVlan": "Natives VLAN (untagged)",
+      "allVlans": "Alle VLANs erlauben",
+      "trunkVlans": "Erlaubte VLANs",
+      "trunkHint": "Zum Beispiel 10, 20-25",
+      "trunkInvalid": "Geben Sie VLAN-IDs von 1 bis 4094 ein, zum Beispiel 10, 20-25.",
+      "trunkUnknown": "Nicht auf diesem Switch: {vlans}",
+      "uplinkWarning": "Dieser Port führt zu einem anderen Switch. Eine falsche Änderung kann diesen Switch oder das Netz dahinter abschneiden.",
+      "confirmUplink": "Ich möchte diesen Uplink ändern",
+      "confirmUplinkFirst": "Bestätigen Sie zuerst die Änderung des Uplinks.",
+      "saved": "Port {port} wurde geändert."
+    },
+    "vlan": {
+      "id": "VLAN-ID",
+      "idHint": "2 bis 4094",
+      "name": "Name",
+      "nameHint": "Bis zu 32 Buchstaben, Ziffern, Unterstriche, Punkte, Bindestriche, Schrägstriche und einzelne Leerzeichen",
+      "usedBy": "Verwendet von",
+      "create": "VLAN anlegen",
+      "createTitle": "VLAN anlegen",
+      "renameTitle": "VLAN {id} umbenennen",
+      "rename": "Umbenennen",
+      "renameLabel": "VLAN {id} umbenennen",
+      "delete": "Löschen",
+      "deleteLabel": "VLAN {id} löschen",
+      "deleteTitle": "VLAN {id} ({name}) löschen?",
+      "deleteText": "Das VLAN wird auf {switch} gelöscht. Kein Port verwendet es.",
+      "onSwitches": "Auf den Switches",
+      "done": "erledigt",
+      "saved": "VLAN {id} wurde gespeichert.",
+      "deleted": "VLAN {id} wurde gelöscht."
+    },
+    "mac": {
+      "query": "MAC-Adresse",
+      "queryHint": "Mindestens 4 Hex-Ziffern; ein Teil der Adresse genügt",
+      "search": "Suchen",
+      "mac": "MAC-Adresse",
+      "switch": "Switch",
+      "where": "Ort",
+      "connected": "Hier angeschlossen",
+      "behind": "Hinter einem anderen Switch (Uplink)",
+      "none": "Auf keinem Switch gefunden.",
+      "switchFailed": "{switch} konnte nicht durchsucht werden: {error}"
+    }
+  },
   "errors": {
     "unknown": "Etwas ist schiefgegangen: {message}",
     "network_error": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
@@ -648,6 +766,12 @@
     "upstream_error": "Das Backend hat einen Fehler gemeldet.",
     "conflict": "Die Daten wurden inzwischen geändert. Sie wurden neu geladen; bitte versuchen Sie es noch einmal.",
     "exists": "Dieser Eintrag existiert bereits.",
+    "invalid_port": "Die Änderung des Ports ist ungültig: {message}",
+    "invalid_vlan": "Das VLAN ist ungültig: {message}",
+    "invalid_query": "Die Suche ist ungültig: {message}",
+    "vlan_in_use": "Das VLAN wird noch verwendet: {message}",
+    "default_vlan": "VLAN 1 kann nicht gelöscht werden.",
+    "rejected": "Der Switch hat die Änderung abgelehnt: {message}",
     "unsupported": "Das wird hier nicht unterstützt: {message}",
     "rejected": "Der Server hat die Änderung nicht übernommen: {message}",
     "invalid_record": "Ungültiger Eintrag: {message}",

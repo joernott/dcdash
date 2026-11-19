@@ -4,6 +4,7 @@ package netbox_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -177,5 +178,57 @@ func TestSyncGuestErrorsAndSkips(t *testing.T) {
 	e.fake.Seed(nbfake.VMs, nbfake.Object{"name": "app1", "cluster": int64(1)})
 	if res := e.svc.DeleteGuest(ctx, base, "lab", true, 5000, "app1"); res.Status != netbox.StatusOK || len(objects(e, nbfake.VMs)) != 0 {
 		t.Errorf("%+v %+v", res, objects(e, nbfake.VMs))
+	}
+}
+
+// Interfaces maintained by hand (named like inside the guest, as in real NetBox data) are
+// matched by MAC address or kept; only interfaces dcdash created are deleted.
+func TestSyncGuestKeepsManualInterfaces(t *testing.T) {
+	ctx := context.Background()
+	e := newAPIEnv(t, nil)
+	vm := e.fake.Seed(nbfake.VMs, nbfake.Object{"name": "app1", "cluster": int64(1), "status": "active"})
+	// Interface IDs are assigned in order: eth0 = 1, kunden_han0 = 2, net9 = 3.
+	mac := e.fake.Seed(nbfake.MACs, nbfake.Object{"mac_address": "BC:24:11:00:00:01",
+		"assigned_object_type": netbox.TypeVMInterface, "assigned_object_id": int64(1)})
+	e.fake.Seed(nbfake.Interfaces, nbfake.Object{"name": "eth0", "virtual_machine": vm, "primary_mac_address": mac})
+	manual := e.fake.Seed(nbfake.Interfaces, nbfake.Object{"name": "kunden_han0", "virtual_machine": vm})
+	e.fake.Seed(nbfake.Interfaces, nbfake.Object{"name": "net9", "virtual_machine": vm, "tags": []int64{1}})
+	e.fake.Seed(nbfake.IPs, nbfake.Object{"address": "198.51.100.5/24", "status": "active",
+		"assigned_object_type": netbox.TypeVMInterface, "assigned_object_id": manual})
+
+	res := e.svc.SyncGuest(ctx, base, guest())
+	if res.Status != netbox.StatusOK {
+		t.Fatalf("%+v", res)
+	}
+	names := map[string]nbfake.Object{}
+	for _, i := range objects(e, nbfake.Interfaces) {
+		names[i["name"].(string)] = i
+	}
+	if len(names) != 3 || names["eth0"] == nil || names["eth0"]["untagged_vlan"] == nil ||
+		names["kunden_han0"] == nil || names["net1"] == nil || names["net0"] != nil || names["net9"] != nil {
+		t.Fatalf("interfaces: %+v", names)
+	}
+	if fmt.Sprint(names["net1"]["tags"]) != "[1]" {
+		t.Errorf("created interface without the dcdash tag: %+v", names["net1"])
+	}
+	var kept bool
+	for _, ip := range objects(e, nbfake.IPs) {
+		kept = kept || ip["address"] == "198.51.100.5/24"
+	}
+	l, _ := e.audit.Query(ctx, audit.Filter{Action: netbox.AuditSync})
+	if !kept || len(l) != 1 || !strings.Contains(strings.Join(anyStrings(l[0].Details["changes"]), ","), "interface net9 deleted") {
+		t.Errorf("address kept %v, audit %+v", kept, l)
+	}
+
+	// The comparison matches the same way: nothing differs after the sync.
+	src := &sources{guests: []netbox.Guest{guest()}}
+	src.guests[0].Networks[1].VLAN = 0 // VLAN 999 isn't in NetBox: written untagged
+	e.svc.SetSources(src, src, src)
+	var cmp netbox.GuestComparison
+	if st, code := e.do(t, "comparer", "GET", "/api/v1/netbox/compare/guests/lab", nil, &cmp); st != 200 {
+		t.Fatal(st, code)
+	}
+	if len(cmp.Guests) != 1 || cmp.Guests[0].State != netbox.StateOK {
+		t.Errorf("%+v", cmp.Guests)
 	}
 }

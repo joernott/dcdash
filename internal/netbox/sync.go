@@ -328,25 +328,22 @@ func (s *Service) syncInterfaces(ctx context.Context, msg string, vm VirtualMach
 	if err != nil {
 		return err
 	}
-	byName := map[string]Interface{}
-	for _, i := range have {
-		byName[i.Name] = i
-	}
-	keep := map[string]bool{}
+	match := matchInterfaces(nets, have, s.cfg.Tag)
 	var first4, first6 int64
 	for _, n := range nets {
-		keep[n.Name] = true
 		vlan, err := s.vlanID(ctx, n.VLAN)
 		if err != nil {
 			return err
 		}
-		ifc, ok := byName[n.Name]
+		ifc, ok := match.byNet[n.Name]
 		want := map[string]any{"mode": nil, "untagged_vlan": nil}
 		if vlan != 0 {
 			want = map[string]any{"mode": "access", "untagged_vlan": vlan}
 		}
 		if !ok {
+			// The tag marks the interface as dcdash's: only tagged interfaces are deleted.
 			want["virtual_machine"], want["name"], want["changelog_message"] = vm.ID, n.Name, msg
+			want["tags"] = []any{tag}
 			if err := s.client.Create(ctx, pathInterfaces, want, &ifc); err != nil {
 				return fmt.Errorf("create the interface %s: %w", n.Name, err)
 			}
@@ -374,10 +371,7 @@ func (s *Service) syncInterfaces(ctx context.Context, msg string, vm VirtualMach
 			}
 		}
 	}
-	for _, i := range have {
-		if keep[i.Name] {
-			continue
-		}
+	for _, i := range match.stale {
 		if err := s.client.Delete(ctx, pathInterfaces, i.ID, msg); err != nil {
 			return fmt.Errorf("delete the interface %s: %w", i.Name, err)
 		}

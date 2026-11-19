@@ -177,6 +177,23 @@ func (s Set) AllowsAny(module, instance string, action Action) bool {
 	return false
 }
 
+// AllowsPrefix reports whether the set grants at least the given action on some resource
+// that starts with prefix (for example "vlan/" for creating a VLAN whose ID is not known
+// yet). A pattern grants it if a value with the prefix can match it.
+func (s Set) AllowsPrefix(module, instance, prefix string, action Action) bool {
+	for _, g := range s {
+		if g.Action < action || !match(g.Module, module) || !match(g.Instance, instance) {
+			continue
+		}
+		head, _, wild := strings.Cut(g.Resource, "*")
+		// "vlan/4*" and "*" can match "vlan/..."; "vlan/10" only if it has the prefix.
+		if strings.HasPrefix(head, prefix) || (wild && strings.HasPrefix(prefix, head)) {
+			return true
+		}
+	}
+	return false
+}
+
 // Strings returns the permissions in textual form.
 func (s Set) Strings() []string {
 	out := make([]string, len(s))

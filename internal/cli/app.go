@@ -29,6 +29,7 @@ import (
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/store"
+	"github.com/joernott/dcdash/internal/switches"
 	"github.com/joernott/dcdash/internal/totp"
 	"github.com/joernott/dcdash/internal/vault"
 	"github.com/joernott/dcdash/internal/version"
@@ -122,6 +123,17 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
 		a.routes = append(a.routes, dhcpSvc.Register)
 	}
+	var switchSvc *switches.Service
+	if len(cfg.Switches) > 0 {
+		swSvc, err := switches.NewService(cfg.Switches, auditLog, log)
+		if err != nil {
+			return nil, err
+		}
+		a.statusChecks = append(a.statusChecks, swSvc.StatusChecks()...)
+		a.routes = append(a.routes, swSvc.Register)
+		a.closers = append(a.closers, swSvc.Close)
+		switchSvc = swSvc
+	}
 	if pve != nil {
 		// The creation wizard adds DHCP reservations and DNS records (task 11.14).
 		pve.SetIntegrations(dhcpSvc, dnsSvc)
@@ -143,6 +155,9 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		}
 		if dnsSvc != nil {
 			dnsSvc.SetNetBox(nb)
+		}
+		if switchSvc != nil {
+			switchSvc.SetNetBox(nb)
 		}
 		// The comparison view (task 12.4) reads the state of the modules.
 		var (

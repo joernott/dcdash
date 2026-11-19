@@ -53,7 +53,7 @@ For administrators:
 - [TLS certificates](docs/certificates.md)
 - [Security](docs/security.md): login, TOTP, sessions, roles and permissions, audit log
 - Modules: [Proxmox VE](docs/proxmox.md), [DNS](docs/dns.md), [DHCP (Kea)](docs/dhcp.md),
-  [NetBox](docs/netbox.md), [Projects](docs/projects.md)
+  [NetBox](docs/netbox.md), [Projects](docs/projects.md), [Switches (Aruba CX)](docs/switches.md)
 - [Monitoring](docs/monitoring.md): health endpoints and Prometheus metrics
 
 For users: the [user guide](docs/user-guide.md).

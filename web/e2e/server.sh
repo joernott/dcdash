@@ -51,6 +51,12 @@ NB_LISTEN="${DCDASH_E2E_NB_LISTEN:-127.0.0.1:18020}"
 go build -o "$DIR/nbfake" ./test/nbfake
 "$DIR/nbfake" -listen "$NB_LISTEN" 2>"$DIR/nbfake.log" &
 
+# Fake Aruba CX switch (internal/switches/aoscx/cxfake) with the same certificate, pinned by
+# its fingerprint.
+CX_LISTEN="${DCDASH_E2E_CX_LISTEN:-127.0.0.1:18030}"
+go build -o "$DIR/cxfake" ./test/cxfake
+"$DIR/cxfake" -listen "$CX_LISTEN" -cert "$DIR/cert.pem" -key "$DIR/key.pem" 2>"$DIR/cxfake.log" &
+
 # With DCDASH_E2E_FULL=1 (scripts/e2e-full.sh), dcdash also uses the real services of
 # the docker compose environment: the bind9 primary (records, rndc, SFTP, catalog zone),
 # Kea DHCPv4/DHCPv6 with the PostgreSQL host database, and the Kea HA pair.
@@ -128,6 +134,10 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["netbox:netbox:*:write", "project:*:objects:write", "proxmox:lab:lxc/200:write"]
+  - name: switch-operator
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["switch:sw1:*:read", "switch:sw1:port/1/1/5:write", "switch:sw1:vlan/4*:write"]
 $FULL_ROLES
 proxmox:
   clusters:
@@ -161,6 +171,13 @@ netbox:
   insecure: true
   token: "nbt_e2e.netbox-e2e-test-only"
   clusters: {lab: "Lab"}
+switches:
+  - name: sw1
+    url: "https://$CX_LISTEN"
+    tls: {fingerprint: "$PVE_FP"}
+    username: dcdash
+    password: "cx-e2e-test-only"
+    netbox_device: sw-e2e
 projects:
   dir: "$DIR/projects"
 metrics: {enabled: true, token: "metrics-e2e-test-only"}

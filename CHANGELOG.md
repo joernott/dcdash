@@ -13,8 +13,17 @@ All notable changes to dcdash are listed here. The format follows
   changing and deleting guests, DHCP reservations and DNS `A`/`AAAA` records are written back
   to NetBox; a failed write-back doesn't undo the change, it is shown and audited as
   `netbox.sync`. A NetBox page compares NetBox with Proxmox, Kea and DNS and updates NetBox
-  on request (`netbox.apply`). Permissions `netbox:<name>:ipam:read` and
+  on request (`netbox.apply`). Interfaces maintained by hand are found by name or MAC address and
+  never deleted. Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
+- **Switches:** Aruba CX switches (AOS-CX 10.x) in the `switches` section: inventory and
+  health on the overview page; a Switches page with a compact overview of all switches like
+  their front panels, the ports (state, VLANs, LLDP neighbors,
+  PoE), port changes (enable, disable, description, access and trunk VLANs), VLAN management
+  on one or several switches and a MAC address search across all switches. Every change is
+  saved to the startup configuration and audited (`switch.port.update`, `switch.vlan.*`);
+  with `netbox_device` it is written to NetBox, and ports show and change their projects.
+  Permissions `switch:<name>:port/<port>:read|operate|write`, `switch:<name>:vlan/<id>:write`.
 - **Projects:** projects are defined as YAML files in `/etc/dcdash/projects` (`projects`
   section) and mark their objects with the tag `project-<name>`, synchronized to NetBox.
   Guests (Proxmox tags, set in the wizard and on the guest page), DHCP reservations and DNS

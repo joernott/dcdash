@@ -28,7 +28,7 @@ func main() {
 
 // seed adds the objects the end-to-end tests expect: the cluster "Lab" (mapped
 // to the Proxmox cluster lab of pvefake), VLANs 100 and 150 with prefixes that
-// match the Kea fake's subnets, and the dcdash tag.
+// match the Kea fake's subnets, the dcdash tag and the device of the switch fake.
 func seed(f *nbfake.Server) {
 	f.Seed(nbfake.Tags, nbfake.Object{"name": "dcdash", "slug": "dcdash"})
 	f.Seed(nbfake.Clusters, nbfake.Object{"name": "Lab"})
@@ -39,5 +39,10 @@ func seed(f *nbfake.Server) {
 	f.Seed(nbfake.Prefixes, nbfake.Object{"prefix": "198.51.100.0/24", "vlan": storage})
 	for _, a := range []string{"192.0.2.1/24", "192.0.2.2/24", "192.0.2.10/24"} {
 		f.Seed(nbfake.IPs, nbfake.Object{"address": a, "status": "active"})
+	}
+	// The switch of the switch fake (test/cxfake), with two of its ports.
+	sw := f.Seed(nbfake.Devices, nbfake.Object{"name": "sw-e2e"})
+	for _, p := range []string{"1/1/2", "1/1/5"} {
+		f.Seed(nbfake.DevIfaces, nbfake.Object{"name": p, "device": sw})
 	}
 }

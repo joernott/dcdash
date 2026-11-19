@@ -27,7 +27,8 @@
     "dns": "DNS",
     "dhcp": "DHCP",
     "netbox": "NetBox",
-    "projects": "Projects"
+    "projects": "Projects",
+    "switches": "Switches"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -44,7 +45,8 @@
       "proxmox": "Proxmox",
       "dns": "DNS",
       "dhcp": "DHCP",
-      "netbox": "NetBox"
+      "netbox": "NetBox",
+      "switch": "Switches"
     },
     "components": {
       "database": "Database",
@@ -73,6 +75,12 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "switch": {
+        "aoscx": "{model} {hostname}, AOS-CX {firmware}",
+        "unauthorized": "The switch rejected dcdash's credentials",
+        "sessionLimit": "Too many sessions are open on the switch; close sessions of other tools or wait 20 minutes",
+        "unavailable": "The switch is not reachable"
       },
       "projects": {
         "loaded": "No projects | One project | {count} projects",
@@ -623,6 +631,116 @@
       "done": "{name}: {change} done."
     }
   },
+  "switches": {
+    "switch": "Switch",
+    "none": "No switches are configured, or you may not see any.",
+    "views": "Switch views",
+    "unavailable": "The switch is not available: {error}",
+    "tabs": {
+      "overview": "Overview",
+      "ports": "Ports",
+      "vlans": "VLANs",
+      "macs": "Find a device"
+    },
+    "overview": {
+      "hint": "All switches like their front panels: odd ports above, even ports below, the SFP ports on the right.",
+      "legend": "▲ up, ▼ no link or disabled; the number is the VLAN, underlined and italic for the native VLAN of a trunk.",
+      "vlan": "VLAN {vlan}",
+      "trunk": "trunk, native VLAN {vlan}",
+      "column": "Ports column {n}",
+      "sfpColumn": "SFP ports column {n}"
+    },
+    "info": {
+      "model": "Model",
+      "firmware": "Firmware",
+      "member": "Member {n}",
+      "serial": "serial number",
+      "uptime": "Uptime",
+      "days": "less than a day | one day | {n} days"
+    },
+    "filter": "Filter",
+    "filterHint": "Port, description, VLAN or neighbor",
+    "noPorts": "No ports",
+    "netboxError": "The NetBox interfaces could not be read: {error}",
+    "uplink": "uplink",
+    "allVlans": "all",
+    "columns": {
+      "port": "Port",
+      "state": "State",
+      "vlans": "VLANs",
+      "description": "Description",
+      "neighbor": "LLDP neighbor",
+      "projects": "Projects",
+      "actions": "Actions"
+    },
+    "states": {
+      "up": "Up",
+      "down": "No link",
+      "disabled": "Disabled"
+    },
+    "modes": {
+      "access": "Access",
+      "trunk": "Trunk"
+    },
+    "edit": "Change",
+    "editPort": "Change port {port}",
+    "editProjects": "Change projects (port {port})",
+    "projectsTitle": "Projects of port {port}",
+    "projectsSaved": "The projects of port {port} were saved.",
+    "notSaved": "The change is active, but it could not be saved to the startup configuration: {error}",
+    "savedHint": "Changes take effect immediately and are saved to the startup configuration.",
+    "port": {
+      "title": "Port {port}",
+      "enabled": "Enabled",
+      "description": "Description",
+      "descriptionHint": "Up to 64 characters, letters without accents",
+      "inLag": "The port belongs to {lag}. Change the VLANs of the LAG.",
+      "mode": "Mode",
+      "accessVlan": "VLAN",
+      "nativeVlan": "Native VLAN (untagged)",
+      "allVlans": "Allow all VLANs",
+      "trunkVlans": "Allowed VLANs",
+      "trunkHint": "For example 10, 20-25",
+      "trunkInvalid": "Enter VLAN IDs from 1 to 4094, for example 10, 20-25.",
+      "trunkUnknown": "Not on this switch: {vlans}",
+      "uplinkWarning": "This port leads to another switch. A wrong change can cut off this switch or the network behind it.",
+      "confirmUplink": "I want to change this uplink",
+      "confirmUplinkFirst": "Confirm the change of the uplink first.",
+      "saved": "Port {port} was changed."
+    },
+    "vlan": {
+      "id": "VLAN ID",
+      "idHint": "2 to 4094",
+      "name": "Name",
+      "nameHint": "Up to 32 letters, digits, underscores, dots, hyphens, slashes and single spaces",
+      "usedBy": "Used by",
+      "create": "Create VLAN",
+      "createTitle": "Create a VLAN",
+      "renameTitle": "Rename VLAN {id}",
+      "rename": "Rename",
+      "renameLabel": "Rename VLAN {id}",
+      "delete": "Delete",
+      "deleteLabel": "Delete VLAN {id}",
+      "deleteTitle": "Delete VLAN {id} ({name})?",
+      "deleteText": "The VLAN is deleted on {switch}. No port uses it.",
+      "onSwitches": "On the switches",
+      "done": "done",
+      "saved": "VLAN {id} was saved.",
+      "deleted": "VLAN {id} was deleted."
+    },
+    "mac": {
+      "query": "MAC address",
+      "queryHint": "At least 4 hex digits; part of an address is enough",
+      "search": "Search",
+      "mac": "MAC address",
+      "switch": "Switch",
+      "where": "Location",
+      "connected": "Connected here",
+      "behind": "Behind another switch (uplink)",
+      "none": "Not found on any switch.",
+      "switchFailed": "{switch} could not be searched: {error}"
+    }
+  },
   "errors": {
     "unknown": "Something went wrong: {message}",
     "network_error": "The server cannot be reached. Check your connection and try again.",
@@ -648,6 +766,12 @@
     "upstream_error": "The backend reported an error.",
     "conflict": "The data was changed in the meantime. It has been reloaded; please try again.",
     "exists": "This entry exists already.",
+    "invalid_port": "The port change is invalid: {message}",
+    "invalid_vlan": "The VLAN is invalid: {message}",
+    "invalid_query": "The search is invalid: {message}",
+    "vlan_in_use": "The VLAN is still in use: {message}",
+    "default_vlan": "VLAN 1 cannot be deleted.",
+    "rejected": "The switch rejected the change: {message}",
     "unsupported": "This is not supported here: {message}",
     "rejected": "The server did not accept the change: {message}",
     "invalid_record": "Invalid entry: {message}",
