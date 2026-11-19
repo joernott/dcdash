@@ -65,7 +65,7 @@ function onKeydown(e: KeyboardEvent) {
       {{ t('nav.skip') }}
     </a>
     <header class="border-b border-border bg-surface-raised">
-      <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2">
+      <div class="mx-auto flex max-w-[112rem] items-center gap-4 px-4 py-2">
         <RouterLink :to="{ name: 'home' }" class="text-lg font-semibold text-primary">
           {{ t('app.title') }}
         </RouterLink>
@@ -101,7 +101,15 @@ function onKeydown(e: KeyboardEvent) {
           </ul>
         </nav>
 
-        <div class="relative ms-auto">
+        <RouterLink
+          :to="{ name: 'docs' }"
+          class="ms-auto rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
+          active-class="bg-surface-sunken font-medium"
+        >
+          {{ t('nav.docs') }}
+        </RouterLink>
+
+        <div class="relative">
           <button
             type="button"
             class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
@@ -142,7 +150,7 @@ function onKeydown(e: KeyboardEvent) {
       </div>
     </header>
 
-    <main id="main" class="mx-auto w-full max-w-7xl flex-1 px-4 py-6" tabindex="-1">
+    <main id="main" class="mx-auto w-full max-w-[112rem] flex-1 px-4 py-6" tabindex="-1">
       <RouterView />
     </main>
   </div>

@@ -42,7 +42,7 @@ func adClient(t *testing.T, cfg config.LDAP) *ldapauth.Client {
 
 func TestADServiceBind(t *testing.T) {
 	c := adClient(t, adConfig(t))
-	if _, err := c.Check(context.Background()); err != nil {
+	if _, err := c.Status(context.Background()); err != nil {
 		t.Fatalf("Check: %v", err)
 	}
 }
@@ -74,7 +74,7 @@ func TestADAuthenticate(t *testing.T) {
 func TestADWrongFingerprintIsRejected(t *testing.T) {
 	cfg := adConfig(t)
 	cfg.TLS.Fingerprint = "00000000000000000000000000000000000000000000000000000000000000AA"
-	if _, err := adClient(t, cfg).Check(context.Background()); !errors.Is(err, ldapauth.ErrUnavailable) {
+	if _, err := adClient(t, cfg).Status(context.Background()); !errors.Is(err, ldapauth.ErrUnavailable) {
 		t.Errorf("wrong fingerprint: %v", err)
 	}
 }

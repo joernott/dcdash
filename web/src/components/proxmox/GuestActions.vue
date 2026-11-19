@@ -45,7 +45,8 @@ const canConsole = computed(
 
 <template>
   <div
-    class="flex flex-wrap gap-1.5"
+    class="flex gap-1.5"
+    :class="{ 'flex-wrap': props.size !== 'sm' }"
     role="group"
     :aria-label="t('proxmox.actionsFor', { name: props.guest.name })"
   >

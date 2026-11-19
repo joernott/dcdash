@@ -204,10 +204,16 @@ type CreateNetwork struct {
 	// IPv6 is "", "auto" (SLAAC), "dhcp" or an address with prefix length.
 	IPv6     string `json:"ipv6,omitempty"`
 	Gateway6 string `json:"gateway6,omitempty"`
-	// Nameservers are IP addresses, SearchDomain a domain.
+	// Nameservers are IP addresses, SearchDomain a domain; only for the first
+	// network device.
 	Nameservers  []string `json:"nameservers,omitempty"`
 	SearchDomain string   `json:"searchDomain,omitempty"`
+	// MAC of the device; empty generates one (prefix BC:24:11).
+	MAC string `json:"mac,omitempty"`
 }
+
+// maxCreateNetworks limits the network devices of a new guest.
+const maxCreateNetworks = 8
 
 // CreateRequest is the body of POST .../guests.
 type CreateRequest struct {
@@ -230,8 +236,15 @@ type CreateRequest struct {
 	// Disk in GiB; for clones 0 keeps the template's size.
 	Disk int64 `json:"disk"`
 	// Storage of the disk; ignored for linked clones.
-	Storage string        `json:"storage,omitempty"`
-	Network CreateNetwork `json:"network"`
+	Storage string `json:"storage,omitempty"`
+	// Networks are the network devices (net0, net1, ...). Network is the
+	// only device of requests without Networks (API of v0.1.1).
+	Networks []CreateNetwork `json:"networks,omitempty"`
+	Network  CreateNetwork   `json:"network"`
+	// Reservations and Records are added after the guest was created and
+	// before it is started.
+	Reservations []CreateReservation `json:"reservations,omitempty"`
+	Records      []CreateRecord      `json:"records,omitempty"`
 	// User (cloud-init only), Password and SSHKeys (one per line) are the
 	// login of a cloned VM (cloud-init) or of root in a container.
 	User        string   `json:"user,omitempty"`
@@ -281,14 +294,7 @@ func validateCommon(req *CreateRequest, p config.ProxmoxProvisioning) error {
 	if req.Disk < 0 || req.Disk > p.Limits.Disk.GiB() {
 		return badRequest("disk: at most %d GiB", p.Limits.Disk.GiB())
 	}
-	n := &req.Network
-	if !slices.Contains(p.Bridges, n.Bridge) {
-		return badRequest("network.bridge %q: not allowed", n.Bridge)
-	}
-	if n.VLAN != 0 && !p.VLANs.Contains(n.VLAN) {
-		return badRequest("network.vlan %d: not allowed", n.VLAN)
-	}
-	if err := validateIP(n); err != nil {
+	if err := validateNetworks(req, p); err != nil {
 		return err
 	}
 	if len(req.Description) > 8192 {
@@ -311,6 +317,56 @@ func validateCommon(req *CreateRequest, p config.ProxmoxProvisioning) error {
 		}
 	}
 	return nil
+}
+
+// validateNetworks checks the network devices and generates missing MAC
+// addresses. Afterwards req.Networks holds all devices and req.Network the
+// first one.
+func validateNetworks(req *CreateRequest, p config.ProxmoxProvisioning) error {
+	if len(req.Networks) == 0 {
+		req.Networks = []CreateNetwork{req.Network}
+	}
+	if len(req.Networks) > maxCreateNetworks {
+		return badRequest("networks: at most %d", maxCreateNetworks)
+	}
+	seen := map[string]bool{}
+	for i := range req.Networks {
+		n := &req.Networks[i]
+		pre := "networks[" + strconv.Itoa(i) + "]."
+		if !slices.Contains(p.Bridges, n.Bridge) {
+			return badRequest("%sbridge %q: not allowed", pre, n.Bridge)
+		}
+		if n.VLAN != 0 && !p.VLANs.Contains(n.VLAN) {
+			return badRequest("%svlan %d: not allowed", pre, n.VLAN)
+		}
+		if i > 0 && (len(n.Nameservers) > 0 || n.SearchDomain != "") {
+			return badRequest("%snameservers and searchDomain: only on the first network device", pre)
+		}
+		if err := validateIP(n); err != nil {
+			return &requestError{http.StatusBadRequest, "invalid_request", pre + strings.TrimPrefix(err.Error(), "network.")}
+		}
+		n.MAC = strings.ToUpper(strings.TrimSpace(n.MAC))
+		if n.MAC == "" {
+			mac, err := newMAC()
+			if err != nil {
+				return err
+			}
+			n.MAC = mac
+		} else if first, _ := strconv.ParseUint(n.MAC[:min(2, len(n.MAC))], 16, 8); !macPattern.MatchString(n.MAC) || first&1 == 1 {
+			return badRequest("%smac: a unicast MAC address like BC:24:11:12:34:56", pre)
+		}
+		if seen[n.MAC] {
+			return badRequest("%smac: used twice", pre)
+		}
+		seen[n.MAC] = true
+	}
+	req.Network = req.Networks[0]
+	return nil
+}
+
+// anyIP reports whether a network device has IP settings.
+func anyIP(ns []CreateNetwork) bool {
+	return slices.ContainsFunc(ns, CreateNetwork.hasIP)
 }
 
 func validateIP(n *CreateNetwork) error {
@@ -518,7 +574,7 @@ func planClone(ctx context.Context, c *Cluster, subj *rbac.Subject, p config.Pro
 	if req.Disk != 0 && (t.bootDisk == "" || req.Disk < t.diskGiB) {
 		return nil, badRequest("disk: at least the template's %d GiB", t.diskGiB)
 	}
-	cloudInit := req.User != "" || req.Password != "" || req.SSHKeys != "" || req.Network.hasIP()
+	cloudInit := req.User != "" || req.Password != "" || req.SSHKeys != "" || anyIP(req.Networks)
 	if req.User != "" && !unixUserPattern.MatchString(req.User) {
 		return nil, badRequest("user: a Unix user name")
 	}
@@ -533,7 +589,10 @@ func planClone(ctx context.Context, c *Cluster, subj *rbac.Subject, p config.Pro
 	if p.Pool != "" {
 		clone.Set("pool", p.Pool)
 	}
-	conf := url.Values{"net0": {t.netModel + "," + req.Network.netDevice()}}
+	conf := url.Values{}
+	for i, n := range req.Networks {
+		conf.Set("net"+strconv.Itoa(i), t.netModel+"="+n.MAC+","+n.netDevice())
+	}
 	commonForm(req, conf)
 	if cloudInit {
 		if !t.cloudInit {
@@ -552,8 +611,10 @@ func planClone(ctx context.Context, c *Cluster, subj *rbac.Subject, p config.Pro
 		if req.SSHKeys != "" {
 			conf.Set("sshkeys", sshKeysParam(req.SSHKeys))
 		}
-		if ip := ipConfig(req.Network); ip != "" {
-			conf.Set("ipconfig0", ip)
+		for i, n := range req.Networks {
+			if ip := ipConfig(n); ip != "" {
+				conf.Set("ipconfig"+strconv.Itoa(i), ip)
+			}
 		}
 	}
 	vmid := req.VMID
@@ -580,7 +641,7 @@ func planISO(ctx context.Context, c *Cluster, p config.ProxmoxProvisioning, req 
 	if !ok {
 		return nil, badRequest("osType: linux, windows or other")
 	}
-	if req.Template != 0 || req.OSTemplate != "" || req.User != "" || req.Password != "" || req.SSHKeys != "" || req.Network.hasIP() {
+	if req.Template != 0 || req.OSTemplate != "" || req.User != "" || req.Password != "" || req.SSHKeys != "" || anyIP(req.Networks) {
 		return nil, badRequest("template, user, password, SSH keys and IP settings don't apply to VMs installed from an ISO image")
 	}
 	if !slices.Contains(p.Storages, req.Storage) {
@@ -596,8 +657,11 @@ func planISO(ctx context.Context, c *Cluster, p config.ProxmoxProvisioning, req 
 		"vmid": {strconv.Itoa(req.VMID)}, "name": {req.Name}, "sockets": {"1"}, "cpu": {"x86-64-v2-AES"},
 		"ostype": {ostype}, "scsihw": {"virtio-scsi-single"},
 		"scsi0": {req.Storage + ":" + strconv.FormatInt(req.Disk, 10) + ",iothread=1"},
-		"ide2":  {req.ISO + ",media=cdrom"}, "net0": {"virtio," + req.Network.netDevice()},
-		"boot": {"order=scsi0;ide2;net0"}, "agent": {"1"},
+		"ide2":  {req.ISO + ",media=cdrom"},
+		"boot":  {"order=scsi0;ide2;net0"}, "agent": {"1"},
+	}
+	for i, n := range req.Networks {
+		f.Set("net"+strconv.Itoa(i), "virtio="+n.MAC+","+n.netDevice())
 	}
 	if req.OSType == "windows" {
 		f.Set("bios", "ovmf")
@@ -632,15 +696,17 @@ func planContainer(ctx context.Context, c *Cluster, p config.ProxmoxProvisioning
 	if err := findVolume(ctx, c, p, req.Node, req.OSTemplate, "vztmpl"); err != nil {
 		return nil, err
 	}
-	n := req.Network
-	net0 := "name=eth0," + n.netDevice()
-	if ip := ipConfig(n); ip != "" {
-		net0 += "," + ip
-	}
 	f := url.Values{
 		"vmid": {strconv.Itoa(req.VMID)}, "hostname": {req.Name}, "ostemplate": {req.OSTemplate},
-		"rootfs": {req.Storage + ":" + strconv.FormatInt(req.Disk, 10)}, "swap": {"512"}, "net0": {net0},
+		"rootfs": {req.Storage + ":" + strconv.FormatInt(req.Disk, 10)}, "swap": {"512"},
 		"unprivileged": {"1"}, "features": {"nesting=1"},
+	}
+	for i, n := range req.Networks {
+		v := "name=eth" + strconv.Itoa(i) + ",hwaddr=" + n.MAC + "," + n.netDevice()
+		if ip := ipConfig(n); ip != "" {
+			v += "," + ip
+		}
+		f.Set("net"+strconv.Itoa(i), v)
 	}
 	if req.Password != "" {
 		f.Set("password", req.Password)
@@ -799,6 +865,12 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeRequestError(w, r, err)
 		return
 	}
+	extra, ok := s.planIntegrations(w, r, subj, &req)
+	if !ok {
+		s.jobs.release(c.Name(), vmid)
+		return
+	}
+	pl.steps = append(pl.steps, extra...)
 	if req.Start {
 		node, typ := pl.node, req.Type
 		pl.steps = append(pl.steps, taskStep(c, "start", func(ctx context.Context) (string, error) {
@@ -809,9 +881,12 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 	maps := pl.details
 	maps["node"], maps["name"], maps["cores"], maps["memory"], maps["disk"] = pl.node, req.Name, req.Cores, req.Memory, req.Disk
 	maps["storage"], maps["bridge"], maps["vlan"], maps["start"] = req.Storage, req.Network.Bridge, req.Network.VLAN, req.Start
-	if req.Network.hasIP() {
-		maps["ipv4"], maps["ipv6"] = req.Network.IPv4, req.Network.IPv6
+	nets := make([]map[string]any, 0, len(req.Networks))
+	for _, n := range req.Networks {
+		nets = append(nets, map[string]any{"bridge": n.Bridge, "vlan": n.VLAN, "mac": n.MAC, "ipv4": n.IPv4, "ipv6": n.IPv6})
 	}
+	maps["networks"] = nets
+	maps["reservations"], maps["records"] = len(req.Reservations), len(req.Records)
 	if req.User != "" {
 		maps["user"] = req.User
 	}

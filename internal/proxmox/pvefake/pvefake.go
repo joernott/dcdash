@@ -32,6 +32,11 @@ type Guest struct {
 	// options (e.g. "scsi0", "net0").
 	Template bool
 	Config   map[string]string
+	// Removed are default options that were deleted; Pending and
+	// PendingDelete are changes of a running VM waiting for a restart.
+	Removed       map[string]bool
+	Pending       map[string]string
+	PendingDelete map[string]bool
 }
 
 // Settings control the behavior of the fake. Change them with Server.Set.
@@ -259,15 +264,20 @@ func (s *Server) guestRequest(w http.ResponseWriter, r *http.Request, set Settin
 	case rest == "status/current" && r.Method == http.MethodGet:
 		writeData(w, map[string]any{"status": gc.Status, "vmid": gc.VMID, "name": gc.Name, "qmpstatus": gc.Status, "ha": map[string]any{"managed": 0}})
 	case rest == "config" && r.Method == http.MethodGet:
-		cfg := map[string]any{"name": gc.Name, "cores": 2, "memory": "2048", "net0": "virtio=BC:24:11:00:00:01,bridge=vmbr0",
-			"cipassword": "**********", "digest": "abc", "tags": gc.Tags}
-		for k, v := range gc.Config {
+		s.mu.Lock()
+		cfg := map[string]any{"cipassword": "**********", "digest": digest(g)}
+		for k, v := range effectiveConfig(g) {
 			cfg[k] = v
 		}
+		s.mu.Unlock()
 		if gc.Template {
 			cfg["template"] = 1
 		}
 		writeData(w, cfg)
+	case rest == "pending" && r.Method == http.MethodGet && gc.Type == "qemu":
+		s.pending(w, g)
+	case rest == "config" && r.Method == http.MethodPost && gc.Type == "qemu":
+		s.configure(w, r, g, p, user)
 	case rest == "clone" && r.Method == http.MethodPost:
 		s.clone(w, r, g, p, user)
 	case (rest == "config" || rest == "resize") && r.Method == http.MethodPut:

@@ -9,6 +9,7 @@ import (
 
 	"github.com/rs/zerolog"
 
+	"github.com/joernott/dcdash/docs"
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
@@ -16,6 +17,7 @@ import (
 	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/dns/bind"
 	"github.com/joernott/dcdash/internal/dns/cloudflare"
+	"github.com/joernott/dcdash/internal/help"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
@@ -27,6 +29,7 @@ import (
 	"github.com/joernott/dcdash/internal/store"
 	"github.com/joernott/dcdash/internal/totp"
 	"github.com/joernott/dcdash/internal/vault"
+	"github.com/joernott/dcdash/internal/version"
 )
 
 // app holds the services of a running server and what they add to it.
@@ -79,7 +82,7 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	}
 	a.statusChecks = append(a.statusChecks, status.Check{Name: "database", Kind: "system", Check: st.Check})
 	if directory != nil {
-		a.statusChecks = append(a.statusChecks, status.Check{Name: "directory", Kind: "system", Check: directory.Check})
+		a.statusChecks = append(a.statusChecks, status.Check{Name: "directory", Kind: "system", Detail: directory.Status})
 	}
 	a.routes = append(a.routes,
 		authSvc.Register,
@@ -88,6 +91,11 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		},
 		func(mux *http.ServeMux) { prefs.NewStore(st.DB()).Register(mux, auditLog, auth.RequireAuthenticated) },
 	)
+	docsSvc, err := help.New(docs.FS, version.Version)
+	if err != nil {
+		return nil, err
+	}
+	a.routes = append(a.routes, func(mux *http.ServeMux) { docsSvc.Register(mux, auth.RequireAuthenticated) })
 	pve, err := newProxmox(cfg.Proxmox, auditLog, sessions, log)
 	if err != nil {
 		return nil, err
@@ -104,13 +112,17 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		a.statusChecks = append(a.statusChecks, dnsSvc.StatusChecks()...)
 		a.routes = append(a.routes, dnsSvc.Register)
 	}
+	var dhcpSvc *dhcp.Service
 	if len(cfg.DHCP.Servers) > 0 {
-		dhcpSvc, err := dhcp.NewService(cfg.DHCP.Servers, auditLog, log)
-		if err != nil {
+		if dhcpSvc, err = dhcp.NewService(cfg.DHCP.Servers, auditLog, log); err != nil {
 			return nil, err
 		}
 		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
 		a.routes = append(a.routes, dhcpSvc.Register)
+	}
+	if pve != nil {
+		// The creation wizard adds DHCP reservations and DNS records (task 11.14).
+		pve.SetIntegrations(dhcpSvc, dnsSvc)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
@@ -185,15 +197,19 @@ func newAuthService(a config.Auth, sessions *session.Manager, authz *auth.Author
 		opts.Local = local
 		log.Warn().Str("username", a.Local.Username).Msg("break-glass account enabled (always requires TOTP)")
 	}
-	if a.LDAP.URL != "" {
+	if a.LDAP.Enabled() {
 		client, err := ldapauth.New(a.LDAP, log)
 		if err != nil {
 			return nil, nil, err
 		}
 		opts.LDAP = client
-		log.Info().Str("url", a.LDAP.URL).Str("mode", a.LDAP.Mode).Msg("LDAP authentication enabled")
+		urls := make([]string, 0, len(a.LDAP.Endpoints()))
+		for _, s := range a.LDAP.Endpoints() {
+			urls = append(urls, s.URL)
+		}
+		log.Info().Strs("urls", urls).Str("mode", a.LDAP.Mode).Msg("LDAP authentication enabled")
 	} else {
-		log.Warn().Msg("auth.ldap.url is not set: LDAP login is disabled")
+		log.Warn().Msg("auth.ldap.url and auth.ldap.servers are not set: LDAP login is disabled")
 	}
 	client, _ := opts.LDAP.(*ldapauth.Client)
 	return auth.New(opts), client, nil

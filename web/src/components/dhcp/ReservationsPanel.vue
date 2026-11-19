@@ -61,7 +61,9 @@ const columns = computed(() => [
   { key: 'hostname', label: t('dhcp.hostname') },
   { key: 'subnet', label: t('dhcp.subnet') },
   { key: 'source', label: t('dhcp.source') },
-  ...(editable.value || canAdd.value ? [{ key: 'actions', label: t('dhcp.actionsColumn') }] : []),
+  ...(editable.value || canAdd.value
+    ? [{ key: 'actions', label: t('dhcp.actionsColumn'), class: 'w-px whitespace-nowrap' }]
+    : []),
 ])
 
 async function load() {
@@ -199,7 +201,7 @@ onMounted(load)
         <template #cell-actions="{ row }">
           <div
             v-if="!(row as DhcpReservation).readOnly"
-            class="flex flex-wrap gap-1.5"
+            class="flex gap-1.5"
             role="group"
             :aria-label="t('dhcp.actionsFor', { name: label(row as DhcpReservation) })"
           >

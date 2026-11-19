@@ -32,18 +32,41 @@ test('create a VM from a template and delete it', async ({ page }) => {
   await page.getByLabel('VLAN (optional)').fill('100')
   await page.getByLabel('IPv4').selectOption('static')
   await page.getByLabel('Address with prefix length').fill('192.0.2.50/24')
+  await page.getByRole('button', { name: 'Add network device' }).click()
+  await page.getByTestId('network-1').getByLabel('VLAN (optional)').fill('150')
   await page.getByLabel('Public SSH keys').fill('ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2e e2e@test')
   await expectAccessible(page, 'Create guest: network')
   await page.getByRole('button', { name: 'Next' }).click()
 
+  // bob may add reservations in 192.0.2.0/24 of kea4 and records in the zones of cf.
+  await page.getByRole('button', { name: 'Add DHCPv4 reservation' }).click()
+  await expect(page.getByTestId('reservation-0').getByLabel('Reserved address')).toHaveValue(
+    '192.0.2.50',
+  )
+  await expectAccessible(page, 'Create guest: DHCP')
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: 'Add A record' }).click()
+  await expect(page.getByTestId('record-0').getByLabel('Content')).toHaveValue('192.0.2.50')
+  await expectAccessible(page, 'Create guest: DNS')
+  await page.getByRole('button', { name: 'Next' }).click()
+
+  await expect(page.getByText('192.0.2.50 · kea4 · net0 · e2e-app')).toBeVisible()
   await expect(page.getByText('192.0.2.50/24')).toBeVisible()
   await expect(page.getByText('vmbr0, VLAN 100')).toBeVisible()
+  await expect(page.getByText('vmbr0, VLAN 150')).toBeVisible()
   await expectAccessible(page, 'Create guest: review')
   await page.getByRole('button', { name: 'Create' }).click()
 
   await expect(page.getByRole('heading', { name: 'e2e-app (5000)' })).toBeVisible()
   await expect(page.getByText('Done', { exact: true }).first()).toBeVisible()
-  for (const step of ['Clone the template', 'Apply the settings', 'Grow the disk', 'Start'])
+  for (const step of [
+    'Clone the template',
+    'Apply the settings',
+    'Grow the disk',
+    'Add the DHCP reservation',
+    'Add the DNS record',
+    'Start',
+  ])
     await expect(page.getByText(step, { exact: true })).toBeVisible()
   await expectAccessible(page, 'Create guest: job')
   await page.screenshot({ path: '../.e2e/screenshots/proxmox-create.png', fullPage: true })
@@ -51,13 +74,33 @@ test('create a VM from a template and delete it', async ({ page }) => {
   await page.getByRole('link', { name: 'Open' }).click()
   await expect(page.getByRole('heading', { name: 'e2e-app', level: 1 })).toBeVisible()
   await expect(page.getByText('ip=192.0.2.50/24')).toBeVisible()
+  // Hardware: a new disk is hot-plugged, a memory change stays pending while the VM runs.
+  const hardware = page.getByRole('region', { name: 'Hardware' })
+  await hardware.getByRole('button', { name: 'Add disk' }).click()
+  const addDisk = page.getByRole('dialog', { name: 'Add disk' })
+  await addDisk.getByLabel('Size (GiB)').fill('8')
+  await expectAccessible(page, 'Add disk')
+  await addDisk.getByRole('button', { name: 'Add', exact: true }).click()
+  await expect(page.getByText('e2e-app: Add disk done.')).toBeVisible()
+  const nics = page.getByRole('table', { name: 'Network devices' })
+  await expect(nics.getByRole('row', { name: /net1/ })).toContainText('VLAN 150')
+  const disks = page.getByRole('table', { name: 'Disks' })
+  await expect(disks.getByRole('row', { name: /scsi1/ })).toContainText('8G')
+  await hardware.getByRole('button', { name: 'Edit options' }).click()
+  const options = page.getByRole('dialog', { name: 'Edit options' })
+  await options.getByLabel('Memory (MiB)', { exact: true }).fill('4096')
+  await options.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByTestId('pending-hint')).toBeVisible()
+  await expectAccessible(page, 'Hardware')
+  await page.screenshot({ path: '../.e2e/screenshots/proxmox-hardware.png', fullPage: true })
+
   // A running guest can't be deleted.
-  await expect(page.getByRole('button', { name: 'Delete' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Delete', exact: true }).first()).toBeDisabled()
   await page.getByRole('button', { name: 'Stop' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Stop' }).click()
   await expect(page.getByText('Done: e2e-app (5000): Stop')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Delete', exact: true }).first().click()
   const dialog = page.getByRole('dialog', { name: 'Delete guest' })
   await expect(dialog.getByRole('button', { name: 'Delete' })).toBeDisabled()
   await dialog.getByLabel('Type e2e-app to confirm').fill('e2e-app')

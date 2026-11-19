@@ -150,7 +150,7 @@ describe('CreateGuestView', () => {
       disk: 0,
       storage: 'local-lvm',
       sshKeys: 'ssh-ed25519 AAAAC3Nza user@host',
-      network: { bridge: 'vmbr0', ipv4: 'dhcp' },
+      networks: [{ bridge: 'vmbr0', ipv4: 'dhcp' }],
       start: true,
     })
     expect(w.text()).toContain('app1 (5000)')
@@ -301,7 +301,7 @@ describe('Deleting a guest', () => {
     const del = pageButtons(w).find((b) => b.text() === 'Delete')!
     expect(del.attributes('disabled')).toBeUndefined()
     await del.trigger('click')
-    const dialog = w.findAll('dialog')[1]!
+    const dialog = w.findAll('dialog').find((d) => d.text().includes('Delete guest'))!
     expect(dialog.text()).toContain('app1 (5000) is deleted with all its disks.')
     const submit = dialog.findAll('button').find((b) => b.text() === 'Delete')!
     expect(submit.attributes('disabled')).toBeDefined()
@@ -334,6 +334,141 @@ describe('Deleting a guest', () => {
     w = mount(router, GuestView, ['proxmox:lab:*:console'])
     await flushPromises()
     expect(pageButtons(w).some((b) => b.text() === 'Delete')).toBe(false)
+    w.unmount()
+  })
+})
+
+describe('CreateGuestView with DHCP and DNS', () => {
+  function integrations() {
+    api.on('GET /api/v1/dhcp/servers', () => [
+      200,
+      {
+        servers: [
+          {
+            name: 'kea4',
+            family: 'v4',
+            status: 'ok',
+            capabilities: { reservations: true, reservationWrite: true },
+          },
+          {
+            name: 'kea6',
+            family: 'v6',
+            status: 'ok',
+            capabilities: { reservations: true, reservationWrite: true },
+          },
+        ],
+      },
+    ])
+    api.on('GET /api/v1/dhcp/servers/{server}/subnets', (_, p) => [
+      200,
+      {
+        subnets:
+          p?.path?.server === 'kea4'
+            ? [{ id: 1, prefix: '192.0.2.0/24' }]
+            : [{ id: 1, prefix: '2001:db8::/64' }],
+      },
+    ])
+    api.on('GET /api/v1/dns/providers', () => [200, { providers: [{ name: 'cf' }] }])
+    api.on('GET /api/v1/dns/providers/{provider}/zones', () => [
+      200,
+      { zones: [{ name: 'example.org' }, { name: '2.0.192.in-addr.arpa' }, { name: 'other.org' }] },
+    ])
+  }
+
+  // The permissions decide which optional steps are loaded.
+  const mountAs = (router: Router, permissions: string[]) =>
+    mount(router, CreateGuestView, permissions)
+
+  it('adds reservations and records for the new guest', async () => {
+    const router = setup()
+    integrations()
+    await router.push('/proxmox/lab/new')
+    let body: Record<string, unknown> = {}
+    api.on('POST /api/v1/proxmox/clusters/{cluster}/guests', (b) => {
+      body = b as Record<string, unknown>
+      return [202, job('running', [['clone', 'running']])]
+    })
+    const w = mountAs(router, [
+      'proxmox:lab:qemu/5*:admin',
+      'dhcp:kea4:192.0.2.0/24:write',
+      'dns:cf:example.org:write',
+      'dns:cf:2.0.192.in-addr.arpa:write',
+    ])
+    await flushPromises()
+    const steps = w.get('ol[aria-label="Steps"]').text()
+    expect(steps).toContain('4. DHCP')
+    expect(steps).toContain('5. DNS')
+    await w
+      .findAll('input')
+      .find((i) => i.attributes('required') !== undefined)!
+      .setValue('app1')
+    await next(w)
+    await next(w)
+    const ipv4 = w
+      .findAll('select')
+      .find((s) => s.element.closest('div')?.textContent?.trim().startsWith('IPv4'))!
+    await ipv4.setValue('static')
+    await w
+      .findAll('input')
+      .find((i) => i.attributes('placeholder') === '192.0.2.10/24')!
+      .setValue('192.0.2.50/24')
+    await w.get('textarea').setValue('ssh-ed25519 AAAAC3Nza user@host')
+    await next(w)
+    expect(w.get('[aria-current="step"]').text()).toContain('DHCP')
+    // kea6 has no subnet the user may write to.
+    expect(w.text()).not.toContain('Add DHCPv6 reservation')
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Add DHCPv4 reservation')!
+      .trigger('click')
+    const res = w.get('[data-testid="reservation-0"]')
+    expect((res.findAll('input')[0]!.element as HTMLInputElement).value).toBe('192.0.2.50')
+    await next(w)
+    expect(w.get('[aria-current="step"]').text()).toContain('DNS')
+    // other.org is not offered.
+    expect(w.text()).not.toContain('other.org')
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Add A record')!
+      .trigger('click')
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Add PTR record')!
+      .trigger('click')
+    const ptr = w.get('[data-testid="record-1"]')
+    expect(ptr.findAll('select').map((s) => (s.element as HTMLSelectElement).value)).toContain(
+      '2.0.192.in-addr.arpa',
+    )
+    await next(w)
+    expect(w.text()).toContain('Reservation 1')
+    expect(w.text()).toContain('50.2.0.192.in-addr.arpa PTR app1.example.org.')
+    await next(w)
+    expect(body.reservations).toEqual([
+      { network: 0, server: 'kea4', subnetId: 1, ipAddress: '192.0.2.50', hostname: 'app1' },
+    ])
+    expect(body.records).toEqual([
+      { provider: 'cf', zone: 'example.org', name: 'app1', type: 'A', content: '192.0.2.50' },
+      {
+        provider: 'cf',
+        zone: '2.0.192.in-addr.arpa',
+        name: '50',
+        type: 'PTR',
+        content: 'app1.example.org.',
+      },
+    ])
+    w.unmount()
+  })
+
+  it('has no DHCP and DNS steps without write permission', async () => {
+    const router = setup()
+    integrations()
+    await router.push('/proxmox/lab/new')
+    const w = mountAs(router, ['proxmox:lab:qemu/5*:admin', 'dhcp:*:*:read', 'dns:*:*:read'])
+    await flushPromises()
+    const steps = w.get('ol[aria-label="Steps"]').text()
+    expect(steps).not.toContain('DHCP')
+    expect(steps).toContain('4. Review')
+    expect(api.calls.some((c) => c.route.startsWith('GET /api/v1/dhcp'))).toBe(false)
     w.unmount()
   })
 })

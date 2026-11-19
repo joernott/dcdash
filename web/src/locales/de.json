@@ -18,6 +18,7 @@
     "toggle": "Menü ein- oder ausblenden",
     "skip": "Zum Inhalt springen",
     "home": "Übersicht",
+    "docs": "Dokumentation",
     "proxmox": "Proxmox",
     "audit": "Audit-Log",
     "sessions": "Sitzungen",
@@ -65,6 +66,10 @@
         "kea": "Kea {version}",
         "keaHA": "Kea {version}, HA {ha}",
         "partnerOutOfTouch": "Keine Verbindung zum HA-Partner {partner}"
+      },
+      "directory": {
+        "connected": "Verbunden mit {server} | Verbunden mit {server}, alle {count} Server erreichbar",
+        "degraded": "Verbunden mit {server}; nicht erreichbar: {down}"
       }
     }
   },
@@ -175,6 +180,10 @@
     "title": "Kein Zugriff",
     "text": "Sie haben keine Berechtigung, diese Seite zu öffnen."
   },
+  "docs": {
+    "pages": "Seiten der Dokumentation",
+    "englishOnly": "Die Dokumentation ist nur auf Englisch verfügbar."
+  },
   "notFound": {
     "title": "Seite nicht gefunden",
     "text": "Diese Seite existiert nicht."
@@ -217,7 +226,7 @@
     "lock": "Sperre",
     "cpu": "CPU",
     "cores": "CPUs: {n}",
-    "memory": "Arbeitsspeicher",
+    "memory": "RAM",
     "disk": "Festplatte",
     "uptime": "Laufzeit",
     "uptimeValue": "{days} T. {hours} Std. {minutes} Min.",
@@ -289,7 +298,9 @@
         "source": "Quelle",
         "resources": "Ressourcen",
         "network": "Netzwerk und Anmeldung",
-        "review": "Prüfen"
+        "review": "Prüfen",
+        "dhcp": "DHCP",
+        "dns": "DNS"
       },
       "kind": "Was möchten Sie erstellen?",
       "kinds": {
@@ -382,7 +393,9 @@
         "configure": "Einstellungen übernehmen",
         "resize": "Festplatte vergrößern",
         "create": "Erstellen",
-        "start": "Starten"
+        "start": "Starten",
+        "dhcp": "DHCP-Reservierung anlegen",
+        "dns": "DNS-Eintrag anlegen"
       },
       "stepStates": {
         "pending": "Wartet",
@@ -412,8 +425,45 @@
         "password": "5 bis 128 Zeichen.",
         "login": "Setzen Sie ein Passwort oder SSH-Schlüssel für root.",
         "sshKeys": "Ein öffentlicher Schlüssel pro Zeile im OpenSSH-Format.",
-        "tags": "Kleinbuchstaben, Ziffern, '-', '_', '+' und '.'."
-      }
+        "tags": "Kleinbuchstaben, Ziffern, '-', '_', '+' und '.'.",
+        "mac": "Eine Unicast-MAC-Adresse wie BC:24:11:12:34:56.",
+        "macTwice": "Diese MAC-Adresse wird doppelt verwendet.",
+        "ipAddress": "Eine IPv4- oder IPv6-Adresse.",
+        "contentA": "Eine IPv4-Adresse.",
+        "contentAAAA": "Eine IPv6-Adresse.",
+        "contentPTR": "Ein Hostname, z. B. app1.example.org.",
+        "ttl": "Eine Anzahl Sekunden."
+      },
+      "networkN": "Netzwerkgerät net{n}",
+      "mac": "MAC-Adresse",
+      "macHint": "Erzeugt; ändern Sie sie nur, wenn der Gast eine bestimmte Adresse braucht.",
+      "addNetwork": "Netzwerkgerät hinzufügen",
+      "removeNetwork": "net{n} entfernen",
+      "dhcpHint": "Reservierungen gelten für die MAC-Adresse eines Netzwerkgeräts und werden angelegt, nachdem der Gast erstellt wurde und bevor er startet. DHCPv6-Server müssen die MAC-Adresse als Kennung akzeptieren (host-reservation-identifiers mit hw-address). Dieser Schritt ist optional.",
+      "noReservations": "Keine Reservierungen.",
+      "reservationN": "Reservierung {n}",
+      "networkDevice": "Netzwerkgerät",
+      "dhcpServer": "DHCP-Server",
+      "subnet": "Subnetz",
+      "reservedAddress": "Reservierte Adresse",
+      "reservedAddressHint": "Leer: Nur der Hostname wird reserviert.",
+      "removeEntry": "Entfernen",
+      "addReservation4": "DHCPv4-Reservierung hinzufügen",
+      "addReservation6": "DHCPv6-Reservierung hinzufügen",
+      "anyAddress": "keine Adresse",
+      "dnsHint": "Einträge werden angelegt, nachdem der Gast erstellt wurde und bevor er startet. Ein PTR-Eintrag braucht die Reverse-Zone der Adresse. Dieser Schritt ist optional.",
+      "noRecords": "Keine Einträge.",
+      "recordN": "DNS-Eintrag {n}",
+      "dnsProvider": "DNS-Anbieter",
+      "zone": "Zone",
+      "recordName": "Name",
+      "recordNameHint": "Relativ zur Zone, {'@'} für die Zone selbst oder vollständig mit abschließendem Punkt.",
+      "recordType": "Typ",
+      "recordContent": "Inhalt",
+      "ttl": "TTL (Sekunden)",
+      "addRecordA": "A-Eintrag hinzufügen",
+      "addRecordAAAA": "AAAA-Eintrag hinzufügen",
+      "addRecordPTR": "PTR-Eintrag hinzufügen"
     },
     "delete": {
       "action": "Löschen",
@@ -424,6 +474,138 @@
       "purgeHint": "Sonst verweisen diese weiterhin auf die gelöschte ID.",
       "stopFirst": "Halten Sie den Gast an, um ihn zu löschen.",
       "done": "{name} wurde gelöscht."
+    },
+    "hardware": {
+      "title": "Hardware",
+      "optionsTitle": "Optionen",
+      "options": {
+        "name": "Name",
+        "description": "Beschreibung",
+        "tags": "Tags",
+        "onboot": "Beim Systemstart starten",
+        "protection": "Schutz vor dem Löschen",
+        "agent": "QEMU Guest Agent",
+        "boot": "Startreihenfolge",
+        "cores": "Kerne",
+        "sockets": "Sockel",
+        "memory": "Arbeitsspeicher (MiB)",
+        "balloon": "Minimaler Arbeitsspeicher (MiB, Ballooning)",
+        "cpu": "CPU-Typ",
+        "numa": "NUMA",
+        "ostype": "Betriebssystem",
+        "hotplug": "Hot-Plug"
+      },
+      "osTypes": {
+        "l26": "Linux 2.6 – 6.x",
+        "l24": "Linux 2.4",
+        "win11": "Windows 11 / Server 2022 / 2025",
+        "win10": "Windows 10 / Server 2016 / 2019",
+        "win8": "Windows 8 / Server 2012",
+        "win7": "Windows 7 / Server 2008 R2",
+        "w2k8": "Windows Vista / Server 2008",
+        "w2k3": "Windows Server 2003",
+        "w2k": "Windows 2000",
+        "wvista": "Windows Vista",
+        "wxp": "Windows XP",
+        "solaris": "Solaris",
+        "other": "Sonstiges"
+      },
+      "hints": {
+        "agent": "1 oder z. B. enabled=1,fstrim_cloned_disks=1",
+        "boot": "z. B. order=scsi0;net0",
+        "cores": "Kerne × Sockel höchstens {cores}.",
+        "memory": "Höchstens {memory} MiB.",
+        "hotplug": "z. B. network,disk,usb",
+        "tags": "Durch Kommas getrennt.",
+        "grow": "Festplatten können nur wachsen. Leer lassen, um die Größe beizubehalten.",
+        "macNew": "Leer lassen, um eine Adresse zu erzeugen.",
+        "macKept": "Die MAC-Adresse bleibt beim Ändern eines Geräts erhalten."
+      },
+      "errors": {
+        "range": "Zwischen {min} und {max}.",
+        "coresTotal": "Kerne × Sockel dürfen {max} nicht überschreiten.",
+        "balloon": "Nicht mehr als der Arbeitsspeicher.",
+        "boot": "order= gefolgt von Geräten, getrennt durch „;“, z. B. order=scsi0;net0.",
+        "grow": "Mehr als {min} und höchstens {max} GiB.",
+        "mac": "Eine Unicast-MAC-Adresse wie BC:24:11:12:34:56."
+      },
+      "diskDialog": {
+        "create": "Festplatte hinzufügen",
+        "edit": "Festplatte {disk} ändern",
+        "attach": "Festplatte {disk} anschließen",
+        "submit": {
+          "create": "Hinzufügen",
+          "edit": "Speichern",
+          "attach": "Anschließen"
+        }
+      },
+      "netDialog": {
+        "create": "Netzwerkgerät hinzufügen",
+        "edit": "Netzwerkgerät {net} ändern"
+      },
+      "option": "Option",
+      "value": "Wert",
+      "pending": "Ausstehend",
+      "pendingRemoval": "Entfernen ausstehend",
+      "pendingHint": "Einige Änderungen stehen aus. Sie werden wirksam, wenn die VM neu gestartet wird: nach Stoppen und Starten oder einem Neustart über Proxmox, nicht aber nach einem Neustart im Gast.",
+      "runningHint": "Die VM läuft. Änderungen, die Proxmox nicht im laufenden Betrieb übernehmen kann, bleiben ausstehend, bis die VM neu gestartet wird.",
+      "notConfigurable": "Änderungen sind nicht möglich: Für diesen Cluster ist keine Bereitstellung konfiguriert.",
+      "default": "Standard",
+      "yes": "ja",
+      "no": "nein",
+      "edit": "Bearbeiten",
+      "editOptions": "Optionen bearbeiten",
+      "changeOptions": "Optionen ändern",
+      "revert": "Ausstehende Änderungen verwerfen",
+      "revertAll": "Ausstehende Änderungen verwerfen",
+      "disks": "Festplatten",
+      "disk": "Festplatte",
+      "noDisks": "Keine Festplatten.",
+      "unused": "nicht angeschlossen",
+      "volume": "Volume",
+      "size": "Größe",
+      "sizeGiB": "Größe (GiB)",
+      "newSize": "Neue Größe (GiB)",
+      "bus": "Bus",
+      "storage": "Speicher",
+      "diskOptions": "Optionen",
+      "discard": "Discard (TRIM)",
+      "discardShort": "Discard",
+      "ssd": "SSD-Emulation",
+      "iothread": "IO-Thread",
+      "iothreadShort": "IO-Thread",
+      "noBackup": "Von Sicherungen ausnehmen",
+      "noBackupShort": "keine Sicherung",
+      "addDisk": "Festplatte hinzufügen",
+      "changeDisk": "Festplatte {disk} ändern",
+      "attach": "Anschließen",
+      "detach": "Trennen",
+      "detachTitle": "Festplatte trennen",
+      "detachText": "{disk} ({volume}) trennen? Die Festplatte bleibt als nicht angeschlossene Festplatte der VM erhalten und kann wieder angeschlossen werden.",
+      "delete": "Löschen",
+      "deleteDisk": "Festplatte {disk} löschen",
+      "deleteDiskTitle": "Festplatte löschen",
+      "deleteDiskText": "Die Festplatte {disk} ({volume}) und alle ihre Daten werden vernichtet. Das kann nicht rückgängig gemacht werden.",
+      "deleteRunning": "Stoppen Sie zuerst die VM oder trennen Sie die Festplatte.",
+      "networks": "Netzwerkgeräte",
+      "noNetworks": "Keine Netzwerkgeräte.",
+      "device": "Gerät",
+      "model": "Modell",
+      "mac": "MAC-Adresse",
+      "netOptions": "Optionen",
+      "firewall": "Proxmox-Firewall",
+      "firewallShort": "Firewall",
+      "linkDown": "Getrennt (Link down)",
+      "linkDownShort": "getrennt",
+      "addNetwork": "Netzwerkgerät hinzufügen",
+      "changeNetwork": "Netzwerkgerät {net} ändern",
+      "remove": "Entfernen",
+      "removeNetwork": "Netzwerkgerät {net} entfernen",
+      "removeNetworkTitle": "Netzwerkgerät entfernen",
+      "removeNetworkText": "{net} ({mac}) entfernen? Der Gast verliert diese Netzwerkverbindung.",
+      "typeToConfirm": "Geben Sie zur Bestätigung {value} ein",
+      "actionsFor": "Aktionen für {item}",
+      "done": "{name}: {change} erledigt."
     }
   },
   "errors": {
@@ -462,7 +644,9 @@
     "no_free_vmid": "Im für Sie erlaubten Bereich ist keine ID frei. Bitte geben Sie eine ID ein.",
     "too_many_jobs": "Zu viele Erstellungen laufen gerade. Bitte warten Sie, bis eine abgeschlossen ist.",
     "guest_running": "Halten Sie den Gast an, bevor Sie ihn löschen.",
-    "confirmation_mismatch": "Die Bestätigung stimmt nicht mit dem Namen überein."
+    "confirmation_mismatch": "Die Bestätigung stimmt nicht mit dem Namen überein.",
+    "config_changed": "Die Konfiguration wurde zwischenzeitlich geändert. Bitte laden Sie sie neu und versuchen Sie es erneut.",
+    "no_free_slot": "Auf diesem Bus ist kein Platz mehr frei."
   },
   "dns": {
     "provider": "Anbieter",
@@ -534,21 +718,7 @@
       "v6": "DHCPv6"
     },
     "noServers": "Ihnen steht kein DHCP-Server zur Verfügung.",
-    "status": {
-      "ok": "Verfügbar",
-      "unavailable": "Nicht verfügbar"
-    },
     "unavailable": "Der Server kann gerade nicht verwendet werden: {error}",
-    "version": "Version",
-    "uptime": "Läuft seit",
-    "uptimeDays": "{d} T. {h} Std.",
-    "uptimeHours": "{h} Std. {m} Min.",
-    "ha": "Hochverfügbarkeit",
-    "haState": "{mode}, {role}: {state}",
-    "haPartner": "Partner {partner}: {state}",
-    "haPartnerLost": "Keine Verbindung zum Partner {partner}",
-    "haGroup": "HA-Gruppe",
-    "haGroupMembers": "{group}, zusammen mit {partners}",
     "missing": {
       "leases": "Leases sind nicht verfügbar: Die Hook-Bibliothek lease_cmds ist nicht geladen.",
       "reservations": "Reservierungen sind nicht verfügbar: Die Hook-Bibliothek host_cmds ist nicht geladen.",

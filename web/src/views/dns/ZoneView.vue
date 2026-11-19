@@ -56,7 +56,9 @@ const columns = computed(() => [
   { key: 'type', label: t('dns.type'), class: 'w-20' },
   { key: 'content', label: t('dns.content') },
   { key: 'ttl', label: t('dns.ttl'), class: 'w-24' },
-  ...(canWrite.value ? [{ key: 'actions', label: t('dns.actionsColumn') }] : []),
+  ...(canWrite.value
+    ? [{ key: 'actions', label: t('dns.actionsColumn'), class: 'w-px whitespace-nowrap' }]
+    : []),
 ])
 
 function ttlLabel(r: DnsRecord): string {
@@ -199,7 +201,7 @@ onMounted(load)
         <template #cell-actions="{ row }">
           <div
             v-if="!(row as DnsRecord).readOnly"
-            class="flex flex-wrap gap-1.5"
+            class="flex gap-1.5"
             role="group"
             :aria-label="t('dns.actionsFor', { name: relativeName((row as DnsRecord).name, zone) })"
           >

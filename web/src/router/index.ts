@@ -104,6 +104,12 @@ export const routes = [
         meta: { title: 'proxmox.shell', module: 'proxmox' },
       },
       {
+        path: 'docs/:page?',
+        name: 'docs',
+        component: () => import('@/views/DocsView.vue'),
+        meta: { title: 'nav.docs' },
+      },
+      {
         path: 'admin/audit',
         name: 'audit',
         component: () => import('@/views/admin/AuditView.vue'),

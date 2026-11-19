@@ -15,6 +15,8 @@ import (
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
+	"github.com/joernott/dcdash/internal/dhcp"
+	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
@@ -38,6 +40,10 @@ type Service struct {
 	consoles *consoleTickets
 	jobs     *jobStore
 	log      zerolog.Logger
+	// dhcp and dns add reservations and records for new guests; nil if
+	// the modules are not configured.
+	dhcp *dhcp.Service
+	dns  *dns.Service
 }
 
 // NewService creates the API for the given clusters. sessions is used to end
@@ -77,6 +83,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+base+"/{cluster}/guests", s.handleCreate)
 	mux.HandleFunc("DELETE "+base+"/{cluster}/guests/{type}/{vmid}", s.handleDelete)
 	mux.HandleFunc("GET "+base+"/{cluster}/jobs/{id}", s.handleJob)
+	s.registerHardware(mux, base)
 	mux.HandleFunc("GET /api/v1/proxmox/console/{id}", s.handleConsoleSocket)
 }
 

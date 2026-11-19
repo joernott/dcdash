@@ -47,7 +47,7 @@ const canDeleteAny = computed(() => session.canAny('dns', 'admin', providerName.
 const columns = computed(() => [
   { key: 'name', label: t('dns.zone') },
   { key: 'status', label: t('dns.status') },
-  { key: 'actions', label: t('dns.actionsColumn') },
+  { key: 'actions', label: t('dns.actionsColumn'), class: 'w-px whitespace-nowrap' },
 ])
 
 async function loadProviders() {

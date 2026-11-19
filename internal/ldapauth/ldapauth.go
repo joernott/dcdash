@@ -13,12 +13,14 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/rs/zerolog"
 
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/tlsutil"
 )
 
@@ -54,43 +56,94 @@ type Group struct {
 
 // Client talks to the directory. It opens a connection per operation, which
 // keeps it simple and robust against server restarts; logins are infrequent.
+//
+// With several servers, a connection goes to the server that worked last. If
+// it cannot be reached (network or TLS errors), the following servers are
+// tried in configured order, wrapping around. Directory answers, such as a wrong password, never
+// cause a failover.
 type Client struct {
-	cfg  config.LDAP
+	cfg     config.LDAP
+	servers []server
+	// preferred is the index of the server that worked last.
+	preferred atomic.Int32
+	log       zerolog.Logger
+	dial      func() (*ldap.Conn, error)
+	// dialServer connects to one server, probe also binds as the service
+	// account; both are replaced in tests.
+	dialServer func(server) (*ldap.Conn, error)
+	probe      func(server) error
+}
+
+// server is one directory server with its TLS configuration.
+type server struct {
+	url  string
+	host string
 	tls  *tls.Config
-	log  zerolog.Logger
-	dial func() (*ldap.Conn, error)
 }
 
 // New creates a client. It does not connect yet.
 func New(cfg config.LDAP, log zerolog.Logger) (*Client, error) {
 	cfg.ApplyDefaults()
-	u, err := url.Parse(cfg.URL)
-	if err != nil {
-		return nil, fmt.Errorf("ldap url: %w", err)
+	endpoints := cfg.Endpoints()
+	if len(endpoints) == 0 {
+		return nil, errors.New("ldap: no server configured")
 	}
-	tlsCfg, err := tlsutil.ClientConfig(cfg.TLS, u.Hostname())
-	if err != nil {
-		return nil, fmt.Errorf("ldap tls: %w", err)
+	c := &Client{cfg: cfg, log: log.With().Str("component", "ldap").Logger()}
+	for _, e := range endpoints {
+		u, err := url.Parse(e.URL)
+		if err != nil {
+			return nil, fmt.Errorf("ldap url: %w", err)
+		}
+		tlsCfg, err := tlsutil.ClientConfig(cfg.TLSFor(e), u.Hostname())
+		if err != nil {
+			return nil, fmt.Errorf("ldap tls for %s: %w", e.URL, err)
+		}
+		c.servers = append(c.servers, server{url: e.URL, host: u.Host, tls: tlsCfg})
 	}
-	c := &Client{cfg: cfg, tls: tlsCfg, log: log.With().Str("component", "ldap").Logger()}
 	c.dial = c.connect
+	c.dialServer = c.connectTo
+	c.probe = c.probeServer
 	return c, nil
 }
 
+// connect connects to the preferred server, failing over to the others.
 func (c *Client) connect() (*ldap.Conn, error) {
+	start := int(c.preferred.Load())
+	msgs := make([]string, 0, len(c.servers))
+	for n := range c.servers {
+		i := (start + n) % len(c.servers)
+		conn, err := c.dialServer(c.servers[i])
+		if err == nil {
+			if i != start {
+				c.log.Warn().Str("url", c.servers[i].url).Str("previous", c.servers[start].url).
+					Msg("failed over to another directory server")
+				c.preferred.Store(int32(i)) // #nosec G115 -- i < len(servers), a short config list
+			}
+			return conn, nil
+		}
+		if len(c.servers) > 1 {
+			c.log.Warn().Err(err).Str("url", c.servers[i].url).Msg("directory server unavailable")
+		}
+		msgs = append(msgs, err.Error())
+	}
+	return nil, fmt.Errorf("%w: %s", ErrUnavailable, strings.Join(msgs, "; "))
+}
+
+// connectTo connects to one server.
+func (c *Client) connectTo(s server) (*ldap.Conn, error) {
 	timeout := c.cfg.Timeout.D()
-	conn, err := ldap.DialURL(c.cfg.URL,
-		ldap.DialWithTLSConfig(c.tls),
+	conn, err := ldap.DialURL(s.url,
+		ldap.DialWithTLSConfig(s.tls),
 		ldap.DialWithDialer(&net.Dialer{Timeout: timeout}),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("%w: connect to %s: %w", ErrUnavailable, c.cfg.URL, err)
+		return nil, fmt.Errorf("connect to %s: %w", s.url, err)
 	}
 	conn.SetTimeout(timeout)
 	if c.cfg.StartTLS {
-		if err := conn.StartTLS(c.tls); err != nil {
+		if err := conn.StartTLS(s.tls); err != nil {
 			_ = conn.Close()
-			return nil, fmt.Errorf("%w: StartTLS: %w", ErrUnavailable, err)
+			return nil, fmt.Errorf("StartTLS with %s: %w", s.url, err)
 		}
 	}
 	return conn, nil
@@ -109,15 +162,76 @@ func (c *Client) serviceConn() (*ldap.Conn, error) {
 	return conn, nil
 }
 
-// Check verifies that the directory is reachable and the service account can
-// bind; it is used as a readiness check.
-func (c *Client) Check(context.Context) (string, error) {
-	conn, err := c.serviceConn()
-	if err != nil {
-		return "", err
+// Status checks every server: it connects and binds as the service account.
+// The directory is usable if one server works; servers that don't are named
+// in the detail. All servers are checked concurrently, and a server that has
+// not answered when ctx ends counts as unavailable.
+func (c *Client) Status(ctx context.Context) (status.Detail, error) {
+	type result struct {
+		i   int
+		err error
 	}
-	_ = conn.Close()
-	return "", nil
+	results := make(chan result, len(c.servers)) // buffered: late probes don't block
+	for i, s := range c.servers {
+		go func() { results <- result{i, c.probe(s)} }()
+	}
+	errs := make([]error, len(c.servers))
+	for i := range errs {
+		errs[i] = errors.New("no answer in time")
+	}
+collect:
+	for range c.servers {
+		select {
+		case r := <-results:
+			errs[r.i] = r.err
+		case <-ctx.Done():
+			break collect
+		}
+	}
+
+	var up, down, msgs []string
+	active := ""
+	for i, err := range errs {
+		if err != nil {
+			down = append(down, c.servers[i].host)
+			msgs = append(msgs, err.Error())
+			c.log.Debug().Err(err).Str("url", c.servers[i].url).Msg("directory server check failed")
+			continue
+		}
+		up = append(up, c.servers[i].host)
+		if active == "" || i == int(c.preferred.Load()) {
+			active = c.servers[i].host
+		}
+	}
+	switch {
+	case len(up) == 0:
+		return status.Detail{}, fmt.Errorf("%w: %s", ErrUnavailable, strings.Join(msgs, "; "))
+	case len(down) == 0:
+		return status.Detail{
+			Text:   "connected to " + active,
+			Code:   "directory.connected",
+			Params: map[string]string{"server": active, "count": strconv.Itoa(len(up))},
+		}, nil
+	default:
+		return status.Detail{
+			Text:   fmt.Sprintf("connected to %s; not reachable: %s", active, strings.Join(msgs, "; ")),
+			Code:   "directory.degraded",
+			Params: map[string]string{"server": active, "down": strings.Join(down, ", ")},
+		}, nil
+	}
+}
+
+// probeServer connects to one server and binds as the service account.
+func (c *Client) probeServer(s server) error {
+	conn, err := c.dialServer(s)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if err := conn.Bind(c.cfg.BindDN, c.cfg.BindPassword.Value()); err != nil {
+		return fmt.Errorf("service account bind at %s: %w", s.url, err)
+	}
+	return nil
 }
 
 // userFilter builds the search filter for a login name; the name is escaped.

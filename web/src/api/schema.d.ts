@@ -80,6 +80,44 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/docs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Pages of the built-in documentation
+     * @description The documentation is embedded in the binary; requires a logged-in user. The list is in
+     *     menu order and contains no page content.
+     */
+    get: operations['listDocs']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/docs/{page}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One page of the built-in documentation, rendered to HTML */
+    get: operations['getDoc']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/auth/login': {
     parameters: {
       query?: never
@@ -406,6 +444,188 @@ export interface paths {
      *     Proxmox task; poll the task for the result. Audited as `proxmox.guest.delete`.
      */
     delete: operations['deleteProxmoxGuest']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Options, disks and network devices of a VM
+     * @description Requires `read` on `qemu/<vmid>`; VMs only. Includes pending changes (they take effect at
+     *     the next start of the VM) and the digest that changes send back. `configurable` is true if
+     *     the cluster has provisioning settings; changes need `write` on the VM. See
+     *     docs/adr/0005-proxmox-vm-configuration.md.
+     */
+    get: operations['getProxmoxHardware']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/options': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Change, remove or revert options of a VM
+     * @description Requires `write` on `qemu/<vmid>` and provisioning settings. Only the options listed in
+     *     `ProxmoxOptionSetting.key` can be set or removed; cores, sockets and memory are limited by
+     *     the provisioning settings. `revert` drops pending changes of any key. Audited as
+     *     `proxmox.guest.configure`.
+     */
+    post: operations['changeProxmoxOptions']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add a new disk to a VM
+     * @description Requires `write` on `qemu/<vmid>` and provisioning settings: the storage must be allowed and
+     *     the size within the disk limit. The disk gets the first free slot of the bus, returned as
+     *     `key`. Audited as `proxmox.disk.create`.
+     */
+    post: operations['createProxmoxDisk']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks/{disk}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Grow a disk or change its options
+     * @description Requires `write` on `qemu/<vmid>`. Disks can only grow, up to the disk limit. Audited as
+     *     `proxmox.disk.resize` (size only) or `proxmox.disk.update`.
+     */
+    put: operations['updateProxmoxDisk']
+    post?: never
+    /**
+     * Delete a disk and its data
+     * @description Requires `admin` on `qemu/<vmid>`; `confirm` must be the disk key. An unused disk is
+     *     destroyed; an attached disk is detached and destroyed, which is only possible while the VM is
+     *     stopped (code guest_running otherwise). Audited as `proxmox.disk.delete`.
+     */
+    delete: operations['deleteProxmoxDisk']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks/{disk}/detach': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Detach a disk; it stays as an unused disk
+     * @description Requires `write` on `qemu/<vmid>`. Audited as `proxmox.disk.detach`.
+     */
+    post: operations['detachProxmoxDisk']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/disks/{disk}/attach': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Attach an unused disk
+     * @description Requires `write` on `qemu/<vmid>`; `disk` is an unused disk (`unusedN`). It gets the first
+     *     free slot of `bus`, returned as `key`. Audited as `proxmox.disk.attach`.
+     */
+    post: operations['attachProxmoxDisk']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/networks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add a network device to a VM
+     * @description Requires `write` on `qemu/<vmid>`; bridge and VLAN must be allowed by the provisioning
+     *     settings. Without `mac` dcdash generates one (prefix BC:24:11). The device gets the first
+     *     free `netN`, returned as `key`. Audited as `proxmox.network.create`.
+     */
+    post: operations['createProxmoxNetwork']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware/networks/{net}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Change a network device; the MAC address stays
+     * @description Requires `write` on `qemu/<vmid>`. `mac` is ignored. Audited as `proxmox.network.update`.
+     */
+    put: operations['updateProxmoxNetwork']
+    post?: never
+    /**
+     * Remove a network device
+     * @description Requires `write` on `qemu/<vmid>`. Audited as `proxmox.network.delete`.
+     */
+    delete: operations['deleteProxmoxNetwork']
     options?: never
     head?: never
     patch?: never
@@ -977,6 +1197,21 @@ export interface components {
       }
       requestId: string
     }
+    DocsPage: {
+      /**
+       * @description Page name, the Markdown file name without ".md".
+       * @example security
+       */
+      name: string
+      /** @description Text of the first heading. */
+      title: string
+      /**
+       * @description The page as HTML, only in GET /api/v1/docs/{page}. Raw HTML of the Markdown is not
+       *     rendered. Links between pages point to /docs/<page>, other links point to GitHub
+       *     and have target="_blank". Heading IDs and link fragments have the prefix "doc-".
+       */
+      html?: string
+    }
     StatusReport: {
       components: components['schemas']['StatusComponent'][]
       /** Format: date-time */
@@ -1001,7 +1236,8 @@ export interface components {
        *     `certificate.missing`, `certificate.expired` (`at`), `proxmox.connected` (`version`,
        *     `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
        *     `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
-       *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`). Times are RFC 3339.
+       *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
+       *     `count`), `directory.degraded` (`server`, `down`). Times are RFC 3339.
        * @example certificate.valid
        */
       detailCode?: string
@@ -1229,6 +1465,22 @@ export interface components {
       size: number
       format: string
     }
+    ProxmoxCreateNetwork: {
+      bridge: string
+      vlan?: number
+      /** @description "dhcp" or an address with prefix length (containers and cloud-init). */
+      ipv4?: string
+      gateway4?: string
+      /** @description "auto", "dhcp" or an address with prefix length. */
+      ipv6?: string
+      gateway6?: string
+      /** @description Only on the first network device. */
+      nameservers?: string[]
+      /** @description Only on the first network device. */
+      searchDomain?: string
+      /** @description MAC address; empty generates one (prefix BC:24:11). */
+      mac?: string
+    }
     ProxmoxCreateRequest: {
       /** @enum {string} */
       type: 'qemu' | 'lxc'
@@ -1269,18 +1521,38 @@ export interface components {
       disk: number
       /** @description Storage of the disk; not for linked clones. */
       storage?: string
-      network: {
-        bridge: string
-        vlan?: number
-        /** @description "dhcp" or an address with prefix length (containers and cloud-init). */
-        ipv4?: string
-        gateway4?: string
-        /** @description "auto", "dhcp" or an address with prefix length. */
-        ipv6?: string
-        gateway6?: string
-        nameservers?: string[]
-        searchDomain?: string
-      }
+      /** @description The network devices net0, net1, ...; replaces network. */
+      networks?: components['schemas']['ProxmoxCreateNetwork'][]
+      /** @description The only network device, for requests without networks (API of v0.1.1). */
+      network?: components['schemas']['ProxmoxCreateNetwork']
+      /**
+       * @description DHCP reservations for the MAC addresses of the network devices, added after the guest
+       *     was created and before it is started. Requires write on the subnet of the DHCP server;
+       *     checked when the request arrives. Audited as dhcp.reservation.create.
+       */
+      reservations?: {
+        /** @description Index of the network device in networks. */
+        network: number
+        server: string
+        subnetId: number
+        ipAddress?: string
+        hostname?: string
+      }[]
+      /**
+       * @description DNS records, added like the reservations. Requires write on the zone. Audited as
+       *     dns.record.create. Reservations and records together are at most 16.
+       */
+      records?: {
+        provider: string
+        zone: string
+        /** @description Relative to the zone or fully qualified with a trailing dot. */
+        name: string
+        /** @enum {string} */
+        type: 'A' | 'AAAA' | 'PTR'
+        content: string
+        /** @description Seconds; 0 or omitted uses 3600. */
+        ttl?: number
+      }[]
       /** @description Cloud-init user of a clone. */
       user?: string
       /** @description Cloud-init password of a clone */
@@ -1307,7 +1579,9 @@ export interface components {
       error?: string
       steps: {
         /** @enum {string} */
-        name: 'clone' | 'configure' | 'resize' | 'create' | 'start'
+        name: 'clone' | 'configure' | 'resize' | 'create' | 'dhcp' | 'dns' | 'start'
+        /** @description What a dhcp or dns step adds */
+        detail?: string
         /** @enum {string} */
         state: 'pending' | 'running' | 'done' | 'failed' | 'skipped'
         /** @description The Proxmox task of the step. */
@@ -1318,6 +1592,157 @@ export interface components {
       created: string
       /** Format: date-time */
       ended?: string
+    }
+    ProxmoxHardware: {
+      /** @description Identifies the configuration; changes send it back. */
+      digest: string
+      running: boolean
+      options: components['schemas']['ProxmoxOptionSetting'][]
+      /** @description Attached and unused disks, without CD-ROM drives. */
+      disks: components['schemas']['ProxmoxHardwareDisk'][]
+      networks: components['schemas']['ProxmoxNetworkDevice'][]
+      /** @description The cluster has provisioning settings. */
+      configurable: boolean
+      /** @description Storages for new disks. */
+      storages: string[]
+      bridges: string[]
+      /** @description Allowed VLAN ranges, e.g. 100-199. */
+      vlans: string[]
+      limits: {
+        cores: number
+        /** @description MiB */
+        memory: number
+        /** @description GiB */
+        disk: number
+      }
+    }
+    ProxmoxOptionSetting: {
+      /** @enum {string} */
+      key:
+        | 'name'
+        | 'description'
+        | 'tags'
+        | 'onboot'
+        | 'protection'
+        | 'agent'
+        | 'boot'
+        | 'cores'
+        | 'sockets'
+        | 'memory'
+        | 'balloon'
+        | 'cpu'
+        | 'numa'
+        | 'ostype'
+        | 'hotplug'
+      /** @description The active value. */
+      value: string
+      /** @description False if the option is not set (Proxmox uses its default). */
+      set: boolean
+      /** @description A change that takes effect at the next start. */
+      pending?: string
+      /** @description The removal is pending. */
+      delete?: boolean
+    }
+    ProxmoxHardwareDisk: {
+      /** @example scsi0 */
+      key: string
+      /** @enum {string} */
+      bus: 'scsi' | 'virtio' | 'sata' | 'ide' | 'unused'
+      /** @example local-lvm:vm-101-disk-0 */
+      volume: string
+      storage: string
+      /** @example 32G */
+      size: string
+      /** Format: int64 */
+      sizeBytes: number
+      discard: boolean
+      ssd: boolean
+      iothread: boolean
+      /** @description False if the disk is excluded from backups. */
+      backup: boolean
+      /** @description False if the addition of the disk is pending. */
+      active: boolean
+      /** @description Pending value. */
+      pending?: string
+      delete?: boolean
+    }
+    ProxmoxNetworkDevice: {
+      /** @example net0 */
+      key: string
+      /** @enum {string} */
+      model: 'virtio' | 'e1000' | 'e1000e' | 'vmxnet3' | 'rtl8139'
+      /** @example BC:24:11:12:34:56 */
+      mac: string
+      bridge: string
+      vlan?: number
+      firewall: boolean
+      linkDown: boolean
+      active: boolean
+      pending?: string
+      delete?: boolean
+    }
+    ProxmoxOptionsRequest: {
+      digest?: string
+      set?: {
+        [key: string]: string
+      }
+      delete?: string[]
+      /** @description Keys whose pending changes are dropped. */
+      revert?: string[]
+    }
+    ProxmoxDiskRequest: {
+      digest?: string
+      /** @enum {string} */
+      bus: 'scsi' | 'virtio' | 'sata' | 'ide'
+      storage: string
+      sizeGiB: number
+      discard?: boolean
+      /** @description Not on virtio. */
+      ssd?: boolean
+      /** @description Only on scsi and virtio. */
+      iothread?: boolean
+      noBackup?: boolean
+    }
+    ProxmoxDiskUpdate: {
+      digest?: string
+      /** @description New size; larger than the current one. Omit to keep it. */
+      sizeGiB?: number
+      discard?: boolean
+      ssd?: boolean
+      iothread?: boolean
+      noBackup?: boolean
+    }
+    ProxmoxDiskAction: {
+      digest?: string
+      /**
+       * @description For attach.
+       * @enum {string}
+       */
+      bus?: 'scsi' | 'virtio' | 'sata' | 'ide'
+      /** @description For delete */
+      confirm?: string
+    }
+    ProxmoxNetworkRequest: {
+      digest?: string
+      /** @enum {string} */
+      model: 'virtio' | 'e1000' | 'e1000e' | 'vmxnet3' | 'rtl8139'
+      bridge: string
+      vlan?: number
+      firewall?: boolean
+      linkDown?: boolean
+      /** @description For new devices; empty generates one. */
+      mac?: string
+    }
+    ProxmoxNetworkAction: {
+      digest?: string
+    }
+    ProxmoxConfigResult: {
+      /** @description The disk or network device that was created or attached. */
+      key?: string
+      upid?: string
+      node: string
+      /** @description False if the task was still running. */
+      done: boolean
     }
     ProxmoxDeleteRequest: {
       /** @description The guest's name (or its ID if it has no name), typed by the user. */
@@ -1630,6 +2055,37 @@ export interface components {
         'application/json': components['schemas']['ErrorBody']
       }
     }
+    /** @description The change is done. */
+    ProxmoxChangeDone: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ProxmoxConfigResult']
+      }
+    }
+    /** @description The Proxmox task was still running after 60 seconds; the task list shows its end. */
+    ProxmoxChangeRunning: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ProxmoxConfigResult']
+      }
+    }
+    /**
+     * @description Codes: provisioning_disabled (the cluster has no provisioning settings), config_changed
+     *     (the configuration changed since it was read: reload and try again), no_free_slot (no free
+     *     slot on the bus), guest_running (stop the VM or detach the disk first).
+     */
+    ProxmoxChangeConflict: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /**
      * @description Codes: provisioning_disabled (the cluster has no provisioning settings),
      *     vmid_taken (the requested ID is in use), no_free_vmid (no free ID of the range may be
@@ -1712,6 +2168,10 @@ export interface components {
     ProxmoxCluster: string
     ProxmoxGuestType: 'qemu' | 'lxc'
     ProxmoxVMID: number
+    /** @description Disk key, e.g. scsi1 or unused0. */
+    ProxmoxDisk: string
+    /** @description Network device key, e.g. net1. */
+    ProxmoxNet: string
     /** @description Provider name from the configuration. */
     DNSProvider: string
     /** @description Zone name without trailing dot. */
@@ -1817,6 +2277,56 @@ export interface operations {
         }
       }
       401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  listDocs: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The documentation pages. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            pages: components['schemas']['DocsPage'][]
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  getDoc: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @example security */
+        page: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The page with its HTML. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DocsPage']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
       default: components['responses']['Error']
     }
   }
@@ -2455,6 +2965,318 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       409: components['responses']['ProxmoxConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getProxmoxHardware: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The hardware of the VM. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProxmoxHardware']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  changeProxmoxOptions: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxOptionsRequest']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createProxmoxDisk: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxDiskRequest']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateProxmoxDisk: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        /** @description Disk key, e.g. scsi1 or unused0. */
+        disk: components['parameters']['ProxmoxDisk']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxDiskUpdate']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteProxmoxDisk: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        /** @description Disk key, e.g. scsi1 or unused0. */
+        disk: components['parameters']['ProxmoxDisk']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxDiskAction']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      /** @description Invalid request, or the confirmation doesn't match the disk (code: confirmation_mismatch). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  detachProxmoxDisk: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        /** @description Disk key, e.g. scsi1 or unused0. */
+        disk: components['parameters']['ProxmoxDisk']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxDiskAction']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  attachProxmoxDisk: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        /** @description Disk key, e.g. scsi1 or unused0. */
+        disk: components['parameters']['ProxmoxDisk']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxDiskAction']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createProxmoxNetwork: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxNetworkRequest']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateProxmoxNetwork: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        /** @description Network device key, e.g. net1. */
+        net: components['parameters']['ProxmoxNet']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxNetworkRequest']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteProxmoxNetwork: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Cluster name from the configuration. */
+        cluster: components['parameters']['ProxmoxCluster']
+        type: components['parameters']['ProxmoxGuestType']
+        vmid: components['parameters']['ProxmoxVMID']
+        /** @description Network device key, e.g. net1. */
+        net: components['parameters']['ProxmoxNet']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProxmoxNetworkAction']
+      }
+    }
+    responses: {
+      200: components['responses']['ProxmoxChangeDone']
+      202: components['responses']['ProxmoxChangeRunning']
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }

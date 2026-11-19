@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from 'vitest'
 
-import { inRanges, isIPv4, isIPv6, newForm, toRequest, validate } from '../provisioning'
+import {
+  inRanges,
+  isIPv4,
+  isIPv6,
+  newForm,
+  newNet,
+  ptrName,
+  toRequest,
+  validate,
+} from '../provisioning'
 import { options } from './fixtures'
 
 const KEY = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample+/= user@host'
@@ -28,13 +37,16 @@ describe('provisioning helpers', () => {
       disk: '',
     })
     expect(validate(f, options)).toEqual({ name: 'name' })
-    Object.assign(f, {
-      name: 'app1',
+    Object.assign(f.networks[0]!, {
       vlan: '100',
       ipv4Mode: 'static',
       ipv4: '10.0.0.5/24',
       gateway4: '10.0.0.1',
       ipv6Mode: 'auto',
+      mac: 'bc:24:11:00:00:01',
+    })
+    Object.assign(f, {
+      name: 'app1',
       nameservers: '10.0.0.53, 2001:db8::53',
       user: 'ops',
       password: 'secret1',
@@ -60,15 +72,18 @@ describe('provisioning helpers', () => {
       start: true,
       description: undefined,
       tags: ['dev', 'web'],
-      network: {
-        bridge: 'vmbr0',
-        vlan: 100,
-        ipv4: '10.0.0.5/24',
-        gateway4: '10.0.0.1',
-        ipv6: 'auto',
-        nameservers: ['10.0.0.53', '2001:db8::53'],
-        searchDomain: undefined,
-      },
+      networks: [
+        {
+          bridge: 'vmbr0',
+          vlan: 100,
+          mac: 'BC:24:11:00:00:01',
+          ipv4: '10.0.0.5/24',
+          gateway4: '10.0.0.1',
+          ipv6: 'auto',
+          nameservers: ['10.0.0.53', '2001:db8::53'],
+          searchDomain: undefined,
+        },
+      ],
     })
     f.full = false
     expect(toRequest(f).storage).toBeUndefined()
@@ -91,9 +106,9 @@ describe('provisioning helpers', () => {
       vmid: 5100,
       disk: 32,
       storage: 'local-lvm',
-      network: { bridge: 'vmbr0' },
+      networks: [{ bridge: 'vmbr0' }],
     })
-    expect(toRequest(iso).network.ipv4).toBeUndefined()
+    expect(toRequest(iso).networks![0]!.ipv4).toBeUndefined()
 
     const ct = { ...newForm(options, 'lxc'), name: 'ct1' }
     expect(validate(ct, options)).toEqual({ password: 'login' })
@@ -104,7 +119,7 @@ describe('provisioning helpers', () => {
       node: 'pve1',
       osTemplate: 'local:vztmpl/debian-13.tar.zst',
       password: 'rootpw',
-      network: { bridge: 'vmbr0', ipv4: 'dhcp' },
+      networks: [{ bridge: 'vmbr0', ipv4: 'dhcp' }],
     })
   })
 
@@ -117,12 +132,17 @@ describe('provisioning helpers', () => {
       memory: '10',
       disk: '0',
       storage: 'ceph',
-      vlan: '300',
-      ipv4Mode: 'static' as const,
-      ipv4: '10.0.0.5',
-      gateway4: 'x',
-      ipv6Mode: 'static' as const,
-      ipv6: '2001:db8::5',
+      networks: [
+        {
+          ...newNet(options, 'lxc'),
+          vlan: '300',
+          ipv4Mode: 'static' as const,
+          ipv4: '10.0.0.5',
+          gateway4: 'x',
+          ipv6Mode: 'static' as const,
+          ipv6: '2001:db8::5',
+        },
+      ],
       nameservers: '1.1.1.1 2.2.2.2 3.3.3.3 4.4.4.4',
       searchDomain: 'bad domain',
       password: 'abc',
@@ -136,15 +156,101 @@ describe('provisioning helpers', () => {
       memory: 'memory',
       disk: 'disk',
       storage: 'required',
-      vlan: 'vlan',
-      ipv4: 'ipv4',
-      gateway4: 'ipv4Address',
-      ipv6: 'ipv6',
+      networks: [{ vlan: 'vlan', ipv4: 'ipv4', gateway4: 'ipv4Address', ipv6: 'ipv6' }],
       nameservers: 'nameservers',
       searchDomain: 'domain',
       password: 'password',
       sshKeys: 'sshKeys',
       tags: 'tags',
     })
+  })
+
+  it('handles several network devices with their own MAC addresses', () => {
+    const f = { ...newForm(options, 'lxc'), name: 'ct1', password: 'rootpw' }
+    expect(f.networks[0]!.mac).toMatch(/^BC:24:11(:[0-9A-F]{2}){3}$/)
+    f.networks.push({ ...newNet(options, 'lxc'), vlan: '150', ipv4Mode: 'none' })
+    expect(f.networks[1]!.mac).not.toBe(f.networks[0]!.mac)
+    expect(validate(f, options)).toEqual({})
+    const req = toRequest(f)
+    expect(req.networks).toHaveLength(2)
+    expect(req.networks![1]).toEqual({ bridge: 'vmbr0', vlan: 150, mac: f.networks[1]!.mac })
+
+    f.networks[1]!.mac = f.networks[0]!.mac.toLowerCase()
+    f.networks.push({ ...newNet(options, 'lxc'), mac: '01:00:5E:00:00:01' })
+    expect(validate(f, options).networks).toEqual([{}, { mac: 'macTwice' }, { mac: 'mac' }])
+  })
+})
+
+describe('reservations and records', () => {
+  it('validates and maps them', () => {
+    const f = { ...newForm(options, 'lxc'), name: 'ct1', password: 'rootpw' }
+    f.reservations.push({
+      network: 0,
+      server: 'kea4',
+      subnetId: '1',
+      ipAddress: '192.0.2.5',
+      hostname: 'ct1',
+    })
+    f.records.push({
+      provider: 'cf',
+      zone: 'example.org',
+      name: 'ct1',
+      type: 'A',
+      content: '192.0.2.5',
+      ttl: '',
+    })
+    expect(validate(f, options)).toEqual({})
+    const req = toRequest(f)
+    expect(req.reservations).toEqual([
+      { network: 0, server: 'kea4', subnetId: 1, ipAddress: '192.0.2.5', hostname: 'ct1' },
+    ])
+    expect(req.records).toEqual([
+      {
+        provider: 'cf',
+        zone: 'example.org',
+        name: 'ct1',
+        type: 'A',
+        content: '192.0.2.5',
+        ttl: undefined,
+      },
+    ])
+
+    f.reservations.push({
+      network: 2,
+      server: '',
+      subnetId: '',
+      ipAddress: 'x',
+      hostname: 'bad name',
+    })
+    f.records.push({
+      provider: 'cf',
+      zone: 'example.org',
+      name: 'a b',
+      type: 'AAAA',
+      content: '192.0.2.5',
+      ttl: 'x',
+    })
+    const e = validate(f, options)
+    expect(e.reservations).toEqual([
+      {},
+      {
+        network: 'required',
+        server: 'required',
+        subnetId: 'required',
+        ipAddress: 'ipAddress',
+        hostname: 'name',
+      },
+    ])
+    expect(e.records).toEqual([{}, { name: 'name', content: 'contentAAAA', ttl: 'ttl' }])
+  })
+
+  it('finds the PTR name of an address in a reverse zone', () => {
+    expect(ptrName('192.0.2.50', '2.0.192.in-addr.arpa')).toBe('50')
+    expect(ptrName('192.0.2.50', '192.in-addr.arpa.')).toBe('50.2.0')
+    expect(ptrName('192.0.2.50', '3.0.192.in-addr.arpa')).toBeUndefined()
+    expect(ptrName('2001:db8::1', '8.b.d.0.1.0.0.2.ip6.arpa')).toBe(
+      '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0',
+    )
+    expect(ptrName('not an address', 'example.org')).toBeUndefined()
   })
 })

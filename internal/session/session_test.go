@@ -105,6 +105,41 @@ func TestIdleTimeoutAndActivity(t *testing.T) {
 	}
 }
 
+// The end of a session is logged with its reason, so that unexpected logouts
+// can be explained from the log.
+func TestEndReasonLogged(t *testing.T) {
+	for _, tc := range []struct {
+		reason string
+		step   time.Duration
+		steps  int
+	}{
+		{"idle", 31 * time.Minute, 1},
+		// Active every 25 minutes until the 8-hour lifetime is over.
+		{"lifetime", 25 * time.Minute, 20},
+	} {
+		t.Run(tc.reason, func(t *testing.T) {
+			m, c := newManager(t)
+			var buf bytes.Buffer
+			m.log = zerolog.New(&buf)
+			token, _ := create(t, m)
+			var err error
+			for range tc.steps {
+				c.advance(tc.step)
+				if _, err = m.Get(context.Background(), token); err != nil {
+					break
+				}
+			}
+			if !errors.Is(err, ErrNotFound) {
+				t.Fatalf("session still valid: %v", err)
+			}
+			if out := buf.String(); !strings.Contains(out, `"reason":"`+tc.reason+`"`) ||
+				!strings.Contains(out, `"username":"alice"`) {
+				t.Errorf("log = %s", out)
+			}
+		})
+	}
+}
+
 // Peek (e.g. an open console checking its session) is no activity.
 func TestPeekIsNoActivity(t *testing.T) {
 	m, c := newManager(t)

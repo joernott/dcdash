@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/rs/zerolog"
@@ -92,8 +94,8 @@ func TestUnreachableDirectory(t *testing.T) {
 	if _, err := c.Authenticate(context.Background(), "alice", "secret"); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("Authenticate: %v", err)
 	}
-	if _, err := c.Check(context.Background()); !errors.Is(err, ErrUnavailable) {
-		t.Errorf("Check: %v", err)
+	if _, err := c.Status(context.Background()); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("Status: %v", err)
 	}
 }
 
@@ -143,5 +145,138 @@ func TestMemberOf(t *testing.T) {
 		if got := u.MemberOf(group); got != want {
 			t.Errorf("MemberOf(%q) = %v, want %v", group, got, want)
 		}
+	}
+}
+
+func failoverClient(t *testing.T, urls ...string) *Client {
+	t.Helper()
+	cfg := testClient(t, config.LDAPModeAD).cfg
+	cfg.URL = ""
+	for _, u := range urls {
+		cfg.Servers = append(cfg.Servers, config.LDAPServer{URL: u})
+	}
+	c, err := New(cfg, zerolog.Nop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+// Unreachable servers are skipped in order, and the server that worked is
+// tried first next time.
+func TestFailover(t *testing.T) {
+	c := failoverClient(t, "ldaps://dc1.example.com", "ldaps://dc2.example.com", "ldaps://dc3.example.com")
+	down := map[string]bool{"dc1.example.com": true}
+	var tried []string
+	c.dialServer = func(s server) (*ldap.Conn, error) {
+		tried = append(tried, s.host)
+		if down[s.host] {
+			return nil, errors.New("connection refused")
+		}
+		return nil, nil
+	}
+
+	if _, err := c.connect(); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(tried, ",") != "dc1.example.com,dc2.example.com" {
+		t.Errorf("first connect tried %v", tried)
+	}
+
+	// dc2 is now preferred, even after dc1 is back.
+	down = map[string]bool{}
+	tried = nil
+	if _, err := c.connect(); err != nil || strings.Join(tried, ",") != "dc2.example.com" {
+		t.Errorf("second connect tried %v: %v", tried, err)
+	}
+
+	// dc2 fails: dc3 is next, then dc1 (wrapping around).
+	down = map[string]bool{"dc2.example.com": true, "dc3.example.com": true}
+	tried = nil
+	if _, err := c.connect(); err != nil || strings.Join(tried, ",") != "dc2.example.com,dc3.example.com,dc1.example.com" {
+		t.Errorf("third connect tried %v: %v", tried, err)
+	}
+
+	// All down: one error naming every server.
+	down = map[string]bool{"dc1.example.com": true, "dc2.example.com": true, "dc3.example.com": true}
+	_, err := c.connect()
+	if !errors.Is(err, ErrUnavailable) || strings.Count(err.Error(), "connection refused") != 3 {
+		t.Errorf("all down: %v", err)
+	}
+}
+
+func TestStatusNamesUnreachableServers(t *testing.T) {
+	c := failoverClient(t, "ldaps://dc1.example.com", "ldaps://dc2.example.com:636")
+	var mu sync.Mutex
+	down := map[string]bool{}
+	c.probe = func(s server) error {
+		mu.Lock()
+		defer mu.Unlock()
+		if down[s.host] {
+			return errors.New("connection refused")
+		}
+		return nil
+	}
+	setDown := func(host string) {
+		mu.Lock()
+		defer mu.Unlock()
+		down[host] = true
+	}
+
+	d, err := c.Status(context.Background())
+	if err != nil || d.Code != "directory.connected" || d.Params["server"] != "dc1.example.com" || d.Params["count"] != "2" {
+		t.Errorf("all up: %+v, %v", d, err)
+	}
+
+	setDown("dc2.example.com:636")
+	d, err = c.Status(context.Background())
+	if err != nil || d.Code != "directory.degraded" || d.Params["down"] != "dc2.example.com:636" ||
+		!strings.Contains(d.Text, "connection refused") {
+		t.Errorf("one down: %+v, %v", d, err)
+	}
+
+	setDown("dc1.example.com")
+	if _, err := c.Status(context.Background()); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("all down: %v", err)
+	}
+}
+
+// A server that doesn't answer before the status check times out counts as
+// unavailable instead of blocking the check.
+func TestStatusTimeout(t *testing.T) {
+	c := failoverClient(t, "ldaps://dc1.example.com", "ldaps://dc2.example.com")
+	block := make(chan struct{})
+	defer close(block)
+	c.probe = func(s server) error {
+		if s.host == "dc2.example.com" {
+			<-block
+		}
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	d, err := c.Status(ctx)
+	if err != nil || d.Code != "directory.degraded" || d.Params["down"] != "dc2.example.com" {
+		t.Errorf("%+v, %v", d, err)
+	}
+}
+
+// A server fingerprint overrides tls.fingerprint for that server only.
+func TestServerFingerprint(t *testing.T) {
+	cfg := testClient(t, config.LDAPModeAD).cfg
+	cfg.URL = ""
+	cfg.Servers = []config.LDAPServer{
+		{URL: "ldaps://dc1.example.com", Fingerprint: strings.Repeat("ab", 32)},
+		{URL: "ldaps://dc2.example.com"},
+	}
+	c, err := New(cfg, zerolog.Nop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.servers[0].tls.InsecureSkipVerify || c.servers[0].tls.VerifyConnection == nil {
+		t.Error("dc1: fingerprint not pinned")
+	}
+	if c.servers[1].tls.InsecureSkipVerify || c.servers[1].tls.ServerName != "dc2.example.com" {
+		t.Errorf("dc2: %+v", c.servers[1].tls)
 	}
 }

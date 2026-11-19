@@ -97,6 +97,11 @@ password.
   Compare the fingerprint with the certificate on the domain controller
   (`/var/lib/samba/private/tls/cert.pem`) before trusting it. A pin has to be updated when the
   certificate is renewed.
+- **Several servers:** with `auth.ldap.servers`, each domain controller can have its own
+  fingerprint. A connection fails over to the next server only on network and TLS errors,
+  so a certificate that doesn't match moves on to the next server instead of being accepted.
+  Directory answers (wrong password, unknown user) are final and never tried on another
+  server.
 - **Credential handling:**
   - Empty passwords never reach the directory, because LDAP treats them as an anonymous bind,
     which succeeds.
@@ -114,7 +119,9 @@ password.
   `Secure`, `HttpOnly` and `SameSite=Strict`. The database stores only the token's SHA-256
   hash.
 - A session ends after `auth.session.lifetime` (default 8 hours) or after `idle_timeout`
-  (default 30 minutes) without requests, whichever comes first. Logging in again always
+  (default 8 hours) without requests, whichever comes first. Open pages poll only while they
+  are visible, so a tab in the background counts as inactive. Each end of a session is
+  logged with its reason. Logging in again always
   creates a new session, so a session can't be fixed in advance (session fixation).
 - When a session advances a step (password, then TOTP), its token is replaced.
 - A session that has passed the password step but not the TOTP step (or the enrollment)
@@ -315,7 +322,7 @@ The instance is the cluster name from the configuration. Resources:
 
 | Resource | Object | Actions used |
 |---|---|---|
-| `qemu/<vmid>` | A virtual machine | `read` (list, details; a template to clone it), `operate` (power actions), `console` (noVNC), `admin` (create and delete) |
+| `qemu/<vmid>` | A virtual machine | `read` (list, details; a template to clone it), `operate` (power actions), `console` (noVNC), `write` (change options, disks and network devices), `admin` (create and delete the VM, delete disks) |
 | `lxc/<vmid>` | A container | `read`, `operate`, `console` (terminal), `admin` (create and delete) |
 | `node/<name>` | A node | `read` (list, usage); `admin` for the node shell |
 | `storage/<node>/<storage>` | A storage | `read` |
@@ -324,7 +331,9 @@ Examples: `proxmox:lab:*:read` (everything in cluster `lab`, read-only),
 `proxmox:lab:qemu/1*:operate` (power actions on VMs whose ID starts with 1),
 `proxmox:*:lxc/*:console` (container terminals in all clusters),
 `proxmox:lab:qemu/5*:admin` (create and delete VMs with IDs starting with 5; see
-[proxmox.md](proxmox.md#creating-and-deleting-guests)).
+[proxmox.md](proxmox.md#creating-and-deleting-guests)),
+`proxmox:lab:qemu/2*:write` (change the hardware of VMs whose ID starts with 2; see
+[proxmox.md](proxmox.md#changing-virtual-machines)).
 
 A node shell is a root shell on the hypervisor, so it needs `admin` on the node, not just
 `console`. Proxmox checks the privileges of dcdash's API token in addition; see
@@ -420,8 +429,11 @@ entry can't be stored, it is written to the application log as an error instead.
 | `auth.logout` | Logout |
 | `authz.denied` | A request was refused for lack of permission; `target` is the missing permission |
 | `proxmox.guest.<action>` | A power action (`start`, `shutdown`, `stop`, `reboot`, `suspend`, `resume`); `target` is `<cluster>/<type>/<vmid>`, `details` contain the node and the Proxmox task ID or the error |
-| `proxmox.guest.create` | A creation ended; `target` is `<cluster>/<type>/<vmid>`, `result` is its outcome, `details` contain the node, name, source, resources, network, whether a password and how many SSH keys were set (never the password), the Proxmox task IDs and the error |
+| `proxmox.guest.create` | A creation ended; `target` is `<cluster>/<type>/<vmid>`, `result` is its outcome, `details` contain the node, name, source, resources, network devices (bridge, VLAN, MAC, IP settings), the number of DHCP reservations and DNS records (each also audited as `dhcp.reservation.create` and `dns.record.create`), whether a password and how many SSH keys were set (never the password), the Proxmox task IDs and the error |
 | `proxmox.guest.delete` | A guest was deleted (the Proxmox task was started); `details` contain the node, name, `purge` and the task ID or the error |
+| `proxmox.guest.configure` | Options of a VM were changed, removed or reverted; `details` contain the node, the keys (`set`, `delete`, `revert`, not the values) and the Proxmox task ID or the error |
+| `proxmox.disk.create`, `.update`, `.resize`, `.attach`, `.detach`, `.delete` | A disk of a VM was added, changed, grown, attached, detached or deleted; `details` contain the node, the disk key, the volume or storage and size, and the task ID or the error |
+| `proxmox.network.create`, `.update`, `.delete` | A network device of a VM was added, changed or removed; `details` contain the node, the device key, the MAC address, bridge and VLAN, and the task ID or the error |
 | `proxmox.console.open` | Opening a console or node shell failed (`result` `failure`) |
 | `proxmox.console.start`, `proxmox.console.end` | A console session started and ended; `details` contain the duration, the bytes in both directions and why it ended |
 | `dns.record.create`, `dns.record.update`, `dns.record.delete` | A record change; `target` is `<provider>/<zone>`, `details` contain name, type, TTL, content and record ID, the previous values for updates (and the error on failure) |

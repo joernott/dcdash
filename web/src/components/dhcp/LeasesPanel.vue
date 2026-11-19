@@ -50,7 +50,9 @@ const columns = computed(() => [
   { key: 'subnet', label: t('dhcp.subnet') },
   { key: 'state', label: t('dhcp.state') },
   { key: 'expires', label: t('dhcp.expires') },
-  ...(canDeleteAny.value ? [{ key: 'actions', label: t('dhcp.actionsColumn') }] : []),
+  ...(canDeleteAny.value
+    ? [{ key: 'actions', label: t('dhcp.actionsColumn'), class: 'w-px whitespace-nowrap' }]
+    : []),
 ])
 
 async function load(params: { subnet?: number; by?: SearchKey; q?: string }) {

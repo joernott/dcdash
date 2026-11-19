@@ -195,3 +195,10 @@ var (
 	// PermSessionsWrite allows terminating the sessions of other users.
 	PermSessionsWrite = P("system", "core", "sessions", ActionWrite)
 )
+
+// DeniedError reports a missing permission found outside of an HTTP handler,
+// e.g. when one module plans a change in another one. The handler turns it
+// into a 403 response with an audit entry (auth.Check).
+type DeniedError struct{ Permission Permission }
+
+func (e *DeniedError) Error() string { return "permission denied: " + e.Permission.String() }

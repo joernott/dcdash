@@ -24,7 +24,9 @@ const columns = computed(() => [
   { key: 'prefix', label: t('dhcp.subnet') },
   { key: 'pools', label: t('dhcp.pools') },
   { key: 'usage', label: t('dhcp.utilization'), class: 'w-64' },
-  ...(props.server.capabilities.leases ? [{ key: 'actions', label: t('dhcp.actionsColumn') }] : []),
+  ...(props.server.capabilities.leases
+    ? [{ key: 'actions', label: t('dhcp.actionsColumn'), class: 'w-px whitespace-nowrap' }]
+    : []),
 ])
 
 function count(n: number): string {

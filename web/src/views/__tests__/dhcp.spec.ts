@@ -140,17 +140,15 @@ function mountView(router: Router, permissions: string[], locale: 'en' | 'de' = 
 }
 
 describe('DhcpView', () => {
-  it('shows the server, HA state and subnet utilization', async () => {
+  it('shows the server selection and subnet utilization', async () => {
     const router = await setup('/dhcp')
     const w = mountView(router, ['dhcp:*:*:read'])
     await flushPromises()
     expect(router.currentRoute.value.params.server).toBe('kea4')
     await flushPromises()
-    expect(w.text()).toContain('Kea 3.0.4')
-    expect(w.text()).toContain('1 d 1 h')
-    expect(w.text()).toContain('hot-standby, primary: hot-standby')
-    expect(w.text()).toContain('Partner kea4-b: hot-standby')
-    expect(w.text()).toContain('site1, together with kea4-b')
+    expect((w.get('select').element as HTMLSelectElement).value).toBe('kea4')
+    // The server status is shown on the overview page, not here.
+    expect(w.text()).not.toContain('Kea 3.0.4')
     const rows = w.findAll('tbody tr')
     expect(rows).toHaveLength(2)
     expect(rows[0]!.text()).toContain('80 of 100')
@@ -163,7 +161,6 @@ describe('DhcpView', () => {
     const router = await setup('/dhcp/kea6')
     const w = mountView(router, ['dhcp:*:*:read'], 'de')
     await flushPromises()
-    expect(w.text()).toContain('Nicht verfügbar')
     expect(w.text()).toContain(
       'Der Server kann gerade nicht verwendet werden: server not reachable',
     )

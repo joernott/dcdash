@@ -11,7 +11,6 @@ import ReservationsPanel from '@/components/dhcp/ReservationsPanel.vue'
 import SubnetsPanel from '@/components/dhcp/SubnetsPanel.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 import type { DhcpServer, DhcpSubnet } from '@/dhcp/dhcp'
 
 const i18n = useI18n()
@@ -54,13 +53,6 @@ const missing = computed(() => {
   if (!c.statistics) out.push(t('dhcp.missing.statistics'))
   return out
 })
-
-function uptime(s: number): string {
-  const d = Math.floor(s / 86400)
-  const h = Math.floor((s % 86400) / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  return d > 0 ? t('dhcp.uptimeDays', { d, h }) : t('dhcp.uptimeHours', { h, m })
-}
 
 async function loadServers() {
   const res = await unwrap(api.GET('/api/v1/dhcp/servers'))
@@ -124,11 +116,11 @@ onMounted(refresh)
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-3">
       <h1 class="text-2xl font-semibold">{{ t('nav.dhcp') }}</h1>
       <div class="flex flex-wrap items-end gap-3">
         <BaseSelect
-          v-if="servers.length > 1"
+          v-if="servers.length > 0"
           :model-value="serverName"
           :label="t('dhcp.server')"
           :options="serverOptions"
@@ -151,57 +143,18 @@ onMounted(refresh)
       {{ t('dhcp.noServers') }}
     </p>
 
-    <section
-      v-if="server"
-      aria-labelledby="dhcp-server"
-      class="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-5"
-    >
-      <div class="flex flex-wrap items-center gap-3">
-        <h2 id="dhcp-server" class="text-lg font-semibold">{{ server.name }}</h2>
-        <StatusBadge
-          :status="server.status === 'ok' ? 'ok' : 'error'"
-          :label="t(`dhcp.status.${server.status}`)"
-        />
-        <span class="text-sm text-fg-muted">{{ t(`dhcp.families.${server.family}`) }}</span>
-      </div>
-      <p v-if="server.status !== 'ok'" class="text-sm text-danger">
+    <template v-if="server">
+      <p
+        v-if="server.status !== 'ok'"
+        role="alert"
+        class="rounded-md border border-danger px-3 py-2 text-sm text-danger"
+      >
         {{ t('dhcp.unavailable', { error: server.error }) }}
       </p>
-      <dl v-else class="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-        <dt class="text-fg-muted">{{ t('dhcp.version') }}</dt>
-        <dd>Kea {{ server.version }}</dd>
-        <dt class="text-fg-muted">{{ t('dhcp.uptime') }}</dt>
-        <dd>{{ uptime(server.uptime ?? 0) }}</dd>
-        <template v-for="ha in server.ha" :key="ha.partner">
-          <dt class="text-fg-muted">{{ t('dhcp.ha') }}</dt>
-          <dd class="flex flex-wrap items-center gap-2">
-            <span>{{ t('dhcp.haState', { mode: ha.mode, role: ha.role, state: ha.state }) }}</span>
-            <StatusBadge
-              :status="ha.inTouch ? 'ok' : 'warning'"
-              :label="
-                ha.inTouch
-                  ? t('dhcp.haPartner', { partner: ha.partner, state: ha.partnerState })
-                  : t('dhcp.haPartnerLost', { partner: ha.partner })
-              "
-            />
-          </dd>
-        </template>
-        <template v-if="server.partners?.length">
-          <dt class="text-fg-muted">{{ t('dhcp.haGroup') }}</dt>
-          <dd>
-            {{
-              t('dhcp.haGroupMembers', {
-                group: server.haGroup,
-                partners: server.partners.join(', '),
-              })
-            }}
-          </dd>
-        </template>
-      </dl>
       <ul v-if="missing.length" class="list-inside list-disc text-sm text-fg-muted">
         <li v-for="m in missing" :key="m">{{ m }}</li>
       </ul>
-    </section>
+    </template>
 
     <template v-if="server?.status === 'ok'">
       <div role="tablist" :aria-label="t('dhcp.views')" class="flex gap-1 border-b border-border">

@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -67,7 +68,7 @@ func TestOpenLDAPStartTLS(t *testing.T) {
 	c := newLDAPClient(t, cfg)
 	ctx := context.Background()
 
-	if _, err := c.Check(ctx); err != nil {
+	if _, err := c.Status(ctx); err != nil {
 		t.Fatalf("Check: %v", err)
 	}
 
@@ -116,8 +117,35 @@ func TestOpenLDAPLDAPSWithFingerprint(t *testing.T) {
 
 	// Without CA or pin the self-signed certificate is rejected.
 	cfg.TLS.Fingerprint = ""
-	if _, err := newLDAPClient(t, cfg).Check(context.Background()); !errors.Is(err, ldapauth.ErrUnavailable) {
+	if _, err := newLDAPClient(t, cfg).Status(context.Background()); !errors.Is(err, ldapauth.ErrUnavailable) {
 		t.Errorf("untrusted certificate accepted: %v", err)
+	}
+}
+
+// Failover: a refused connection and an untrusted certificate move on to the
+// next server; the last one pins its certificate with its own fingerprint.
+func TestOpenLDAPFailover(t *testing.T) {
+	ldapsURL := requireEnv(t, "DCDASH_IT_OPENLDAPS_URL")
+	cfg := openLDAPConfig(t, "")
+	cfg.Servers = []config.LDAPServer{
+		{URL: "ldaps://127.0.0.1:1"},
+		{URL: ldapsURL},
+		{URL: ldapsURL, Fingerprint: fingerprintOf(t, requireEnv(t, "DCDASH_IT_OPENLDAP_CERT"))},
+	}
+	c := newLDAPClient(t, cfg)
+	ctx := context.Background()
+
+	if _, err := c.Authenticate(ctx, "alice", "alice-test-only"); err != nil {
+		t.Fatalf("failover login: %v", err)
+	}
+	// A wrong password is an answer of the directory, not a reason to fail over.
+	if _, err := c.Authenticate(ctx, "alice", "wrong"); !errors.Is(err, ldapauth.ErrInvalidCredentials) {
+		t.Errorf("wrong password: %v", err)
+	}
+
+	d, err := c.Status(ctx)
+	if err != nil || d.Code != "directory.degraded" || !strings.Contains(d.Params["down"], "127.0.0.1:1") {
+		t.Errorf("status: %+v, %v", d, err)
 	}
 }
 

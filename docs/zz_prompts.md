@@ -45,7 +45,7 @@ yes, please go ahead
 
 ## 2026-11-12 — Sprint 1 (Foundation)
 
-I set up a dedicated development vm for you: dev.vm.test.sf.thse.net where you have a user "claude" with password "[REDACTED]" and sudo rights, so you can install software as needed. You can use ssh using the ssh key /c/Users/ext-se-jo/.ssh/id_ed25519_claude to connect to it. You can install whatever software you need on that. I've also added that key as a deploy key with write access to github.
+I set up a dedicated development vm for you: [REDACTED] where you have a user "claude" with password "[REDACTED]" and sudo rights, so you can install software as needed. You can use ssh using the ssh key /c/Users/[REDACTED]/.ssh/id_ed25519_claude to connect to it. You can install whatever software you need on that. I've also added that key as a deploy key with write access to github.
 
 ---
 
@@ -63,7 +63,7 @@ Please squas-merge sprint 1 into main, push theit and start with sprint 2
 
 ## 2026-11-12 — Sprint 2 (TLS)
 
-Please continue with the next sprint. You can use the ldap bind user "ssp-service@windows.test.sf.thse.net" with password "[REDACTED]" to connect to the domain controller "ldaps://DC1.windows.test.sf.thse.net:636"
+Please continue with the next sprint. You can use the ldap bind user "[REDACTED]" with password "[REDACTED]" to connect to the domain controller "ldaps://[REDACTED]:636"
 
 ---
 
@@ -94,7 +94,7 @@ please continue
 ## 2026-11-13 — Sprint 6 (Proxmox)
 
 You do have sudo on the VM, use the password "[REDACTED]". You can install whatever you need on the vm as its only purpose is to develop this app. Please install the test browser and notify me if you need assistance. Afterwards, please continue with Sprint 6.
-I have created a user "dashroot" with password "[REDACTED]" on the Proxmox server https://proxtester2.wan.kunden.sf.thse.net:8006 and created the API token "[REDACTED]" for that user. I've granted PVEVMUser rights on / to the users group.
+I have created a user "dashroot" with password "[REDACTED]" on the Proxmox server https://[REDACTED]:8006 and created the API token "[REDACTED]" for that user. I've granted PVEVMUser rights on / to the users group.
 
 ---
 
@@ -166,5 +166,63 @@ You can create and delete test VMs there, using the ID range >1000.
 ---
 
 ## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+yes, please go ahead
+
+---
+
+## 2026-11-17 — Sprint 10 (Proxmox Provisioning)
+
+the workflow finished
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+I have deployed dcdash on a dedicated VM an configured it our test network now. The LDAP login fails with
+Nov 18 11:10:40 dcdash dcdash[5852]: {"level":"error","req_id":"dbunj85eg6itak5qqj50","ip":"[REDACTED]","component":"auth","username":"[REDACTED]","client_ip":"[REDACTED]","error":"directory unavailable: connect to ldaps://[REDACTED]:636: LDAP Result Code 200 \"Network Error\": tls: failed to verify certificate: x509: certificate relies on legacy Common Name field, use SANs instead","time":"2026-11-18T11:10:40.099732619+01:00","message":"login failed: directory unavailable"}
+
+As this is the certificate, SAMBA creates for itself, not using the SAN is a quirk we need to be able to work with. Is there a way to get this working?
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+For the next sprint, please add the folowing tasks:
+- add support for multiple LDAP URLs for failover
+- Integrate the documentation as a separate menu "Documentation" in the top bar
+- The Width of the column "Actions" in the German translation is insufficient to display all buttons in one line, the same goes for the "Usage" column. The latter can be fixed by changing the translation from "Arbeitsspeicher" to "RAM", but for the buttons, I'd like to have a wider column. Currently, the dashboard is centerd in the browser and wastes a lot of real estate of the 1920 wide screen. Please make it wider and add around 20% more space to the actions column.
+- When viewing a VM, I would like to reconfigure Settings like "agent", boot", etc. I would also like to be able to resize, detach, attach, create and delete disks as well as add, edit and remove network devices
+- Also, I seem to get kicked out after a few minutes of inactivity. I would prefer to stay logged in for 8 hours
+- When looking at the DNS zone, the Edit and Delete buttons don't fit into the Actions column in both languages, that should be fixed, too
+- On the DHCP-Page, remove the status box for the dhcp server and move the server selection under the DHCP headline
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+Please redact the prompts before pushing. 
+When creating a VM, on tab 3 "Network and login", there should be the option to add multiple nics
+When creating a VM, after tab 3, the user should have tabs for adding DHCP reservations (IPv4 and v6) and adding  DNS names.
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+redact these names anyway. Sprint 11 should end with v0.1.1 as we are just polishing v0.1.0.
+Sprint 12 will then be a new minor version 0.2.0. In that sprint, I want to:
+- add support for netbox as common data source. Changes made in dcdash should update the respective entries in netbox
+- add Support for Aruba CX 6x00 switches: Configuring VLANs, ports, finding devices by MAC across multiple switches, get an overview over port statuses across multiple switches
+- add support for OPNSense firewall: health check, VPN status check, en-/disabling Wireguard peers, restarting IPSEC tunnels, Managing aliases and rules
+
+---
+
+## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+please split sprint 12 into one sprint per application, push the branch and start with sprint 11. There is no need to rewrite main and "dashroot" can remain in the prompts.
+
+---
+
+## 2026-11-19 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
 
 yes, please go ahead

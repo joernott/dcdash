@@ -33,6 +33,9 @@ user directory, the certificate, each Proxmox cluster, DNS provider and DHCP ser
 tile names the problem; the response time shows how long the check took. The page refreshes
 every 30 seconds.
 
+The **Documentation** link in the top bar opens this documentation inside dcdash, in the
+version that matches the running release. It is available in English only.
+
 ## Your account and settings
 
 Open the menu with your name in the top right corner:
@@ -62,12 +65,19 @@ cluster, choose it at the top.
 - **Node shell:** a root shell on a node. It requires administrator rights on the node.
 - **Create:** if your administrator allows it for the cluster, "Create" opens a wizard for
   a virtual machine from a template, a virtual machine from an ISO image, or a container. You
-  choose the name, the resources, the network and, for templates and containers, the login
+  choose the name, the resources, one or more network devices and, for templates and containers, the login
   (password or SSH keys) and IP settings. Leave the ID empty to get the next free one. After
+  If you may add DHCP reservations or DNS records, two more steps add them for the new
+  guest.
   "Create", the page shows the progress of each step; it continues if you close the page.
   If a step fails, check the guest and delete it if necessary.
 - **Delete:** on the guest's page, for stopped guests. You type the name to confirm. The
   guest and its disks are deleted; this can't be undone.
+- **Hardware:** on the page of a VM, change its options (for example memory, cores, boot
+  order, guest agent), add, grow, detach, attach and delete disks, and add, change and remove
+  network devices, if you may change the VM. Changes Proxmox can't apply to a running VM are
+  marked as pending and take effect when the VM is started again. See
+  [proxmox.md](proxmox.md#changing-virtual-machines).
 
 ## DNS
 

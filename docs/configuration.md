@@ -25,7 +25,7 @@ The command also prints warnings. Warnings don't stop dcdash:
 - The configuration file or a file referenced with `file:` is accessible by other users (any
   permission bit for "other" is set). Use `chmod 0640` or `0600`. This check is skipped on
   Windows.
-- No login method is configured: `auth.ldap.url` is empty and `auth.local.enabled` is false.
+- No login method is configured: neither `auth.ldap.url` nor `auth.ldap.servers` is set, and `auth.local.enabled` is false.
 - `server.tls.mode` is `none`.
 
 **Secrets.** Keys marked with type *secret* accept three forms:
@@ -118,12 +118,13 @@ Login, sessions and lockout. See [security.md](security.md#authentication).
 
 ### auth.ldap
 
-LDAP login is enabled when `auth.ldap.url` is set. The other `auth.ldap` keys are validated
-only then. See [security.md](security.md#ldap).
+LDAP login is enabled when `auth.ldap.url` or `auth.ldap.servers` is set. The other `auth.ldap`
+keys are validated only then. See [security.md](security.md#ldap).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `auth.ldap.url` | string | empty (LDAP off) | `ldaps://host[:port]`, or `ldap://host[:port]` with `start_tls` or `insecure`. |
+| `auth.ldap.url` | string | empty (LDAP off) | `ldaps://host[:port]`, or `ldap://host[:port]` with `start_tls` or `insecure`. For several servers use `servers` instead. |
+| `auth.ldap.servers` | list | empty | Several directory servers for failover, instead of `url`. Each entry has `url` (as above) and an optional `fingerprint`, which pins that server's certificate and overrides `tls.fingerprint` (Samba creates a different certificate on each domain controller). dcdash uses the server that worked last; if it can't be reached (network or TLS error), the next servers are tried in order. A wrong password never causes a failover. The overview page names servers that are not reachable. |
 | `auth.ldap.start_tls` | bool | `false` | Upgrades an `ldap://` connection to TLS. Not possible with `ldaps://`. |
 | `auth.ldap.insecure` | bool | `false` | Allows `ldap://` without StartTLS, which sends passwords in clear text. For tests only. |
 | `auth.ldap.tls.*` | | | TLS client settings, see [General rules](#general-rules). |
@@ -153,7 +154,7 @@ See [security.md](security.md#sessions).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `auth.session.lifetime` | duration | `8h` | Maximum duration of a session, regardless of activity. Must be positive. |
-| `auth.session.idle_timeout` | duration | `30m` | Ends a session after this time without requests. Must be positive and not longer than `lifetime`. |
+| `auth.session.idle_timeout` | duration | `8h` | Ends a session after this time without requests. Open dcdash pages poll only while they are visible, so a tab in the background counts as inactive. Must be positive and not longer than `lifetime`. |
 
 ### auth.lockout
 

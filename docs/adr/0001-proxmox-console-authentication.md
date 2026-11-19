@@ -26,7 +26,7 @@ for termproxy, or for both.
 
 ## Spike
 
-The spike ran against Proxmox VE 9.0.11 (proxtester2), first with a small Go program, then with
+The spike ran against Proxmox VE 9.0.11 (test cluster), first with a small Go program, then with
 the integration test `TestProxmoxPowerActions` and the dcdash client. The guests were VM 110 and
 container 122, which the user set aside for tests (the API token has `PVEVMUser` only on them).
 

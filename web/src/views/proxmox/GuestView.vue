@@ -8,12 +8,14 @@ import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import DeleteGuestDialog from '@/components/proxmox/DeleteGuestDialog.vue'
 import GuestActions from '@/components/proxmox/GuestActions.vue'
+import HardwarePanel from '@/components/proxmox/HardwarePanel.vue'
 import PowerActionDialog from '@/components/proxmox/PowerActionDialog.vue'
 import TaskList from '@/components/proxmox/TaskList.vue'
 import UsageBar from '@/components/proxmox/UsageBar.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatBytes, ratio, statusStyle, uptimeParts, type PowerAction } from '@/proxmox/guests'
+import { guestWritePermission } from '@/proxmox/hardware'
 import { guestAdminPermission } from '@/proxmox/provisioning'
 import { useProxmoxClustersStore } from '@/stores/proxmoxClusters'
 import { useSessionStore } from '@/stores/session'
@@ -44,6 +46,10 @@ const canDelete = computed(
     !!guest.value &&
     clusterStore.provisioning(cluster.value) &&
     session.can(guestAdminPermission(cluster.value, type.value, vmid.value)),
+)
+const canWrite = computed(() => session.can(guestWritePermission(cluster.value, vmid.value)))
+const canAdmin = computed(() =>
+  session.can(guestAdminPermission(cluster.value, type.value, vmid.value)),
 )
 
 /** Configuration entries sorted by key, values as text. */
@@ -195,6 +201,16 @@ onBeforeUnmount(() => clearInterval(timer))
           :detail="`${bytes(guest.mem)} / ${bytes(guest.maxMem)}`"
         />
       </section>
+
+      <HardwarePanel
+        v-if="type === 'qemu' && !guest.template"
+        :cluster="cluster"
+        :vmid="vmid"
+        :name="guest.name || String(guest.vmid)"
+        :can-write="canWrite"
+        :can-admin="canAdmin"
+        @changed="load"
+      />
 
       <section aria-labelledby="guest-config" class="flex flex-col gap-3">
         <h2 id="guest-config" class="text-lg font-semibold">{{ t('proxmox.configuration') }}</h2>

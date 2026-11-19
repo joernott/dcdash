@@ -64,7 +64,7 @@ const columns = computed(() => [
   { key: 'node', label: t('proxmox.node') },
   { key: 'status', label: t('proxmox.status') },
   { key: 'usage', label: t('proxmox.usage'), class: 'min-w-40' },
-  { key: 'actions', label: t('proxmox.actionsColumn') },
+  { key: 'actions', label: t('proxmox.actionsColumn'), class: 'w-px whitespace-nowrap' },
 ])
 
 const typeOptions = computed(() => [
