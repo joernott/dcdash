@@ -220,3 +220,9 @@ Sprint 12 will then be a new minor version 0.2.0. In that sprint, I want to:
 ## 2026-11-18 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
 
 please split sprint 12 into one sprint per application, push the branch and start with sprint 11. There is no need to rewrite main and "dashroot" can remain in the prompts.
+
+---
+
+## 2026-11-19 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
+
+yes, please go ahead
