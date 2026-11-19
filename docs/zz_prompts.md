@@ -226,3 +226,9 @@ please split sprint 12 into one sprint per application, push the branch and star
 ## 2026-11-19 — Sprint 11 (LDAP Failover, VM Configuration and UI Fixes)
 
 yes, please go ahead
+
+---
+
+## 2026-11-19 — Sprint 12 (NetBox)
+
+start with sprint 12

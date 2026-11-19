@@ -43,7 +43,7 @@ These apply to every task:
 | 9 | `sprint/09-release` | Hardening, documentation, packaging, **v0.1.0** | v0.1.0 | done |
 | 10 | `sprint/10-proxmox-provisioning` | Creating and deleting VMs and containers, **v0.1.1** | v0.1.1 | done |
 | 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | done |
-| 12 | `sprint/12-netbox` | NetBox as common data source with write-back | v0.2.0 | planned |
+| 12 | `sprint/12-netbox` | NetBox as common data source with write-back | v0.2.0 | in progress |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | planned |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | planned |
 
@@ -386,14 +386,23 @@ These apply to every task:
 
 ## Sprint 12 — NetBox
 
-- [ ] **12.1** API research: NetBox REST API (devices, virtual machines, interfaces, IP
+- [x] **12.1** API research: NetBox REST API (devices, virtual machines, interfaces, IP
   addresses, prefixes, VLANs, MAC addresses), token permissions, and the mapping between
   dcdash objects and NetBox objects; results in an ADR, amend this sprint if needed
+  ([ADR 0006](adr/0006-netbox.md))
 - [ ] **12.2** Configuration and client; NetBox as a common data source, for example VLAN
   names, prefixes and free IP addresses in the creation wizard
+  - [ ] **12.2.1** `netbox` configuration section, client (tokens v1 and v2, TLS, errors),
+    status on the overview page
+  - [ ] **12.2.2** Fake NetBox (`test/nbfake`) with the calls of ADR 0006
+  - [ ] **12.2.3** VLAN names and free addresses in the creation wizard
 - [ ] **12.3** Write-back: changes in dcdash update NetBox (creating, changing and deleting
   guests, disks and network devices; DHCP reservations; DNS names). A failed NetBox update
   does not undo the change itself, but it is shown to the user and written to the audit log
+  - [ ] **12.3.1** Creating and deleting guests (job step)
+  - [ ] **12.3.2** Changing options, disks and network devices of VMs
+  - [ ] **12.3.3** DHCP reservations and DNS `A`/`AAAA` records
+  - [ ] **12.3.4** Web interface: NetBox results and errors after changes
 - [ ] **12.4** Comparison view: differences between NetBox and the actual state of the
   connected systems
 - [ ] **12.5** Permissions and audit actions, navigation entry
