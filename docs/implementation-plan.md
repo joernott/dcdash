@@ -411,8 +411,8 @@ These apply to every task:
 - [ ] **12.8** Projects: tags `project-<name>` group the objects of a project. Projects are
   defined in YAML files in `/etc/dcdash/projects` (one file per project: tag name, color;
   more metadata later); dcdash synchronizes their tags to NetBox
-  - [ ] **12.8.1** Design: project files, tag synchronization, which objects carry project
-    tags in NetBox and Proxmox, permissions (amend ADR 0006)
+  - [x] **12.8.1** Design: project files, tag synchronization, which objects carry project
+    tags in NetBox and Proxmox, permissions ([ADR 0007](adr/0007-projects.md))
   - [ ] **12.8.2** `projects` configuration, loading and reloading the project files, tag
     synchronization to NetBox, status on the overview page
   - [ ] **12.8.3** Assigning projects: creation wizard and guest page (NetBox VM, its
