@@ -415,10 +415,10 @@ These apply to every task:
     tags in NetBox and Proxmox, permissions ([ADR 0007](adr/0007-projects.md))
   - [x] **12.8.2** `projects` configuration, loading and reloading the project files, tag
     synchronization to NetBox, status on the overview page
-  - [ ] **12.8.3** Assigning projects: creation wizard and guest page (NetBox VM, its
+  - [x] **12.8.3** Assigning projects: creation wizard and guest page (NetBox VM, its
     addresses and Proxmox tags), DHCP reservations and DNS records (their NetBox addresses);
     VLANs, prefixes, IP addresses and ranges, and switch ports (device interfaces) in NetBox
-  - [ ] **12.8.4** Project pages: a list of all projects and a page per project with all
+  - [x] **12.8.4** Project pages: a list of all projects and a page per project with all
     related objects and links to them in dcdash
   - [ ] **12.8.5** Permissions and audit, tests, OpenAPI, documentation
 

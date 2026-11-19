@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router'
 
 import { api, ApiError, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import ProjectPicker from '@/components/projects/ProjectPicker.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -1130,6 +1131,7 @@ onBeforeUnmount(() => {
             :hint="t('proxmox.create.tagsHint')"
             :error="err('tags')"
           />
+          <ProjectPicker v-model="form.projects" />
           <BaseInput v-model="form.description" :label="t('proxmox.create.description')" />
           <label class="flex items-center gap-2 text-sm">
             <input v-model="form.start" type="checkbox" class="size-4" />

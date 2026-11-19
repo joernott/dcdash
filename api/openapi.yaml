@@ -28,6 +28,8 @@ tags:
     description: "Kea DHCP servers: subnets, leases and reservations"
   - name: netbox
     description: "NetBox: VLANs, prefixes and free addresses; write-back of changes"
+  - name: projects
+    description: "Projects: groups of objects with the tag project-<name>"
 
 paths:
   /healthz:
@@ -1757,6 +1759,203 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/projects:
+    put:
+      tags: [proxmox]
+      operationId: setGuestProjects
+      summary: Set the projects of a guest
+      description: |
+        Replaces the projects of a guest, its Proxmox tags `project-<name>`; other tags are kept.
+        Needs `write` on the guest and `project:<name>:objects:write` on every added and
+        removed project. The guest is then written to NetBox. Audited as `project.assign` and
+        `project.unassign`.
+      parameters:
+        - { name: cluster, in: path, required: true, schema: { type: string } }
+        - { name: type, in: path, required: true, schema: { type: string, enum: [qemu, lxc] } }
+        - { name: vmid, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projects]
+              properties:
+                projects: { type: array, items: { type: string } }
+      responses:
+        "200":
+          description: The projects of the guest.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects]
+                properties:
+                  projects: { type: array, items: { type: string } }
+                  netbox: { $ref: "#/components/schemas/NetBoxResult" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/ProxmoxChangeConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/addresses/{address}/projects:
+    get:
+      tags: [netbox]
+      operationId: getNetBoxAddressProjects
+      summary: Projects of an address in NetBox
+      description: The projects of the NetBox address, for the DHCP and DNS dialogs. Any logged-in user.
+      parameters:
+        - { name: address, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The projects (names), empty if the address isn't in NetBox.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects]
+                properties:
+                  projects: { type: array, items: { type: string } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/projects:
+    get:
+      tags: [projects]
+      operationId: listProjects
+      summary: List the projects
+      description: |
+        The projects the user may read (`project:<name>:objects:read`). Users with access to all
+        projects also get the state: invalid project files, tag synchronization errors and
+        orphaned tags.
+      responses:
+        "200":
+          description: Projects.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/projects/{name}:
+    get:
+      tags: [projects]
+      operationId: getProject
+      summary: A project with its objects
+      description: |
+        The project with its Proxmox guests (from all clusters; guests the user may not read are
+        listed without node and status) and its NetBox objects by type. Sources that can't be
+        read are listed in `errors`. Needs `project:<name>:objects:read`.
+      parameters:
+        - { name: name, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The project.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/projects/{name}/search:
+    get:
+      tags: [projects]
+      operationId: searchProjectObjects
+      summary: Search NetBox objects to add to a project
+      description: Searches NetBox objects of a type (up to 25). Needs `project:<name>:objects:write`.
+      parameters:
+        - { name: name, in: path, required: true, schema: { type: string } }
+        - { name: type, in: query, required: true, schema: { $ref: "#/components/schemas/ProjectObjectType" } }
+        - { name: q, in: query, required: true, schema: { type: string, maxLength: 100 } }
+      responses:
+        "200":
+          description: Matching objects.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [objects]
+                properties:
+                  objects: { type: array, items: { $ref: "#/components/schemas/ProjectObject" } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/projects/{name}/objects:
+    post:
+      tags: [projects]
+      operationId: addProjectObject
+      summary: Add a NetBox object to a project
+      description: |
+        Adds the project's tag to a NetBox object. Needs `project:<name>:objects:write`. Audited as
+        `project.assign`. Guests are assigned through their projects (Proxmox tags).
+      parameters:
+        - { name: name, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, id]
+              properties:
+                type: { $ref: "#/components/schemas/ProjectObjectType" }
+                id: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: The object.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectObject" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/projects/{name}/objects/{type}/{id}:
+    delete:
+      tags: [projects]
+      operationId: removeProjectObject
+      summary: Remove a NetBox object from a project
+      description: Removes the project's tag from a NetBox object. Audited as `project.unassign`.
+      parameters:
+        - { name: name, in: path, required: true, schema: { type: string } }
+        - { name: type, in: path, required: true, schema: { $ref: "#/components/schemas/ProjectObjectType" } }
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        "200":
+          description: The object.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProjectObject" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -2162,6 +2361,72 @@ components:
         state: { type: string, enum: [missing, differs] }
         netbox: { type: string, description: The DNS name in NetBox if it differs. }
 
+    Project:
+      type: object
+      required: [name, title, color, description, tag, canWrite]
+      properties:
+        name: { type: string, examples: [webshop] }
+        title: { type: string }
+        color: { type: string, description: 6 hex digits, examples: [2196f3] }
+        description: { type: string }
+        tag: { type: string, examples: [project-webshop] }
+        canWrite: { type: boolean, description: The user may assign objects to the project. }
+
+    ProjectList:
+      type: object
+      required: [projects]
+      properties:
+        projects: { type: array, items: { $ref: "#/components/schemas/Project" } }
+        state:
+          type: object
+          required: [errors, orphaned]
+          properties:
+            errors: { type: array, items: { type: string }, description: Invalid project files. }
+            tagError: { type: string, description: The last tag synchronization to NetBox failed. }
+            orphaned: { type: array, items: { type: string }, description: NetBox tags with the prefix but without project file. }
+
+    ProjectObjectType:
+      type: string
+      enum: [vm, ip, iprange, prefix, vlan, interface]
+
+    ProjectObject:
+      type: object
+      required: [type, id, display]
+      properties:
+        type: { $ref: "#/components/schemas/ProjectObjectType" }
+        id: { type: integer, format: int64 }
+        display: { type: string }
+        detail: { type: string }
+        url: { type: string, description: The object's page in NetBox. }
+        cluster: { type: string, description: NetBox cluster of a VM. }
+        vmid: { type: integer }
+        proxmoxCluster: { type: string, description: Proxmox cluster mapped to the VM's NetBox cluster. }
+
+    ProjectGuest:
+      type: object
+      required: [cluster, type, vmid, name, node, status, visible]
+      properties:
+        cluster: { type: string }
+        type: { type: string, enum: [qemu, lxc] }
+        vmid: { type: integer }
+        name: { type: string }
+        node: { type: string }
+        status: { type: string }
+        visible: { type: boolean, description: The user may read the guest. }
+
+    ProjectPage:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          required: [guests, errors]
+          properties:
+            guests: { type: array, items: { $ref: "#/components/schemas/ProjectGuest" } }
+            netbox:
+              type: object
+              description: NetBox objects by type; missing without NetBox.
+              additionalProperties: { type: array, items: { $ref: "#/components/schemas/ProjectObject" } }
+            errors: { type: array, items: { type: string } }
+
     NetBoxResult:
       type: object
       description: |
@@ -2545,6 +2810,10 @@ components:
         sshKeys: { type: string, description: Public SSH keys, one per line. }
         start: { type: boolean, description: Start the guest when it's ready. }
         description: { type: string }
+        projects:
+          type: array
+          items: { type: string }
+          description: Projects of the new guest, added as tags project-<name>; each needs `project:<name>:objects:write`.
         tags:
           type: array
           items: { type: string }
@@ -2798,6 +3067,10 @@ components:
       required: [name, type, content]
       additionalProperties: false
       properties:
+        projects:
+          type: array
+          items: { type: string }
+          description: Projects of the address of an A or AAAA record in NetBox; missing keeps them. Each added or removed project needs `project:<name>:objects:write`.
         name:
           type: string
           description: Relative to the zone, "@" for the apex, or fully qualified.
@@ -2978,6 +3251,10 @@ components:
       required: [subnetId, identifierType, identifier]
       additionalProperties: false
       properties:
+        projects:
+          type: array
+          items: { type: string }
+          description: Projects of the reserved addresses in NetBox; missing keeps them. Each added or removed project needs `project:<name>:objects:write`.
         subnetId: { type: integer, minimum: 0 }
         identifierType:
           type: string

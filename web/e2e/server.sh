@@ -20,6 +20,13 @@ openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 1 \
   -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
   -keyout "$DIR/key.pem" -out "$DIR/cert.pem" 2>/dev/null
 "$BIN" gen-key > "$DIR/encryption.key"
+# A project (task 12.8); its tag is created in the NetBox fake at startup.
+mkdir -p "$DIR/projects"
+cat > "$DIR/projects/webshop.yaml" <<'PROJECT'
+title: Webshop
+color: 2196f3
+description: The new web shop
+PROJECT
 
 # Fake Proxmox API (internal/proxmox/pvefake) with the same certificate, pinned
 # by its fingerprint. Playwright stops the whole process group at the end.
@@ -120,7 +127,7 @@ roles:
   - name: netbox-user
     groups: [dcdash-vm]
     require_totp: false
-    permissions: ["netbox:netbox:*:write"]
+    permissions: ["netbox:netbox:*:write", "project:*:objects:write", "proxmox:lab:lxc/200:write"]
 $FULL_ROLES
 proxmox:
   clusters:
@@ -154,6 +161,8 @@ netbox:
   insecure: true
   token: "nbt_e2e.netbox-e2e-test-only"
   clusters: {lab: "Lab"}
+projects:
+  dir: "$DIR/projects"
 metrics: {enabled: true, token: "metrics-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"

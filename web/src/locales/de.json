@@ -26,7 +26,8 @@
     "backHome": "Zurück zur Übersicht",
     "dns": "DNS",
     "dhcp": "DHCP",
-    "netbox": "NetBox"
+    "netbox": "NetBox",
+    "projects": "Projekte"
   },
   "home": {
     "welcome": "Willkommen, {name}",
@@ -887,6 +888,63 @@
       "disks": "Festplatten (MiB)",
       "interfaces": "Schnittstellen",
       "addresses": "Adressen"
+    }
+  },
+  "projects": {
+    "label": "Projekte",
+    "pickerHint": "Projekte gruppieren Objekte mit dem Tag project-<Name> in Proxmox und NetBox.",
+    "none": "Keine Projekte. Projekte werden als Dateien im Projektverzeichnis angelegt.",
+    "state": "Projektdateien und Tags",
+    "stateHint": "Wird Benutzern mit Zugriff auf alle Projekte angezeigt.",
+    "stateOk": "Alle Projektdateien sind gültig und ihre Tags sind in NetBox.",
+    "invalidFile": "Ungültige Projektdatei: {error}",
+    "tagError": "Die Tags konnten nicht mit NetBox abgeglichen werden: {error}",
+    "orphaned": "Zum NetBox-Tag {tag} gibt es keine Projektdatei.",
+    "breadcrumb": "Pfad",
+    "sourceError": "Konnte nicht gelesen werden: {error}",
+    "empty": "Zu diesem Projekt gehört noch nichts.",
+    "guests": "Virtuelle Maschinen und Container",
+    "remove": "Entfernen",
+    "add": "NetBox-Objekte hinzufügen",
+    "addHint": "Suchen Sie VLANs, Präfixe, IP-Adressen, IP-Bereiche, Switch-Ports oder virtuelle Maschinen in NetBox und fügen Sie sie dem Projekt hinzu. Gäste in Proxmox ordnen Sie auf ihrer Seite zu.",
+    "type": "Objekttyp",
+    "search": "Suche",
+    "searchButton": "Suchen",
+    "noResults": "Nichts gefunden.",
+    "addButton": "Hinzufügen",
+    "alreadyAdded": "bereits im Projekt",
+    "added": "{object} wurde dem Projekt hinzugefügt.",
+    "removed": "{object} wurde aus dem Projekt entfernt.",
+    "guestSaved": "Die Projekte wurden gespeichert.",
+    "noneAssigned": "keine",
+    "edit": "Projekte ändern",
+    "editTitle": "Projekte",
+    "columns": {
+      "project": "Projekt",
+      "tag": "Tag",
+      "description": "Beschreibung",
+      "guest": "Gast",
+      "cluster": "Cluster",
+      "status": "Status",
+      "object": "Objekt",
+      "detail": "Details",
+      "actions": "Aktionen"
+    },
+    "sections": {
+      "vm": "Virtuelle Maschinen in NetBox",
+      "ip": "IP-Adressen",
+      "iprange": "IP-Bereiche",
+      "prefix": "Präfixe",
+      "vlan": "VLANs",
+      "interface": "Switch-Ports"
+    },
+    "types": {
+      "vm": "Virtuelle Maschine",
+      "ip": "IP-Adresse",
+      "iprange": "IP-Bereich",
+      "prefix": "Präfix",
+      "vlan": "VLAN",
+      "interface": "Switch-Port"
     }
   }
 }

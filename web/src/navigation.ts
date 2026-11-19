@@ -23,6 +23,7 @@ export const navigation: NavItem[] = [
   { name: 'dns', label: 'nav.dns', module: { name: 'dns', action: 'read' } },
   { name: 'dhcp', label: 'nav.dhcp', module: { name: 'dhcp', action: 'read' } },
   { name: 'netbox', label: 'nav.netbox', module: { name: 'netbox', action: 'read' } },
+  { name: 'projects', label: 'nav.projects', module: { name: 'project', action: 'read' } },
   { name: 'audit', label: 'nav.audit', permission: PERMISSIONS.auditRead },
   { name: 'sessions', label: 'nav.sessions', permission: PERMISSIONS.sessionsRead },
 ]

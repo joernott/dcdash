@@ -74,6 +74,18 @@ export const routes = [
         meta: { title: 'nav.dhcp', module: 'dhcp' },
       },
       {
+        path: 'projects',
+        name: 'projects',
+        component: () => import('@/views/projects/ProjectsView.vue'),
+        meta: { title: 'nav.projects', module: 'project' },
+      },
+      {
+        path: 'projects/:name',
+        name: 'project',
+        component: () => import('@/views/projects/ProjectView.vue'),
+        meta: { title: 'nav.projects', module: 'project' },
+      },
+      {
         path: 'netbox/:cluster?',
         name: 'netbox',
         component: () => import('@/views/netbox/NetBoxView.vue'),

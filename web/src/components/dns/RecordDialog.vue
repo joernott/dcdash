@@ -1,10 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import ProjectPicker from '@/components/projects/ProjectPicker.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -19,6 +20,7 @@ import {
   type DnsRecord,
   type RecordType,
 } from '@/dns/records'
+import { useProjectsStore } from '@/stores/projects'
 
 /** Creates or edits a record. Open it with create() or edit(). */
 const props = defineProps<{ provider: string; zone: string; capabilities: Capabilities }>()
@@ -54,6 +56,31 @@ const canProxy = computed(
 )
 const title = computed(() => (editing.value ? t('dns.editRecord') : t('dns.addRecord')))
 
+// Projects of the address of an A or AAAA record in NetBox (task 12.8).
+const projectsStore = useProjectsStore()
+const projects = ref<string[]>([])
+const withProjects = computed(
+  () =>
+    projectsStore.addressProjects &&
+    projectsStore.projects.length > 0 &&
+    (form.value.type === 'A' || form.value.type === 'AAAA'),
+)
+
+async function loadProjects(address: string) {
+  projects.value = []
+  if (!withProjects.value) return
+  try {
+    const res = await unwrap(
+      api.GET('/api/v1/netbox/addresses/{address}/projects', { params: { path: { address } } }),
+    )
+    projects.value = res.projects
+  } catch {
+    // Without NetBox data the address has no projects.
+  }
+}
+
+onMounted(() => void projectsStore.load())
+
 function reset() {
   error.value = ''
   busy.value = false
@@ -65,6 +92,7 @@ function create(recordSetVersion: string) {
   editing.value = null
   version.value = recordSetVersion
   form.value = { name: '', type: 'A', ttl: '0', content: '', proxied: false, comment: '' }
+  projects.value = []
   open.value = true
 }
 
@@ -83,6 +111,7 @@ function edit(r: DnsRecord) {
     proxied: r.proxied ?? false,
     comment: r.comment ?? '',
   }
+  void loadProjects(r.content)
   open.value = true
 }
 
@@ -113,6 +142,7 @@ async function save() {
     proxied: canProxy.value ? form.value.proxied : undefined,
     comment: props.capabilities.comments ? form.value.comment.trim() : undefined,
     version: version.value,
+    projects: withProjects.value ? projects.value : undefined,
   }
   const path = { provider: props.provider, zone: props.zone }
   try {
@@ -170,6 +200,7 @@ defineExpose({ create, edit })
         v-model="form.comment"
         :label="t('dns.comment')"
       />
+      <ProjectPicker v-if="withProjects" v-model="projects" />
       <p v-if="error" role="alert" class="text-sm text-danger">{{ error }}</p>
     </form>
     <template #footer>

@@ -26,7 +26,8 @@
     "backHome": "Back to the overview",
     "dns": "DNS",
     "dhcp": "DHCP",
-    "netbox": "NetBox"
+    "netbox": "NetBox",
+    "projects": "Projects"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -887,6 +888,63 @@
       "disks": "Disks (MiB)",
       "interfaces": "Interfaces",
       "addresses": "Addresses"
+    }
+  },
+  "projects": {
+    "label": "Projects",
+    "pickerHint": "Projects group objects with the tag project-<name> in Proxmox and NetBox.",
+    "none": "No projects. Projects are defined as files in the project directory.",
+    "state": "Project files and tags",
+    "stateHint": "Shown to users with access to all projects.",
+    "stateOk": "All project files are valid and their tags are in NetBox.",
+    "invalidFile": "Invalid project file: {error}",
+    "tagError": "The tags could not be synchronized to NetBox: {error}",
+    "orphaned": "The NetBox tag {tag} has no project file.",
+    "breadcrumb": "Path",
+    "sourceError": "Could not be read: {error}",
+    "empty": "Nothing belongs to this project yet.",
+    "guests": "Virtual machines and containers",
+    "remove": "Remove",
+    "add": "Add NetBox objects",
+    "addHint": "Search for VLANs, prefixes, IP addresses, IP ranges, switch ports or virtual machines in NetBox and add them to the project. Guests in Proxmox are added on their pages.",
+    "type": "Object type",
+    "search": "Search",
+    "searchButton": "Search",
+    "noResults": "Nothing found.",
+    "addButton": "Add",
+    "alreadyAdded": "already in the project",
+    "added": "{object} was added to the project.",
+    "removed": "{object} was removed from the project.",
+    "guestSaved": "The projects were saved.",
+    "noneAssigned": "none",
+    "edit": "Change projects",
+    "editTitle": "Projects",
+    "columns": {
+      "project": "Project",
+      "tag": "Tag",
+      "description": "Description",
+      "guest": "Guest",
+      "cluster": "Cluster",
+      "status": "Status",
+      "object": "Object",
+      "detail": "Details",
+      "actions": "Actions"
+    },
+    "sections": {
+      "vm": "Virtual machines in NetBox",
+      "ip": "IP addresses",
+      "iprange": "IP ranges",
+      "prefix": "Prefixes",
+      "vlan": "VLANs",
+      "interface": "Switch ports"
+    },
+    "types": {
+      "vm": "Virtual machine",
+      "ip": "IP address",
+      "iprange": "IP range",
+      "prefix": "Prefix",
+      "vlan": "VLAN",
+      "interface": "Switch port"
     }
   }
 }

@@ -52,6 +52,8 @@ export interface CreateForm {
   start: boolean
   description: string
   tags: string
+  /** Projects of the new guest (task 12.8), sent as projects. */
+  projects: string[]
   /** DHCP reservations and DNS records added after the creation (optional steps). */
   reservations: ResForm[]
   records: RecForm[]
@@ -139,6 +141,7 @@ export function newForm(o: ProvisioningOptions, kind: Kind = 'clone'): CreateFor
     start: true,
     description: '',
     tags: '',
+    projects: [],
     reservations: [],
     records: [],
   }
@@ -401,6 +404,7 @@ export function toRequest(f: CreateForm): CreateRequest {
   }
   const tags = words(f.tags)
   if (tags.length > 0) req.tags = tags
+  if (f.projects.length > 0) req.projects = [...f.projects]
   if (f.reservations.length > 0) {
     req.reservations = f.reservations.map((r) => ({
       network: r.network,

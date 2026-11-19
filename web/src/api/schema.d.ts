@@ -1196,6 +1196,154 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/projects': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Set the projects of a guest
+     * @description Replaces the projects of a guest, its Proxmox tags `project-<name>`; other tags are kept.
+     *     Needs `write` on the guest and `project:<name>:objects:write` on every added and
+     *     removed project. The guest is then written to NetBox. Audited as `project.assign` and
+     *     `project.unassign`.
+     */
+    put: operations['setGuestProjects']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/addresses/{address}/projects': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Projects of an address in NetBox
+     * @description The projects of the NetBox address, for the DHCP and DNS dialogs. Any logged-in user.
+     */
+    get: operations['getNetBoxAddressProjects']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/projects': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the projects
+     * @description The projects the user may read (`project:<name>:objects:read`). Users with access to all
+     *     projects also get the state: invalid project files, tag synchronization errors and
+     *     orphaned tags.
+     */
+    get: operations['listProjects']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/projects/{name}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * A project with its objects
+     * @description The project with its Proxmox guests (from all clusters; guests the user may not read are
+     *     listed without node and status) and its NetBox objects by type. Sources that can't be
+     *     read are listed in `errors`. Needs `project:<name>:objects:read`.
+     */
+    get: operations['getProject']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/projects/{name}/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Search NetBox objects to add to a project
+     * @description Searches NetBox objects of a type (up to 25). Needs `project:<name>:objects:write`.
+     */
+    get: operations['searchProjectObjects']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/projects/{name}/objects': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add a NetBox object to a project
+     * @description Adds the project's tag to a NetBox object. Needs `project:<name>:objects:write`. Audited as
+     *     `project.assign`. Guests are assigned through their projects (Proxmox tags).
+     */
+    post: operations['addProjectObject']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/projects/{name}/objects/{type}/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Remove a NetBox object from a project
+     * @description Removes the project's tag from a NetBox object. Audited as `project.unassign`.
+     */
+    delete: operations['removeProjectObject']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1432,6 +1580,67 @@ export interface components {
       state: 'missing' | 'differs'
       /** @description The DNS name in NetBox if it differs. */
       netbox?: string
+    }
+    Project: {
+      /** @example webshop */
+      name: string
+      title: string
+      /**
+       * @description 6 hex digits
+       * @example 2196f3
+       */
+      color: string
+      description: string
+      /** @example project-webshop */
+      tag: string
+      /** @description The user may assign objects to the project. */
+      canWrite: boolean
+    }
+    ProjectList: {
+      projects: components['schemas']['Project'][]
+      state?: {
+        /** @description Invalid project files. */
+        errors: string[]
+        /** @description The last tag synchronization to NetBox failed. */
+        tagError?: string
+        /** @description NetBox tags with the prefix but without project file. */
+        orphaned: string[]
+      }
+    }
+    /** @enum {string} */
+    ProjectObjectType: 'vm' | 'ip' | 'iprange' | 'prefix' | 'vlan' | 'interface'
+    ProjectObject: {
+      type: components['schemas']['ProjectObjectType']
+      /** Format: int64 */
+      id: number
+      display: string
+      detail?: string
+      /** @description The object's page in NetBox. */
+      url?: string
+      /** @description NetBox cluster of a VM. */
+      cluster?: string
+      vmid?: number
+      /** @description Proxmox cluster mapped to the VM's NetBox cluster. */
+      proxmoxCluster?: string
+    }
+    ProjectGuest: {
+      cluster: string
+      /** @enum {string} */
+      type: 'qemu' | 'lxc'
+      vmid: number
+      name: string
+      node: string
+      status: string
+      /** @description The user may read the guest. */
+      visible: boolean
+    }
+    ProjectPage: components['schemas']['Project'] & {
+      guests: components['schemas']['ProjectGuest'][]
+      /** @description NetBox objects by type; missing without NetBox. */
+      netbox?: {
+        [key: string]: components['schemas']['ProjectObject'][]
+      }
+      errors: string[]
     }
     /**
      * @description Result of the write-back to NetBox after a change (missing if the change isn't written
@@ -1791,6 +2000,8 @@ export interface components {
       /** @description Start the guest when it's ready. */
       start?: boolean
       description?: string
+      /** @description Projects of the new guest, added as tags project-<name>; each needs `project:<name>:objects:write`. */
+      projects?: string[]
       tags?: string[]
     }
     ProxmoxJob: {
@@ -2049,6 +2260,8 @@ export interface components {
       version: string
     }
     DNSRecordRequest: {
+      /** @description Projects of the address of an A or AAAA record in NetBox; missing keeps them. Each added or removed project needs `project:<name>:objects:write`. */
+      projects?: string[]
       /** @description Relative to the zone, "@" for the apex, or fully qualified. */
       name: string
       /** @enum {string} */
@@ -2199,6 +2412,8 @@ export interface components {
       reservations: components['schemas']['DHCPReservation'][]
     }
     DHCPReservationRequest: {
+      /** @description Projects of the reserved addresses in NetBox; missing keeps them. Each added or removed project needs `project:<name>:objects:write`. */
+      projects?: string[]
       subnetId: number
       /**
        * @description client-id for DHCPv4, duid for DHCPv6.
@@ -4479,6 +4694,223 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  setGuestProjects: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        cluster: string
+        type: 'qemu' | 'lxc'
+        vmid: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          projects: string[]
+        }
+      }
+    }
+    responses: {
+      /** @description The projects of the guest. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            projects: string[]
+            netbox?: components['schemas']['NetBoxResult']
+          }
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['ProxmoxChangeConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getNetBoxAddressProjects: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        address: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The projects (names), empty if the address isn't in NetBox. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            projects: string[]
+          }
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listProjects: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Projects. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProjectList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  getProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The project. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProjectPage']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      default: components['responses']['Error']
+    }
+  }
+  searchProjectObjects: {
+    parameters: {
+      query: {
+        type: components['schemas']['ProjectObjectType']
+        q: string
+      }
+      header?: never
+      path: {
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Matching objects. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            objects: components['schemas']['ProjectObject'][]
+          }
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Error']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  addProjectObject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          type: components['schemas']['ProjectObjectType']
+          /** Format: int64 */
+          id: number
+        }
+      }
+    }
+    responses: {
+      /** @description The object. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProjectObject']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Error']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  removeProjectObject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        name: string
+        type: components['schemas']['ProjectObjectType']
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The object. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProjectObject']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
