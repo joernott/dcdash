@@ -139,9 +139,9 @@ func (s *Service) switchVLAN(ctx context.Context, vid int, changes *[]string) (i
 }
 
 // SyncSwitchVLAN writes a VLAN created, renamed or deleted on a switch to
-// NetBox, in the configured VLAN group and site. A deleted VLAN is deleted in
-// NetBox only if dcdash created it (it has the tag); other VLANs may be used
-// elsewhere and are kept. It returns nil without write-back.
+// NetBox, in the configured VLAN group and site. A missing VLAN is created with
+// the tag. An existing VLAN is renamed or deleted only if dcdash created it (it
+// has the tag): NetBox VLANs are shared by all switches and may be used elsewhere. It returns nil without write-back.
 func (s *Service) SyncSwitchVLAN(ctx context.Context, base audit.Entry, vid int, name string, deleted bool) *Result {
 	if !s.writing() {
 		return nil
@@ -184,6 +184,9 @@ func (s *Service) SyncSwitchVLAN(ctx context.Context, base audit.Entry, vid int,
 				return fmt.Errorf("create the VLAN %d: %w", vid, err)
 			}
 			changes = append(changes, "VLAN created")
+		case vlans[0].Name != name && !hasTag(vlans[0].Tags, s.cfg.Tag):
+			// A VLAN in NetBox is shared by all switches: only VLANs dcdash created are renamed.
+			changes = append(changes, "VLAN kept as "+vlans[0].Name+" (not created by dcdash)")
 		case vlans[0].Name != name:
 			if err := s.client.Update(ctx, pathVLANs, vlans[0].ID, map[string]any{"name": name, "changelog_message": msg}, nil); err != nil {
 				return fmt.Errorf("rename the VLAN %d: %w", vid, err)

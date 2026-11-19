@@ -34,6 +34,8 @@ const switches = [
   {
     name: 'sw1',
     type: 'aoscx',
+    url: 'https://192.0.2.33',
+    host: '192.0.2.33',
     status: 'ok',
     hostname: 'sw-test',
     model: '6000 24G 4SFP Swch',
@@ -43,7 +45,15 @@ const switches = [
     booted: '2026-11-01T00:00:00Z',
     members: [{ name: '1', product: '6000 24G 4SFP Swch', serial: 'CN1', partNumber: 'R8N88A' }],
   },
-  { name: 'sw2', type: 'aoscx', status: 'unavailable', error: 'switch not reachable', members: [] },
+  {
+    name: 'sw2',
+    type: 'aoscx',
+    url: 'https://sw2.example.org',
+    host: 'sw2.example.org',
+    status: 'unavailable',
+    error: 'switch not reachable',
+    members: [],
+  },
 ]
 
 function port(name: string, extra: Record<string, unknown> = {}) {
@@ -111,7 +121,7 @@ async function setup(path = '/switches', list: unknown[] = switches) {
       canCreate: true,
     },
   ])
-  api.on('GET /api/v1/switches/{switch}/ports', () => [200, ports])
+  api.on('GET /api/v1/switches/{switch}/ports', () => [200, structuredClone(ports)])
   api.on('GET /api/v1/projects', () => [200, { projects: [] }])
   api.on('GET /api/v1/netbox', () => [404, apiError('not_found')])
   await router.push(path)
@@ -123,7 +133,7 @@ async function setup(path = '/switches', list: unknown[] = switches) {
 
 describe('SwitchesView', () => {
   it('shows the inventory and the ports and changes a port', async () => {
-    const { w, router } = await setup()
+    const { w, router } = await setup('/switches?tab=ports')
     expect(router.currentRoute.value.params.switch).toBe('sw1')
     expect(w.text()).toContain('AOS-CX PL.10.08.1010 (v10.08)')
     expect(w.text()).toContain('serial number CN1')
@@ -172,7 +182,7 @@ describe('SwitchesView', () => {
   })
 
   it('asks before changing an uplink and reports a failed save', async () => {
-    const { w } = await setup('/switches/sw1')
+    const { w } = await setup('/switches/sw1?tab=ports')
     api.on('PUT /api/v1/switches/{switch}/ports/{port}', () => [
       200,
       {
@@ -276,6 +286,33 @@ describe('SwitchesView', () => {
     expect(rows[0]!.text()).toContain('Connected here')
     expect(rows[1]!.text()).toContain('Behind another switch')
     expect(w.text()).toContain('sw2 could not be searched: switch not reachable')
+    w.unmount()
+  })
+})
+
+describe('switch overview', () => {
+  it('shows all switches like their front panels', async () => {
+    const { w } = await setup()
+    const sw1 = w.findAll('tbody')[0]!
+    const rows = sw1.findAll('tr')
+    expect(rows).toHaveLength(2)
+    const head = rows[0]!.get('th')
+    expect(head.attributes('rowspan')).toBe('2')
+    expect(head.get('a[href="https://192.0.2.33"]').text()).toBe('https')
+    expect(head.get('a[href="ssh://192.0.2.33"]').text()).toBe('ssh')
+    // Port 1 above port 2, port 3 (here 4) in the next column.
+    const cells = (r: number) =>
+      rows[r]!.findAll('td').map((c) =>
+        c.find('.sr-only').exists() ? c.get('.sr-only').text() : '',
+      )
+    expect(cells(0)[0]).toBe('1/1/1: Up, trunk, native VLAN 1, uplink')
+    expect(cells(1)[0]).toBe('1/1/2: Up, VLAN 10, app1')
+    expect(cells(1)[1]).toBe('1/1/4: Disabled, VLAN 10')
+    expect(rows[0]!.findAll('td')[0]!.text()).toContain('▲')
+    expect(rows[1]!.findAll('td')[1]!.text()).toContain('▼')
+    expect(w.findAll('tbody')[1]!.text()).toContain(
+      'The switch is not available: switch not reachable',
+    )
     w.unmount()
   })
 })

@@ -66,6 +66,15 @@ dcdash logs in when it first needs the switch and keeps the session. The switch 
 sessions after 20 minutes and all sessions after 8 hours; dcdash then logs in again and
 repeats the request. dcdash logs out when it stops.
 
+## Overview
+
+The "Overview" tab shows all switches at a glance, laid out like their front panels: per
+switch two rows (four for a 48-port switch, two more per stack member), ports 1 and 2 in the
+first column, 3 and 4 in the second and so on, the SFP ports in the last two columns. Each
+port shows ▲ (up) or ▼ (no link or disabled) and its VLAN; the native VLAN of a trunk is
+underlined and italic. The first column has the switch name (to its ports) and links to its
+web interface (https) and to SSH. Columns a smaller switch doesn't have stay empty.
+
 ## Ports
 
 The "Switches" page shows one switch at a time; choose it at the top. The "Ports" tab lists
@@ -128,8 +137,8 @@ writes changes to NetBox:
 | Change | NetBox |
 |---|---|
 | A port is changed | The interface of the device with the port's name: description, enabled, 802.1Q mode (`access`, `tagged`, `tagged-all`), untagged and tagged VLANs. VLANs that NetBox doesn't know are left out and noted |
-| A VLAN is created or renamed | The VLAN with this ID (in `netbox.vlan_group` or `netbox.site`, if set) is renamed, or created with the tag |
-| A VLAN is deleted | The NetBox VLAN is deleted only if dcdash created it (it has the tag); otherwise it may be used elsewhere and is kept |
+| A VLAN is created | The VLAN with this ID (in `netbox.vlan_group` or `netbox.site`, if set) is created with the tag if NetBox doesn't have it |
+| A VLAN is renamed or deleted | The NetBox VLAN is renamed or deleted only if dcdash created it (it has the tag). NetBox VLANs are shared by all switches, so others keep their name and stay; the outcome notes it |
 
 dcdash never creates or deletes interfaces of a device: they come from the device type in
 NetBox. A failed write-back doesn't undo the change on the switch; it is shown and audited

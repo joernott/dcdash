@@ -7,6 +7,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import MacSearchPanel from '@/components/switches/MacSearchPanel.vue'
+import OverviewPanel from '@/components/switches/OverviewPanel.vue'
 import PortsPanel from '@/components/switches/PortsPanel.vue'
 import VlansPanel from '@/components/switches/VlansPanel.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -19,8 +20,8 @@ const { t } = i18n
 const route = useRoute()
 const router = useRouter()
 
-type Tab = 'ports' | 'vlans' | 'macs'
-const TABS: Tab[] = ['ports', 'vlans', 'macs']
+type Tab = 'overview' | 'ports' | 'vlans' | 'macs'
+const TABS: Tab[] = ['overview', 'ports', 'vlans', 'macs']
 
 const switches = ref<SwitchInfo[]>([])
 const loading = ref(false)
@@ -30,7 +31,7 @@ const name = computed(() => String(route.params.switch ?? ''))
 const current = computed(() => switches.value.find((s) => s.name === name.value))
 const tab = computed<Tab>(() => {
   const q = String(route.query.tab ?? '')
-  return (TABS as string[]).includes(q) ? (q as Tab) : 'ports'
+  return (TABS as string[]).includes(q) ? (q as Tab) : 'overview'
 })
 const options = computed(() =>
   switches.value.map((s) => ({
@@ -102,7 +103,7 @@ onMounted(load)
     </p>
 
     <section
-      v-if="current"
+      v-if="current && (tab === 'ports' || tab === 'vlans')"
       aria-labelledby="switch-info"
       class="flex flex-col gap-2 rounded-md border border-border p-4"
     >
@@ -162,7 +163,8 @@ onMounted(load)
         </button>
       </div>
       <div :id="`switch-panel-${tab}`" role="tabpanel" :aria-labelledby="`switch-tab-${tab}`">
-        <MacSearchPanel v-if="tab === 'macs'" />
+        <OverviewPanel v-if="tab === 'overview'" :switches="switches" />
+        <MacSearchPanel v-else-if="tab === 'macs'" />
         <template v-else-if="current?.status === 'ok'">
           <PortsPanel v-if="tab === 'ports'" :switch-name="current.name" />
           <VlansPanel v-else :switch-name="current.name" :switches="names" />

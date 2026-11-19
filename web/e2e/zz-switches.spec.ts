@@ -16,6 +16,13 @@ test('switch ports, VLANs, projects and MAC search', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Switches', exact: true }).click()
   await expect(page).toHaveURL(/\/switches\/sw1$/)
+  // The overview: sw1 like its front panel.
+  const overview = page.getByRole('table', { name: 'Overview' })
+  await expect(overview.getByRole('link', { name: 'sw1' })).toBeVisible()
+  await expect(overview.getByText('1/1/2: Up, VLAN 10, app1')).toBeAttached()
+  await expectAccessible(page, 'Switch overview')
+  await page.screenshot({ path: '../.e2e/screenshots/switches-overview.png', fullPage: true })
+  await page.getByRole('tab', { name: 'Ports' }).click()
   const ports = page.getByRole('table', { name: 'Ports' })
   await expect(ports.getByRole('row').filter({ hasText: 'core-sw' })).toContainText('uplink')
   await expectAccessible(page, 'Switch ports')

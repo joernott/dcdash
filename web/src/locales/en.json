@@ -637,9 +637,18 @@
     "views": "Switch views",
     "unavailable": "The switch is not available: {error}",
     "tabs": {
+      "overview": "Overview",
       "ports": "Ports",
       "vlans": "VLANs",
       "macs": "Find a device"
+    },
+    "overview": {
+      "hint": "All switches like their front panels: odd ports above, even ports below, the SFP ports on the right.",
+      "legend": "▲ up, ▼ no link or disabled; the number is the VLAN, underlined and italic for the native VLAN of a trunk.",
+      "vlan": "VLAN {vlan}",
+      "trunk": "trunk, native VLAN {vlan}",
+      "column": "Ports column {n}",
+      "sfpColumn": "SFP ports column {n}"
     },
     "info": {
       "model": "Model",

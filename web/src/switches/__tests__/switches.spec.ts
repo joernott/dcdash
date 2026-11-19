@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest'
 import {
   formatSpeed,
   formatVlans,
+  overviewLayout,
   parseVlans,
   portMatches,
   portState,
@@ -76,5 +77,50 @@ describe('switch helpers', () => {
   it('computes the uptime', () => {
     expect(uptimeDays('2026-11-01T00:00:00Z', Date.parse('2026-11-19T12:00:00Z'))).toBe(18)
     expect(uptimeDays(undefined)).toBeNull()
+  })
+})
+
+describe('overview layout', () => {
+  const named = (n: number, member = 1, sfp = false) =>
+    port({ name: `${member}/1/${n}`, connector: sfp ? 'SFP_PLUS' : 'RJ45' })
+  const names = (rows: (SwitchPort | null)[][]) => rows.map((r) => r.map((p) => p?.name ?? '-'))
+
+  it('lays out 24 + 4 ports in two rows', () => {
+    const ports = [
+      ...Array.from({ length: 24 }, (_, i) => named(i + 1)),
+      ...[25, 26, 27, 28].map((n) => named(n, 1, true)),
+      port({ name: 'lag1', type: 'lag' }),
+    ]
+    const rows = names(overviewLayout(ports))
+    expect(rows).toHaveLength(2)
+    expect(rows[0]!.slice(0, 2)).toEqual(['1/1/1', '1/1/3'])
+    expect(rows[1]!.slice(0, 2)).toEqual(['1/1/2', '1/1/4'])
+    expect(rows[0]![11]).toBe('1/1/23')
+    expect(rows[0]!.slice(12)).toEqual(['1/1/25', '1/1/27'])
+    expect(rows[1]!.slice(12)).toEqual(['1/1/26', '1/1/28'])
+  })
+
+  it('uses four rows for 48 ports and leaves columns of small switches blank', () => {
+    const big = [
+      ...Array.from({ length: 48 }, (_, i) => named(i + 1)),
+      ...[49, 50, 51, 52].map((n) => named(n, 1, true)),
+    ]
+    const rows = names(overviewLayout(big))
+    expect(rows).toHaveLength(4)
+    expect(rows[2]![0]).toBe('1/1/25')
+    expect(rows[3]![11]).toBe('1/1/48')
+    expect(rows[0]!.slice(12)).toEqual(['1/1/49', '1/1/51'])
+    expect(rows[2]!.slice(12)).toEqual(['-', '-'])
+
+    const small = names(overviewLayout(Array.from({ length: 8 }, (_, i) => named(i + 1))))
+    expect(small).toHaveLength(2)
+    expect(small[1]!.slice(3, 5)).toEqual(['1/1/8', '-'])
+  })
+
+  it('stacks members', () => {
+    const rows = names(overviewLayout([named(1), named(1, 2), named(2, 2)]))
+    expect(rows).toHaveLength(4)
+    expect(rows[2]![0]).toBe('2/1/1')
+    expect(rows[3]![0]).toBe('2/1/2')
   })
 })

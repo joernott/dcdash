@@ -17,7 +17,8 @@ All notable changes to dcdash are listed here. The format follows
   never deleted. Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
 - **Switches:** Aruba CX switches (AOS-CX 10.x) in the `switches` section: inventory and
-  health on the overview page; a Switches page with the ports (state, VLANs, LLDP neighbors,
+  health on the overview page; a Switches page with a compact overview of all switches like
+  their front panels, the ports (state, VLANs, LLDP neighbors,
   PoE), port changes (enable, disable, description, access and trunk VLANs), VLAN management
   on one or several switches and a MAC address search across all switches. Every change is
   saved to the startup configuration and audited (`switch.port.update`, `switch.vlan.*`);

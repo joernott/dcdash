@@ -197,6 +197,8 @@ func TestNetBoxWriteBack(t *testing.T) {
 	e.nb.Seed(nbfake.DevIfaces, nbfake.Object{"name": "1/1/2", "device": dev, "tags": []int64{project}})
 	e.nb.Seed(nbfake.DevIfaces, nbfake.Object{"name": "1/1/5", "device": dev})
 	e.nb.Seed(nbfake.VLANs, nbfake.Object{"vid": int64(10), "name": "servers"})
+	// A VLAN maintained in NetBox: not renamed or deleted from a switch.
+	e.nb.Seed(nbfake.VLANs, nbfake.Object{"vid": int64(4002), "name": "lte450"})
 
 	var l switches.PortList
 	if st, _ := e.do(t, "viewer", "GET", "/api/v1/switches/sw1/ports", nil, &l); st != 200 || l.Ports[1].NetBox == nil ||
@@ -247,7 +249,20 @@ func TestNetBoxWriteBack(t *testing.T) {
 	if st, _ := e.do(t, "netops", "DELETE", "/api/v1/switches/sw1/vlans/4001", nil, &vr); st != 200 || vr.NetBox.Status != "ok" || found() != "" {
 		t.Errorf("delete: %+v %s", vr.NetBox, found())
 	}
-	if l, _ := e.audit.Query(ctx, audit.Filter{Action: "netbox.sync"}); len(l) != 5 {
+	if st, _ := e.do(t, "netops", "POST", "/api/v1/switches/sw1/vlans", switches.VLANRequest{ID: 4002, Name: "other"}, &vr); st != 201 || vr.NetBox.Status != "ok" {
+		t.Errorf("existing: %+v", vr.NetBox)
+	}
+	if st, _ := e.do(t, "netops", "DELETE", "/api/v1/switches/sw1/vlans/4002", nil, &vr); st != 200 || vr.NetBox.Status != "ok" {
+		t.Errorf("delete existing: %+v", vr.NetBox)
+	}
+	kept := false
+	for _, v := range e.nb.Objects(nbfake.VLANs) {
+		kept = kept || v["name"] == "lte450"
+	}
+	if !kept {
+		t.Errorf("NetBox VLAN changed: %+v", e.nb.Objects(nbfake.VLANs))
+	}
+	if l, _ := e.audit.Query(ctx, audit.Filter{Action: "netbox.sync"}); len(l) != 7 {
 		t.Errorf("netbox audit: %d", len(l))
 	}
 }

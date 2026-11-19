@@ -2624,6 +2624,10 @@ export interface components {
       name: string
       /** @enum {string} */
       type: 'aoscx'
+      /** @description URL of the switch from the configuration (its web interface). */
+      url: string
+      /** @description Host name or address of the switch */
+      host: string
       /** @enum {string} */
       status: 'ok' | 'unavailable'
       /** @description Why the switch is unavailable. */

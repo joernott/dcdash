@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -143,7 +144,7 @@ func TestSwitchList(t *testing.T) {
 	}
 	a, b := l.Switches[0], l.Switches[1]
 	if a.Name != "sw1" || a.Status != "ok" || a.Hostname != "sw-test" || a.Model != "6000 24G 4SFP Swch" ||
-		a.Firmware != "PL.10.08.1010" || a.APIVersion != "v10.08" || a.Booted == nil || len(a.Members) != 1 || a.Type != "aoscx" {
+		a.Firmware != "PL.10.08.1010" || a.APIVersion != "v10.08" || a.Host != "127.0.0.1" || !strings.HasPrefix(a.URL, "http://127.0.0.1:") || a.Booted == nil || len(a.Members) != 1 || a.Type != "aoscx" {
 		t.Errorf("sw1: %+v", a)
 	}
 	if b.Name != "sw2" || b.Status != "unavailable" || b.Error != "the switch rejected dcdash's credentials" || b.Members == nil {

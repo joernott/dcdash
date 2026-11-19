@@ -144,7 +144,10 @@ See [projects.md](projects.md).
 
 ## Switches
 
-The Switches page shows one switch at a time with its model, firmware and uptime:
+The Switches page starts with an **overview** of all switches, laid out like their front
+panels: ▲ for ports that are up, ▼ for the others, with the VLAN below; the switch name
+leads to its ports, "https" and "ssh" to the switch itself. The other tabs show one switch at
+a time with its model, firmware and uptime:
 
 - **Ports:** state, speed, VLANs, LLDP neighbor and projects of each port; the filter
   searches names, descriptions, VLANs and neighbors. "Change" opens a dialog to enable or

@@ -75,3 +75,56 @@ export function uptimeDays(booted: string | undefined, now = Date.now()): number
   const t = Date.parse(booted)
   return Number.isNaN(t) ? null : Math.max(0, Math.floor((now - t) / 86_400_000))
 }
+
+/** Columns of the compact overview: 12 for copper ports (two per column), 2 for SFP ports. */
+export const OVERVIEW_COLUMNS = 14
+const COPPER_COLUMNS = 12
+
+/** The member and port number of a port name ("1/1/5" -> [1, 5]); null for LAGs. */
+function portNumber(name: string): [number, number] | null {
+  const m = /^(\d+)\/\d+\/(\d+)$/.exec(name)
+  return m ? [Number(m[1]), Number(m[2])] : null
+}
+
+/**
+ * Lays the physical ports of a switch out like its front panel: per member (stack) two rows
+ * for each 24 copper ports, ports 1 and 2 in the first column, 3 and 4 in the second and so
+ * on; the SFP ports in the last two columns. Unused cells are null.
+ */
+export function overviewLayout(ports: SwitchPort[]): (SwitchPort | null)[][] {
+  const members = new Map<number, { copper: SwitchPort[]; sfp: SwitchPort[] }>()
+  for (const p of ports) {
+    const n = portNumber(p.name)
+    if (p.type !== 'system' || !n) continue
+    const m = members.get(n[0]) ?? { copper: [], sfp: [] }
+    ;(p.connector?.startsWith('SFP') ? m.sfp : m.copper).push(p)
+    members.set(n[0], m)
+  }
+  const byNumber = (a: SwitchPort, b: SwitchPort) => portNumber(a.name)![1] - portNumber(b.name)![1]
+  const rows: (SwitchPort | null)[][] = []
+  for (const key of [...members.keys()].sort((a, b) => a - b)) {
+    const { copper, sfp } = members.get(key)!
+    copper.sort(byNumber)
+    sfp.sort(byNumber)
+    const count = Math.max(
+      2,
+      2 *
+        Math.ceil(Math.max(0, ...copper.map((p) => portNumber(p.name)![1])) / (2 * COPPER_COLUMNS)),
+      2 * Math.ceil(sfp.length / 4),
+    )
+    const block: (SwitchPort | null)[][] = Array.from({ length: count }, () =>
+      Array<SwitchPort | null>(OVERVIEW_COLUMNS).fill(null),
+    )
+    copper.forEach((p) => {
+      // By port number, so that a missing port leaves its cell empty.
+      const i = portNumber(p.name)![1] - 1
+      const within = i % (2 * COPPER_COLUMNS)
+      block[2 * Math.floor(i / (2 * COPPER_COLUMNS)) + (within % 2)]![Math.floor(within / 2)] = p
+    })
+    sfp.forEach((p, i) => {
+      block[2 * Math.floor(i / 4) + (i % 2)]![COPPER_COLUMNS + Math.floor((i % 4) / 2)] = p
+    })
+    rows.push(...block)
+  }
+  return rows
+}

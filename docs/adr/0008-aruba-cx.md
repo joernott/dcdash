@@ -75,8 +75,8 @@ versions; dcdash uses `latest` (`v10.08` on the test switch).
   ports come first, ports in a LAG count as uplinks if the LAG is one.
 - **NetBox write-back** (task 13.7) only for switches with `netbox_device`: ports update the
   existing interfaces of that device (dcdash never creates or deletes interfaces), VLANs are
-  created and renamed in the configured VLAN group or site and deleted only if they have the
-  dcdash tag. Projects of switch ports are the project tags of their NetBox interfaces and
+  created in the configured VLAN group or site if missing, and renamed or deleted only if they
+  have the dcdash tag (NetBox VLANs are shared by all switches). Projects of switch ports are the project tags of their NetBox interfaces and
   are changed through the project API (ADR 0007).
 - **Tests** with a fake AOS-CX API that returns the data shapes above; a manual test against
   the real switch is documented.

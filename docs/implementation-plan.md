@@ -428,6 +428,8 @@ These apply to every task:
   table, LLDP, saving the configuration); results in an ADR, amend this sprint if needed
 - [x] **13.2** Configuration and client for several switches, inventory and health status
 - [x] **13.3** Port overview across all switches: status, speed, VLANs, PoE, LLDP neighbor
+  - [x] **13.3.1** Compact overview of all switches like their front panels (odd ports above,
+    even ports below, SFP ports at the end), with https and ssh links
 - [x] **13.4** Find devices by MAC address across all switches, telling access ports from
   uplinks
 - [x] **13.5** Manage VLANs: create, rename and delete, on one or several switches
@@ -435,6 +437,8 @@ These apply to every task:
   the change is saved to the startup configuration
 - [x] **13.7** NetBox write-back for switch VLANs and ports (see 12.3); projects for switch ports on
   the switch pages (see 12.8)
+  - [x] **13.7.1** Test with the NetBox copy: device DCDASH-SW33; shared NetBox VLANs are only
+    renamed or deleted if dcdash created them
 - [x] **13.8** Permissions and audit actions, navigation entry
 - [x] **13.9** Tests: fake AOS-CX server, manual test against a real switch documented
 - [x] **13.10** Documentation

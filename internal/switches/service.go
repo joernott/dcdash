@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -55,6 +56,8 @@ type Backend interface {
 type sw struct {
 	backend Backend
 	typ     string
+	// url is the configured URL of the switch, for links in the UI.
+	url string
 	// device is the NetBox device of the switch, "" if not written to NetBox.
 	device string
 	// writeMu serializes changes: they read, modify and write back.
@@ -86,6 +89,7 @@ func NewService(cfgs config.Switches, auditLog *audit.Log, log zerolog.Logger) (
 			return nil, err
 		}
 		s.add(b, c.Type, c.NetBoxDevice)
+		s.switches[c.Name].url = c.URL
 	}
 	return s, nil
 }
@@ -200,6 +204,9 @@ type SwitchView struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
 	// Status is "ok" or "unavailable" (Error says why).
+	// URL of the switch (its web interface), Host the host name or address (for SSH).
+	URL        string         `json:"url"`
+	Host       string         `json:"host"`
 	Status     string         `json:"status"`
 	Error      string         `json:"error,omitempty"`
 	Hostname   string         `json:"hostname,omitempty"`
@@ -218,7 +225,10 @@ type SwitchList struct {
 
 func (s *Service) view(ctx context.Context, name string) SwitchView {
 	x := s.switches[name]
-	v := SwitchView{Name: name, Type: x.typ, Members: []aoscx.Member{}}
+	v := SwitchView{Name: name, Type: x.typ, URL: x.url, Members: []aoscx.Member{}}
+	if u, err := url.Parse(x.url); err == nil {
+		v.Host = u.Hostname()
+	}
 	inv, err := s.inventory(ctx, x, false)
 	if err != nil {
 		v.Status, v.Error = "unavailable", errorText(err)

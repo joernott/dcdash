@@ -3526,10 +3526,12 @@ components:
 
     Switch:
       type: object
-      required: [name, type, status, members]
+      required: [name, type, url, host, status, members]
       properties:
         name: { type: string, description: Name from the configuration. }
         type: { type: string, enum: [aoscx] }
+        url: { type: string, description: URL of the switch from the configuration (its web interface). }
+        host: { type: string, description: Host name or address of the switch, for SSH. }
         status: { type: string, enum: [ok, unavailable] }
         error: { type: string, description: Why the switch is unavailable. }
         hostname: { type: string }
