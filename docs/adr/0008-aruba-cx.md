@@ -1,6 +1,6 @@
 # ADR 0008: Aruba CX switches
 
-- Status: proposed (to be verified against a real switch)
+- Status: proposed (reading verified against a real switch, writing not yet)
 - Date: 2026-11-19
 - Task: 13.1
 
@@ -9,42 +9,69 @@
 dcdash should show and change Aruba CX 6x00 switches (AOS-CX 10.x): port status across all
 switches, finding devices by MAC address, VLANs, and port configuration. The REST API is
 described in the AOS-CX REST API guide (v10.0x, for example 10.15) and used by HPE's Python
-library pyaoscx. This ADR is based on the documentation; the calls are checked against a
-real switch in task 13.9 and this ADR is amended then.
+library pyaoscx.
+
+The read calls were checked on 2026-11-19 against a test switch: Aruba 6000 (24 × 1 GbE RJ45,
+4 × SFP+), firmware PL.10.08.1010. The write calls are still unverified (see "Open").
 
 ## API
 
-All calls go to `https://<switch>/rest/v10.<minor>/...` (the newest version the firmware
-offers; `GET /rest` lists them).
+All calls go to `https://<switch>/rest/v10.<minor>/...`. `GET /rest` (no login) lists the
+versions; dcdash uses `latest` (`v10.08` on the test switch).
 
-| Purpose | Call | Notes |
-|---|---|---|
-| Log in | `POST /rest/v10.xx/login` with `username` and `password` (form) and the header `x-use-csrf-token: true` | Returns a session cookie and the CSRF token in the `x-csrf-token` response header, which every later request sends. |
-| Log out | `POST /rest/v10.xx/logout` | Sessions are limited per user and per switch; dcdash logs out when it doesn't need a session any more. Idle timeout 20 minutes, hard timeout 8 hours. |
-| System, firmware | `GET /rest/v10.xx/system?attributes=hostname,platform_name,software_version` | Health check. |
-| Interfaces | `GET /rest/v10.xx/system/interfaces?depth=2&attributes=...` | Admin and link state, speed, description, VLAN mode, access VLAN, trunk VLANs; statistics are separate. |
-| LLDP neighbors | `GET /rest/v10.xx/system/interfaces/{name}/lldp_neighbors?depth=2` | Interface names are URL-encoded (`1%2F1%2F1`). |
-| PoE | `GET /rest/v10.xx/system/interfaces/{name}/poe_interface` | Only on PoE models. |
-| VLANs | `GET`, `POST`, `PUT`, `DELETE /rest/v10.xx/system/vlans[/{id}]` | `name`, `admin` state. |
-| MAC address table | `GET /rest/v10.xx/system/vlans/*/macs?depth=2` | Keys `<from>,<mac>` (`dynamic`, `static`, ...), attribute `port`. |
-| Change a port | `PUT`/`PATCH /rest/v10.xx/system/interfaces/{name}` | `admin`, `description`, `vlan_mode`, `vlan_tag`, `vlan_trunks`. |
-| Save the configuration | `PUT /rest/v10.xx/fullconfigs/startup-config?from=/rest/v10.xx/fullconfigs/running-config` | The equivalent of `write memory`. |
+| Purpose | Call | Verified | Notes |
+|---|---|---|---|
+| Versions | `GET /rest` | yes | `{"latest": {"version": "v10.08", "prefix": "/rest/v10.08"}, ...}` |
+| Log in | `POST /rest/v10.xx/login`, form fields `username`, `password` | yes | Session cookie. Newer firmware returns a CSRF token in the `x-csrf-token` header when asked with `x-use-csrf-token: true`; 10.08 returns none. dcdash sends the token back when there is one. |
+| Log out | `POST /rest/v10.xx/logout` | yes | Sessions per user are limited; idle timeout 20 minutes, hard timeout 8 hours. |
+| System | `GET /system?attributes=hostname,platform_name,software_version` | yes | `DCDASH-SW33`, `6000`, `PL.10.08.1010` |
+| Interfaces | `GET /system/interfaces?depth=2&attributes=...` | yes | Map by name. Includes VLAN interfaces (`vlan34`, `type: vlan`); ports have `type: system`. |
+| LLDP neighbors | `GET /system/interfaces/{name}/lldp_neighbors?depth=2` | yes | Keys `<chassis id>,<port id>`; `neighbor_info.chassis_name`, `port_description`, `mgmt_ip_list`, `chassis_capability_enabled` (`"Bridge, Router"`). Names are URL-encoded (`1%2F1%2F1`). |
+| PoE | `GET /system/interfaces/{name}/poe_interface` | no | The 6000 test switch has no PoE. |
+| VLANs | `GET /system/vlans?depth=2` | yes | `id`, `name`, `admin`, `oper_state`, `type` (`default`, `static`). |
+| MAC address table | `GET /system/vlans/*/macs?depth=2` | yes | Per VLAN: keys `<from>,<mac>` (`dynamic`, ...), `mac_addr`, `from`, `port` (`{"1/1/1": "/rest/..."}`). |
+| Create, rename, delete VLANs | `POST /system/vlans`, `PUT`/`PATCH`/`DELETE /system/vlans/{id}` | no | |
+| Change a port | `PATCH /system/interfaces/{name}` | no | See "Port attributes". |
+| Save the configuration | `PUT /fullconfigs/startup-config?from=/rest/v10.xx/fullconfigs/running-config` | no | The equivalent of `write memory`. |
+
+### Port attributes (10.08)
+
+| Attribute | Meaning on the test switch |
+|---|---|
+| `admin_state`, `link_state`, `link_speed` | Operational state (`up`/`down`), speed in bit/s |
+| `admin` | `null` on ports; the configured state is in `user_config.admin` (`"down"` when shut down, missing when enabled by default). To be verified by a write. |
+| `description` | Port description, `null` when empty |
+| `vlan_mode` | `null` for an access port (the default), `native-untagged` or `native-tagged` for a trunk |
+| `vlan_tag` | Access or native VLAN as a reference `{"1404": "/rest/v10.08/system/vlans/1404"}`, `null` for VLAN 1 |
+| `vlan_trunks` | Allowed VLANs of a trunk; empty means all VLANs |
+| `applied_vlan_mode`, `applied_vlan_tag`, `applied_vlan_trunks` | What is active, with VLAN 1 and "all VLANs" resolved |
+| `hw_intf_info.connector`, `max_speed` | `RJ45` or `SFP_PLUS`, maximum speed in Mbit/s |
 
 ## Decision (draft)
 
-- **Several switches** in a `switches` section, each with URL, TLS (CA file or fingerprint),
-  username and password of a local or TACACS/RADIUS account with the `administrators` role
-  (read-only accounts for read-only use).
+- **Several switches** in a `switches` section, each with URL, TLS and username and password
+  of an account with the `administrators` role (read-only accounts for read-only use).
+- **TLS:** the switches' factory certificates are self-signed, and their subject (for
+  example `CN=switch,SN=<serial>`) is no host name, so a CA file cannot be verified. They are
+  pinned by `tls.fingerprint` (SHA-256), as for Proxmox and LDAP; a CA file is for
+  certificates issued by the user's CA.
 - **Sessions** are kept per switch and reused; requests with an expired session log in again
   once. Logout on shutdown.
-- **Uplinks** are told from access ports by LLDP neighbors that are switches (system
-  capabilities "bridge") and by trunk ports; the MAC search lists access ports first.
+- **Uplinks** are told from access ports by LLDP neighbors that are bridges and by trunk ports;
+  the MAC search lists access ports first.
 - **Changes** (VLANs, ports) are made in the running configuration and saved to the startup
   configuration right after; a failed save is reported as an error.
 - **Permissions** `switch:<name>:port/<interface>:<action>`, `switch:<name>:vlan/<id>:<action>`.
 - **NetBox write-back** for VLANs and ports (task 13.7), projects for switch ports on the switch
   pages (see ADR 0007).
-- **Tests** with a fake AOS-CX API; a manual test against a real switch is documented.
+- **Tests** with a fake AOS-CX API that returns the data shapes above; a manual test against
+  the real switch is documented.
+
+## Open
+
+Write calls on the test switch (allowed: all ports except the uplink 1/1/1, VLANs 4000 and
+higher, `write memory`): create VLAN 4000, set description, access VLAN, trunk VLANs and the
+admin state of an unused port, revert everything, save the configuration.
 
 ## Sources
 
