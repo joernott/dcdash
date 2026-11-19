@@ -23,6 +23,7 @@ import (
 	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/prefs"
+	"github.com/joernott/dcdash/internal/project"
 	"github.com/joernott/dcdash/internal/proxmox"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
@@ -125,9 +126,9 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		// The creation wizard adds DHCP reservations and DNS records (task 11.14).
 		pve.SetIntegrations(dhcpSvc, dnsSvc)
 	}
+	var nb *netbox.Service
 	if cfg.NetBox.Enabled() {
-		nb, err := netbox.NewService(cfg.NetBox, auditLog, log)
-		if err != nil {
+		if nb, err = netbox.NewService(cfg.NetBox, auditLog, log); err != nil {
 			return nil, err
 		}
 		a.statusChecks = append(a.statusChecks, nb.StatusChecks()...)
@@ -160,6 +161,10 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		}
 		nb.SetSources(gs, rs, ds)
 	}
+	// Projects (task 12.8): groups of objects with the tag project-<name>.
+	projects := project.New(ctx, cfg.Projects, nb, auditLog, log)
+	a.runners = append(a.runners, projects.Run)
+	a.statusChecks = append(a.statusChecks, projects.StatusChecks()...)
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
 	return a, nil

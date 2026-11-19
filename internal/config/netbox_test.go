@@ -98,3 +98,17 @@ netbox:
 		t.Errorf("insecure: %v", err)
 	}
 }
+
+func TestProjectsConfig(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(testKeyYAML + netboxProxmoxYAML))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Projects.Dir != "/etc/dcdash/projects" || cfg.Projects.ReloadInterval.D() != time.Minute {
+		t.Errorf("defaults: %+v", cfg.Projects)
+	}
+	if _, err := Parse(strings.NewReader(testKeyYAML + netboxProxmoxYAML + "projects: {reload_interval: -1s}\n")); err == nil ||
+		!strings.Contains(err.Error(), "projects.reload_interval") {
+		t.Errorf("negative interval: %v", err)
+	}
+}

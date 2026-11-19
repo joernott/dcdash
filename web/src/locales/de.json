@@ -48,7 +48,8 @@
     "components": {
       "database": "Datenbank",
       "directory": "Benutzerverzeichnis",
-      "certificate": "Zertifikat"
+      "certificate": "Zertifikat",
+      "projects": "Projekte"
     },
     "details": {
       "certificate": {
@@ -71,6 +72,10 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "projects": {
+        "loaded": "Keine Projekte | Ein Projekt | {count} Projekte",
+        "invalid": "Eine ungültige Projektdatei: {first} | {count} ungültige Projektdateien, die erste: {first}"
       },
       "directory": {
         "connected": "Verbunden mit {server} | Verbunden mit {server}, alle {count} Server erreichbar",

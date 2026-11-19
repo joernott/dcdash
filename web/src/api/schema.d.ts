@@ -1371,7 +1371,7 @@ export interface components {
        *     `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
        *     `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
        *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
-       *     `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`). Times are RFC 3339.
+       *     `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
        * @example certificate.valid
        */
       detailCode?: string

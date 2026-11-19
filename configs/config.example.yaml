@@ -270,6 +270,15 @@ netbox:
 #  # VRF of the IP addresses; empty is the global table.
 #  vrf: ""
 
+# Projects (see docs/projects.md): one file <name>.yaml per project in dir, e.g.
+#   title: Webshop relaunch
+#   color: 2196f3
+#   description: The new web shop
+# The tag project-<name> marks the project's objects in Proxmox and NetBox.
+projects:
+  dir: /etc/dcdash/projects
+  reload_interval: 1m
+
 # Prometheus metrics at /metrics (see docs/monitoring.md).
 metrics:
   enabled: false

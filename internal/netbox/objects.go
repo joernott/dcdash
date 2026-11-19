@@ -288,3 +288,17 @@ func (c *Client) Delete(ctx context.Context, path string, objID int64, message s
 	}
 	return nil
 }
+
+// TagObject is a tag.
+type TagObject struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	Color       string `json:"color"`
+	Description string `json:"description"`
+}
+
+// Tags returns all tags.
+func (c *Client) Tags(ctx context.Context) ([]TagObject, error) {
+	return list[TagObject](ctx, c, pathTags, nil)
+}
