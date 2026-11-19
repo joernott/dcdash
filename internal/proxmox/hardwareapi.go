@@ -5,6 +5,7 @@ package proxmox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/joernott/dcdash/internal/audit"
+	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/netbox"
@@ -262,6 +264,26 @@ func (s *Service) handleOptions(w http.ResponseWriter, r *http.Request) {
 	if err := checkResources(req, entries, p); err != nil {
 		writeRequestError(w, r, err)
 		return
+	}
+	// Project tags need the project permission (task 12.8.3).
+	if nv, set := req.Set["tags"]; set || slices.Contains(req.Delete, "tags") {
+		var cur []string
+		for _, e := range entries {
+			if e.Key == "tags" && e.Value != nil {
+				cur = projectsOfTags(splitTags(fmt.Sprint(e.Value)))
+			}
+		}
+		next := projectsOfTags(splitTags(nv))
+		added := slices.DeleteFunc(slices.Clone(next), func(p string) bool { return slices.Contains(cur, p) })
+		removed := slices.DeleteFunc(slices.Clone(cur), func(p string) bool { return slices.Contains(next, p) })
+		if !s.checkProjects(w, r, added) {
+			return
+		}
+		for _, p := range removed {
+			if !auth.Check(w, r, projectPermission(p)) {
+				return
+			}
+		}
 	}
 
 	form := url.Values{}

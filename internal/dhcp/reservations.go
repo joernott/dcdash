@@ -64,6 +64,9 @@ type ReservationRequest struct {
 	Prefixes       []string `json:"prefixes,omitempty"`
 	Hostname       string   `json:"hostname,omitempty"`
 	Version        string   `json:"version,omitempty"`
+	// Projects of the reserved addresses in NetBox (task 12.8.3); missing
+	// keeps them.
+	Projects *[]string `json:"projects,omitempty"`
 }
 
 // reservationID encodes subnet and identifier.
@@ -321,6 +324,9 @@ func (s *Service) handleCreateReservation(w http.ResponseWriter, r *http.Request
 		writeChangeError(w, r, err)
 		return
 	}
+	if !s.netbox.CheckAddressProjects(w, r, req.IPAddresses, req.Projects) {
+		return
+	}
 	tgt := target(q.name, subnetName(q.subnets, res.SubnetID))
 	details := reservationDetails(res)
 	b, err := s.writeTarget(r.Context(), q)
@@ -335,7 +341,9 @@ func (s *Service) handleCreateReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 	s.audit.RecordRequest(r, "dhcp.reservation.create", tgt, audit.ResultSuccess, details)
-	nb := s.netbox.SyncReservation(r.Context(), netbox.Base(r), tgt, nbReservation(q.name, res), nil)
+	nr := nbReservation(q.name, res)
+	nr.Projects = req.Projects
+	nb := s.netbox.SyncReservation(r.Context(), netbox.Base(r), tgt, nr, nil)
 	s.respondReservation(w, r, q, b, res, http.StatusCreated, nb)
 }
 
@@ -416,6 +424,9 @@ func (s *Service) handleUpdateReservation(w http.ResponseWriter, r *http.Request
 	// Keep what dcdash does not edit.
 	res.ClientClasses, res.Options = cur.ClientClasses, cur.Options
 	res.NextServer, res.ServerHostname, res.BootFileName = cur.NextServer, cur.ServerHostname, cur.BootFileName
+	if !s.netbox.CheckAddressProjects(w, r, req.IPAddresses, req.Projects) {
+		return
+	}
 	tgt := target(q.name, subnetName(q.subnets, res.SubnetID))
 	details := reservationDetails(res)
 	details["server"] = b.Name()
@@ -428,7 +439,9 @@ func (s *Service) handleUpdateReservation(w http.ResponseWriter, r *http.Request
 	}
 	s.audit.RecordRequest(r, "dhcp.reservation.update", tgt, audit.ResultSuccess, details)
 	prev := nbReservation(q.name, cur)
-	nb := s.netbox.SyncReservation(r.Context(), netbox.Base(r), tgt, nbReservation(q.name, res), &prev)
+	nr := nbReservation(q.name, res)
+	nr.Projects = req.Projects
+	nb := s.netbox.SyncReservation(r.Context(), netbox.Base(r), tgt, nr, &prev)
 	s.respondReservation(w, r, q, b, res, http.StatusOK, nb)
 }
 

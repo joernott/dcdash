@@ -47,3 +47,18 @@ func TestRecordsWrittenToNetBox(t *testing.T) {
 		t.Errorf("delete TXT: %d", code)
 	}
 }
+
+func TestRecordProjects(t *testing.T) {
+	e := newAPIEnv(t)
+	f, nb := nbfake.NewService(t, e.audit)
+	f.Seed(nbfake.Tags, nbfake.Object{"name": "Webshop", "slug": "project-webshop"})
+	e.svc.SetNetBox(nb)
+	path := base + "/cf/zones/example.org/records"
+	var rs dns.RecordSet
+	e.do(t, "viewer", "GET", path, nil, &rs)
+	ps := []string{"webshop"}
+	req := dns.RecordRequest{Name: "shop", Type: "A", TTL: 300, Content: "192.0.2.9", Version: rs.Version, Projects: &ps}
+	if code, c := e.do(t, "editor", "POST", path, req, nil); code != 403 {
+		t.Errorf("without project permission: %d %s", code, c)
+	}
+}

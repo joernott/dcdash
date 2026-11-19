@@ -7,6 +7,7 @@ package project
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -133,4 +134,20 @@ func loadFile(path string) (Project, error) {
 		return Project{}, errors.New("description: at most 200 characters")
 	}
 	return p, nil
+}
+
+// Guest is a Proxmox guest of a project.
+type Guest struct {
+	Cluster string `json:"cluster"`
+	Type    string `json:"type"`
+	VMID    int    `json:"vmid"`
+	Name    string `json:"name"`
+	Node    string `json:"node"`
+	Status  string `json:"status"`
+}
+
+// GuestSource lists the guests with a tag in all clusters (the Proxmox
+// module). Clusters that can't be read are returned as errors.
+type GuestSource interface {
+	ProjectGuests(ctx context.Context, tag string) ([]Guest, []error)
 }

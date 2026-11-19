@@ -35,9 +35,12 @@ const (
 	VLANGroups = "ipam/vlan-groups"
 	VRFs       = "ipam/vrfs"
 	Tags       = "extras/tags"
+	IPRanges   = "ipam/ip-ranges"
+	Devices    = "dcim/devices"
+	DevIfaces  = "dcim/interfaces"
 )
 
-var types = []string{Clusters, VMs, Interfaces, Disks, MACs, Sites, IPs, Prefixes, VLANs, VLANGroups, VRFs, Tags}
+var types = []string{Clusters, VMs, Interfaces, Disks, MACs, Sites, IPs, Prefixes, VLANs, VLANGroups, VRFs, Tags, IPRanges, Devices, DevIfaces}
 
 // Version is reported by /api/status/.
 const Version = "4.7.5"
@@ -230,6 +233,24 @@ func (s *Server) matches(typ string, o Object, q map[string][]string) bool {
 		if k == "limit" || k == "offset" || k == "brief" || k == "ordering" {
 			continue
 		}
+		if k == "tag" {
+			if !slices.ContainsFunc(toInts(o["tags"]), func(id int64) bool { return str(s.objects[Tags][id]["slug"]) == vals[0] }) {
+				return false
+			}
+			continue
+		}
+		if k == "q" {
+			found := false
+			for _, v := range o {
+				if sv, ok := v.(string); ok && strings.Contains(strings.ToLower(sv), strings.ToLower(vals[0])) {
+					found = true
+				}
+			}
+			if !found {
+				return false
+			}
+			continue
+		}
 		if k == "contains" && typ == Prefixes {
 			p, err1 := netip.ParsePrefix(str(o["prefix"]))
 			a, err2 := netip.ParseAddr(vals[0])
@@ -365,6 +386,7 @@ var foreignKeys = map[string]map[string]string{
 	IPs:        {"vrf": VRFs},
 	Prefixes:   {"vrf": VRFs, "vlan": VLANs},
 	VLANs:      {"group": VLANGroups, "site": Sites},
+	DevIfaces:  {"device": Devices},
 }
 
 var required = map[string][]string{
@@ -380,6 +402,9 @@ var required = map[string][]string{
 	Sites:      {"name", "slug"},
 	VRFs:       {"name"},
 	Tags:       {"name", "slug"},
+	IPRanges:   {"start_address", "end_address"},
+	Devices:    {"name"},
+	DevIfaces:  {"device", "name"},
 }
 
 var statusLabels = map[string]string{
@@ -802,6 +827,11 @@ func (s *Server) render(typ string, o Object) Object {
 	case VLANs:
 		out["group"] = ref(VLANGroups, o["group"], "name", "slug")
 		out["site"] = ref(Sites, o["site"], "name", "slug")
+	case DevIfaces:
+		out["device"] = ref(Devices, o["device"], "name")
+	}
+	if typ != Tags {
+		out["tags"] = tags
 	}
 	return out
 }

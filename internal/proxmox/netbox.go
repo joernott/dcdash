@@ -30,6 +30,11 @@ var ctDiskPattern = regexp.MustCompile(`^(rootfs|mp\d+)$`)
 // netboxGuest builds the NetBox state of a guest from its configuration.
 func netboxGuest(cluster, typ string, vmid int, cfg map[string]any) netbox.Guest {
 	g := netbox.Guest{Cluster: cluster, VMID: vmid, Name: configName(cfg, strconv.Itoa(vmid)), Container: typ == TypeLXC}
+	if t, ok := cfg["tags"]; ok && t != nil {
+		for _, p := range projectsOfTags(splitTags(fmt.Sprint(t))) {
+			g.Projects = append(g.Projects, ProjectPrefix+p)
+		}
+	}
 	num := func(k string, def float64) float64 {
 		if v, err := strconv.ParseFloat(fmt.Sprint(cfg[k]), 64); err == nil && cfg[k] != nil {
 			return v

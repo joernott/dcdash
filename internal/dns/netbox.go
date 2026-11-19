@@ -40,8 +40,9 @@ func addressRecord(rec Record) (netbox.DNSRecord, bool) {
 }
 
 // recordChanged writes a new or changed record to NetBox; prev is the record
-// before a change.
-func (s *Service) recordChanged(ctx context.Context, base audit.Entry, target string, rec Record, prev *Record) *netbox.Result {
+// before a change, projects replace the projects of the address (nil keeps
+// them).
+func (s *Service) recordChanged(ctx context.Context, base audit.Entry, target string, rec Record, prev *Record, projects *[]string) *netbox.Result {
 	var before *netbox.DNSRecord
 	if prev != nil {
 		if b, ok := addressRecord(*prev); ok {
@@ -49,6 +50,7 @@ func (s *Service) recordChanged(ctx context.Context, base audit.Entry, target st
 		}
 	}
 	now, ok := addressRecord(rec)
+	now.Projects = projects
 	switch {
 	case ok:
 		return s.netbox.SyncDNSName(ctx, base, target, now, before)

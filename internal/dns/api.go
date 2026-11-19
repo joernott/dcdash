@@ -278,6 +278,18 @@ type RecordRequest struct {
 	Proxied *bool  `json:"proxied,omitempty"`
 	Comment string `json:"comment,omitempty"`
 	Version string `json:"version"`
+	// Projects of the address of an A or AAAA record in NetBox (task
+	// 12.8.3); missing keeps them.
+	Projects *[]string `json:"projects,omitempty"`
+}
+
+// projectAddrs returns the address of an A or AAAA request for the project
+// check.
+func (q RecordRequest) projectAddrs() []string {
+	if q.Type == "A" || q.Type == "AAAA" {
+		return []string{q.Content}
+	}
+	return nil
 }
 
 func (q RecordRequest) record() Record {
@@ -308,6 +320,9 @@ func (s *Service) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
+	if !s.netbox.CheckAddressProjects(w, r, req.projectAddrs(), req.Projects) {
+		return
+	}
 	rec, err := p.CreateRecord(r.Context(), zone, req.record(), req.Version)
 	if err != nil {
 		d := recordDetails(req.record(), "")
@@ -318,7 +333,7 @@ func (s *Service) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	s.audit.RecordRequest(r, "dns.record.create", recordTarget(p, zone), audit.ResultSuccess, recordDetails(rec, rec.ID))
 	httpx.WriteJSON(w, http.StatusCreated, RecordResult{Record: rec,
-		NetBox: s.recordChanged(r.Context(), netbox.Base(r), recordTarget(p, zone), rec, nil)})
+		NetBox: s.recordChanged(r.Context(), netbox.Base(r), recordTarget(p, zone), rec, nil, req.Projects)})
 }
 
 func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
@@ -328,6 +343,9 @@ func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	var req RecordRequest
 	if !decode(w, r, &req) {
+		return
+	}
+	if !s.netbox.CheckAddressProjects(w, r, req.projectAddrs(), req.Projects) {
 		return
 	}
 	id := r.PathValue("id")
@@ -352,7 +370,7 @@ func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		before = &prev
 	}
 	httpx.WriteJSON(w, http.StatusOK, RecordResult{Record: rec,
-		NetBox: s.recordChanged(r.Context(), netbox.Base(r), recordTarget(p, zone), rec, before)})
+		NetBox: s.recordChanged(r.Context(), netbox.Base(r), recordTarget(p, zone), rec, before, req.Projects)})
 }
 
 func (s *Service) handleDeleteRecord(w http.ResponseWriter, r *http.Request) {

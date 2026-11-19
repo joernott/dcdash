@@ -254,6 +254,9 @@ type CreateRequest struct {
 	Start       bool     `json:"start,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+	// Projects are added as tags project-<name>; each needs write on the
+	// project.
+	Projects []string `json:"projects,omitempty"`
 }
 
 // requestError is a validation error of a create request.
@@ -832,6 +835,16 @@ func (s *Service) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := validateCommon(&req, p); err != nil {
 		writeRequestError(w, r, err)
+		return
+	}
+	// Projects are tags project-<name> (task 12.8.3); also project tags given
+	// as tags need the project permission.
+	for _, p := range req.Projects {
+		if !slices.Contains(req.Tags, ProjectPrefix+p) {
+			req.Tags = append(req.Tags, ProjectPrefix+p)
+		}
+	}
+	if !s.checkProjects(w, r, projectsOfTags(req.Tags)) {
 		return
 	}
 	ctx := r.Context()

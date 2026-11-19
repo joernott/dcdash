@@ -33,3 +33,31 @@ func TestReservationsWrittenToNetBox(t *testing.T) {
 		t.Errorf("audit: %+v", l)
 	}
 }
+
+func TestReservationProjects(t *testing.T) {
+	testUsers["projectops"] = []string{"dhcp:kea4-a:192.0.2.0/24:write", "project:webshop:objects:write"}
+	e := newAPIEnv(t, nil)
+	f, nb := nbfake.NewService(t, e.audit)
+	f.Seed(nbfake.Tags, nbfake.Object{"name": "Webshop", "slug": "project-webshop"})
+	e.svc.SetNetBox(nb)
+	path := base + "/kea4-a/reservations"
+	ps := []string{"webshop"}
+	req := dhcp.ReservationRequest{SubnetID: 1, IdentifierType: "hw-address", Identifier: "aa:bb:cc:00:00:05",
+		IPAddresses: []string{"192.0.2.15"}, Projects: &ps}
+	if code, c := e.do(t, "netops", "POST", path, req, nil); code != 403 {
+		t.Errorf("without project permission: %d %s", code, c)
+	}
+	unknown := []string{"other"}
+	req.Projects = &unknown
+	if code, c := e.do(t, "projectops", "POST", path, req, nil); code != 400 || c != "unknown_project" {
+		t.Errorf("unknown project: %d %s", code, c)
+	}
+	req.Projects = &ps
+	if code, c := e.do(t, "projectops", "POST", path, req, nil); code != 201 {
+		t.Fatalf("create: %d %s", code, c)
+	}
+	ip := f.Objects(nbfake.IPs)[0]
+	if tags := ip["tags"].([]int64); len(tags) != 2 {
+		t.Errorf("tags: %+v", ip)
+	}
+}

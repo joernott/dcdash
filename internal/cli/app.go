@@ -165,6 +165,11 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	projects := project.New(ctx, cfg.Projects, nb, auditLog, log)
 	a.runners = append(a.runners, projects.Run)
 	a.statusChecks = append(a.statusChecks, projects.StatusChecks()...)
+	a.routes = append(a.routes, projects.Register)
+	if pve != nil {
+		pve.SetProjects(projects)
+		projects.SetGuestSource(pve)
+	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
 	return a, nil

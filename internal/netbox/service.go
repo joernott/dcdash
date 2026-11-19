@@ -179,3 +179,14 @@ func (s *Service) check(ctx context.Context) (status.Detail, error) {
 	}
 	return status.Detail{Text: "NetBox " + v, Code: "netbox.connected", Params: map[string]string{"version": v}}, nil
 }
+
+// ProxmoxCluster returns the Proxmox cluster that is mapped to a NetBox
+// cluster, or "".
+func (s *Service) ProxmoxCluster(netboxCluster string) string {
+	for k, v := range s.cfg.Clusters {
+		if v == netboxCluster {
+			return k
+		}
+	}
+	return ""
+}

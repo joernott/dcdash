@@ -47,6 +47,8 @@ type Service struct {
 	dns  *dns.Service
 	// netbox receives the changes of guests; nil if not configured.
 	netbox *netbox.Service
+	// projects knows the projects; nil if there are none.
+	projects Projects
 }
 
 // NewService creates the API for the given clusters. sessions is used to end
@@ -78,6 +80,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+base, s.handleClusters)
 	mux.HandleFunc("GET "+base+"/{cluster}/resources", s.handleResources)
 	mux.HandleFunc("GET "+base+"/{cluster}/guests/{type}/{vmid}", s.handleGuest)
+	mux.HandleFunc("PUT "+base+"/{cluster}/guests/{type}/{vmid}/projects", s.handleProjects)
 	mux.HandleFunc("POST "+base+"/{cluster}/guests/{type}/{vmid}/actions/{action}", s.handleAction)
 	mux.HandleFunc("GET "+base+"/{cluster}/tasks/{upid}", s.handleTask)
 	mux.HandleFunc("POST "+base+"/{cluster}/guests/{type}/{vmid}/console", s.handleGuestConsole)

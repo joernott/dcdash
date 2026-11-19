@@ -35,6 +35,9 @@ type Service struct {
 	synced   string
 	tagErr   string
 	orphaned []string
+
+	// guests lists the guests of a project; nil without Proxmox.
+	guests GuestSource
 }
 
 // AuditTags is the audit action of the tag synchronization.

@@ -57,6 +57,8 @@ type Guest struct {
 	MemoryMiB int64
 	Disks     []GuestDisk
 	Networks  []GuestNetwork
+	// Projects are the project tags of the guest (project-<name>).
+	Projects []string
 }
 
 // GuestDisk is a disk of a guest.
@@ -188,11 +190,19 @@ func (s *Service) syncGuest(ctx context.Context, msg string, g Guest, changes *[
 	if err != nil {
 		return err
 	}
+	ids, err := s.tagIDs(ctx)
+	if err != nil {
+		return err
+	}
 	vm, err := s.findVM(ctx, clusterID, g.VMID, g.OldName, g.Name)
 	switch {
 	case errors.Is(err, ErrNotFound):
+		tags, _ := projectTagBody([]Tag{{ID: tag, Slug: s.cfg.Tag}}, g.Projects, ids)
+		if tags == nil {
+			tags = []any{tag}
+		}
 		body := map[string]any{"name": g.Name, "cluster": clusterID, "status": "active", "memory": g.MemoryMiB,
-			"tags": []any{tag}, "changelog_message": msg}
+			"tags": tags, "changelog_message": msg}
 		if g.VCPUs > 0 {
 			body["vcpus"] = g.VCPUs
 		}
@@ -219,6 +229,9 @@ func (s *Service) syncGuest(ctx context.Context, msg string, g Guest, changes *[
 		if f := s.cfg.VMIDField; f != "" && fmt.Sprint(vm.CustomFields[f]) != strconv.Itoa(g.VMID) {
 			body["custom_fields"] = map[string]any{f: g.VMID}
 		}
+		if tags, _ := projectTagBody(vm.Tags, g.Projects, ids); tags != nil {
+			body["tags"] = tags
+		}
 		if len(body) > 0 {
 			body["changelog_message"] = msg
 			if err := s.client.Update(ctx, pathVMs, vm.ID, body, &vm); err != nil {
@@ -230,7 +243,30 @@ func (s *Service) syncGuest(ctx context.Context, msg string, g Guest, changes *[
 	if err := s.syncDisks(ctx, msg, vm.ID, g.Disks, changes); err != nil {
 		return err
 	}
-	return s.syncInterfaces(ctx, msg, vm, g.Networks, tag, changes)
+	if err := s.syncInterfaces(ctx, msg, vm, g.Networks, tag, changes); err != nil {
+		return err
+	}
+	return s.tagAddresses(ctx, msg, vm.ID, g.Projects, ids, changes)
+}
+
+// tagAddresses gives the addresses on the interfaces of a VM the projects of
+// the guest.
+func (s *Service) tagAddresses(ctx context.Context, msg string, vmID int64, projects []string, ids map[string]int64, changes *[]string) error {
+	ips, err := s.client.IPAddresses(ctx, url.Values{"virtual_machine_id": {strconv.FormatInt(vmID, 10)}})
+	if err != nil {
+		return err
+	}
+	for _, ip := range ips {
+		tags, _ := projectTagBody(ip.Tags, projects, ids)
+		if tags == nil {
+			continue
+		}
+		if err := s.client.Update(ctx, pathIPAddresses, ip.ID, map[string]any{"tags": tags, "changelog_message": msg}, nil); err != nil {
+			return fmt.Errorf("update the projects of %s: %w", ip.Address, err)
+		}
+		*changes = append(*changes, "address "+ip.Address+" projects")
+	}
+	return nil
 }
 
 func (s *Service) syncDisks(ctx context.Context, msg string, vmID int64, disks []GuestDisk, changes *[]string) error {

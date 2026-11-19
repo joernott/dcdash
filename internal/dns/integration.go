@@ -68,7 +68,7 @@ func (r *PlannedRecord) Create(ctx context.Context, entry audit.Entry) error {
 	if err == nil {
 		base := entry
 		base.Time, base.Action, base.Details = time.Time{}, "", nil
-		r.s.recordChanged(ctx, base, r.Target, rec, nil)
+		r.s.recordChanged(ctx, base, r.Target, rec, nil, nil)
 	}
 	return err
 }

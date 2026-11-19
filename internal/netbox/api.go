@@ -38,6 +38,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/netbox/compare/guests/{cluster}/{type}/{vmid}", s.handleApplyGuest)
 	mux.HandleFunc("DELETE /api/v1/netbox/compare/guests/{cluster}/vms/{id}", s.handleDeleteVM)
 	mux.HandleFunc("GET /api/v1/netbox/compare/addresses", s.handleCompareAddresses)
+	mux.HandleFunc("GET /api/v1/netbox/addresses/{address}/projects", s.handleAddressProjects)
 }
 
 // Info describes the NetBox connection in GET /api/v1/netbox.
@@ -259,4 +260,32 @@ func (s *Service) handleCompareAddresses(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// AddressProjects is the response of GET /api/v1/netbox/addresses/{address}/projects.
+type AddressProjects struct {
+	Projects []string `json:"projects"`
+}
+
+// handleAddressProjects returns the projects of an address in NetBox, for
+// the DHCP and DNS dialogs. Any logged-in user may read them.
+func (s *Service) handleAddressProjects(w http.ResponseWriter, r *http.Request) {
+	if auth.SubjectFromContext(r.Context()) == nil {
+		httpx.WriteError(w, http.StatusUnauthorized, "not_authenticated", "not logged in")
+		return
+	}
+	a, err := netip.ParseAddr(r.PathValue("address"))
+	if err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid_request", "invalid address")
+		return
+	}
+	ps, err := s.addressProjects(r.Context(), []string{a.String()})
+	if err != nil {
+		s.writeError(w, r, err)
+		return
+	}
+	if ps == nil {
+		ps = []string{}
+	}
+	httpx.WriteJSON(w, http.StatusOK, AddressProjects{Projects: ps})
 }

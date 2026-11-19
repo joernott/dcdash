@@ -27,6 +27,8 @@ type Reservation struct {
 	// MAC is the hardware address; empty for reservations by other
 	// identifiers.
 	MAC string
+	// Projects (names) replace the projects of the addresses; nil keeps them.
+	Projects *[]string
 }
 
 func (r Reservation) description() string { return "DHCP reservation (" + r.Server + ")" }
@@ -160,7 +162,7 @@ func (s *Service) SyncReservation(ctx context.Context, base audit.Entry, target 
 			}
 			changes = append(changes, "address "+ip.Address+" updated")
 		}
-		return nil
+		return s.setAddressProjects(ctx, msg, res.Addresses, res.Projects, &changes)
 	}()
 	return s.finish(ctx, base, target, map[string]any{"addresses": res.Addresses, "changes": nonNil(changes)}, err)
 }
@@ -213,6 +215,8 @@ type DNSRecord struct {
 	// Name is the fully qualified name, with or without the final dot.
 	Name    string
 	Address string
+	// Projects (names) replace the projects of the address; nil keeps them.
+	Projects *[]string
 }
 
 func (r DNSRecord) name() string { return strings.TrimSuffix(strings.ToLower(r.Name), ".") }
@@ -239,14 +243,16 @@ func (s *Service) SyncDNSName(ctx context.Context, base audit.Entry, target stri
 			return fmt.Errorf("address %q: %w", rec.Address, err)
 		}
 		ip, created, err := s.ensureAddress(ctx, msg, a, map[string]any{"dns_name": rec.name()}, &changes)
-		if err != nil || created || ip.DNSName == rec.name() {
+		if err != nil {
 			return err
 		}
-		if err := s.client.Update(ctx, pathIPAddresses, ip.ID, map[string]any{"dns_name": rec.name(), "changelog_message": msg}, nil); err != nil {
-			return fmt.Errorf("update the address %s: %w", ip.Address, err)
+		if !created && ip.DNSName != rec.name() {
+			if err := s.client.Update(ctx, pathIPAddresses, ip.ID, map[string]any{"dns_name": rec.name(), "changelog_message": msg}, nil); err != nil {
+				return fmt.Errorf("update the address %s: %w", ip.Address, err)
+			}
+			changes = append(changes, "address "+ip.Address+" DNS name "+rec.name())
 		}
-		changes = append(changes, "address "+ip.Address+" DNS name "+rec.name())
-		return nil
+		return s.setAddressProjects(ctx, msg, []string{rec.Address}, rec.Projects, &changes)
 	}()
 	return s.finish(ctx, base, target, map[string]any{"name": rec.name(), "address": rec.Address, "changes": nonNil(changes)}, err)
 }
@@ -280,5 +286,26 @@ func (s *Service) clearDNSName(ctx context.Context, msg string, rec DNSRecord, c
 		return fmt.Errorf("update the address %s: %w", ip.Address, err)
 	}
 	*changes = append(*changes, "address "+ip.Address+" DNS name cleared")
+	return nil
+}
+
+// setAddressProjects sets the projects of addresses; nil keeps them.
+func (s *Service) setAddressProjects(ctx context.Context, msg string, addrs []string, projects *[]string, changes *[]string) error {
+	if projects == nil {
+		return nil
+	}
+	for _, a := range addrs {
+		addr, err := netip.ParseAddr(a)
+		if err != nil {
+			continue
+		}
+		ip, err := s.findAddress(ctx, addr)
+		if err != nil {
+			return err
+		}
+		if err := s.tagProjects(ctx, msg, ip, *projects, changes); err != nil {
+			return err
+		}
+	}
 	return nil
 }
