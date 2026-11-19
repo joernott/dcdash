@@ -371,6 +371,7 @@ Aruba CX switches, reached over their REST API. Default: no switches. See
 | `switches[].username` | string | none | Switch account. The role `administrators` allows changes, `operators` only reading. Required. |
 | `switches[].password` | secret | none | Password of the account. Required. |
 | `switches[].api_version` | string | empty (newest) | REST API version, for example `v10.08`. Empty uses the newest version the switch offers. |
+| `switches[].netbox_device` | string | empty | Name of the switch's device in NetBox. With it and `netbox`, port and VLAN changes are written to NetBox and ports show their projects. See [switches.md](switches.md#netbox). |
 | `switches[].timeout` | duration | `20s` | Timeout of a single request. `0` uses the default. Must not be negative. |
 
 ## projects

@@ -64,11 +64,20 @@ versions; dcdash uses `latest` (`v10.08` on the test switch).
 - **Uplinks** are told from access ports by LLDP neighbors that are bridges and by trunk ports;
   the MAC search lists access ports first.
 - **Changes** (VLANs, ports) are made by read-modify-write of the writable object (no `PATCH`
-  on 10.08), in the running configuration and saved to the startup
+  on 10.08), serialized per switch, in the running configuration and saved to the startup
   configuration right after; a failed save is reported as an error.
-- **Permissions** `switch:<name>:port/<interface>:<action>`, `switch:<name>:vlan/<id>:<action>`.
-- **NetBox write-back** for VLANs and ports (task 13.7), projects for switch ports on the switch
-  pages (see ADR 0007).
+- **Permissions** `switch:<name>:port/<interface>:<action>` (`operate` enables and disables a
+  port, `write` changes it) and `switch:<name>:vlan/<id>:write`. Creating a VLAN is offered
+  if the user has `write` on some `vlan/...` resource (`rbac.Set.AllowsPrefix`).
+- **Safety:** dcdash refuses to delete VLAN 1 and VLANs that ports use; the UI asks for a
+  confirmation before an uplink is changed. Saving takes about 10 seconds on a 6000.
+- **MAC search** reads the MAC address tables of all switches in parallel; hits on access
+  ports come first, ports in a LAG count as uplinks if the LAG is one.
+- **NetBox write-back** (task 13.7) only for switches with `netbox_device`: ports update the
+  existing interfaces of that device (dcdash never creates or deletes interfaces), VLANs are
+  created and renamed in the configured VLAN group or site and deleted only if they have the
+  dcdash tag. Projects of switch ports are the project tags of their NetBox interfaces and
+  are changed through the project API (ADR 0007).
 - **Tests** with a fake AOS-CX API that returns the data shapes above; a manual test against
   the real switch is documented.
 

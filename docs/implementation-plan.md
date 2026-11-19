@@ -427,17 +427,17 @@ These apply to every task:
 - [x] **13.1** API research: AOS-CX REST API (sessions, VLANs, interfaces, MAC address
   table, LLDP, saving the configuration); results in an ADR, amend this sprint if needed
 - [x] **13.2** Configuration and client for several switches, inventory and health status
-- [ ] **13.3** Port overview across all switches: status, speed, VLANs, PoE, LLDP neighbor
-- [ ] **13.4** Find devices by MAC address across all switches, telling access ports from
+- [x] **13.3** Port overview across all switches: status, speed, VLANs, PoE, LLDP neighbor
+- [x] **13.4** Find devices by MAC address across all switches, telling access ports from
   uplinks
-- [ ] **13.5** Manage VLANs: create, rename and delete, on one or several switches
-- [ ] **13.6** Configure ports: enable and disable, description, access VLAN, trunk VLANs;
+- [x] **13.5** Manage VLANs: create, rename and delete, on one or several switches
+- [x] **13.6** Configure ports: enable and disable, description, access VLAN, trunk VLANs;
   the change is saved to the startup configuration
-- [ ] **13.7** NetBox write-back for switch VLANs and ports (see 12.3); projects for switch ports on
+- [x] **13.7** NetBox write-back for switch VLANs and ports (see 12.3); projects for switch ports on
   the switch pages (see 12.8)
-- [ ] **13.8** Permissions and audit actions, navigation entry
-- [ ] **13.9** Tests: fake AOS-CX server, manual test against a real switch documented
-- [ ] **13.10** Documentation
+- [x] **13.8** Permissions and audit actions, navigation entry
+- [x] **13.9** Tests: fake AOS-CX server, manual test against a real switch documented
+- [x] **13.10** Documentation
 - [x] **13.11** NetBox test with a copy of the production database (see 12.3): keep interfaces
   maintained by hand, matched by name or MAC address, and delete only interfaces dcdash
   created

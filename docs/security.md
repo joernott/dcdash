@@ -415,9 +415,14 @@ and `vlan/<id>`:
 
 | Permission | Allows |
 |---|---|
-| `switch:<name>:*:read` | Seeing the switch, its inventory and health |
+| `switch:<name>:*:read` | Seeing the switch, its inventory, health, ports, VLANs and MAC addresses |
+| `switch:<name>:port/<port>:read` | Seeing a port and the MAC addresses learned on it |
+| `switch:<name>:port/<port>:operate` | Enabling and disabling the port |
+| `switch:<name>:port/<port>:write` | Changing the description and VLANs of the port |
+| `switch:<name>:vlan/<id>:write` | Creating, renaming and deleting the VLAN |
 
-Permissions for ports and VLANs follow with the port and VLAN pages (Sprint 13). The switch
+Changing an uplink can cut off a switch; give `write` on uplink ports only to network
+administrators. dcdash refuses to delete VLANs that ports use and VLAN 1. The switch
 account (`switches[].username`) limits what dcdash can do at all: `operators` can only read.
 See [switches.md](switches.md).
 
@@ -485,6 +490,8 @@ entry can't be stored, it is written to the application log as an error instead.
 | `netbox.sync` | A change was written back to NetBox; `target` is the target of the change (`<cluster>/<type>/<vmid>`, `<server>/<subnet>`, `<provider>/<zone>`), `result` is the outcome of the write-back, `details` contain the changed NetBox objects and the error |
 | `netbox.apply` | NetBox was updated from the comparison view; `target` is `<cluster>/<type>/<vmid>`, or `<cluster>/netbox/<id>` for a deleted NetBox VM; `details` as for `netbox.sync` |
 | `project.assign`, `project.unassign` | A guest or a NetBox object was added to or removed from a project; `target` is the project, `details` name the object (guest or NetBox type and ID) and the error |
+| `switch.port.update` | A switch port was changed; `target` is `<switch>/<port>`, `details` contain the state before and after, the change, whether the configuration was saved and the NetBox outcome |
+| `switch.vlan.create`, `switch.vlan.update`, `switch.vlan.delete` | A VLAN change on a switch; `target` is `<switch>/vlan/<id>`, `details` contain the ID, the name (and the previous name), whether the configuration was saved and the NetBox outcome |
 | `project.tags` | dcdash created or changed project tags in NetBox; actor `dcdash`, `details` list the created, changed and orphaned tags |
 
 ## Security review

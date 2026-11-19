@@ -22,6 +22,8 @@ dcdash works with NetBox 4.2 and later (MAC addresses as objects); it is tested 
      tags (`extras`).
    - **Add, change, delete:** virtual machines, VM interfaces, virtual disks; IP addresses; MAC
      addresses. Not needed with `write_back: false`.
+   - **For switches** (`switches[].netbox_device`): view devices; change interfaces (`dcim`);
+     add, change and delete VLANs (`ipam`).
 2. **A tag** for the objects dcdash creates, `dcdash` by default (`netbox.tag`). dcdash
    doesn't create it.
 3. **A cluster for each Proxmox cluster** whose guests are written to NetBox, mapped in
@@ -60,6 +62,7 @@ clusters exist.
 | A guest is deleted | The virtual machine is deleted if it has the tag, otherwise set to `decommissioning` (`netbox.on_delete`). NetBox deletes its interfaces, disks and addresses with it |
 | A DHCP reservation is added or changed | An IP address with the description `DHCP reservation (<server>)`, assigned to the VM interface with the reservation's MAC address if NetBox has one |
 | A DHCP reservation is deleted | Its address is deleted if dcdash created it (tag, not assigned, no DNS name); otherwise only the description is cleared |
+| A switch port or VLAN is changed | The device interface or the VLAN, see [switches.md](switches.md#netbox) |
 | An `A` or `AAAA` record is added or changed | The DNS name of the IP address; the address is created if needed |
 | An `A` or `AAAA` record is deleted | The DNS name is cleared; the address stays |
 

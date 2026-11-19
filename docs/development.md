@@ -218,8 +218,17 @@ maintained by hand and showed no differences afterwards.
 
 `TestArubaCX` in `test/integration/aruba_test.go` reads from a real Aruba CX switch when
 `DCDASH_IT_ARUBA_URL`, `DCDASH_IT_ARUBA_FINGERPRINT`, `DCDASH_IT_ARUBA_USER` and
-`DCDASH_IT_ARUBA_PASSWORD` are set. It changes nothing. Last run: 2026-11-19, Aruba 6000,
-firmware PL.10.08.1010: inventory read, four parallel requests share one session, logout.
+`DCDASH_IT_ARUBA_PASSWORD` are set. It reads the inventory (four parallel requests share one
+session), the ports with LLDP neighbors, the VLANs and the MAC address table. With
+`DCDASH_IT_ARUBA_WRITE_PORT` (an unused port without link) it also creates a test VLAN
+(`DCDASH_IT_ARUBA_WRITE_VLAN`, default 4000, at least 4000), renames it, makes the port an
+access port in it, then a disabled trunk, and restores the port, deletes the VLAN and saves
+the configuration. It refuses port 1/1/1, the uplink of the test switch.
+
+Last run: 2026-11-19, Aruba 6000, firmware PL.10.08.1010, port 1/1/5, VLAN 4000: passed.
+The dcdash API was also checked by hand against that switch: port 1/1/5 changed and
+restored, VLAN 4001 created and deleted (each saved, about 10 seconds), the uplink and
+VLAN 1404 refused for lack of permission, the MAC search found an address behind the uplink.
 
 ## Configuration
 

@@ -134,12 +134,29 @@ VLANs, prefixes, IP ranges and switch ports. Projects are defined by the adminis
 - **Assigning:** choose projects in the last step of the creation wizard, with "Change
   projects" on the page of a guest, or in the dialogs of DHCP reservations and DNS records.
   You can only assign projects you have permission for.
+  Switch ports get projects on the Switches page.
 - **Projects page:** "Projects" in the menu lists your projects. The page of a project shows
   its guests and its objects in NetBox. "Add NetBox objects" searches NetBox for VLANs,
   prefixes, addresses, ranges and switch ports and adds them; "Remove" takes them out of the
   project again.
 
 See [projects.md](projects.md).
+
+## Switches
+
+The Switches page shows one switch at a time with its model, firmware and uptime:
+
+- **Ports:** state, speed, VLANs, LLDP neighbor and projects of each port; the filter
+  searches names, descriptions, VLANs and neighbors. "Change" opens a dialog to enable or
+  disable the port and change its description and VLANs (access or trunk). Uplinks to other
+  switches need an extra confirmation.
+- **VLANs:** the VLANs with the ports that use them. Create a VLAN on one or several switches,
+  rename it, or delete it if no port uses it.
+- **Find a device:** enter (part of) a MAC address. "Connected here" marks the port the
+  device is plugged into; "Behind another switch" marks uplinks.
+
+Changes take effect immediately and are saved to the startup configuration, which takes a
+few seconds. See [switches.md](switches.md).
 
 ## Administration
 
