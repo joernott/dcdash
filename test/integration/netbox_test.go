@@ -204,4 +204,33 @@ func TestNetBox(t *testing.T) {
 	if res := svc.DeleteReservation(ctx, ab, "kea4/198.18.0.0/24", r); res.Status != netbox.StatusOK {
 		t.Fatalf("delete reservation: %+v", res)
 	}
+
+	// Projects (task 12.8): the tag is created, a prefix found by search, tagged and listed.
+	ptag := "project-it-" + suffix
+	sync, err := svc.SyncProjectTags(ctx, "project-it-"+suffix, []netbox.ProjectTag{{Slug: ptag, Name: "IT " + suffix, Color: "2196f3"}})
+	if err != nil || len(sync.Created) != 1 {
+		t.Fatalf("project tags: %+v %v", sync, err)
+	}
+	t.Cleanup(func() {
+		tags, _ := c.Tags(ctx)
+		for _, tg := range tags {
+			if tg.Slug == ptag {
+				_ = c.Delete(ctx, "/extras/tags/", tg.ID, "")
+			}
+		}
+	})
+	found, err := svc.SearchObjects(ctx, "prefix", "198.18.0")
+	if err != nil || len(found) == 0 || found[0].Display != "198.18.0.0/24" {
+		t.Fatalf("search: %+v %v", found, err)
+	}
+	if _, err := svc.SetObjectProject(ctx, ab, "prefix", found[0].ID, ptag, true); err != nil {
+		t.Fatalf("tag prefix: %v", err)
+	}
+	objs, err := svc.ProjectObjects(ctx, ptag)
+	if err != nil || len(objs["prefix"]) != 1 || objs["prefix"][0].URL == "" {
+		t.Fatalf("project objects: %+v %v", objs, err)
+	}
+	if _, err := svc.SetObjectProject(ctx, ab, "prefix", found[0].ID, ptag, false); err != nil {
+		t.Fatalf("untag prefix: %v", err)
+	}
 }

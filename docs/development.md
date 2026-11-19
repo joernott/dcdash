@@ -198,6 +198,7 @@ end. Last run: 2026-11-19, NetBox 4.7.5.
 | DHCP reservation assigned to the interface by MAC address; DNS name set and cleared | passed |
 | Comparison finds a changed value | passed |
 | Guest deleted: VM with interfaces and addresses removed | passed |
+| Projects: tag created, prefix found by search, tagged, listed by tag and untagged | passed |
 
 ## Configuration
 
