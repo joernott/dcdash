@@ -238,6 +238,38 @@ dhcp:
 #    # Servers of a Kea HA pair share a group: leases are deleted on both.
 #    ha_group: site1
 
+# NetBox as a common data source (see docs/netbox.md). Disabled without a URL.
+# Permissions use the name as instance: "netbox:netbox:ipam:read" (VLAN names
+# and free addresses in the creation wizard), "netbox:netbox:sync:read" and
+# "netbox:netbox:sync:write" (comparison view).
+netbox:
+  url: ""
+#  name: netbox
+#  url: https://netbox.example.com
+#  tls:
+#    ca_file: /etc/dcdash/netbox-ca.pem # or fingerprint
+#  # A v2 token (nbt_<key>.<token>) or a v1 token.
+#  token: "file:/etc/dcdash/netbox.token"
+#  timeout: 15s
+#  # false: only read from NetBox, never write.
+#  write_back: true
+#  # Tag (slug) on the objects dcdash creates; create it in NetBox first.
+#  tag: dcdash
+#  # Deleting a guest: "tagged" deletes VMs with the tag and sets the others to
+#  # decommissioning, "delete" always deletes, "decommission" never deletes.
+#  on_delete: tagged
+#  # Integer custom field of virtual machines with the Proxmox VMID (optional,
+#  # recommended). Without it, VMs are found by name.
+#  vmid_field: proxmox_vmid
+#  # Proxmox cluster (proxmox.clusters[].name) -> NetBox cluster name.
+#  clusters:
+#    pve-lab: "Lab"
+#  # VLAN lookups by VLAN ID in this VLAN group or site (slugs, optional).
+#  vlan_group: ""
+#  site: ""
+#  # VRF of the IP addresses; empty is the global table.
+#  vrf: ""
+
 # Prometheus metrics at /metrics (see docs/monitoring.md).
 metrics:
   enabled: false

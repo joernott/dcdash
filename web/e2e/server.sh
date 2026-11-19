@@ -39,6 +39,11 @@ KEA6_LISTEN="${DCDASH_E2E_KEA6_LISTEN:-127.0.0.1:18011}"
 go build -o "$DIR/keafake" ./test/keafake
 "$DIR/keafake" -listen4 "$KEA4_LISTEN" -listen6 "$KEA6_LISTEN" 2>"$DIR/keafake.log" &
 
+# Fake NetBox (internal/netbox/nbfake), plain HTTP on loopback.
+NB_LISTEN="${DCDASH_E2E_NB_LISTEN:-127.0.0.1:18020}"
+go build -o "$DIR/nbfake" ./test/nbfake
+"$DIR/nbfake" -listen "$NB_LISTEN" 2>"$DIR/nbfake.log" &
+
 # With DCDASH_E2E_FULL=1 (scripts/e2e-full.sh), dcdash also uses the real services of
 # the docker compose environment: the bind9 primary (records, rndc, SFTP, catalog zone),
 # Kea DHCPv4/DHCPv6 with the PostgreSQL host database, and the Kea HA pair.
@@ -112,6 +117,10 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["dhcp:kea4:192.0.2.0/24:write", "dhcp:kea4:*:read", "dhcp:kea6:*:read"]
+  - name: netbox-user
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["netbox:netbox:*:write"]
 $FULL_ROLES
 proxmox:
   clusters:
@@ -140,6 +149,11 @@ dhcp:
     - {name: kea4, family: v4, url: "http://$KEA4_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
     - {name: kea6, family: v6, url: "http://$KEA6_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
 $FULL_DHCP
+netbox:
+  url: "http://$NB_LISTEN"
+  insecure: true
+  token: "nbt_e2e.netbox-e2e-test-only"
+  clusters: {lab: "Lab"}
 metrics: {enabled: true, token: "metrics-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"

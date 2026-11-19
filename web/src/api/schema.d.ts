@@ -1062,6 +1062,51 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/netbox': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * NetBox connection
+     * @description Returns the name of the NetBox instance (the permission segment of
+     *     `netbox:<name>:<resource>:<action>`), whether changes are written back, and the Proxmox
+     *     clusters that are mapped to NetBox clusters. Any logged-in user may read it. 404 if
+     *     NetBox isn't configured.
+     */
+    get: operations['getNetBox']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/vlans/{vid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * A VLAN with its prefixes and free addresses
+     * @description Looks up the VLAN with that VLAN ID in NetBox (in the configured VLAN group or site) and
+     *     returns its prefixes in the configured VRF, each with up to 8 free addresses. Used by
+     *     the creation wizard. Needs `netbox:<name>:ipam:read`.
+     */
+    get: operations['getNetBoxVLAN']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1224,7 +1269,7 @@ export interface components {
        * @example certificate
        */
       name: string
-      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp). */
+      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox). */
       kind: string
       /** @enum {string} */
       status: 'ok' | 'error'
@@ -1237,7 +1282,7 @@ export interface components {
        *     `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
        *     `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
        *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
-       *     `count`), `directory.degraded` (`server`, `down`). Times are RFC 3339.
+       *     `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`). Times are RFC 3339.
        * @example certificate.valid
        */
       detailCode?: string
@@ -1247,6 +1292,32 @@ export interface components {
       }
       /** Format: int64 */
       latencyMs: number
+    }
+    NetBoxInfo: {
+      /** @example netbox */
+      name: string
+      /** @description Changes made in dcdash are written to NetBox. */
+      writeBack: boolean
+      /** @description Proxmox clusters that are mapped to NetBox clusters. */
+      clusters: string[]
+    }
+    NetBoxVLAN: {
+      /** @example 100 */
+      vid: number
+      /** @example servers */
+      name: string
+      description: string
+      /** @description Prefixes of the VLAN, IPv4 first. */
+      prefixes: components['schemas']['NetBoxPrefix'][]
+    }
+    NetBoxPrefix: {
+      /** @example 192.0.2.0/24 */
+      prefix: string
+      /** @enum {integer} */
+      family: 4 | 6
+      description: string
+      /** @description Up to 8 free addresses with prefix length; empty if the prefix is full. */
+      free: string[]
     }
     HealthStatus: {
       /** @enum {string} */
@@ -4069,6 +4140,57 @@ export interface operations {
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
       409: components['responses']['DHCPConflict']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getNetBox: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The connection. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxInfo']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      default: components['responses']['Error']
+    }
+  }
+  getNetBoxVLAN: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        vid: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The VLAN. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxVLAN']
+        }
+      }
+      400: components['responses']['Error']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }

@@ -39,6 +39,7 @@ type Config struct {
 	Proxmox  Proxmox  `yaml:"proxmox"`
 	DNS      DNS      `yaml:"dns"`
 	DHCP     DHCP     `yaml:"dhcp"`
+	NetBox   NetBox   `yaml:"netbox"`
 	Metrics  Metrics  `yaml:"metrics"`
 	Security Security `yaml:"security"`
 	Log      Log      `yaml:"log"`
@@ -100,6 +101,7 @@ func Default() Config {
 		},
 		Auth:    Auth{LDAP: defaultLDAP(), Session: defaultSession(), Lockout: defaultLockout(), TOTP: TOTP{Issuer: "dcdash"}},
 		Audit:   defaultAudit(),
+		NetBox:  defaultNetBox(),
 		Log:     Log{Level: "info", Format: "json"},
 		DataDir: "/var/lib/dcdash",
 	}
@@ -225,6 +227,7 @@ func (c *Config) Validate() error {
 	c.Proxmox.validate(add)
 	c.DNS.validate(add)
 	c.DHCP.validate(add)
+	c.NetBox.validate(c.Proxmox, add)
 	c.Metrics.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")

@@ -390,12 +390,12 @@ These apply to every task:
   addresses, prefixes, VLANs, MAC addresses), token permissions, and the mapping between
   dcdash objects and NetBox objects; results in an ADR, amend this sprint if needed
   ([ADR 0006](adr/0006-netbox.md))
-- [ ] **12.2** Configuration and client; NetBox as a common data source, for example VLAN
+- [x] **12.2** Configuration and client; NetBox as a common data source, for example VLAN
   names, prefixes and free IP addresses in the creation wizard
-  - [ ] **12.2.1** `netbox` configuration section, client (tokens v1 and v2, TLS, errors),
+  - [x] **12.2.1** `netbox` configuration section, client (tokens v1 and v2, TLS, errors),
     status on the overview page
-  - [ ] **12.2.2** Fake NetBox (`test/nbfake`) with the calls of ADR 0006
-  - [ ] **12.2.3** VLAN names and free addresses in the creation wizard
+  - [x] **12.2.2** Fake NetBox (`test/nbfake`) with the calls of ADR 0006
+  - [x] **12.2.3** VLAN names and free addresses in the creation wizard
 - [ ] **12.3** Write-back: changes in dcdash update NetBox (creating, changing and deleting
   guests, disks and network devices; DHCP reservations; DNS names). A failed NetBox update
   does not undo the change itself, but it is shown to the user and written to the audit log

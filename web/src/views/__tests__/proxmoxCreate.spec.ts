@@ -471,4 +471,96 @@ describe('CreateGuestView with DHCP and DNS', () => {
     expect(api.calls.some((c) => c.route.startsWith('GET /api/v1/dhcp'))).toBe(false)
     w.unmount()
   })
+
+  it('shows VLAN names and free addresses from NetBox', async () => {
+    vi.useFakeTimers()
+    const router = setup()
+    api.on('GET /api/v1/netbox', () => [
+      200,
+      { name: 'netbox', writeBack: true, clusters: ['lab'] },
+    ])
+    api.on('GET /api/v1/netbox/vlans/{vid}', (_, params) =>
+      Number(params?.path?.vid) === 100
+        ? [
+            200,
+            {
+              vid: 100,
+              name: 'servers',
+              description: '',
+              prefixes: [
+                {
+                  prefix: '192.0.2.0/24',
+                  family: 4,
+                  description: '',
+                  free: ['192.0.2.3/24', '192.0.2.4/24'],
+                },
+                {
+                  prefix: '2001:db8:1::/64',
+                  family: 6,
+                  description: '',
+                  free: ['2001:db8:1::1/64'],
+                },
+              ],
+            },
+          ]
+        : [404, apiError('not_found')],
+    )
+    await router.push('/proxmox/lab/new')
+    const w = mountAs(router, ['proxmox:lab:qemu/5*:admin', 'netbox:netbox:ipam:read'])
+    await flushPromises()
+    await w
+      .findAll('input')
+      .find((i) => i.attributes('required') !== undefined)!
+      .setValue('app1')
+    await next(w)
+    await next(w)
+    const field = (label: string, i = 0) =>
+      w
+        .get(`[data-testid="network-${i}"]`)
+        .findAll('input, select')
+        .find((x) => x.element.closest('div')?.textContent?.trim().startsWith(label))!
+    await field('VLAN').setValue('100')
+    vi.advanceTimersByTime(500)
+    await flushPromises()
+    expect(w.text()).toContain('NetBox: servers')
+    await field('IPv4').setValue('static')
+    const use4 = () =>
+      w.findAll('button').find((b) => b.text().startsWith('Use the free address 192.0.2'))
+    expect(use4()!.text()).toBe('Use the free address 192.0.2.3/24 from NetBox')
+    await use4()!.trigger('click')
+    expect((w.find('input[placeholder="192.0.2.10/24"]').element as HTMLInputElement).value).toBe(
+      '192.0.2.3/24',
+    )
+    expect(use4()).toBeUndefined()
+
+    // A second device in the same VLAN gets the next free address.
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Add network device')!
+      .trigger('click')
+    await field('VLAN', 1).setValue('100')
+    await field('IPv4', 1).setValue('static')
+    expect(w.get('[data-testid="network-1"]').text()).toContain(
+      'Use the free address 192.0.2.4/24 from NetBox',
+    )
+    await field('VLAN', 1).setValue('120')
+    vi.advanceTimersByTime(500)
+    await flushPromises()
+    expect(w.get('[data-testid="network-1"]').text()).toContain('This VLAN is not in NetBox.')
+    expect(api.calls.filter((c) => c.route === 'GET /api/v1/netbox/vlans/{vid}')).toHaveLength(2)
+    w.unmount()
+  })
+
+  it('does not look up VLANs without permission', async () => {
+    vi.useFakeTimers()
+    const router = setup()
+    api.on('GET /api/v1/netbox', () => [200, { name: 'netbox', writeBack: true, clusters: [] }])
+    await router.push('/proxmox/lab/new')
+    const w = mountAs(router, ['proxmox:lab:qemu/5*:admin', 'netbox:netbox:sync:read'])
+    await flushPromises()
+    vi.advanceTimersByTime(500)
+    await flushPromises()
+    expect(api.calls.some((c) => c.route.startsWith('GET /api/v1/netbox/vlans'))).toBe(false)
+    w.unmount()
+  })
 })

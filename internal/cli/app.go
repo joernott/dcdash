@@ -21,6 +21,7 @@ import (
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
 	"github.com/joernott/dcdash/internal/lockout"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/prefs"
 	"github.com/joernott/dcdash/internal/proxmox"
 	"github.com/joernott/dcdash/internal/rbac"
@@ -123,6 +124,14 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 	if pve != nil {
 		// The creation wizard adds DHCP reservations and DNS records (task 11.14).
 		pve.SetIntegrations(dhcpSvc, dnsSvc)
+	}
+	if cfg.NetBox.Enabled() {
+		nb, err := netbox.NewService(cfg.NetBox, auditLog, log)
+		if err != nil {
+			return nil, err
+		}
+		a.statusChecks = append(a.statusChecks, nb.StatusChecks()...)
+		a.routes = append(a.routes, nb.Register)
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

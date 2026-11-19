@@ -26,6 +26,8 @@ tags:
     description: "DNS zones and records in Cloudflare and bind9"
   - name: dhcp
     description: "Kea DHCP servers: subnets, leases and reservations"
+  - name: netbox
+    description: "NetBox: VLANs, prefixes and free addresses; write-back of changes"
 
 paths:
   /healthz:
@@ -1598,6 +1600,55 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/netbox:
+    get:
+      tags: [netbox]
+      operationId: getNetBox
+      summary: NetBox connection
+      description: |
+        Returns the name of the NetBox instance (the permission segment of
+        `netbox:<name>:<resource>:<action>`), whether changes are written back, and the Proxmox
+        clusters that are mapped to NetBox clusters. Any logged-in user may read it. 404 if
+        NetBox isn't configured.
+      responses:
+        "200":
+          description: The connection.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxInfo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/vlans/{vid}:
+    get:
+      tags: [netbox]
+      operationId: getNetBoxVLAN
+      summary: A VLAN with its prefixes and free addresses
+      description: |
+        Looks up the VLAN with that VLAN ID in NetBox (in the configured VLAN group or site) and
+        returns its prefixes in the configured VRF, each with up to 8 free addresses. Used by
+        the creation wizard. Needs `netbox:<name>:ipam:read`.
+      parameters:
+        - name: vid
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 4094 }
+      responses:
+        "200":
+          description: The VLAN.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxVLAN" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -1932,7 +1983,7 @@ components:
         name: { type: string, examples: [database, directory, certificate] }
         kind:
           type: string
-          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp).'
+          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox).'
         status: { type: string, enum: [ok, error] }
         detail: { type: string, description: A detail such as "valid until ..." or the error message, in English. }
         detailCode:
@@ -1944,13 +1995,48 @@ components:
             `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
             `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
             (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
-            `count`), `directory.degraded` (`server`, `down`). Times are RFC 3339.
+            `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`). Times are RFC 3339.
           examples: [certificate.valid]
         detailParams:
           type: object
           description: Parameters of detailCode.
           additionalProperties: { type: string }
         latencyMs: { type: integer, format: int64 }
+
+    NetBoxInfo:
+      type: object
+      required: [name, writeBack, clusters]
+      properties:
+        name: { type: string, examples: [netbox] }
+        writeBack: { type: boolean, description: Changes made in dcdash are written to NetBox. }
+        clusters:
+          type: array
+          description: Proxmox clusters that are mapped to NetBox clusters.
+          items: { type: string }
+
+    NetBoxVLAN:
+      type: object
+      required: [vid, name, description, prefixes]
+      properties:
+        vid: { type: integer, examples: [100] }
+        name: { type: string, examples: [servers] }
+        description: { type: string }
+        prefixes:
+          type: array
+          description: Prefixes of the VLAN, IPv4 first.
+          items: { $ref: "#/components/schemas/NetBoxPrefix" }
+
+    NetBoxPrefix:
+      type: object
+      required: [prefix, family, description, free]
+      properties:
+        prefix: { type: string, examples: [192.0.2.0/24] }
+        family: { type: integer, enum: [4, 6] }
+        description: { type: string }
+        free:
+          type: array
+          description: Up to 8 free addresses with prefix length; empty if the prefix is full.
+          items: { type: string, examples: [192.0.2.3/24] }
 
     HealthStatus:
       type: object

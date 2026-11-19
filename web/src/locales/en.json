@@ -41,7 +41,8 @@
       "system": "dcdash",
       "proxmox": "Proxmox",
       "dns": "DNS",
-      "dhcp": "DHCP"
+      "dhcp": "DHCP",
+      "netbox": "NetBox"
     },
     "components": {
       "database": "Database",
@@ -66,6 +67,9 @@
         "kea": "Kea {version}",
         "keaHA": "Kea {version}, HA {ha}",
         "partnerOutOfTouch": "No connection to the HA partner {partner}"
+      },
+      "netbox": {
+        "connected": "NetBox {version}"
       },
       "directory": {
         "connected": "Connected to {server} | Connected to {server}, all {count} servers reachable",
@@ -350,6 +354,9 @@
       "vlan": "VLAN (optional)",
       "vlanRange": "Allowed: {ranges}",
       "vlanNone": "Only untagged networks are allowed.",
+      "netboxVlan": "NetBox: {name}",
+      "netboxVlanUnknown": "This VLAN is not in NetBox.",
+      "netboxFree": "Use the free address {address} from NetBox",
       "isoNetworkHint": "You configure the network during the installation.",
       "cloudInitHint": "These settings take effect through cloud-init if the template supports it.",
       "ipv4": "IPv4",
