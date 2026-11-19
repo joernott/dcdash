@@ -45,7 +45,7 @@ These apply to every task:
 | 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | done |
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
-| 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | planned |
+| 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | in progress |
 
 ---
 
