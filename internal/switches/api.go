@@ -335,6 +335,8 @@ type VLANList struct {
 	VLANs  []VLANView `json:"vlans"`
 	// Usage maps a VLAN ID to the ports that use it (access, native or trunk).
 	Usage map[string][]string `json:"usage"`
+	// CanCreate: the user may create VLANs (write on some vlan/<id>).
+	CanCreate bool `json:"canCreate"`
 }
 
 func (s *Service) handleVLANs(w http.ResponseWriter, r *http.Request) {
@@ -352,7 +354,8 @@ func (s *Service) handleVLANs(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, err)
 		return
 	}
-	out := VLANList{Switch: x.backend.Name(), VLANs: s.vlanViews(subj, x.backend.Name(), vlans), Usage: map[string][]string{}}
+	out := VLANList{Switch: x.backend.Name(), VLANs: s.vlanViews(subj, x.backend.Name(), vlans), Usage: map[string][]string{},
+		CanCreate: subj.Permissions.AllowsPrefix(Module, x.backend.Name(), "vlan/", rbac.ActionWrite)}
 	for _, v := range vlans {
 		if u := usage(v.ID, ports); len(u) > 0 {
 			out.Usage[strconv.Itoa(v.ID)] = u

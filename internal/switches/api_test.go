@@ -147,7 +147,7 @@ func TestVLANs(t *testing.T) {
 	}
 	var list switches.VLANList
 	if st, _ := e.do(t, "viewer", "GET", "/api/v1/switches/sw1/vlans", nil, &list); st != 200 || len(list.VLANs) != 4 ||
-		len(list.Usage["20"]) != 1 || list.Usage["20"][0] != "1/1/3" || list.Usage["4001"] != nil {
+		len(list.Usage["20"]) != 1 || list.Usage["20"][0] != "1/1/3" || list.Usage["4001"] != nil || list.CanCreate {
 		t.Errorf("list: %+v", list)
 	}
 	if st, _ := e.do(t, "netops", "DELETE", "/api/v1/switches/sw1/vlans/4001", nil, &res); st != 200 || !res.Saved {

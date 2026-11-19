@@ -31,7 +31,7 @@ tags:
   - name: projects
     description: "Projects: groups of objects with the tag project-<name>"
   - name: switches
-    description: "Aruba CX switches: inventory and health"
+    description: "Aruba CX switches: inventory, health, ports, VLANs and MAC addresses"
 
 paths:
   /healthz:
@@ -1847,6 +1847,187 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/switches/{switch}/ports:
+    get:
+      tags: [switches]
+      operationId: listSwitchPorts
+      summary: List the ports of a switch
+      description: |
+        Physical ports and LAGs with state, speed, VLANs, LLDP neighbors and PoE, plus the
+        switch's VLANs. Only ports the user may read are listed
+        (`switch:<switch>:port/<port>:read`). With `switches[].netbox_device` and NetBox, each
+        port carries its NetBox interface and projects.
+      parameters:
+        - $ref: "#/components/parameters/SwitchName"
+      responses:
+        "200":
+          description: The ports.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchPortList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/switches/{switch}/ports/{port}:
+    put:
+      tags: [switches]
+      operationId: updateSwitchPort
+      summary: Change a port
+      description: |
+        Changes the given fields of a port and saves the configuration to the startup
+        configuration. Enabling and disabling alone needs `switch:<switch>:port/<port>:operate`,
+        everything else `write`. Audited as `switch.port.update`. A failed save is returned
+        as `saveError`; the change stays in the running configuration.
+      parameters:
+        - $ref: "#/components/parameters/SwitchName"
+        - { name: port, in: path, required: true, schema: { type: string }, description: "Port name, slashes URL-encoded (1%2F1%2F5)." }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SwitchPortUpdate" }
+      responses:
+        "200":
+          description: The changed port.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchPortResult" }
+        "400": { $ref: "#/components/responses/SwitchInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/SwitchRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/switches/{switch}/vlans:
+    get:
+      tags: [switches]
+      operationId: listSwitchVLANs
+      summary: List the VLANs of a switch
+      description: The VLANs with the ports that use them. Needs `read` on any resource of the switch.
+      parameters:
+        - $ref: "#/components/parameters/SwitchName"
+      responses:
+        "200":
+          description: The VLANs.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchVLANList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [switches]
+      operationId: createSwitchVLAN
+      summary: Create a VLAN
+      description: |
+        Creates a VLAN (2 to 4094) and saves the configuration. Needs
+        `switch:<switch>:vlan/<id>:write`. Audited as `switch.vlan.create`.
+      parameters:
+        - $ref: "#/components/parameters/SwitchName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SwitchVLANRequest" }
+      responses:
+        "201":
+          description: The VLAN was created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchVLANResult" }
+        "400": { $ref: "#/components/responses/SwitchInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/SwitchConflict" }
+        "422": { $ref: "#/components/responses/SwitchRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/switches/{switch}/vlans/{id}:
+    put:
+      tags: [switches]
+      operationId: renameSwitchVLAN
+      summary: Rename a VLAN
+      description: Needs `switch:<switch>:vlan/<id>:write`. Audited as `switch.vlan.update`.
+      parameters:
+        - $ref: "#/components/parameters/SwitchName"
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SwitchVLANRequest" }
+      responses:
+        "200":
+          description: The VLAN was renamed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchVLANResult" }
+        "400": { $ref: "#/components/responses/SwitchInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/SwitchRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [switches]
+      operationId: deleteSwitchVLAN
+      summary: Delete a VLAN
+      description: |
+        Deletes a VLAN that no port uses and saves the configuration. VLAN 1 cannot be
+        deleted. Needs `switch:<switch>:vlan/<id>:write`. Audited as `switch.vlan.delete`.
+      parameters:
+        - $ref: "#/components/parameters/SwitchName"
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: The VLAN was deleted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchVLANResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/SwitchConflict" }
+        "422": { $ref: "#/components/responses/SwitchRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/switches/macs:
+    get:
+      tags: [switches]
+      operationId: searchSwitchMACs
+      summary: Find a MAC address on all switches
+      description: |
+        Searches the MAC address tables of all switches the user may see for a (partial) MAC
+        address. Results on ports the user may not read are left out. Access ports come first:
+        there the device is connected; on uplinks the device is behind another switch.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string }, description: "At least 4 hex digits; colons, dashes and dots are ignored.", examples: [bc:24:11] }
+      responses:
+        "200":
+          description: The hits and the switches that could not be searched.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchMACSearch" }
+        "400": { $ref: "#/components/responses/SwitchInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/projects:
     get:
       tags: [projects]
@@ -2003,9 +2184,25 @@ components:
     DNSZone: { name: zone, in: path, required: true, schema: { type: string }, description: Zone name without trailing dot. }
     DNSRecordID: { name: id, in: path, required: true, schema: { type: string } }
 
+    SwitchName: { name: switch, in: path, required: true, schema: { type: string }, description: Switch name from the configuration. }
     DHCPServer: { name: server, in: path, required: true, schema: { type: string }, description: Server name from the configuration. }
     DHCPReservationID: { name: id, in: path, required: true, schema: { type: string }, description: The id of the reservation as listed. }
   responses:
+    SwitchInvalid:
+      description: "Invalid request: invalid_request, invalid_port, invalid_vlan or invalid_query, with the reason as message."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    SwitchConflict:
+      description: "The VLAN exists (exists), is used by ports (vlan_in_use) or is VLAN 1 (default_vlan)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    SwitchRejected:
+      description: "The switch rejected the change (rejected), with its message."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     DHCPInvalid:
       description: "Invalid reservation (code: invalid_reservation, with the reason as message) or request (invalid_request)."
       content:
@@ -3157,6 +3354,165 @@ components:
         servers:
           type: array
           items: { $ref: "#/components/schemas/DHCPServer" }
+
+    SwitchNeighbor:
+      type: object
+      required: [chassisId, portId, capabilities, bridge]
+      properties:
+        chassisId: { type: string }
+        portId: { type: string }
+        systemName: { type: string }
+        systemDescription: { type: string }
+        portDescription: { type: string }
+        mgmtAddress: { type: string }
+        capabilities: { type: array, items: { type: string }, examples: [[Bridge, Router]] }
+        bridge: { type: boolean, description: The neighbor is a switch. }
+
+    SwitchPort:
+      type: object
+      required: [name, type, description, enabled, adminUp, linkUp, speedMbps, mode, vlan, trunkVlans, allVlans, neighbors, uplink, canOperate, canWrite]
+      properties:
+        name: { type: string, examples: [1/1/5] }
+        type: { type: string, enum: [system, lag] }
+        description: { type: string }
+        enabled: { type: boolean, description: Configured state (shutdown is false). }
+        adminUp: { type: boolean }
+        linkUp: { type: boolean }
+        speedMbps: { type: integer }
+        connector: { type: string, examples: [RJ45] }
+        maxSpeedMbps: { type: integer }
+        mode: { type: string, enum: [access, trunk] }
+        vlan: { type: integer, description: Access VLAN or native VLAN of a trunk. }
+        nativeTagged: { type: boolean }
+        trunkVlans: { type: array, items: { type: integer } }
+        allVlans: { type: boolean, description: A trunk that allows all VLANs. }
+        lag: { type: string, description: The LAG the port belongs to. }
+        members: { type: array, items: { type: string }, description: Ports of a LAG. }
+        neighbors:
+          type: array
+          items: { $ref: "#/components/schemas/SwitchNeighbor" }
+        poe:
+          type: object
+          properties:
+            status: { type: string }
+            powerDrawnW: { type: number }
+        uplink: { type: boolean, description: A trunk or a port to another switch (LLDP). }
+        canOperate: { type: boolean }
+        canWrite: { type: boolean }
+        netbox:
+          type: object
+          required: [id, projects]
+          properties:
+            id: { type: integer, description: ID of the NetBox interface. }
+            projects: { type: array, items: { type: string } }
+
+    SwitchVLAN:
+      type: object
+      required: [id, name, type, adminUp, operUp, canWrite]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { type: string, examples: [static, default] }
+        adminUp: { type: boolean }
+        operUp: { type: boolean }
+        description: { type: string }
+        canWrite: { type: boolean }
+
+    SwitchPortList:
+      type: object
+      required: [switch, ports, vlans]
+      properties:
+        switch: { type: string }
+        ports: { type: array, items: { $ref: "#/components/schemas/SwitchPort" } }
+        vlans: { type: array, items: { $ref: "#/components/schemas/SwitchVLAN" } }
+        netboxError: { type: string, description: The NetBox interfaces could not be read. }
+
+    SwitchPortUpdate:
+      type: object
+      description: Fields to change; missing fields stay unchanged.
+      properties:
+        enabled: { type: boolean }
+        description: { type: string, maxLength: 64 }
+        mode: { type: string, enum: [access, trunk] }
+        vlan: { type: integer, description: Access VLAN or native VLAN of a trunk. }
+        trunkVlans: { type: array, items: { type: integer }, description: Allowed VLANs of a trunk; empty allows all. }
+
+    SwitchChangeResult:
+      type: object
+      required: [saved]
+      properties:
+        saved: { type: boolean, description: The configuration was saved to the startup configuration. }
+        saveError: { type: string }
+        netbox: { $ref: "#/components/schemas/NetBoxResult" }
+
+    SwitchPortResult:
+      allOf:
+        - $ref: "#/components/schemas/SwitchChangeResult"
+        - type: object
+          required: [port]
+          properties:
+            port: { $ref: "#/components/schemas/SwitchPort" }
+
+    SwitchVLANList:
+      type: object
+      required: [switch, vlans, usage, canCreate]
+      properties:
+        switch: { type: string }
+        vlans: { type: array, items: { $ref: "#/components/schemas/SwitchVLAN" } }
+        usage:
+          type: object
+          description: Ports that use a VLAN (access, native or trunk), by VLAN ID.
+          additionalProperties: { type: array, items: { type: string } }
+        canCreate: { type: boolean, description: "The user may create VLANs (write on some vlan/<id>)." }
+
+    SwitchVLANRequest:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer, minimum: 2, maximum: 4094, description: Only for creating. }
+        name: { type: string, maxLength: 32 }
+
+    SwitchVLANResult:
+      allOf:
+        - $ref: "#/components/schemas/SwitchChangeResult"
+        - type: object
+          properties:
+            vlan:
+              type: object
+              required: [id, name, type, adminUp, operUp]
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                type: { type: string }
+                adminUp: { type: boolean }
+                operUp: { type: boolean }
+
+    SwitchMACResult:
+      type: object
+      required: [switch, mac, vlan, port, uplink, from]
+      properties:
+        switch: { type: string }
+        mac: { type: string }
+        vlan: { type: integer }
+        port: { type: string }
+        portDescription: { type: string }
+        uplink: { type: boolean, description: The device is behind another switch. }
+        from: { type: string, examples: [dynamic] }
+
+    SwitchMACSearch:
+      type: object
+      required: [query, results, errors]
+      properties:
+        query: { type: string }
+        results: { type: array, items: { $ref: "#/components/schemas/SwitchMACResult" } }
+        errors:
+          type: array
+          items:
+            type: object
+            required: [switch, error]
+            properties:
+              switch: { type: string }
+              error: { type: string }
 
     SwitchMember:
       type: object

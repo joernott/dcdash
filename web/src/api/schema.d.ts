@@ -1261,6 +1261,124 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/switches/{switch}/ports': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the ports of a switch
+     * @description Physical ports and LAGs with state, speed, VLANs, LLDP neighbors and PoE, plus the
+     *     switch's VLANs. Only ports the user may read are listed
+     *     (`switch:<switch>:port/<port>:read`). With `switches[].netbox_device` and NetBox, each
+     *     port carries its NetBox interface and projects.
+     */
+    get: operations['listSwitchPorts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/switches/{switch}/ports/{port}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Change a port
+     * @description Changes the given fields of a port and saves the configuration to the startup
+     *     configuration. Enabling and disabling alone needs `switch:<switch>:port/<port>:operate`,
+     *     everything else `write`. Audited as `switch.port.update`. A failed save is returned
+     *     as `saveError`; the change stays in the running configuration.
+     */
+    put: operations['updateSwitchPort']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/switches/{switch}/vlans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the VLANs of a switch
+     * @description The VLANs with the ports that use them. Needs `read` on any resource of the switch.
+     */
+    get: operations['listSwitchVLANs']
+    put?: never
+    /**
+     * Create a VLAN
+     * @description Creates a VLAN (2 to 4094) and saves the configuration. Needs
+     *     `switch:<switch>:vlan/<id>:write`. Audited as `switch.vlan.create`.
+     */
+    post: operations['createSwitchVLAN']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/switches/{switch}/vlans/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Rename a VLAN
+     * @description Needs `switch:<switch>:vlan/<id>:write`. Audited as `switch.vlan.update`.
+     */
+    put: operations['renameSwitchVLAN']
+    post?: never
+    /**
+     * Delete a VLAN
+     * @description Deletes a VLAN that no port uses and saves the configuration. VLAN 1 cannot be
+     *     deleted. Needs `switch:<switch>:vlan/<id>:write`. Audited as `switch.vlan.delete`.
+     */
+    delete: operations['deleteSwitchVLAN']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/switches/macs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Find a MAC address on all switches
+     * @description Searches the MAC address tables of all switches the user may see for a (partial) MAC
+     *     address. Results on ports the user may not read are left out. Access ports come first:
+     *     there the device is connected; on uplinks the device is behind another switch.
+     */
+    get: operations['searchSwitchMACs']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/projects': {
     parameters: {
       query?: never
@@ -2347,6 +2465,147 @@ export interface components {
     DHCPServerList: {
       servers: components['schemas']['DHCPServer'][]
     }
+    SwitchNeighbor: {
+      chassisId: string
+      portId: string
+      systemName?: string
+      systemDescription?: string
+      portDescription?: string
+      mgmtAddress?: string
+      /**
+       * @example [
+       *       "Bridge",
+       *       "Router"
+       *     ]
+       */
+      capabilities: string[]
+      /** @description The neighbor is a switch. */
+      bridge: boolean
+    }
+    SwitchPort: {
+      /** @example 1/1/5 */
+      name: string
+      /** @enum {string} */
+      type: 'system' | 'lag'
+      description: string
+      /** @description Configured state (shutdown is false). */
+      enabled: boolean
+      adminUp: boolean
+      linkUp: boolean
+      speedMbps: number
+      /** @example RJ45 */
+      connector?: string
+      maxSpeedMbps?: number
+      /** @enum {string} */
+      mode: 'access' | 'trunk'
+      /** @description Access VLAN or native VLAN of a trunk. */
+      vlan: number
+      nativeTagged?: boolean
+      trunkVlans: number[]
+      /** @description A trunk that allows all VLANs. */
+      allVlans: boolean
+      /** @description The LAG the port belongs to. */
+      lag?: string
+      /** @description Ports of a LAG. */
+      members?: string[]
+      neighbors: components['schemas']['SwitchNeighbor'][]
+      poe?: {
+        status?: string
+        powerDrawnW?: number
+      }
+      /** @description A trunk or a port to another switch (LLDP). */
+      uplink: boolean
+      canOperate: boolean
+      canWrite: boolean
+      netbox?: {
+        /** @description ID of the NetBox interface. */
+        id: number
+        projects: string[]
+      }
+    }
+    SwitchVLAN: {
+      id: number
+      name: string
+      /**
+       * @example static
+       * @example default
+       */
+      type: string
+      adminUp: boolean
+      operUp: boolean
+      description?: string
+      canWrite: boolean
+    }
+    SwitchPortList: {
+      switch: string
+      ports: components['schemas']['SwitchPort'][]
+      vlans: components['schemas']['SwitchVLAN'][]
+      /** @description The NetBox interfaces could not be read. */
+      netboxError?: string
+    }
+    /** @description Fields to change; missing fields stay unchanged. */
+    SwitchPortUpdate: {
+      enabled?: boolean
+      description?: string
+      /** @enum {string} */
+      mode?: 'access' | 'trunk'
+      /** @description Access VLAN or native VLAN of a trunk. */
+      vlan?: number
+      /** @description Allowed VLANs of a trunk; empty allows all. */
+      trunkVlans?: number[]
+    }
+    SwitchChangeResult: {
+      /** @description The configuration was saved to the startup configuration. */
+      saved: boolean
+      saveError?: string
+      netbox?: components['schemas']['NetBoxResult']
+    }
+    SwitchPortResult: components['schemas']['SwitchChangeResult'] & {
+      port: components['schemas']['SwitchPort']
+    }
+    SwitchVLANList: {
+      switch: string
+      vlans: components['schemas']['SwitchVLAN'][]
+      /** @description Ports that use a VLAN (access, native or trunk), by VLAN ID. */
+      usage: {
+        [key: string]: string[]
+      }
+      /** @description The user may create VLANs (write on some vlan/<id>). */
+      canCreate: boolean
+    }
+    SwitchVLANRequest: {
+      /** @description Only for creating. */
+      id?: number
+      name: string
+    }
+    SwitchVLANResult: components['schemas']['SwitchChangeResult'] & {
+      vlan?: {
+        id: number
+        name: string
+        type: string
+        adminUp: boolean
+        operUp: boolean
+      }
+    }
+    SwitchMACResult: {
+      switch: string
+      mac: string
+      vlan: number
+      port: string
+      portDescription?: string
+      /** @description The device is behind another switch. */
+      uplink: boolean
+      /** @example dynamic */
+      from: string
+    }
+    SwitchMACSearch: {
+      query: string
+      results: components['schemas']['SwitchMACResult'][]
+      errors: {
+        switch: string
+        error: string
+      }[]
+    }
     /** @description A chassis of the switch, several for a stack (VSF). */
     SwitchMember: {
       /**
@@ -2493,6 +2752,33 @@ export interface components {
     }
   }
   responses: {
+    /** @description Invalid request: invalid_request, invalid_port, invalid_vlan or invalid_query, with the reason as message. */
+    SwitchInvalid: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description The VLAN exists (exists), is used by ports (vlan_in_use) or is VLAN 1 (default_vlan). */
+    SwitchConflict: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description The switch rejected the change (rejected), with its message. */
+    SwitchRejected: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Invalid reservation (code: invalid_reservation, with the reason as message) or request (invalid_request). */
     DHCPInvalid: {
       headers: {
@@ -2685,6 +2971,8 @@ export interface components {
     /** @description Zone name without trailing dot. */
     DNSZone: string
     DNSRecordID: string
+    /** @description Switch name from the configuration. */
+    SwitchName: string
     /** @description Server name from the configuration. */
     DHCPServer: string
     /** @description The id of the reservation as listed. */
@@ -4845,6 +5133,226 @@ export interface operations {
           'application/json': components['schemas']['SwitchList']
         }
       }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  listSwitchPorts: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Switch name from the configuration. */
+        switch: components['parameters']['SwitchName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The ports. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchPortList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateSwitchPort: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Switch name from the configuration. */
+        switch: components['parameters']['SwitchName']
+        /** @description Port name, slashes URL-encoded (1%2F1%2F5). */
+        port: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SwitchPortUpdate']
+      }
+    }
+    responses: {
+      /** @description The changed port. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchPortResult']
+        }
+      }
+      400: components['responses']['SwitchInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['SwitchRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listSwitchVLANs: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Switch name from the configuration. */
+        switch: components['parameters']['SwitchName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The VLANs. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchVLANList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createSwitchVLAN: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Switch name from the configuration. */
+        switch: components['parameters']['SwitchName']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SwitchVLANRequest']
+      }
+    }
+    responses: {
+      /** @description The VLAN was created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchVLANResult']
+        }
+      }
+      400: components['responses']['SwitchInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['SwitchConflict']
+      422: components['responses']['SwitchRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  renameSwitchVLAN: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Switch name from the configuration. */
+        switch: components['parameters']['SwitchName']
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SwitchVLANRequest']
+      }
+    }
+    responses: {
+      /** @description The VLAN was renamed. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchVLANResult']
+        }
+      }
+      400: components['responses']['SwitchInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['SwitchRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteSwitchVLAN: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Switch name from the configuration. */
+        switch: components['parameters']['SwitchName']
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The VLAN was deleted. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchVLANResult']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['SwitchConflict']
+      422: components['responses']['SwitchRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  searchSwitchMACs: {
+    parameters: {
+      query: {
+        /**
+         * @description At least 4 hex digits; colons, dashes and dots are ignored.
+         * @example bc:24:11
+         */
+        q: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The hits and the switches that could not be searched. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchMACSearch']
+        }
+      }
+      400: components['responses']['SwitchInvalid']
       401: components['responses']['Unauthorized']
       default: components['responses']['Error']
     }

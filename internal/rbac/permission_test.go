@@ -114,3 +114,23 @@ func TestSet(t *testing.T) {
 		t.Errorf("Strings: %v", got)
 	}
 }
+
+func TestAllowsPrefix(t *testing.T) {
+	s, err := ParseSet([]string{"switch:sw1:vlan/4*:write", "switch:sw2:vlan/10:write", "switch:sw3:*:write",
+		"switch:sw4:port/1/1/5:write", "switch:sw5:v*:read"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		instance string
+		action   Action
+		want     bool
+	}{
+		{"sw1", ActionWrite, true}, {"sw2", ActionWrite, true}, {"sw3", ActionWrite, true},
+		{"sw4", ActionWrite, false}, {"sw5", ActionRead, true}, {"sw5", ActionWrite, false}, {"sw6", ActionRead, false},
+	} {
+		if got := s.AllowsPrefix("switch", c.instance, "vlan/", c.action); got != c.want {
+			t.Errorf("%s %s: %v", c.instance, c.action, got)
+		}
+	}
+}

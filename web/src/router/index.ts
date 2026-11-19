@@ -86,6 +86,12 @@ export const routes = [
         meta: { title: 'nav.projects', module: 'project' },
       },
       {
+        path: 'switches/:switch?',
+        name: 'switches',
+        component: () => import('@/views/switches/SwitchesView.vue'),
+        meta: { title: 'nav.switches', module: 'switch' },
+      },
+      {
         path: 'netbox/:cluster?',
         name: 'netbox',
         component: () => import('@/views/netbox/NetBoxView.vue'),
