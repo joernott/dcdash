@@ -295,3 +295,9 @@ I have configured the firewall to allow https access from your dev machine to th
 ## 2026-11-19 — Sprint 13 (Aruba CX)
 
 We will add the mac addresses in netbox to facilitate the matching. Please keep the database dump for testing: Please continue with the write test
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+yes, continue with 13.2

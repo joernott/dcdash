@@ -426,7 +426,7 @@ These apply to every task:
 
 - [x] **13.1** API research: AOS-CX REST API (sessions, VLANs, interfaces, MAC address
   table, LLDP, saving the configuration); results in an ADR, amend this sprint if needed
-- [ ] **13.2** Configuration and client for several switches, inventory and health status
+- [x] **13.2** Configuration and client for several switches, inventory and health status
 - [ ] **13.3** Port overview across all switches: status, speed, VLANs, PoE, LLDP neighbor
 - [ ] **13.4** Find devices by MAC address across all switches, telling access ports from
   uplinks

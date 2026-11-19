@@ -30,6 +30,8 @@ tags:
     description: "NetBox: VLANs, prefixes and free addresses; write-back of changes"
   - name: projects
     description: "Projects: groups of objects with the tag project-<name>"
+  - name: switches
+    description: "Aruba CX switches: inventory and health"
 
 paths:
   /healthz:
@@ -1826,6 +1828,25 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/switches:
+    get:
+      tags: [switches]
+      operationId: listSwitches
+      summary: List switches
+      description: |
+        Returns the switches on which the user holds at least `read` on any resource
+        (`switch:<name>:*:read`), with their inventory. The inventory is cached for a minute;
+        switches are read in parallel.
+      responses:
+        "200":
+          description: Visible switches.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SwitchList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/projects:
     get:
       tags: [projects]
@@ -2290,7 +2311,7 @@ components:
         name: { type: string, examples: [database, directory, certificate] }
         kind:
           type: string
-          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox).'
+          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox, switch).'
         status: { type: string, enum: [ok, error] }
         detail: { type: string, description: A detail such as "valid until ..." or the error message, in English. }
         detailCode:
@@ -2302,7 +2323,8 @@ components:
             `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
             `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
             (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
-            `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
+            `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `switch.aoscx` (`model`, `hostname`, `firmware`),
+            `switch.unauthorized`, `switch.sessionLimit`, `switch.unavailable`, `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
           examples: [certificate.valid]
         detailParams:
           type: object
@@ -3135,6 +3157,42 @@ components:
         servers:
           type: array
           items: { $ref: "#/components/schemas/DHCPServer" }
+
+    SwitchMember:
+      type: object
+      description: A chassis of the switch, several for a stack (VSF).
+      required: [name, product, serial, partNumber]
+      properties:
+        name: { type: string, description: Member number., examples: ["1"] }
+        product: { type: string, examples: ["6000 24G 4SFP Swch"] }
+        serial: { type: string }
+        partNumber: { type: string, examples: [R8N88A] }
+
+    Switch:
+      type: object
+      required: [name, type, status, members]
+      properties:
+        name: { type: string, description: Name from the configuration. }
+        type: { type: string, enum: [aoscx] }
+        status: { type: string, enum: [ok, unavailable] }
+        error: { type: string, description: Why the switch is unavailable. }
+        hostname: { type: string }
+        model: { type: string, description: Product name of the first chassis, or the platform. }
+        platform: { type: string, examples: ["6000"] }
+        firmware: { type: string, examples: [PL.10.08.1010] }
+        apiVersion: { type: string, examples: [v10.08] }
+        booted: { type: string, format: date-time }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/SwitchMember" }
+
+    SwitchList:
+      type: object
+      required: [switches]
+      properties:
+        switches:
+          type: array
+          items: { $ref: "#/components/schemas/Switch" }
 
     DHCPSubnetStats:
       type: object

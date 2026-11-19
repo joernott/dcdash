@@ -214,6 +214,13 @@ would have deleted these interfaces and, with them, their addresses. Since then 
 are matched by name or primary MAC address, and only interfaces with the dcdash tag are
 deleted (task 13.11). "Update NetBox" on two real VMs then kept all interfaces and addresses
 maintained by hand and showed no differences afterwards.
+## Tests against a real switch
+
+`TestArubaCX` in `test/integration/aruba_test.go` reads from a real Aruba CX switch when
+`DCDASH_IT_ARUBA_URL`, `DCDASH_IT_ARUBA_FINGERPRINT`, `DCDASH_IT_ARUBA_USER` and
+`DCDASH_IT_ARUBA_PASSWORD` are set. It changes nothing. Last run: 2026-11-19, Aruba 6000,
+firmware PL.10.08.1010: inventory read, four parallel requests share one session, logout.
+
 ## Configuration
 
 See `configs/config.example.yaml` for all options. Check a configuration with:

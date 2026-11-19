@@ -1239,6 +1239,28 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/switches': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List switches
+     * @description Returns the switches on which the user holds at least `read` on any resource
+     *     (`switch:<name>:*:read`), with their inventory. The inventory is cached for a minute;
+     *     switches are read in parallel.
+     */
+    get: operations['listSwitches']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/projects': {
     parameters: {
       query?: never
@@ -1506,7 +1528,7 @@ export interface components {
        * @example certificate
        */
       name: string
-      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox). */
+      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox, switch). */
       kind: string
       /** @enum {string} */
       status: 'ok' | 'error'
@@ -1519,7 +1541,8 @@ export interface components {
        *     `endpoint`), `dns.bind` (`server`, `count`), `dns.bindChecked` (`server`, `count`,
        *     `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
        *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
-       *     `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
+       *     `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `switch.aoscx` (`model`, `hostname`, `firmware`),
+       *     `switch.unauthorized`, `switch.sessionLimit`, `switch.unavailable`, `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
        * @example certificate.valid
        */
       detailCode?: string
@@ -2323,6 +2346,44 @@ export interface components {
     }
     DHCPServerList: {
       servers: components['schemas']['DHCPServer'][]
+    }
+    /** @description A chassis of the switch, several for a stack (VSF). */
+    SwitchMember: {
+      /**
+       * @description Member number.
+       * @example 1
+       */
+      name: string
+      /** @example 6000 24G 4SFP Swch */
+      product: string
+      serial: string
+      /** @example R8N88A */
+      partNumber: string
+    }
+    Switch: {
+      /** @description Name from the configuration. */
+      name: string
+      /** @enum {string} */
+      type: 'aoscx'
+      /** @enum {string} */
+      status: 'ok' | 'unavailable'
+      /** @description Why the switch is unavailable. */
+      error?: string
+      hostname?: string
+      /** @description Product name of the first chassis */
+      model?: string
+      /** @example 6000 */
+      platform?: string
+      /** @example PL.10.08.1010 */
+      firmware?: string
+      /** @example v10.08 */
+      apiVersion?: string
+      /** Format: date-time */
+      booted?: string
+      members: components['schemas']['SwitchMember'][]
+    }
+    SwitchList: {
+      switches: components['schemas']['Switch'][]
     }
     DHCPSubnetStats: {
       subnetId: number
@@ -4763,6 +4824,28 @@ export interface operations {
       400: components['responses']['Error']
       401: components['responses']['Unauthorized']
       502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listSwitches: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Visible switches. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SwitchList']
+        }
+      }
+      401: components['responses']['Unauthorized']
       default: components['responses']['Error']
     }
   }

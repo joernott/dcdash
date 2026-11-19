@@ -44,7 +44,8 @@
       "proxmox": "Proxmox",
       "dns": "DNS",
       "dhcp": "DHCP",
-      "netbox": "NetBox"
+      "netbox": "NetBox",
+      "switch": "Switches"
     },
     "components": {
       "database": "Database",
@@ -73,6 +74,12 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "switch": {
+        "aoscx": "{model} {hostname}, AOS-CX {firmware}",
+        "unauthorized": "The switch rejected dcdash's credentials",
+        "sessionLimit": "Too many sessions are open on the switch; close sessions of other tools or wait 20 minutes",
+        "unavailable": "The switch is not reachable"
       },
       "projects": {
         "loaded": "No projects | One project | {count} projects",

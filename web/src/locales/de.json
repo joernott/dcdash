@@ -44,7 +44,8 @@
       "proxmox": "Proxmox",
       "dns": "DNS",
       "dhcp": "DHCP",
-      "netbox": "NetBox"
+      "netbox": "NetBox",
+      "switch": "Switches"
     },
     "components": {
       "database": "Datenbank",
@@ -73,6 +74,12 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "switch": {
+        "aoscx": "{model} {hostname}, AOS-CX {firmware}",
+        "unauthorized": "Der Switch hat die Anmeldedaten von dcdash abgelehnt",
+        "sessionLimit": "Auf dem Switch sind zu viele Sitzungen offen; schließen Sie Sitzungen anderer Werkzeuge oder warten Sie 20 Minuten",
+        "unavailable": "Der Switch ist nicht erreichbar"
       },
       "projects": {
         "loaded": "Keine Projekte | Ein Projekt | {count} Projekte",

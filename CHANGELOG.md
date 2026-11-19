@@ -16,6 +16,9 @@ All notable changes to dcdash are listed here. The format follows
   on request (`netbox.apply`). Interfaces maintained by hand are found by name or MAC address and
   never deleted. Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
+- **Switches:** Aruba CX switches (AOS-CX 10.x) in the `switches` section, with inventory
+  (model, serial number, firmware) and health on the overview page. Permission
+  `switch:<name>:*:read`.
 - **Projects:** projects are defined as YAML files in `/etc/dcdash/projects` (`projects`
   section) and mark their objects with the tag `project-<name>`, synchronized to NetBox.
   Guests (Proxmox tags, set in the wizard and on the guest page), DHCP reservations and DNS

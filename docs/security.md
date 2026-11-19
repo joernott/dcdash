@@ -283,7 +283,7 @@ A permission has four segments, `module:instance:resource:action`:
 
 | Segment | Meaning | Examples |
 |---|---|---|
-| module | The service family | `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `system` |
+| module | The service family | `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `switch`, `system` |
 | instance | A configured backend, by name | `cluster-a`, `cloudflare-prod`; always `core` for `system` |
 | resource | An object of the backend | a VM, a zone, a subnet; `audit` or `sessions` for `system` |
 | action | The level of access | see below |
@@ -407,6 +407,19 @@ The instance is the project name; the resource is always `objects`:
 Assigning also needs the right to change the object: `write` on a guest, on the subnet of a
 reservation or on the zone of a record. Project tags in a VM's options and in creation
 requests need the project permission too. See [projects.md](projects.md).
+
+### Switch permissions
+
+The instance is the switch name; resources are `port/<interface>` (for example `port/1/1/5`)
+and `vlan/<id>`:
+
+| Permission | Allows |
+|---|---|
+| `switch:<name>:*:read` | Seeing the switch, its inventory and health |
+
+Permissions for ports and VLANs follow with the port and VLAN pages (Sprint 13). The switch
+account (`switches[].username`) limits what dcdash can do at all: `operators` can only read.
+See [switches.md](switches.md).
 
 ## Audit log
 

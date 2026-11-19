@@ -13,6 +13,7 @@ documents.
 | DNS: Cloudflare and bind9 | [dns.md](dns.md) |
 | DHCP: Kea | [dhcp.md](dhcp.md) |
 | NetBox as a common data source | [netbox.md](netbox.md) |
+| Switches: Aruba CX | [switches.md](switches.md) |
 | Projects: grouping objects with tags | [projects.md](projects.md) |
 | Health endpoints and Prometheus metrics | [monitoring.md](monitoring.md) |
 | Using the web interface | [user-guide.md](user-guide.md) |
@@ -30,6 +31,7 @@ and keep its secrets in files readable only for dcdash (`file:` in the configura
 | bind9 | A TSIG key allowed to transfer and update the zones; for zone creation also rndc, an SFTP account for zone files and a catalog zone | [dns.md](dns.md#bind9) |
 | Kea 3.0 | An HTTPS control socket with basic authentication on each daemon, the hook libraries, and a host database for changing reservations | [dhcp.md](dhcp.md#prerequisites-on-the-kea-servers) |
 | NetBox 4.2 or later | An API token with object permissions for virtual machines, interfaces, disks, MAC and IP addresses; a tag; a cluster per Proxmox cluster | [netbox.md](netbox.md#prerequisites-in-netbox) |
+| Aruba CX (AOS-CX 10.x) | The REST API enabled (`https-server rest access-mode read-write`) and an account with the role `administrators` | [switches.md](switches.md#prerequisites-on-the-switch) |
 | ACME CA (optional) | Access to the CA; for DNS-01 a DNS provider token | [certificates.md](certificates.md) |
 
 Each module is optional: configure only the backends you want to manage.
