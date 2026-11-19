@@ -402,7 +402,8 @@
         "create": "Create",
         "start": "Start",
         "dhcp": "Add the DHCP reservation",
-        "dns": "Add the DNS record"
+        "dns": "Add the DNS record",
+        "netbox": "Update NetBox"
       },
       "stepStates": {
         "pending": "Waiting",
@@ -828,5 +829,8 @@
     "delegatedPrefixes": "Delegated prefixes",
     "listHint": "Optional; several separated by commas.",
     "keptFields": "Client classes and options of this reservation are kept unchanged."
+  },
+  "netbox": {
+    "writeBackFailed": "The change was made, but NetBox could not be updated: {error}"
   }
 }

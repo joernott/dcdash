@@ -230,6 +230,14 @@ func (s *Server) matches(typ string, o Object, q map[string][]string) bool {
 		if k == "limit" || k == "offset" || k == "brief" || k == "ordering" {
 			continue
 		}
+		if k == "contains" && typ == Prefixes {
+			p, err1 := netip.ParsePrefix(str(o["prefix"]))
+			a, err2 := netip.ParseAddr(vals[0])
+			if err1 != nil || err2 != nil || !p.Contains(a) {
+				return false
+			}
+			continue
+		}
 		got, ok := s.field(typ, o, k)
 		if !ok {
 			continue

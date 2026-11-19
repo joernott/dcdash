@@ -132,6 +132,17 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		}
 		a.statusChecks = append(a.statusChecks, nb.StatusChecks()...)
 		a.routes = append(a.routes, nb.Register)
+		// Changes of guests, DHCP reservations and DNS records are written to
+		// NetBox (task 12.3).
+		if pve != nil {
+			pve.SetNetBox(nb)
+		}
+		if dhcpSvc != nil {
+			dhcpSvc.SetNetBox(nb)
+		}
+		if dnsSvc != nil {
+			dnsSvc.SetNetBox(nb)
+		}
 	}
 	a.middleware = append(a.middleware,
 		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))

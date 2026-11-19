@@ -35,3 +35,18 @@ export function freeAddress(vlan: NetBoxVlan, family: 4 | 6, used: string[]): st
   }
   return null
 }
+
+export type NetBoxResult = Schemas['NetBoxResult']
+
+/**
+ * The message for a change that was made but could not be written to NetBox; null if the
+ * write-back succeeded or didn't happen.
+ */
+export function netboxFailure(
+  result: NetBoxResult | null | undefined,
+  t: (key: string, params: Record<string, unknown>) => string,
+): string | null {
+  return result?.status === 'failed'
+    ? t('netbox.writeBackFailed', { error: result.error ?? '' })
+    : null
+}

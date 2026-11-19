@@ -20,6 +20,7 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/dhcp/kea"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
 )
 
@@ -43,6 +44,9 @@ type ReservationView struct {
 	// Source is "config" (configuration file, read-only) or "database".
 	Source   string `json:"source"`
 	ReadOnly bool   `json:"readOnly"`
+	// NetBox is the result of the write-back to NetBox after a change;
+	// missing if changes aren't written to NetBox.
+	NetBox *netbox.Result `json:"netbox,omitempty"`
 }
 
 // ReservationList is the response of GET .../reservations.
@@ -331,18 +335,21 @@ func (s *Service) handleCreateReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 	s.audit.RecordRequest(r, "dhcp.reservation.create", tgt, audit.ResultSuccess, details)
-	s.respondReservation(w, r, q, b, res, http.StatusCreated)
+	nb := s.netbox.SyncReservation(r.Context(), netbox.Base(r), tgt, nbReservation(q.name, res), nil)
+	s.respondReservation(w, r, q, b, res, http.StatusCreated, nb)
 }
 
 // respondReservation answers with the stored reservation as Kea returns it.
-func (s *Service) respondReservation(w http.ResponseWriter, r *http.Request, q request, b Backend, res kea.Reservation, status int) {
+func (s *Service) respondReservation(w http.ResponseWriter, r *http.Request, q request, b Backend, res kea.Reservation, status int, nb *netbox.Result) {
 	typ, id := res.Identifier()
 	stored, found, err := b.Reservation(r.Context(), res.SubnetID, typ, id, kea.SourceDatabase)
 	if err != nil || !found {
 		stored = res
 		stored.Source = kea.SourceDatabase
 	}
-	httpx.WriteJSON(w, status, q.reservationView(stored))
+	v := q.reservationView(stored)
+	v.NetBox = nb
+	httpx.WriteJSON(w, status, v)
 }
 
 // current returns the stored reservation of the ID in the request, checked
@@ -420,7 +427,9 @@ func (s *Service) handleUpdateReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 	s.audit.RecordRequest(r, "dhcp.reservation.update", tgt, audit.ResultSuccess, details)
-	s.respondReservation(w, r, q, b, res, http.StatusOK)
+	prev := nbReservation(q.name, cur)
+	nb := s.netbox.SyncReservation(r.Context(), netbox.Base(r), tgt, nbReservation(q.name, res), &prev)
+	s.respondReservation(w, r, q, b, res, http.StatusOK, nb)
 }
 
 func (s *Service) handleDeleteReservation(w http.ResponseWriter, r *http.Request) {
@@ -443,5 +452,9 @@ func (s *Service) handleDeleteReservation(w http.ResponseWriter, r *http.Request
 		return
 	}
 	s.audit.RecordRequest(r, "dhcp.reservation.delete", tgt, audit.ResultSuccess, details)
+	if nb := s.netbox.DeleteReservation(r.Context(), netbox.Base(r), tgt, nbReservation(q.name, cur)); nb != nil {
+		httpx.WriteJSON(w, http.StatusOK, DeleteResult{NetBox: nb})
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }

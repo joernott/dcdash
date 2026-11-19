@@ -21,6 +21,7 @@ import {
   type RecordFilter,
 } from '@/dns/records'
 import { useSessionStore } from '@/stores/session'
+import { netboxFailure } from '@/netbox/netbox'
 import { useToastStore } from '@/stores/toast'
 
 const i18n = useI18n()
@@ -88,6 +89,8 @@ async function load() {
 
 function saved(r: DnsRecord) {
   toast.success(t('dns.recordSaved', { name: relativeName(r.name, zone.value), type: r.type }))
+  const nb = netboxFailure(r.netbox, t)
+  if (nb) toast.error(nb)
   void load()
 }
 
@@ -112,7 +115,7 @@ async function removeRecord() {
   if (!r) return
   busy.value = true
   try {
-    await unwrap(
+    const res = await unwrap(
       api.DELETE('/api/v1/dns/providers/{provider}/zones/{zone}/records/{id}', {
         params: {
           path: { provider: provider.value, zone: zone.value, id: r.id },
@@ -122,6 +125,8 @@ async function removeRecord() {
     )
     deleting.value = null
     toast.success(t('dns.recordDeleted', { name: relativeName(r.name, zone.value), type: r.type }))
+    const nb = netboxFailure(res?.netbox, t)
+    if (nb) toast.error(nb)
     await load()
   } catch (e) {
     deleteError.value = errorMessage(i18n, e)

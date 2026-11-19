@@ -18,6 +18,7 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/dhcp/kea"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/status"
 )
 
@@ -78,6 +79,8 @@ type Service struct {
 	audit   *audit.Log
 	log     zerolog.Logger
 	now     func() time.Time
+	// netbox receives changed reservations; nil if not configured.
+	netbox *netbox.Service
 }
 
 // NewService creates the service for the configured servers.

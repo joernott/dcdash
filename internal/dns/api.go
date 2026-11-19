@@ -15,6 +15,7 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/status"
 )
@@ -30,6 +31,8 @@ type Service struct {
 	order     []string
 	audit     *audit.Log
 	log       zerolog.Logger
+	// netbox receives changed A and AAAA records; nil if not configured.
+	netbox *netbox.Service
 }
 
 // NewService creates the API for the given providers.
@@ -314,7 +317,8 @@ func (s *Service) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit.RecordRequest(r, "dns.record.create", recordTarget(p, zone), audit.ResultSuccess, recordDetails(rec, rec.ID))
-	httpx.WriteJSON(w, http.StatusCreated, rec)
+	httpx.WriteJSON(w, http.StatusCreated, RecordResult{Record: rec,
+		NetBox: s.recordChanged(r.Context(), netbox.Base(r), recordTarget(p, zone), rec, nil)})
 }
 
 func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
@@ -343,7 +347,12 @@ func (s *Service) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		d["previous"] = recordDetails(prev, id)
 	}
 	s.audit.RecordRequest(r, "dns.record.update", recordTarget(p, zone), audit.ResultSuccess, d)
-	httpx.WriteJSON(w, http.StatusOK, rec)
+	var before *Record
+	if hasPrev {
+		before = &prev
+	}
+	httpx.WriteJSON(w, http.StatusOK, RecordResult{Record: rec,
+		NetBox: s.recordChanged(r.Context(), netbox.Base(r), recordTarget(p, zone), rec, before)})
 }
 
 func (s *Service) handleDeleteRecord(w http.ResponseWriter, r *http.Request) {
@@ -356,8 +365,9 @@ func (s *Service) handleDeleteRecord(w http.ResponseWriter, r *http.Request) {
 	// The record is looked up first so the audit entry shows what was
 	// deleted.
 	details := map[string]any{"id": id}
-	if rec, ok := s.findRecord(r, p, zone, id); ok {
-		details = recordDetails(rec, id)
+	old, found := s.findRecord(r, p, zone, id)
+	if found {
+		details = recordDetails(old, id)
 	}
 	if err := p.DeleteRecord(r.Context(), zone, id, version); err != nil {
 		details["error"] = err.Error()
@@ -366,6 +376,12 @@ func (s *Service) handleDeleteRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.audit.RecordRequest(r, "dns.record.delete", recordTarget(p, zone), audit.ResultSuccess, details)
+	if found {
+		if nb := s.recordDeleted(r.Context(), netbox.Base(r), recordTarget(p, zone), old); nb != nil {
+			httpx.WriteJSON(w, http.StatusOK, DeleteResult{NetBox: nb})
+			return
+		}
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

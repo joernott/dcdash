@@ -4,6 +4,7 @@ package dns
 
 import (
 	"context"
+	"time"
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/rbac"
@@ -64,5 +65,10 @@ func (r *PlannedRecord) Create(ctx context.Context, entry audit.Entry) error {
 		entry.Result = audit.ResultFailure
 	}
 	_ = r.s.audit.Record(ctx, entry)
+	if err == nil {
+		base := entry
+		base.Time, base.Details = time.Time{}, nil
+		r.s.recordChanged(ctx, base, r.Target, rec, nil)
+	}
 	return err
 }

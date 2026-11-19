@@ -37,6 +37,7 @@ type apiEnv struct {
 	fake  *cffake.Server
 	srv   *httptest.Server
 	audit *audit.Log
+	svc   *dns.Service
 }
 
 func newAPIEnv(t *testing.T) *apiEnv {
@@ -72,7 +73,7 @@ func newAPIEnv(t *testing.T) *apiEnv {
 	})
 	srv := httptest.NewServer(authz.Middleware(inject))
 	t.Cleanup(srv.Close)
-	return &apiEnv{fake: fake, srv: srv, audit: auditLog}
+	return &apiEnv{fake: fake, srv: srv, audit: auditLog, svc: svc}
 }
 
 // do sends a request and decodes a successful response into out. It returns

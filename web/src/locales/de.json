@@ -402,7 +402,8 @@
         "create": "Erstellen",
         "start": "Starten",
         "dhcp": "DHCP-Reservierung anlegen",
-        "dns": "DNS-Eintrag anlegen"
+        "dns": "DNS-Eintrag anlegen",
+        "netbox": "NetBox aktualisieren"
       },
       "stepStates": {
         "pending": "Wartet",
@@ -828,5 +829,8 @@
     "delegatedPrefixes": "Delegierte Präfixe",
     "listHint": "Optional; mehrere durch Kommas getrennt.",
     "keptFields": "Client-Klassen und Optionen dieser Reservierung bleiben unverändert."
+  },
+  "netbox": {
+    "writeBackFailed": "Die Änderung wurde durchgeführt, aber NetBox konnte nicht aktualisiert werden: {error}"
   }
 }

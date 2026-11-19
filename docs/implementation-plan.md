@@ -396,13 +396,13 @@ These apply to every task:
     status on the overview page
   - [x] **12.2.2** Fake NetBox (`test/nbfake`) with the calls of ADR 0006
   - [x] **12.2.3** VLAN names and free addresses in the creation wizard
-- [ ] **12.3** Write-back: changes in dcdash update NetBox (creating, changing and deleting
+- [x] **12.3** Write-back: changes in dcdash update NetBox (creating, changing and deleting
   guests, disks and network devices; DHCP reservations; DNS names). A failed NetBox update
   does not undo the change itself, but it is shown to the user and written to the audit log
-  - [ ] **12.3.1** Creating and deleting guests (job step)
-  - [ ] **12.3.2** Changing options, disks and network devices of VMs
-  - [ ] **12.3.3** DHCP reservations and DNS `A`/`AAAA` records
-  - [ ] **12.3.4** Web interface: NetBox results and errors after changes
+  - [x] **12.3.1** Creating and deleting guests (job step)
+  - [x] **12.3.2** Changing options, disks and network devices of VMs
+  - [x] **12.3.3** DHCP reservations and DNS `A`/`AAAA` records
+  - [x] **12.3.4** Web interface: NetBox results and errors after changes
 - [ ] **12.4** Comparison view: differences between NetBox and the actual state of the
   connected systems
 - [ ] **12.5** Permissions and audit actions, navigation entry

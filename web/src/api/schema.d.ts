@@ -1293,6 +1293,19 @@ export interface components {
       /** Format: int64 */
       latencyMs: number
     }
+    /**
+     * @description Result of the write-back to NetBox after a change (missing if the change isn't written
+     *     to NetBox). A failure doesn't undo the change; it is recorded as `netbox.sync`.
+     */
+    NetBoxResult: {
+      /** @enum {string} */
+      status: 'ok' | 'failed'
+      /** @description The error of NetBox if status is failed. */
+      error?: string
+    }
+    NetBoxWriteBack: {
+      netbox: components['schemas']['NetBoxResult']
+    }
     NetBoxInfo: {
       /** @example netbox */
       name: string
@@ -1441,6 +1454,11 @@ export interface components {
     ProxmoxTaskRef: {
       upid: string
       node: string
+    }
+    ProxmoxDeleteResult: {
+      upid: string
+      node: string
+      netbox?: components['schemas']['NetBoxResult']
     }
     ProxmoxTask: {
       upid: string
@@ -1650,7 +1668,7 @@ export interface components {
       error?: string
       steps: {
         /** @enum {string} */
-        name: 'clone' | 'configure' | 'resize' | 'create' | 'dhcp' | 'dns' | 'start'
+        name: 'clone' | 'configure' | 'resize' | 'create' | 'netbox' | 'dhcp' | 'dns' | 'start'
         /** @description What a dhcp or dns step adds */
         detail?: string
         /** @enum {string} */
@@ -1814,6 +1832,7 @@ export interface components {
       node: string
       /** @description False if the task was still running. */
       done: boolean
+      netbox?: components['schemas']['NetBoxResult']
     }
     ProxmoxDeleteRequest: {
       /** @description The guest's name (or its ID if it has no name), typed by the user. */
@@ -1862,6 +1881,7 @@ export interface components {
       name: string
     }
     DNSRecord: {
+      netbox?: components['schemas']['NetBoxResult']
       id: string
       /** @description Fully qualified name without trailing dot. */
       name: string
@@ -2011,6 +2031,7 @@ export interface components {
       }[]
     }
     DHCPReservation: {
+      netbox?: components['schemas']['NetBoxResult']
       id: string
       /** @description Send back with an update or delete. */
       version: string
@@ -3020,7 +3041,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['ProxmoxTaskRef']
+          'application/json': components['schemas']['ProxmoxDeleteResult']
         }
       }
       /** @description Invalid request, or the confirmation doesn't match the name (code: confirmation_mismatch). */
@@ -3870,6 +3891,15 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description Record deleted; the A or AAAA record was written to NetBox. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxWriteBack']
+        }
+      }
       /** @description Record deleted. */
       204: {
         headers: {
@@ -4128,6 +4158,15 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description Reservation deleted and written to NetBox. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxWriteBack']
+        }
+      }
       /** @description Reservation deleted. */
       204: {
         headers: {

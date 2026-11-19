@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, it, expect } from 'vitest'
 
-import { freeAddress, ipamPermission, parseVid, type NetBoxVlan } from '../netbox'
+import { freeAddress, ipamPermission, netboxFailure, parseVid, type NetBoxVlan } from '../netbox'
 
 const vlan: NetBoxVlan = {
   vid: 100,
@@ -32,5 +32,14 @@ describe('netbox helpers', () => {
     expect(freeAddress(vlan, 4, ['192.0.2.3', '192.0.2.4', '198.51.100.1'])).toBeNull()
     expect(freeAddress(vlan, 6, ['2001:DB8::1/64'])).toBeNull()
     expect(freeAddress(vlan, 6, [])).toBe('2001:db8::1/64')
+  })
+
+  it('reports failed write-backs only', () => {
+    const t = (k: string, p: Record<string, unknown>) => `${k}: ${String(p.error)}`
+    expect(netboxFailure({ status: 'failed', error: 'down' }, t)).toBe(
+      'netbox.writeBackFailed: down',
+    )
+    expect(netboxFailure({ status: 'ok' }, t)).toBeNull()
+    expect(netboxFailure(undefined, t)).toBeNull()
   })
 })

@@ -18,6 +18,7 @@ import (
 	"github.com/joernott/dcdash/internal/dhcp"
 	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/status"
@@ -44,6 +45,8 @@ type Service struct {
 	// the modules are not configured.
 	dhcp *dhcp.Service
 	dns  *dns.Service
+	// netbox receives the changes of guests; nil if not configured.
+	netbox *netbox.Service
 }
 
 // NewService creates the API for the given clusters. sessions is used to end

@@ -616,7 +616,7 @@ paths:
           description: Task started.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProxmoxTaskRef" }
+              schema: { $ref: "#/components/schemas/ProxmoxDeleteResult" }
         "400":
           description: "Invalid request, or the confirmation doesn't match the name (code: confirmation_mismatch)."
           content:
@@ -1378,6 +1378,11 @@ paths:
         - { name: version, in: query, required: true, schema: { type: string }, description: Version of the record as read. }
       responses:
         "204": { description: Record deleted. }
+        "200":
+          description: Record deleted; the A or AAAA record was written to NetBox.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxWriteBack" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1591,6 +1596,11 @@ paths:
         - { name: version, in: query, required: true, schema: { type: string }, description: Version of the reservation as read. }
       responses:
         "204": { description: Reservation deleted. }
+        "200":
+          description: Reservation deleted and written to NetBox.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxWriteBack" }
         "400": { $ref: "#/components/responses/DHCPInvalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -2003,6 +2013,22 @@ components:
           additionalProperties: { type: string }
         latencyMs: { type: integer, format: int64 }
 
+    NetBoxResult:
+      type: object
+      description: |
+        Result of the write-back to NetBox after a change (missing if the change isn't written
+        to NetBox). A failure doesn't undo the change; it is recorded as `netbox.sync`.
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok, failed] }
+        error: { type: string, description: The error of NetBox if status is failed. }
+
+    NetBoxWriteBack:
+      type: object
+      required: [netbox]
+      properties:
+        netbox: { $ref: "#/components/schemas/NetBoxResult" }
+
     NetBoxInfo:
       type: object
       required: [name, writeBack, clusters]
@@ -2183,6 +2209,14 @@ components:
       properties:
         upid: { type: string }
         node: { type: string }
+
+    ProxmoxDeleteResult:
+      type: object
+      required: [upid, node]
+      properties:
+        upid: { type: string }
+        node: { type: string }
+        netbox: { $ref: "#/components/schemas/NetBoxResult" }
 
     ProxmoxTask:
       type: object
@@ -2385,7 +2419,7 @@ components:
             type: object
             required: [name, state]
             properties:
-              name: { type: string, enum: [clone, configure, resize, create, dhcp, dns, start] }
+              name: { type: string, enum: [clone, configure, resize, create, netbox, dhcp, dns, start] }
               detail: { type: string, description: What a dhcp or dns step adds, e.g. "192.0.2.50 (kea4)". }
               state: { type: string, enum: [pending, running, done, failed, skipped] }
               upid: { type: string, description: The Proxmox task of the step. }
@@ -2519,6 +2553,7 @@ components:
         upid: { type: string }
         node: { type: string }
         done: { type: boolean, description: False if the task was still running. }
+        netbox: { $ref: "#/components/schemas/NetBoxResult" }
     ProxmoxDeleteRequest:
       type: object
       required: [confirm]
@@ -2587,6 +2622,7 @@ components:
       type: object
       required: [id, name, type, ttl, content, version]
       properties:
+        netbox: { $ref: "#/components/schemas/NetBoxResult" }
         id: { type: string }
         name: { type: string, description: Fully qualified name without trailing dot. }
         type: { type: string, examples: [A, MX, TXT] }
@@ -2759,6 +2795,7 @@ components:
       type: object
       required: [id, version, subnetId, subnet, identifierType, identifier, ipAddresses, source, readOnly]
       properties:
+        netbox: { $ref: "#/components/schemas/NetBoxResult" }
         id: { type: string }
         version: { type: string, description: Send back with an update or delete. }
         subnetId: { type: integer, description: "0: global reservation." }
