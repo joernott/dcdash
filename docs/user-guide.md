@@ -109,6 +109,23 @@ its version, whether it belongs to an HA pair, and the state of the pair.
   address, client ID or DUID. Reservations from Kea's configuration file are marked
   read-only and can only be changed there.
 
+## NetBox
+
+If NetBox is connected, dcdash keeps it up to date: creating, changing and deleting guests,
+DHCP reservations and DNS `A`/`AAAA` records are written to NetBox. If that fails, the change
+in dcdash is still made, and an error message tells you that NetBox could not be updated.
+
+In the creation wizard, the VLAN field shows the name of the VLAN in NetBox, and with static
+addresses a button offers a free address from the VLAN's prefixes ("Use the free address ...
+from NetBox"). The address is only taken when the guest is created.
+
+The NetBox page compares a Proxmox cluster with NetBox. By default it lists only guests that
+differ, are missing in NetBox or exist only there; "Only differences" switches to all guests.
+"Update NetBox" writes a guest's current state to NetBox, "Delete from NetBox" removes a
+virtual machine that exists only in NetBox (only those dcdash created). "Compare" checks the
+DHCP reservations and DNS records against the addresses in NetBox. See
+[netbox.md](netbox.md).
+
 ## Administration
 
 Users with the corresponding permissions see two more pages:

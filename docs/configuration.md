@@ -335,6 +335,27 @@ socket. Default: no servers. See [dhcp.md](dhcp.md).
 | `dhcp.servers[].timeout` | duration | `15s` | Timeout of a single command. `0` uses the default. Must not be negative. |
 | `dhcp.servers[].ha_group` | string | empty (standalone) | Groups the servers of a Kea HA pair. Same naming rules as `name`; all servers of a group must have the same `family`. See [dhcp.md](dhcp.md#ha-pairs). |
 
+## netbox
+
+NetBox as a common data source with write-back. Disabled without `url`. See
+[netbox.md](netbox.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `netbox.name` | string | `netbox` | Name in the UI and in permissions (`netbox:<name>:...`). Same rules as `proxmox.clusters[].name`. |
+| `netbox.url` | string | empty (disabled) | URL of NetBox without `/api`, `https://host[:port][/path]`. |
+| `netbox.insecure` | bool | `false` | Allows an `http://` URL, which sends the token in clear text. For tests only. |
+| `netbox.tls.*` | | | TLS client settings, see [General rules](#general-rules). |
+| `netbox.token` | secret | none | API token: a v2 token `nbt_<key>.<token>` (sent as `Bearer`) or a v1 token (sent as `Token`). Required. |
+| `netbox.timeout` | duration | `15s` | Timeout of a single request. Must not be negative. |
+| `netbox.write_back` | bool | `true` | Writes changes made in dcdash to NetBox. `false` only reads. |
+| `netbox.tag` | string | `dcdash` | Slug of the tag on the objects dcdash creates. It must exist in NetBox. |
+| `netbox.on_delete` | string | `tagged` | When a guest is deleted: `tagged` deletes NetBox VMs with the tag and sets the others to `decommissioning`, `delete` always deletes, `decommission` never deletes. |
+| `netbox.vmid_field` | string | empty | Name of an integer custom field of virtual machines with the Proxmox VMID. Without it, VMs are found by name. |
+| `netbox.clusters` | map | empty | Proxmox cluster name (`proxmox.clusters[].name`) to NetBox cluster name. Guests of other clusters are not written to NetBox. |
+| `netbox.vlan_group`, `netbox.site` | string | empty | Slugs that restrict the VLAN lookup by VLAN ID. |
+| `netbox.vrf` | string | empty (global table) | Name of the VRF of the IP addresses and prefixes. |
+
 ## metrics
 
 The optional Prometheus endpoint `/metrics`. The other keys are validated only when

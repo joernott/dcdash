@@ -6,6 +6,22 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **NetBox:** NetBox 4.2 or later as a common data source (`netbox` section). The creation
+  wizard shows VLAN names and offers free addresses from the VLAN's prefixes. Creating,
+  changing and deleting guests, DHCP reservations and DNS `A`/`AAAA` records are written back
+  to NetBox; a failed write-back doesn't undo the change, it is shown and audited as
+  `netbox.sync`. A NetBox page compares NetBox with Proxmox, Kea and DNS and updates NetBox
+  on request (`netbox.apply`). Permissions `netbox:<name>:ipam:read` and
+  `netbox:<name>:sync:read`/`write`.
+
+### Changed
+
+- **API:** deleting a DHCP reservation or a DNS record answers `200` with the NetBox result
+  instead of `204` when the change is written to NetBox; responses of changes contain a
+  `netbox` field.
+
 ## [0.1.2] - 2026-11-18
 
 Polish of v0.1.0: changing virtual machines, LDAP failover, the built-in documentation and
