@@ -17,6 +17,7 @@ import (
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/switches/aoscx"
@@ -39,12 +40,25 @@ type Backend interface {
 	Name() string
 	APIVersion() string
 	Inventory(ctx context.Context) (aoscx.Inventory, error)
+	Ports(ctx context.Context) ([]aoscx.Port, error)
+	Port(ctx context.Context, name string) (aoscx.Port, error)
+	UpdatePort(ctx context.Context, name string, ch aoscx.PortChange) error
+	VLANs(ctx context.Context) ([]aoscx.VLAN, error)
+	CreateVLAN(ctx context.Context, id int, name string) error
+	RenameVLAN(ctx context.Context, id int, name string) error
+	DeleteVLAN(ctx context.Context, id int) error
+	MACs(ctx context.Context) ([]aoscx.MACEntry, error)
+	SaveConfig(ctx context.Context) error
 	Close(ctx context.Context) error
 }
 
 type sw struct {
 	backend Backend
 	typ     string
+	// device is the NetBox device of the switch, "" if not written to NetBox.
+	device string
+	// writeMu serializes changes: they read, modify and write back.
+	writeMu sync.Mutex
 
 	mu       sync.Mutex
 	inv      aoscx.Inventory
@@ -59,6 +73,8 @@ type Service struct {
 	audit    *audit.Log
 	log      zerolog.Logger
 	now      func() time.Time
+	// nb receives port and VLAN changes; nil if not configured.
+	nb *netbox.Service
 }
 
 // NewService creates the service for the configured switches.
@@ -69,7 +85,7 @@ func NewService(cfgs config.Switches, auditLog *audit.Log, log zerolog.Logger) (
 		if err != nil {
 			return nil, err
 		}
-		s.add(b, c.Type)
+		s.add(b, c.Type, c.NetBoxDevice)
 	}
 	return s, nil
 }
@@ -79,8 +95,8 @@ func newService(auditLog *audit.Log, log zerolog.Logger) *Service {
 		log: log.With().Str("component", "switches").Logger(), now: time.Now}
 }
 
-func (s *Service) add(b Backend, typ string) {
-	s.switches[b.Name()] = &sw{backend: b, typ: typ}
+func (s *Service) add(b Backend, typ, device string) {
+	s.switches[b.Name()] = &sw{backend: b, typ: typ, device: device}
 	s.order = append(s.order, b.Name())
 }
 
@@ -176,6 +192,7 @@ func errorText(err error) string {
 // Register adds the switch routes.
 func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/v1/switches", s.handleSwitches)
+	s.registerNetwork(mux)
 }
 
 // SwitchView describes a switch in GET /api/v1/switches.

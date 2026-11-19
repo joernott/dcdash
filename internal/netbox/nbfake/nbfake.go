@@ -299,6 +299,8 @@ func (s *Server) field(typ string, o Object, filter string) (string, bool) {
 		return "", true
 	}
 	switch typ + " " + filter {
+	case DevIfaces + " device":
+		return str(s.objects[Devices][toInt(o["device"])]["name"]), true
 	case VMs + " cluster_id", Clusters + " id":
 		return fk("cluster"), true
 	case Interfaces + " virtual_machine_id", Disks + " virtual_machine_id":
@@ -386,7 +388,7 @@ var foreignKeys = map[string]map[string]string{
 	IPs:        {"vrf": VRFs},
 	Prefixes:   {"vrf": VRFs, "vlan": VLANs},
 	VLANs:      {"group": VLANGroups, "site": Sites},
-	DevIfaces:  {"device": Devices},
+	DevIfaces:  {"device": Devices, "untagged_vlan": VLANs},
 }
 
 var required = map[string][]string{
@@ -543,6 +545,13 @@ func (s *Server) validate(typ string, o Object, errs fieldErrors) {
 		}
 		if o["mode"] != nil && o["mode"] != "" && o["mode"] != "access" && o["mode"] != "tagged" && o["mode"] != "tagged-all" {
 			errs.add("mode", fmt.Sprintf("%q is not a valid choice.", str(o["mode"])))
+		}
+	case DevIfaces:
+		if o["mode"] != nil && o["mode"] != "" && o["mode"] != "access" && o["mode"] != "tagged" && o["mode"] != "tagged-all" {
+			errs.add("mode", fmt.Sprintf("%q is not a valid choice.", str(o["mode"])))
+		}
+		if len(toInts(o["tagged_vlans"])) > 0 && o["mode"] != "tagged" {
+			errs.add("tagged_vlans", "Tagged VLANs can only be assigned in tagged mode.")
 		}
 	case Disks:
 		for oid, x := range s.objects[Disks] {
@@ -829,6 +838,11 @@ func (s *Server) render(typ string, o Object) Object {
 		out["site"] = ref(Sites, o["site"], "name", "slug")
 	case DevIfaces:
 		out["device"] = ref(Devices, o["device"], "name")
+		out["untagged_vlan"] = ref(VLANs, o["untagged_vlan"], "vid", "name")
+		out["mode"] = choice(o["mode"])
+		if _, ok := o["enabled"]; !ok {
+			out["enabled"] = true
+		}
 	}
 	if typ != Tags {
 		out["tags"] = tags

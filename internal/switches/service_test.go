@@ -3,6 +3,7 @@
 package switches_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,6 +17,8 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/netbox"
+	"github.com/joernott/dcdash/internal/netbox/nbfake"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
 	"github.com/joernott/dcdash/internal/status"
@@ -26,19 +29,24 @@ import (
 
 // Test users and their permissions.
 var testUsers = map[string][]string{
-	"admin":  {"switch:*:*:admin"},
-	"viewer": {"switch:sw1:*:read"},
-	"other":  {"dhcp:*:*:admin"},
+	"admin":    {"switch:*:*:admin"},
+	"viewer":   {"switch:sw1:*:read"},
+	"operator": {"switch:sw1:port/*:operate"},
+	"netops":   {"switch:sw1:*:read", "switch:sw1:port/1/1/5:write", "switch:sw1:vlan/4*:write"},
+	"other":    {"dhcp:*:*:admin"},
 }
 
 type apiEnv struct {
 	sw1, sw2 *cxfake.Server
 	srv      *httptest.Server
 	svc      *switches.Service
+	audit    *audit.Log
+	nb       *nbfake.Server
 }
 
-// newAPIEnv creates sw1 and sw2 (wrong password in dcdash's configuration).
-func newAPIEnv(t *testing.T) *apiEnv {
+// newAPIEnv creates sw1 (NetBox device "sw1-nb" if withNetBox) and sw2 (wrong password in
+// dcdash's configuration).
+func newAPIEnv(t *testing.T, withNetBox ...bool) *apiEnv {
 	t.Helper()
 	e := &apiEnv{sw1: cxfake.New("dcdash", "pw"), sw2: cxfake.New("dcdash", "pw")}
 	e.sw2.Hostname = "sw-two"
@@ -58,8 +66,15 @@ func newAPIEnv(t *testing.T) *apiEnv {
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	auditLog := audit.New(st.DB(), zerolog.Nop())
+	e.audit = auditLog
+	cfgs[0].NetBoxDevice = "sw1-nb"
 	if e.svc, err = switches.NewService(cfgs, auditLog, zerolog.Nop()); err != nil {
 		t.Fatal(err)
+	}
+	if len(withNetBox) > 0 && withNetBox[0] {
+		var nb *netbox.Service
+		e.nb, nb = nbfake.NewService(t, auditLog)
+		e.svc.SetNetBox(nb)
 	}
 	mux := http.NewServeMux()
 	e.svc.Register(mux)
@@ -81,20 +96,43 @@ func newAPIEnv(t *testing.T) *apiEnv {
 
 func (e *apiEnv) get(t *testing.T, user, path string, out any) int {
 	t.Helper()
-	req, _ := http.NewRequest(http.MethodGet, e.srv.URL+path, nil)
+	st, _ := e.do(t, user, http.MethodGet, path, nil, out)
+	return st
+}
+
+// do sends a request and decodes a successful response into out. It returns the status and
+// the error code of a failed request.
+func (e *apiEnv) do(t *testing.T, user, method, path string, body, out any) (int, string) {
+	t.Helper()
+	var rd io.Reader
+	if body != nil {
+		b, _ := json.Marshal(body)
+		rd = bytes.NewReader(b)
+	}
+	req, _ := http.NewRequest(method, e.srv.URL+path, rd)
 	req.Header.Set("X-Test-User", user)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
 	data, _ := io.ReadAll(res.Body)
-	if res.StatusCode == http.StatusOK && out != nil {
+	if res.StatusCode >= 300 {
+		var eb struct {
+			Error struct {
+				Code string `json:"code"`
+			} `json:"error"`
+		}
+		_ = json.Unmarshal(data, &eb)
+		return res.StatusCode, eb.Error.Code
+	}
+	if out != nil {
 		if err := json.Unmarshal(data, out); err != nil {
 			t.Fatalf("%s: %v: %s", path, err, data)
 		}
 	}
-	return res.StatusCode
+	return res.StatusCode, ""
 }
 
 func TestSwitchList(t *testing.T) {

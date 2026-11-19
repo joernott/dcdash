@@ -39,6 +39,9 @@ type Switch struct {
 	// APIVersion is the REST API version, e.g. "v10.08". Empty: the newest
 	// version the switch offers.
 	APIVersion string `yaml:"api_version"`
+	// NetBoxDevice is the name of the switch's device in NetBox. With it, port and
+	// VLAN changes are written to NetBox and ports show their projects.
+	NetBoxDevice string `yaml:"netbox_device"`
 	// Timeout of a single request.
 	Timeout Duration `yaml:"timeout"`
 }

@@ -301,3 +301,9 @@ We will add the mac addresses in netbox to facilitate the matching. Please keep 
 ## 2026-11-19 — Sprint 13 (Aruba CX)
 
 yes, continue with 13.2
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+yes, continue with the rest of sprint 13 until you need input from me

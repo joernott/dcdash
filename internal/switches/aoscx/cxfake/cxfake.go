@@ -39,6 +39,15 @@ type Server struct {
 	// Subsystems maps "<type>,<name>" to product info.
 	Subsystems map[string]Product
 
+	// Ports by name, VLANs by ID, the MAC address table and LLDP neighbors by
+	// port (see network.go).
+	Ports     map[string]*Port
+	VLANs     map[int]*VLAN
+	MACs      []MAC
+	Neighbors map[string][]Neighbor
+	// Saves counts copies of the running to the startup configuration.
+	Saves int
+
 	sessions map[string]string // session ID -> CSRF token
 	logins   int
 	requests []string
@@ -55,13 +64,15 @@ type Product struct {
 // New returns a fake 6000 switch with one chassis.
 func New(username, password string) *Server {
 	p := Product{ProductName: "6000 24G 4SFP Swch", SerialNumber: "CN00000001", PartNumber: "R8N88A"}
-	return &Server{
+	s := &Server{
 		Username: username, Password: password,
 		Hostname: "sw-test", Platform: "6000", Firmware: "PL.10.08.1010", BootTime: 1795091390,
 		Subsystems: map[string]Product{"chassis,1": p, "line_card,1/1": p, "management_module,1/1": p},
 		sessions:   map[string]string{},
 		fail:       map[string]int{},
 	}
+	s.seed()
+	return s
 }
 
 // Logins returns the number of successful logins.
@@ -168,7 +179,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, out)
 	default:
-		http.NotFound(w, r)
+		s.network(w, r)
 	}
 }
 
