@@ -232,3 +232,22 @@ yes, please go ahead
 ## 2026-11-19 — Sprint 12 (NetBox)
 
 start with sprint 12
+
+---
+
+## 2026-11-19 — Sprint 12 (NetBox)
+
+I have a production Netbox at netbox.thse.net but we have to be careful to not damage existing data. What do you neef from me to access those tests?
+Before you squash merge the branch, I have an additional task for netbox to support tag management in Netbox. We will use tags to group various items that belong to the same Project
+
+---
+
+## 2026-11-19 — Sprint 12 (NetBox)
+
+Answers:
+1. Yes, use project- as a prefix
+2. Yes, dcdash should manage tags and synchronize them to Netbox 
+3. Yes to all three, but also switch ports and IP addresses/ranges
+4. Yes, they should also show up in proxmox
+5. Yes to all.
+6. Ideally, we will have a folder /etc/dcdash/projects where a yaml file for every project exists and we can define metadata for it. At the moment, that will be the tag name and color, later on, we might have more informations in that file. A page listing all projects and a page per project, allowing access to all related objects.
