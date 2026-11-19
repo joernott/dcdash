@@ -374,6 +374,22 @@ Aruba CX switches, reached over their REST API. Default: no switches. See
 | `switches[].netbox_device` | string | empty | Name of the switch's device in NetBox. With it and `netbox`, port and VLAN changes are written to NetBox and ports show their projects. See [switches.md](switches.md#netbox). |
 | `switches[].timeout` | duration | `20s` | Timeout of a single request. `0` uses the default. Must not be negative. |
 
+## firewalls
+
+OPNsense firewalls, reached over their REST API. Default: no firewalls. See
+[firewalls.md](firewalls.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `firewalls[].name` | string | none | Unique name, used in the UI and in permissions (`firewall:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
+| `firewalls[].type` | string | `opnsense` | Type of the firewall API. Only `opnsense` so far. |
+| `firewalls[].url` | string | none | URL of the web interface, `https://host[:port]` without a path. Required. |
+| `firewalls[].insecure` | bool | `false` | Allows an `http://` URL, which sends the API secret in clear text. For tests only. |
+| `firewalls[].tls.*` | | | TLS client settings, see [General rules](#general-rules). The default certificate is self-signed: use `fingerprint`, see [firewalls.md](firewalls.md#certificate). |
+| `firewalls[].api_key` | string | none | API key of the dcdash user in OPNsense. Required. |
+| `firewalls[].api_secret` | secret | none | API secret of the key. Required. |
+| `firewalls[].timeout` | duration | `30s` | Timeout of a single request. `0` uses the default. Must not be negative. |
+
 ## projects
 
 Projects group objects with the tag `project-<name>`. See [projects.md](projects.md).

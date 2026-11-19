@@ -16,6 +16,12 @@ All notable changes to dcdash are listed here. The format follows
   on request (`netbox.apply`). Interfaces maintained by hand are found by name or MAC address and
   never deleted. Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
+- **Firewalls:** OPNsense firewalls in the `firewalls` section: version and gateways on the
+  overview page; a Firewalls page with gateways and services (restart), WireGuard peers
+  (enable, disable) and IPsec tunnels (restart), aliases and filter rules. Rule changes are
+  applied with a savepoint and rolled back by OPNsense if they cut off dcdash. Permissions
+  `firewall:<name>:system|wireguard/<peer>|ipsec/<connection>|alias/<name>|rule/<interface>:<action>`,
+  audited as `firewall.*`.
 - **Switches:** Aruba CX switches (AOS-CX 10.x) in the `switches` section: inventory and
   health on the overview page; a Switches page with a compact overview of all switches like
   their front panels, the ports (state, VLANs, LLDP neighbors,

@@ -451,14 +451,14 @@ These apply to every task:
 - [ ] **14.1** API research: OPNsense API (system status, gateways, services, WireGuard,
   IPsec, aliases, filter rules with savepoint and rollback); results in an ADR, amend this
   sprint if needed
-- [ ] **14.2** Configuration and client, health check (system, gateways, services) on the
+- [x] **14.2** Configuration and client, health check (system, gateways, services) on the
   overview page
-- [ ] **14.3** VPN status: WireGuard peers (last handshake, traffic) and IPsec tunnels
+- [x] **14.3** VPN status: WireGuard peers (last handshake, traffic) and IPsec tunnels
   (phase 1 and phase 2)
-- [ ] **14.4** Enable and disable WireGuard peers, restart IPsec tunnels
-- [ ] **14.5** Manage aliases
-- [ ] **14.6** Manage filter rules, applied with a savepoint so that a rule that cuts off
+- [x] **14.4** Enable and disable WireGuard peers, restart IPsec tunnels
+- [x] **14.5** Manage aliases
+- [x] **14.6** Manage filter rules, applied with a savepoint so that a rule that cuts off
   access is rolled back automatically
-- [ ] **14.7** Permissions and audit actions, navigation entry
+- [x] **14.7** Permissions and audit actions, navigation entry
 - [ ] **14.8** Tests: fake OPNsense server, manual test against a real firewall documented
 - [ ] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`

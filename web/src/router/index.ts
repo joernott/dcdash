@@ -86,6 +86,12 @@ export const routes = [
         meta: { title: 'nav.projects', module: 'project' },
       },
       {
+        path: 'firewalls/:firewall?',
+        name: 'firewalls',
+        component: () => import('@/views/firewalls/FirewallsView.vue'),
+        meta: { title: 'nav.firewalls', module: 'firewall' },
+      },
+      {
         path: 'switches/:switch?',
         name: 'switches',
         component: () => import('@/views/switches/SwitchesView.vue'),

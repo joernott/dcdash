@@ -1379,6 +1379,232 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/firewalls': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List firewalls
+     * @description Returns the firewalls on which the user holds at least `read` on any resource
+     *     (`firewall:<name>:*:read`), with version, uptime and memory. Cached for a minute.
+     */
+    get: operations['listFirewalls']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/health': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Gateways and services of a firewall
+     * @description Needs `firewall:<firewall>:system:read`.
+     */
+    get: operations['getFirewallHealth']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/services/restart': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Restart a service
+     * @description Needs `firewall:<firewall>:system:operate`. Audited as `firewall.service.restart`.
+     */
+    post: operations['restartFirewallService']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/vpn': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * WireGuard peers and IPsec tunnels
+     * @description Peers and tunnels the user may read (`wireguard/<peer>`, `ipsec/<connection>`). A
+     *     part the firewall doesn't offer, or the API user may not read, is named in `errors`.
+     */
+    get: operations['getFirewallVPN']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/wireguard/{uuid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Enable or disable a WireGuard peer
+     * @description Changes the peer and applies the WireGuard configuration. Needs
+     *     `firewall:<firewall>:wireguard/<peer name>:operate`. Audited as `firewall.wireguard.update`.
+     */
+    put: operations['setFirewallPeer']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/ipsec/{name}/restart': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Restart an IPsec tunnel
+     * @description Disconnects and connects the connection; connecting is asynchronous. Needs
+     *     `firewall:<firewall>:ipsec/<name>:operate`. Audited as `firewall.ipsec.restart`.
+     */
+    post: operations['restartFirewallTunnel']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/aliases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List aliases
+     * @description Aliases the user may read (`firewall:<firewall>:alias/<name>:read`).
+     */
+    get: operations['listFirewallAliases']
+    put?: never
+    /**
+     * Create an alias
+     * @description Creates the alias and applies the aliases. Needs `firewall:<firewall>:alias/<name>:write`.
+     *     Audited as `firewall.alias.create`.
+     */
+    post: operations['createFirewallAlias']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/aliases/{uuid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Change an alias
+     * @description A rename needs `write` on the old and the new name. Audited as `firewall.alias.update`.
+     */
+    put: operations['updateFirewallAlias']
+    post?: never
+    /**
+     * Delete an alias
+     * @description OPNsense refuses aliases in use (422). Audited as `firewall.alias.delete`.
+     */
+    delete: operations['deleteFirewallAlias']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/rules': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List filter rules
+     * @description Rules of the interfaces the user may read (`firewall:<firewall>:rule/<interface>:read`),
+     *     in their order. Legacy and automatic rules are read-only.
+     */
+    get: operations['listFirewallRules']
+    put?: never
+    /**
+     * Create a filter rule
+     * @description Creates the rule with a savepoint: dcdash applies it, checks over a new connection that
+     *     it still reaches the firewall and only then keeps it. Otherwise OPNsense restores the
+     *     previous rules within a minute (`rolledBack`). Needs
+     *     `firewall:<firewall>:rule/<interface>:write`. Audited as `firewall.rule.create`.
+     */
+    post: operations['createFirewallRule']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/firewalls/{firewall}/rules/{uuid}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Change a filter rule
+     * @description Like creating; moving a rule to another interface needs `write` on both. Audited as
+     *     `firewall.rule.update`.
+     */
+    put: operations['updateFirewallRule']
+    post?: never
+    /**
+     * Delete a filter rule
+     * @description With a savepoint, like creating. Audited as `firewall.rule.delete`.
+     */
+    delete: operations['deleteFirewallRule']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/projects': {
     parameters: {
       query?: never
@@ -1646,7 +1872,7 @@ export interface components {
        * @example certificate
        */
       name: string
-      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox, switch). */
+      /** @description "system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox, switch, firewall). */
       kind: string
       /** @enum {string} */
       status: 'ok' | 'error'
@@ -1660,7 +1886,9 @@ export interface components {
        *     `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
        *     (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
        *     `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `switch.aoscx` (`model`, `hostname`, `firmware`),
-       *     `switch.unauthorized`, `switch.sessionLimit`, `switch.unavailable`, `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
+       *     `switch.unauthorized`, `switch.sessionLimit`, `switch.unavailable`, `firewall.opnsense` (`product`,
+       *     `version`, `gateways`), `firewall.gatewayDown` (`gateways`, `count`), `firewall.unauthorized`,
+       *     `firewall.forbidden`, `firewall.unavailable`, `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
        * @example certificate.valid
        */
       detailCode?: string
@@ -2465,6 +2693,181 @@ export interface components {
     DHCPServerList: {
       servers: components['schemas']['DHCPServer'][]
     }
+    Firewall: {
+      name: string
+      /** @enum {string} */
+      type: 'opnsense'
+      /** @description URL of the web interface from the configuration. */
+      url: string
+      /** @description Host name or address */
+      host: string
+      /** @enum {string} */
+      status: 'ok' | 'unavailable'
+      error?: string
+      /** @example OPNsense */
+      product?: string
+      /** @example 26.1.6 */
+      version?: string
+      /** @description As OPNsense formats it. */
+      uptime?: string
+      /** @description Bytes. */
+      memoryUsed?: number
+      /** @description Bytes. */
+      memoryTotal?: number
+    }
+    FirewallList: {
+      firewalls: components['schemas']['Firewall'][]
+    }
+    FirewallGateway: {
+      name: string
+      address: string
+      /** @enum {string} */
+      status: 'online' | 'down' | 'degraded'
+      /** @description OPNsense's state: none, down, force_down, delay, loss, delay+loss. */
+      detail: string
+      /** @example 1.2 ms */
+      delay?: string
+      stddev?: string
+      /** @example 0.0 % */
+      loss?: string
+    }
+    FirewallService: {
+      id: string
+      name: string
+      description: string
+      running: boolean
+      /** @description OPNsense needs the service. */
+      locked: boolean
+    }
+    FirewallHealth: {
+      gateways: components['schemas']['FirewallGateway'][]
+      services: components['schemas']['FirewallService'][]
+      /** @description The user may restart services. */
+      canOperate: boolean
+    }
+    FirewallPeer: {
+      uuid: string
+      name: string
+      enabled: boolean
+      publicKey: string
+      endpoint?: string
+      allowedIps?: string
+      interface?: string
+      /**
+       * Format: date-time
+       * @description 0001-01-01T00:00:00Z if there was none.
+       */
+      latestHandshake: string
+      rxBytes: number
+      txBytes: number
+      /** @description online (handshake in the last 5 minutes), stale, offline, or empty. */
+      status: string
+      canOperate: boolean
+    }
+    FirewallChildSA: {
+      name: string
+      description?: string
+      /** @example INSTALLED */
+      state?: string
+      localTs?: string
+      remoteTs?: string
+      bytesIn: number
+      bytesOut: number
+    }
+    FirewallTunnel: {
+      name: string
+      description: string
+      connected: boolean
+      localAddrs?: string
+      remoteAddrs?: string
+      bytesIn: number
+      bytesOut: number
+      children: components['schemas']['FirewallChildSA'][]
+      canOperate: boolean
+    }
+    FirewallVPN: {
+      peers: components['schemas']['FirewallPeer'][]
+      tunnels: components['schemas']['FirewallTunnel'][]
+      /** @description Errors by part (wireguard, ipsec). */
+      errors: {
+        [key: string]: string
+      }
+    }
+    FirewallAlias: {
+      uuid: string
+      name: string
+      /** @example host */
+      type: string
+      enabled: boolean
+      content: string[]
+      description: string
+      canWrite: boolean
+      /** @description dcdash edits host, network, port, url, urltable, mac and networkgroup aliases. */
+      editable: boolean
+    }
+    FirewallAliasList: {
+      aliases: components['schemas']['FirewallAlias'][]
+      canCreate: boolean
+    }
+    FirewallAliasRequest: {
+      name: string
+      /** @enum {string} */
+      type: 'host' | 'network' | 'port' | 'url' | 'urltable' | 'mac' | 'networkgroup'
+      enabled: boolean
+      content: string[]
+      description?: string
+    }
+    FirewallRuleRequest: {
+      enabled: boolean
+      /** @description Order (lower first). */
+      sequence?: number
+      /** @enum {string} */
+      action: 'pass' | 'block' | 'reject'
+      quick?: boolean
+      /** @example lan */
+      interface: string
+      /** @enum {string} */
+      direction: 'in' | 'out'
+      /** @enum {string} */
+      ipProtocol: 'inet' | 'inet6' | 'inet46'
+      /**
+       * @example any
+       * @example TCP
+       * @example UDP
+       * @example TCP/UDP
+       * @example ICMP
+       */
+      protocol?: string
+      /** @description any, an address, a network, an alias or an interface network (lan). */
+      source?: string
+      sourceNot?: boolean
+      sourcePort?: string
+      destination?: string
+      destinationNot?: boolean
+      /** @description Only with TCP or UDP. */
+      destinationPort?: string
+      log?: boolean
+      description?: string
+    }
+    FirewallRule: components['schemas']['FirewallRuleRequest'] & {
+      /** @description Empty for legacy rules. */
+      uuid: string
+      /** @description Legacy or automatic rule */
+      legacy: boolean
+      canWrite: boolean
+    }
+    FirewallRuleList: {
+      rules: components['schemas']['FirewallRule'][]
+      canCreate: boolean
+    }
+    FirewallRuleResult: {
+      /** @description The change is applied and kept. */
+      kept: boolean
+      /** @description dcdash couldn't reach the firewall after the change; OPNsense restores the previous rules within a minute. */
+      rolledBack: boolean
+      warning?: string
+      rule?: components['schemas']['FirewallRule']
+    }
     SwitchNeighbor: {
       chassisId: string
       portId: string
@@ -2756,6 +3159,33 @@ export interface components {
     }
   }
   responses: {
+    /** @description Invalid request: invalid_request, invalid_alias or invalid_rule, with the reason as message. */
+    FirewallInvalid: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description The alias type is read-only (alias_read_only), or the firewall has no savepoints for rules (no_savepoint). */
+    FirewallConflict: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description OPNsense rejected the change (rejected), with its messages. */
+    FirewallRejected: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Invalid request: invalid_request, invalid_port, invalid_vlan or invalid_query, with the reason as message. */
     SwitchInvalid: {
       headers: {
@@ -2975,6 +3405,8 @@ export interface components {
     /** @description Zone name without trailing dot. */
     DNSZone: string
     DNSRecordID: string
+    /** @description Firewall name from the configuration. */
+    FirewallName: string
     /** @description Switch name from the configuration. */
     SwitchName: string
     /** @description Server name from the configuration. */
@@ -5358,6 +5790,430 @@ export interface operations {
       }
       400: components['responses']['SwitchInvalid']
       401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  listFirewalls: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Visible firewalls. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  getFirewallHealth: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The health. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallHealth']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  restartFirewallService: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** @description Service ID from the health response. */
+          id: string
+        }
+      }
+    }
+    responses: {
+      /** @description The service was restarted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getFirewallVPN: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The VPN state. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallVPN']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      default: components['responses']['Error']
+    }
+  }
+  setFirewallPeer: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+        uuid: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          enabled: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description The peer. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallPeer']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  restartFirewallTunnel: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The tunnel is being restarted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listFirewallAliases: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The aliases. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallAliasList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createFirewallAlias: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FirewallAliasRequest']
+      }
+    }
+    responses: {
+      /** @description The alias. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallAlias']
+        }
+      }
+      400: components['responses']['FirewallInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['FirewallRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateFirewallAlias: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+        uuid: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FirewallAliasRequest']
+      }
+    }
+    responses: {
+      /** @description The alias. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallAlias']
+        }
+      }
+      400: components['responses']['FirewallInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['FirewallConflict']
+      422: components['responses']['FirewallRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteFirewallAlias: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+        uuid: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The alias was deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['FirewallRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listFirewallRules: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The rules. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallRuleList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createFirewallRule: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FirewallRuleRequest']
+      }
+    }
+    responses: {
+      /** @description The outcome. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallRuleResult']
+        }
+      }
+      400: components['responses']['FirewallInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['FirewallConflict']
+      422: components['responses']['FirewallRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateFirewallRule: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+        uuid: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FirewallRuleRequest']
+      }
+    }
+    responses: {
+      /** @description The outcome. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallRuleResult']
+        }
+      }
+      400: components['responses']['FirewallInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['FirewallConflict']
+      422: components['responses']['FirewallRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteFirewallRule: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Firewall name from the configuration. */
+        firewall: components['parameters']['FirewallName']
+        uuid: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The outcome. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FirewallRuleResult']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['FirewallConflict']
+      502: components['responses']['Upstream']
       default: components['responses']['Error']
     }
   }

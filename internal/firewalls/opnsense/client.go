@@ -105,7 +105,9 @@ type Client struct {
 	key    string
 	secret string
 	http   *http.Client
-	log    zerolog.Logger
+	// fresh opens a new connection for every request (see Reachable).
+	fresh *http.Client
+	log   zerolog.Logger
 }
 
 // New creates the client of a firewall. It does not connect.
@@ -128,7 +130,11 @@ func New(cfg config.Firewall, log zerolog.Logger) (*Client, error) {
 		}
 		tr.TLSClientConfig = tc
 	}
+	freshTr := tr.Clone()
+	freshTr.DisableKeepAlives = true
+	noRedirect := func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	return &Client{
+		fresh:  &http.Client{Transport: freshTr, Timeout: 10 * time.Second, CheckRedirect: noRedirect},
 		name:   cfg.Name,
 		base:   u.Scheme + "://" + u.Host,
 		key:    cfg.APIKey,
@@ -146,6 +152,17 @@ func (c *Client) Name() string { return c.name }
 // Do sends a request to path below /api (for example "/core/firmware/status").
 // body is sent as JSON if not nil; a JSON answer is decoded into out.
 func (c *Client) Do(ctx context.Context, method, path string, body, out any) error {
+	return c.do(ctx, c.http, method, path, body, out)
+}
+
+// Reachable checks over a new connection that the API still answers. After a
+// rule change it tells whether the firewall still lets dcdash in: pf keeps
+// existing connections, so a reused connection would pass anyway.
+func (c *Client) Reachable(ctx context.Context) error {
+	return c.do(ctx, c.fresh, http.MethodGet, "/core/firmware/status", nil, nil)
+}
+
+func (c *Client) do(ctx context.Context, hc *http.Client, method, path string, body, out any) error {
 	var r io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -167,7 +184,7 @@ func (c *Client) Do(ctx context.Context, method, path string, body, out any) err
 		req.Header.Set("Content-Type", "application/json")
 	}
 	start := time.Now()
-	resp, err := c.http.Do(req)
+	resp, err := hc.Do(req)
 	if err != nil {
 		return fmt.Errorf("%w: %s %s: %w", ErrUnavailable, method, path, err)
 	}

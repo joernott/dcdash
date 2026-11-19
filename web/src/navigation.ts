@@ -25,6 +25,7 @@ export const navigation: NavItem[] = [
   { name: 'netbox', label: 'nav.netbox', module: { name: 'netbox', action: 'read' } },
   { name: 'projects', label: 'nav.projects', module: { name: 'project', action: 'read' } },
   { name: 'switches', label: 'nav.switches', module: { name: 'switch', action: 'read' } },
+  { name: 'firewalls', label: 'nav.firewalls', module: { name: 'firewall', action: 'read' } },
   { name: 'audit', label: 'nav.audit', permission: PERMISSIONS.auditRead },
   { name: 'sessions', label: 'nav.sessions', permission: PERMISSIONS.sessionsRead },
 ]

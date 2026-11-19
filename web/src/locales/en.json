@@ -28,7 +28,8 @@
     "dhcp": "DHCP",
     "netbox": "NetBox",
     "projects": "Projects",
-    "switches": "Switches"
+    "switches": "Switches",
+    "firewalls": "Firewalls"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -46,7 +47,8 @@
       "dns": "DNS",
       "dhcp": "DHCP",
       "netbox": "NetBox",
-      "switch": "Switches"
+      "switch": "Switches",
+      "firewall": "Firewalls"
     },
     "components": {
       "database": "Database",
@@ -75,6 +77,13 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "firewall": {
+        "opnsense": "{product} {version}",
+        "gatewayDown": "Gateway down: {gateways} | Gateways down: {gateways}",
+        "unauthorized": "The firewall rejected dcdash's API key",
+        "forbidden": "The API user lacks a privilege",
+        "unavailable": "The firewall is not reachable"
       },
       "switch": {
         "aoscx": "{model} {hostname}, AOS-CX {firmware}",
@@ -631,6 +640,144 @@
       "done": "{name}: {change} done."
     }
   },
+  "firewalls": {
+    "firewall": "Firewall",
+    "none": "No firewalls are configured, or you may not see any.",
+    "views": "Firewall views",
+    "unavailable": "The firewall is not available: {error}",
+    "actions": "Actions",
+    "delete": "Delete",
+    "tabs": {
+      "health": "Health",
+      "vpn": "VPN",
+      "aliases": "Aliases",
+      "rules": "Rules"
+    },
+    "info": {
+      "version": "Version",
+      "uptime": "Uptime",
+      "memory": "Memory",
+      "memoryOf": "{used} of {total}"
+    },
+    "gatewayStates": {
+      "online": "Online",
+      "degraded": "Degraded",
+      "down": "Down"
+    },
+    "health": {
+      "gateways": "Gateways",
+      "services": "Services",
+      "gateway": "Gateway",
+      "address": "Address",
+      "status": "Status",
+      "quality": "Delay and loss",
+      "notMonitored": "not monitored",
+      "service": "Service",
+      "description": "Description",
+      "running": "Running",
+      "stopped": "Stopped",
+      "restart": "Restart",
+      "restartLabel": "Restart {service}",
+      "restartTitle": "Restart {service}?",
+      "restartText": "The service is restarted on {firewall}. It is briefly unavailable.",
+      "restarted": "{service} was restarted."
+    },
+    "vpn": {
+      "peer": "Peer",
+      "handshake": "Last handshake",
+      "traffic": "Traffic",
+      "allowedIps": "Tunnel addresses",
+      "tunnel": "Tunnel",
+      "remote": "Remote",
+      "children": "Phase 2",
+      "never": "never",
+      "ago": "{age} ago",
+      "disabled": "Disabled",
+      "states": {
+        "online": "Online",
+        "stale": "Stale",
+        "offline": "Offline"
+      },
+      "enable": "Enable",
+      "disable": "Disable",
+      "enableLabel": "Enable {peer}",
+      "disableLabel": "Disable {peer}",
+      "enabledPeer": "{peer} was enabled.",
+      "disabledPeer": "{peer} was disabled.",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "notInstalled": "not installed",
+      "restart": "Restart",
+      "restartLabel": "Restart tunnel {tunnel}",
+      "restarted": "{tunnel} is being restarted.",
+      "noPeers": "No WireGuard peers",
+      "noTunnels": "No IPsec tunnels",
+      "partError": "Not available: {error}"
+    },
+    "aliases": {
+      "name": "Name",
+      "type": "Type",
+      "content": "Content",
+      "description": "Description",
+      "enabled": "Enabled",
+      "filterHint": "Name, description or content",
+      "create": "Create alias",
+      "createTitle": "Create an alias",
+      "editTitle": "Change alias {name}",
+      "editLabel": "Change alias {name}",
+      "deleteLabel": "Delete alias {name}",
+      "deleteTitle": "Delete alias {name}?",
+      "deleteText": "The alias is deleted and the packet filter reloaded. OPNsense refuses aliases that rules use.",
+      "nameHint": "Up to 32 letters, digits and underscores, starting with a letter or underscore",
+      "contentHint": "One entry per line: addresses, networks, ports, URLs or other aliases, depending on the type.",
+      "appliedHint": "The change is loaded into the packet filter immediately.",
+      "saved": "Alias {name} was saved.",
+      "deleted": "Alias {name} was deleted."
+    },
+    "rules": {
+      "allInterfaces": "All interfaces",
+      "action": "Action",
+      "interface": "Interface",
+      "direction": "Direction",
+      "ipVersion": "IP version",
+      "protocol": "Protocol",
+      "source": "Source",
+      "sourcePort": "Source port",
+      "destination": "Destination",
+      "destinationPort": "Destination port",
+      "netHint": "any, an address, a network, an alias, or an interface network such as lan",
+      "portHint": "A port, a range such as 1000-2000, or a port alias",
+      "enabled": "Enabled",
+      "log": "Log matching packets",
+      "disabled": "disabled",
+      "legacy": "read-only",
+      "create": "Create rule",
+      "createTitle": "Create a rule",
+      "editTitle": "Change the rule",
+      "editLabel": "Change rule {rule}",
+      "deleteLabel": "Delete rule {rule}",
+      "deleteTitle": "Delete the rule?",
+      "deleteText": "The rule {rule} is deleted with a savepoint.",
+      "apply": "Apply",
+      "savepointHint": "dcdash applies every change with a savepoint and then checks that it can still reach the firewall. If not, OPNsense restores the previous rules within a minute.",
+      "kept": "The rules were applied.",
+      "rolledBack": "After the change, dcdash could not reach {firewall}. OPNsense restores the previous rules within a minute.",
+      "actions": {
+        "pass": "Pass",
+        "block": "Block",
+        "reject": "Reject"
+      },
+      "directions": {
+        "in": "in",
+        "out": "out"
+      },
+      "ip": {
+        "inet": "IPv4",
+        "inet6": "IPv6",
+        "inet46": "IPv4+6"
+      }
+    }
+  },
   "switches": {
     "switch": "Switch",
     "none": "No switches are configured, or you may not see any.",
@@ -772,6 +919,10 @@
     "vlan_in_use": "The VLAN is still in use: {message}",
     "default_vlan": "VLAN 1 cannot be deleted.",
     "rejected": "The switch rejected the change: {message}",
+    "invalid_alias": "The alias is invalid: {message}",
+    "invalid_rule": "The rule is invalid: {message}",
+    "no_savepoint": "This OPNsense version has no savepoints; dcdash changes rules only with an automatic rollback.",
+    "alias_read_only": "Aliases of this type are changed in OPNsense.",
     "unsupported": "This is not supported here: {message}",
     "rejected": "The server did not accept the change: {message}",
     "invalid_record": "Invalid entry: {message}",

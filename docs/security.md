@@ -283,7 +283,7 @@ A permission has four segments, `module:instance:resource:action`:
 
 | Segment | Meaning | Examples |
 |---|---|---|
-| module | The service family | `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `switch`, `system` |
+| module | The service family | `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `switch`, `firewall`, `system` |
 | instance | A configured backend, by name | `cluster-a`, `cloudflare-prod`; always `core` for `system` |
 | resource | An object of the backend | a VM, a zone, a subnet; `audit` or `sessions` for `system` |
 | action | The level of access | see below |
@@ -426,6 +426,24 @@ administrators. dcdash refuses to delete VLANs that ports use and VLAN 1. The sw
 account (`switches[].username`) limits what dcdash can do at all: `operators` can only read.
 See [switches.md](switches.md).
 
+### Firewall permissions
+
+The instance is the firewall name; resources are `system`, `wireguard/<peer>`,
+`ipsec/<connection>`, `alias/<name>` and `rule/<interface>`:
+
+| Permission | Allows |
+|---|---|
+| `firewall:<name>:system:read`, `:operate` | Seeing gateways and services, restarting services |
+| `firewall:<name>:wireguard/<peer>:read`, `:operate` | Seeing a WireGuard peer, enabling and disabling it |
+| `firewall:<name>:ipsec/<connection>:read`, `:operate` | Seeing an IPsec tunnel, restarting it |
+| `firewall:<name>:alias/<name>:read`, `:write` | Seeing an alias, creating, changing and deleting it |
+| `firewall:<name>:rule/<interface>:read`, `:write` | Seeing the rules of an interface, creating, changing and deleting them |
+
+A user sees a firewall with `read` on any of its resources. Rule changes are always applied
+with a savepoint: if dcdash can't reach the firewall afterwards, OPNsense restores the
+previous rules within a minute. The privileges of the API user in OPNsense limit what dcdash
+can do at all. See [firewalls.md](firewalls.md).
+
 ## Audit log
 
 dcdash records every login attempt and every state-changing action in the audit log, together
@@ -492,6 +510,9 @@ entry can't be stored, it is written to the application log as an error instead.
 | `project.assign`, `project.unassign` | A guest or a NetBox object was added to or removed from a project; `target` is the project, `details` name the object (guest or NetBox type and ID) and the error |
 | `switch.port.update` | A switch port was changed; `target` is `<switch>/<port>`, `details` contain the state before and after, the change, whether the configuration was saved and the NetBox outcome |
 | `switch.vlan.create`, `switch.vlan.update`, `switch.vlan.delete` | A VLAN change on a switch; `target` is `<switch>/vlan/<id>`, `details` contain the ID, the name (and the previous name), whether the configuration was saved and the NetBox outcome |
+| `firewall.service.restart`, `firewall.wireguard.update`, `firewall.ipsec.restart` | A service or IPsec tunnel was restarted, or a WireGuard peer enabled or disabled; `target` is `<firewall>/service/<id>`, `<firewall>/ipsec/<connection>` or `<firewall>/wireguard/<peer>` |
+| `firewall.alias.create`, `firewall.alias.update`, `firewall.alias.delete` | An alias change; `target` is `<firewall>/alias/<name>`, `details` contain type, content and the previous values |
+| `firewall.rule.create`, `firewall.rule.update`, `firewall.rule.delete` | A filter rule change; `target` is `<firewall>/rule/<interface>`, `details` contain the rule, the previous rule and `rolledBack` if dcdash couldn't reach the firewall afterwards (the result is then a failure) |
 | `project.tags` | dcdash created or changed project tags in NetBox; actor `dcdash`, `details` list the created, changed and orphaned tags |
 
 ## Security review

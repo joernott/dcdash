@@ -4,7 +4,7 @@
 // OPNsense 26.1 (see docs/adr/0009-opnsense.md): basic authentication with key
 // and secret, search answers with rows, {"result": "failed", "validations"}
 // on invalid changes, and filter savepoints that roll back after a timeout
-// unless they are cancelled.
+// unless they are canceled.
 package opnfake
 
 import (

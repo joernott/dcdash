@@ -28,7 +28,8 @@
     "dhcp": "DHCP",
     "netbox": "NetBox",
     "projects": "Projekte",
-    "switches": "Switches"
+    "switches": "Switches",
+    "firewalls": "Firewalls"
   },
   "home": {
     "welcome": "Willkommen, {name}",
@@ -46,7 +47,8 @@
       "dns": "DNS",
       "dhcp": "DHCP",
       "netbox": "NetBox",
-      "switch": "Switches"
+      "switch": "Switches",
+      "firewall": "Firewalls"
     },
     "components": {
       "database": "Datenbank",
@@ -75,6 +77,13 @@
       },
       "netbox": {
         "connected": "NetBox {version}"
+      },
+      "firewall": {
+        "opnsense": "{product} {version}",
+        "gatewayDown": "Gateway ausgefallen: {gateways} | Gateways ausgefallen: {gateways}",
+        "unauthorized": "Die Firewall hat den API-Schlüssel von dcdash abgelehnt",
+        "forbidden": "Dem API-Benutzer fehlt ein Recht",
+        "unavailable": "Die Firewall ist nicht erreichbar"
       },
       "switch": {
         "aoscx": "{model} {hostname}, AOS-CX {firmware}",
@@ -631,6 +640,144 @@
       "done": "{name}: {change} erledigt."
     }
   },
+  "firewalls": {
+    "firewall": "Firewall",
+    "none": "Es sind keine Firewalls eingerichtet, oder Sie dürfen keine sehen.",
+    "views": "Ansichten der Firewall",
+    "unavailable": "Die Firewall ist nicht verfügbar: {error}",
+    "actions": "Aktionen",
+    "delete": "Löschen",
+    "tabs": {
+      "health": "Zustand",
+      "vpn": "VPN",
+      "aliases": "Aliase",
+      "rules": "Regeln"
+    },
+    "info": {
+      "version": "Version",
+      "uptime": "Laufzeit",
+      "memory": "Speicher",
+      "memoryOf": "{used} von {total}"
+    },
+    "gatewayStates": {
+      "online": "Online",
+      "degraded": "Beeinträchtigt",
+      "down": "Ausgefallen"
+    },
+    "health": {
+      "gateways": "Gateways",
+      "services": "Dienste",
+      "gateway": "Gateway",
+      "address": "Adresse",
+      "status": "Zustand",
+      "quality": "Verzögerung und Verlust",
+      "notMonitored": "nicht überwacht",
+      "service": "Dienst",
+      "description": "Beschreibung",
+      "running": "Läuft",
+      "stopped": "Angehalten",
+      "restart": "Neu starten",
+      "restartLabel": "{service} neu starten",
+      "restartTitle": "{service} neu starten?",
+      "restartText": "Der Dienst wird auf {firewall} neu gestartet. Er ist kurz nicht verfügbar.",
+      "restarted": "{service} wurde neu gestartet."
+    },
+    "vpn": {
+      "peer": "Peer",
+      "handshake": "Letzter Handshake",
+      "traffic": "Datenmenge",
+      "allowedIps": "Tunneladressen",
+      "tunnel": "Tunnel",
+      "remote": "Gegenstelle",
+      "children": "Phase 2",
+      "never": "nie",
+      "ago": "vor {age}",
+      "disabled": "Abgeschaltet",
+      "states": {
+        "online": "Online",
+        "stale": "Veraltet",
+        "offline": "Offline"
+      },
+      "enable": "Einschalten",
+      "disable": "Abschalten",
+      "enableLabel": "{peer} einschalten",
+      "disableLabel": "{peer} abschalten",
+      "enabledPeer": "{peer} wurde eingeschaltet.",
+      "disabledPeer": "{peer} wurde abgeschaltet.",
+      "connected": "Verbunden",
+      "notConnected": "Nicht verbunden",
+      "notInstalled": "nicht aufgebaut",
+      "restart": "Neu starten",
+      "restartLabel": "Tunnel {tunnel} neu starten",
+      "restarted": "{tunnel} wird neu gestartet.",
+      "noPeers": "Keine WireGuard-Peers",
+      "noTunnels": "Keine IPsec-Tunnel",
+      "partError": "Nicht verfügbar: {error}"
+    },
+    "aliases": {
+      "name": "Name",
+      "type": "Typ",
+      "content": "Inhalt",
+      "description": "Beschreibung",
+      "enabled": "Eingeschaltet",
+      "filterHint": "Name, Beschreibung oder Inhalt",
+      "create": "Alias anlegen",
+      "createTitle": "Alias anlegen",
+      "editTitle": "Alias {name} ändern",
+      "editLabel": "Alias {name} ändern",
+      "deleteLabel": "Alias {name} löschen",
+      "deleteTitle": "Alias {name} löschen?",
+      "deleteText": "Der Alias wird gelöscht und der Paketfilter neu geladen. OPNsense lehnt Aliase ab, die Regeln verwenden.",
+      "nameHint": "Bis zu 32 Buchstaben, Ziffern und Unterstriche, beginnend mit einem Buchstaben oder Unterstrich",
+      "contentHint": "Ein Eintrag pro Zeile: Adressen, Netze, Ports, URLs oder andere Aliase, je nach Typ.",
+      "appliedHint": "Die Änderung wird sofort in den Paketfilter geladen.",
+      "saved": "Alias {name} wurde gespeichert.",
+      "deleted": "Alias {name} wurde gelöscht."
+    },
+    "rules": {
+      "allInterfaces": "Alle Schnittstellen",
+      "action": "Aktion",
+      "interface": "Schnittstelle",
+      "direction": "Richtung",
+      "ipVersion": "IP-Version",
+      "protocol": "Protokoll",
+      "source": "Quelle",
+      "sourcePort": "Quellport",
+      "destination": "Ziel",
+      "destinationPort": "Zielport",
+      "netHint": "any, eine Adresse, ein Netz, ein Alias oder ein Schnittstellennetz wie lan",
+      "portHint": "Ein Port, ein Bereich wie 1000-2000 oder ein Port-Alias",
+      "enabled": "Eingeschaltet",
+      "log": "Passende Pakete protokollieren",
+      "disabled": "abgeschaltet",
+      "legacy": "nur lesbar",
+      "create": "Regel anlegen",
+      "createTitle": "Regel anlegen",
+      "editTitle": "Regel ändern",
+      "editLabel": "Regel {rule} ändern",
+      "deleteLabel": "Regel {rule} löschen",
+      "deleteTitle": "Regel löschen?",
+      "deleteText": "Die Regel {rule} wird mit einem Sicherungspunkt gelöscht.",
+      "apply": "Anwenden",
+      "savepointHint": "dcdash wendet jede Änderung mit einem Sicherungspunkt an und prüft dann, ob es die Firewall noch erreicht. Wenn nicht, stellt OPNsense innerhalb einer Minute die vorherigen Regeln wieder her.",
+      "kept": "Die Regeln wurden angewendet.",
+      "rolledBack": "Nach der Änderung konnte dcdash {firewall} nicht mehr erreichen. OPNsense stellt innerhalb einer Minute die vorherigen Regeln wieder her.",
+      "actions": {
+        "pass": "Erlauben",
+        "block": "Blockieren",
+        "reject": "Zurückweisen"
+      },
+      "directions": {
+        "in": "ein",
+        "out": "aus"
+      },
+      "ip": {
+        "inet": "IPv4",
+        "inet6": "IPv6",
+        "inet46": "IPv4+6"
+      }
+    }
+  },
   "switches": {
     "switch": "Switch",
     "none": "Es sind keine Switches eingerichtet, oder Sie dürfen keine sehen.",
@@ -772,6 +919,10 @@
     "vlan_in_use": "Das VLAN wird noch verwendet: {message}",
     "default_vlan": "VLAN 1 kann nicht gelöscht werden.",
     "rejected": "Der Switch hat die Änderung abgelehnt: {message}",
+    "invalid_alias": "Der Alias ist ungültig: {message}",
+    "invalid_rule": "Die Regel ist ungültig: {message}",
+    "no_savepoint": "Diese OPNsense-Version hat keine Sicherungspunkte; dcdash ändert Regeln nur mit automatischer Rücknahme.",
+    "alias_read_only": "Aliase dieses Typs werden in OPNsense geändert.",
     "unsupported": "Das wird hier nicht unterstützt: {message}",
     "rejected": "Der Server hat die Änderung nicht übernommen: {message}",
     "invalid_record": "Ungültiger Eintrag: {message}",
