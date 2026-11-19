@@ -200,6 +200,20 @@ end. Last run: 2026-11-19, NetBox 4.7.5.
 | Guest deleted: VM with interfaces and addresses removed | passed |
 | Projects: tag created, prefix found by search, tagged, listed by tag and untagged | passed |
 
+### Copy of a production NetBox
+
+On 2026-11-19 dcdash was tested against a copy of a production NetBox 4.7.5 (`pg_dump`,
+restored into a separate container on the dev VM, deleted afterwards) and the real test
+Proxmox cluster. `TestNetBox` passed on the copy and left no objects behind. The comparison of
+37 guests with 26 virtual machines of the mapped cluster found 23 pairs, 14 guests only in
+Proxmox and 3 VMs only in NetBox.
+
+The real data had interfaces named like inside the guest (`ens18`, `eth0`, `Ethernet`,
+`kunden_vm0`), often without MAC address, with the addresses assigned to them. The write-back
+would have deleted these interfaces and, with them, their addresses. Since then interfaces
+are matched by name or primary MAC address, and only interfaces with the dcdash tag are
+deleted (task 13.11). "Update NetBox" on two real VMs then kept all interfaces and addresses
+maintained by hand and showed no differences afterwards.
 ## Configuration
 
 See `configs/config.example.yaml` for all options. Check a configuration with:

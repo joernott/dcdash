@@ -258,3 +258,34 @@ Answers:
 
 To answer your open question: Solution 1 would be my preferred solution.
 And yes, merge sprint 12 and start sprint 13
+
+---
+
+## 2026-11-19 — Sprint 13 (Aruba CX)
+
+The dump is on the dev VM in the file /home/claude/netbox_prod.dump. We are using NetBox Community v4.7.5-Docker-5.1.1 
+
+To answer your questionsfor the aruba switches:
+1: 
+
+```
+DCDASH-SW33(config)# show version
+-----------------------------------------------------------------------------
+ArubaOS-CX
+(c) Copyright 2017-2021 Hewlett Packard Enterprise Development LP
+-----------------------------------------------------------------------------
+Version      : PL.10.08.1010
+Build Date   : 2021-09-21 14:53:08 UTC
+Build ID     : ArubaOS-CX:PL.10.08.1010:51920eb359ca:202109211429
+Build SHA    : 51920eb359caf6584f995926dea7a99242bab059
+Active Image : primary
+
+Service OS Version : PL.01.09.0003
+BIOS Version       : PL.02.0002
+```
+
+2. 10.15.34.33. Currently there are no variables for the switch config. I have added DCDASH_IT_ARUBA_USER containing the user name and DCDASH_IT_ARUBA_PASSWORD containing the password to dcdash-it.env
+3. You can use all ports except for port 1/1/1 which is the upstream port and VLANS in the range >=4000
+4. Yes, you can run write memory, this switch is exclusively for you
+
+I have configured the firewall to allow https access from your dev machine to the switch network

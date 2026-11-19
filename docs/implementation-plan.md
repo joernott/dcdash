@@ -438,6 +438,9 @@ These apply to every task:
 - [ ] **13.8** Permissions and audit actions, navigation entry
 - [ ] **13.9** Tests: fake AOS-CX server, manual test against a real switch documented
 - [ ] **13.10** Documentation
+- [x] **13.11** NetBox test with a copy of the production database (see 12.3): keep interfaces
+  maintained by hand, matched by name or MAC address, and delete only interfaces dcdash
+  created
 
 ## Sprint 14 — OPNsense Firewalls and Release v0.2.0
 

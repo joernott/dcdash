@@ -13,7 +13,8 @@ All notable changes to dcdash are listed here. The format follows
   changing and deleting guests, DHCP reservations and DNS `A`/`AAAA` records are written back
   to NetBox; a failed write-back doesn't undo the change, it is shown and audited as
   `netbox.sync`. A NetBox page compares NetBox with Proxmox, Kea and DNS and updates NetBox
-  on request (`netbox.apply`). Permissions `netbox:<name>:ipam:read` and
+  on request (`netbox.apply`). Interfaces maintained by hand are found by name or MAC address and
+  never deleted. Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
 - **Projects:** projects are defined as YAML files in `/etc/dcdash/projects` (`projects`
   section) and mark their objects with the tag `project-<name>`, synchronized to NetBox.

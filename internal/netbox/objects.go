@@ -94,6 +94,18 @@ type Interface struct {
 	UntaggedVLAN   *VLANRef `json:"untagged_vlan"`
 	PrimaryMAC     *MACRef  `json:"primary_mac_address"`
 	Description    string   `json:"description"`
+	Tags           []Tag    `json:"tags"`
+}
+
+// HasTag reports whether the interface has the tag (slug).
+func (i Interface) HasTag(slug string) bool { return hasTag(i.Tags, slug) }
+
+// MAC returns the primary MAC address of the interface, or "".
+func (i Interface) MAC() string {
+	if i.PrimaryMAC == nil {
+		return ""
+	}
+	return i.PrimaryMAC.MACAddress
 }
 
 // MACAddress is a MAC address object (NetBox 4.2 and later).

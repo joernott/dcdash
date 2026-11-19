@@ -56,7 +56,7 @@ clusters exist.
 | Change in dcdash | NetBox |
 |---|---|
 | A guest is created | A virtual machine in the mapped cluster with the tag, status `active`, vCPUs (sockets × cores), memory, the VMID custom field; a virtual disk per disk; an interface per network device (`netN`, for containers the name inside, for example `eth0`) with the MAC address as primary MAC address and the VLAN as untagged VLAN; the static addresses on the interfaces, the first ones as primary addresses |
-| Options, disks or network devices of a VM are changed | The same objects are updated: renamed, resized, created and deleted to match the guest |
+| Options, disks or network devices of a VM are changed | The same objects are updated: renamed, resized, created and deleted to match the guest. Existing interfaces are found by name or by their primary MAC address and keep their name (for example `ens18` maintained by hand). New interfaces get the tag; an interface without the tag is never deleted, so interfaces and addresses maintained by hand stay |
 | A guest is deleted | The virtual machine is deleted if it has the tag, otherwise set to `decommissioning` (`netbox.on_delete`). NetBox deletes its interfaces, disks and addresses with it |
 | A DHCP reservation is added or changed | An IP address with the description `DHCP reservation (<server>)`, assigned to the VM interface with the reservation's MAC address if NetBox has one |
 | A DHCP reservation is deleted | Its address is deleted if dcdash created it (tag, not assigned, no DNS name); otherwise only the description is cleared |
@@ -87,7 +87,8 @@ from NetBox when the task ends.
 
 The NetBox page (menu "NetBox") compares, per mapped cluster, the guests with the virtual
 machines in NetBox: name, vCPUs, memory, disks, interfaces with MAC address and VLAN, and the
-static addresses. Each guest is:
+static addresses. Interfaces are matched like the write-back does; interfaces without the tag that
+match no network device are not compared. Each guest is:
 
 - **Matches**: no differences.
 - **Differs**: the differences are listed, Proxmox ("Actual") and NetBox side by side.

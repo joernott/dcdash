@@ -125,7 +125,7 @@ func (s *Service) CompareGuests(ctx context.Context, cluster string, visible fun
 		} else {
 			used[st.vm.ID] = true
 			d.NetBoxID, d.Tagged = st.vm.ID, st.vm.HasTag(s.cfg.Tag)
-			d.Differences = differences(g, st)
+			d.Differences = differences(g, st, s.cfg.Tag)
 			d.State = StateOK
 			if len(d.Differences) > 0 {
 				d.State = StateDiffers
@@ -237,8 +237,9 @@ func (s *Service) netboxState(ctx context.Context, clusterID int64) ([]*nbState,
 	return out, nil
 }
 
-// differences compares a guest with its NetBox state.
-func differences(g Guest, st *nbState) []Difference {
+// differences compares a guest with its NetBox state. Interfaces are matched as the
+// write-back does (see matchInterfaces); interfaces dcdash leaves alone are not compared.
+func differences(g Guest, st *nbState, tag string) []Difference {
 	var out []Difference
 	add := func(field, actual, netbox string) {
 		if actual != netbox {
@@ -259,15 +260,24 @@ func differences(g Guest, st *nbState) []Difference {
 	}
 	add("disks", joinSorted(disks), joinSorted(nbDisks))
 	var nets, nbNets, addrs, nbAddrs []string
+	match := matchInterfaces(g.Networks, st.ifcs, tag)
+	foreign := map[int64]bool{}
+	for _, i := range match.foreign {
+		foreign[i.ID] = true
+	}
 	for _, n := range g.Networks {
-		nets = append(nets, netString(n.Name, n.MAC, n.VLAN))
+		name := match.name(n)
+		nets = append(nets, netString(name, n.MAC, n.VLAN))
 		for _, a := range n.Addresses {
-			addrs = append(addrs, n.Name+" "+a)
+			addrs = append(addrs, name+" "+a)
 		}
 	}
 	ifcName := map[int64]string{}
 	for _, i := range st.ifcs {
 		ifcName[i.ID] = i.Name
+		if foreign[i.ID] {
+			continue
+		}
 		mac, vlan := "", 0
 		if i.PrimaryMAC != nil {
 			mac = i.PrimaryMAC.MACAddress
