@@ -238,6 +238,22 @@ dhcp:
 #    # Servers of a Kea HA pair share a group: leases are deleted on both.
 #    ha_group: site1
 
+# OPNsense firewalls (see docs/firewalls.md). Permissions use the name as instance:
+# "firewall:fw-core:*:read" shows the firewall, "firewall:fw-core:rule/lan:write" changes the
+# rules of the LAN interface (always with a savepoint and automatic rollback).
+firewalls: []
+#  - name: fw-core
+#    url: https://fw-core.example.com
+#    tls:
+#      # The default certificate is self-signed: pin it.
+#      fingerprint: "AB:CD:...:EF"
+#    api_key: "..."
+#    api_secret: "file:/etc/dcdash/fw-core.secret"
+#    timeout: 30s
+#    # Without savepoints (OPNsense 26.7 and later): interfaces whose rules dcdash doesn't
+#    # change, in addition to the one it reaches the firewall through.
+#    protected_interfaces: []
+
 # Aruba CX switches (see docs/switches.md). Permissions use the name as instance:
 # "switch:sw-core:*:read" shows the switch, "switch:sw-core:port/1/1/*:write" changes ports,
 # "switch:sw-core:vlan/4*:write" manages VLANs.

@@ -17,6 +17,7 @@ import (
 	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/dns/bind"
 	"github.com/joernott/dcdash/internal/dns/cloudflare"
+	"github.com/joernott/dcdash/internal/firewalls"
 	"github.com/joernott/dcdash/internal/help"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/ldapauth"
@@ -122,6 +123,14 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		}
 		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
 		a.routes = append(a.routes, dhcpSvc.Register)
+	}
+	if len(cfg.Firewalls) > 0 {
+		fwSvc, err := firewalls.NewService(cfg.Firewalls, auditLog, log)
+		if err != nil {
+			return nil, err
+		}
+		a.statusChecks = append(a.statusChecks, fwSvc.StatusChecks()...)
+		a.routes = append(a.routes, fwSvc.Register)
 	}
 	var switchSvc *switches.Service
 	if len(cfg.Switches) > 0 {

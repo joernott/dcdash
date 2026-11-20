@@ -230,6 +230,17 @@ The dcdash API was also checked by hand against that switch: port 1/1/5 changed 
 restored, VLAN 4001 created and deleted (each saved, about 10 seconds), the uplink and
 VLAN 1404 refused for lack of permission, the MAC search found an address behind the uplink.
 
+## Tests against a real OPNsense
+
+`TestOPNsense` in `test/integration/opnsense_test.go` reads from a real OPNsense firewall when
+`DCDASH_IT_OPN_URL`, `DCDASH_IT_OPN_FINGERPRINT`, `DCDASH_IT_OPN_KEY` and `DCDASH_IT_OPN_SECRET`
+are set: version, gateways, services, WireGuard, IPsec, aliases and rules. With
+`DCDASH_IT_OPN_WRITE=1` it creates, changes and deletes a test alias and creates and deletes a
+**disabled** test rule on `DCDASH_IT_OPN_RULE_IF` (default `lan`), each rule change with a
+savepoint. With `DCDASH_IT_OPN_ROLLBACK=1` it also deletes the rule without canceling the
+rollback and checks after 70 seconds that OPNsense restored it. Disabled rules don't change
+the traffic. Not run yet against a real firewall.
+
 ## Configuration
 
 See `configs/config.example.yaml` for all options. Check a configuration with:

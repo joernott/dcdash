@@ -6,6 +6,11 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-20
+
+NetBox as the common data source, projects, and the network: Aruba CX switches and OPNsense
+firewalls.
+
 ### Added
 
 - **NetBox:** NetBox 4.2 or later as a common data source (`netbox` section). The creation
@@ -16,6 +21,15 @@ All notable changes to dcdash are listed here. The format follows
   on request (`netbox.apply`). Interfaces maintained by hand are found by name or MAC address and
   never deleted. Permissions `netbox:<name>:ipam:read` and
   `netbox:<name>:sync:read`/`write`.
+- **Firewalls:** OPNsense firewalls in the `firewalls` section: version and gateways on the
+  overview page; a Firewalls page with gateways and services (restart), WireGuard peers
+  (enable, disable) and IPsec tunnels (restart), aliases and filter rules. Rule changes are
+  applied with a savepoint and rolled back by OPNsense if they cut off dcdash. Permissions
+  `firewall:<name>:system|wireguard/<peer>|ipsec/<connection>|alias/<name>|rule/<interface>:<action>`,
+  audited as `firewall.*`.
+  OPNsense 26.7 and later have no savepoints: there, a lockout guard keeps dcdash from
+  changing the rules of the interface it reaches the firewall through, floating rules and rules
+  on interface groups (`protected_interfaces` for more).
 - **Switches:** Aruba CX switches (AOS-CX 10.x) in the `switches` section: inventory and
   health on the overview page; a Switches page with a compact overview of all switches like
   their front panels, the ports (state, VLANs, LLDP neighbors,
@@ -134,7 +148,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/joernott/dcdash/releases/tag/v0.2.0
 [0.1.2]: https://github.com/joernott/dcdash/releases/tag/v0.1.2
 [0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1
 [0.1.0]: https://github.com/joernott/dcdash/releases/tag/v0.1.0

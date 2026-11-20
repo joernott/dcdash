@@ -161,6 +161,21 @@ a time with its model, firmware and uptime:
 Changes take effect immediately and are saved to the startup configuration, which takes a
 few seconds. See [switches.md](switches.md).
 
+## Firewalls
+
+The Firewalls page shows one firewall at a time with its version, uptime and memory, and
+links to its web interface and SSH:
+
+- **Health:** the gateways and services; "Restart" restarts a service.
+- **VPN:** WireGuard peers with their last handshake and traffic ("Enable", "Disable"), and
+  IPsec tunnels ("Restart").
+- **Aliases:** create, change and delete aliases; the content has one entry per line.
+- **Rules:** the filter rules, optionally of one interface. "Apply" in the rule dialog makes
+  the change with a savepoint: if dcdash can't reach the firewall afterwards, OPNsense
+  restores the previous rules within a minute, and the page tells you.
+
+See [firewalls.md](firewalls.md).
+
 ## Administration
 
 Users with the corresponding permissions see two more pages:

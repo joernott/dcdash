@@ -57,6 +57,11 @@ CX_LISTEN="${DCDASH_E2E_CX_LISTEN:-127.0.0.1:18030}"
 go build -o "$DIR/cxfake" ./test/cxfake
 "$DIR/cxfake" -listen "$CX_LISTEN" -cert "$DIR/cert.pem" -key "$DIR/key.pem" 2>"$DIR/cxfake.log" &
 
+# Fake OPNsense firewall (internal/firewalls/opnsense/opnfake) with the same certificate.
+OPN_LISTEN="${DCDASH_E2E_OPN_LISTEN:-127.0.0.1:18040}"
+go build -o "$DIR/opnfake" ./test/opnfake
+"$DIR/opnfake" -listen "$OPN_LISTEN" -cert "$DIR/cert.pem" -key "$DIR/key.pem" 2>"$DIR/opnfake.log" &
+
 # With DCDASH_E2E_FULL=1 (scripts/e2e-full.sh), dcdash also uses the real services of
 # the docker compose environment: the bind9 primary (records, rndc, SFTP, catalog zone),
 # Kea DHCPv4/DHCPv6 with the PostgreSQL host database, and the Kea HA pair.
@@ -138,6 +143,10 @@ roles:
     groups: [dcdash-vm]
     require_totp: false
     permissions: ["switch:sw1:*:read", "switch:sw1:port/1/1/5:write", "switch:sw1:vlan/4*:write"]
+  - name: firewall-operator
+    groups: [dcdash-vm]
+    require_totp: false
+    permissions: ["firewall:fw1:*:read", "firewall:fw1:wireguard/*:operate", "firewall:fw1:alias/e2e_*:write", "firewall:fw1:rule/lan:write"]
 $FULL_ROLES
 proxmox:
   clusters:
@@ -171,6 +180,12 @@ netbox:
   insecure: true
   token: "nbt_e2e.netbox-e2e-test-only"
   clusters: {lab: "Lab"}
+firewalls:
+  - name: fw1
+    url: "https://$OPN_LISTEN"
+    tls: {fingerprint: "$PVE_FP"}
+    api_key: e2e-key
+    api_secret: "opn-e2e-test-only"
 switches:
   - name: sw1
     url: "https://$CX_LISTEN"

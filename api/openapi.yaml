@@ -30,6 +30,8 @@ tags:
     description: "NetBox: VLANs, prefixes and free addresses; write-back of changes"
   - name: projects
     description: "Projects: groups of objects with the tag project-<name>"
+  - name: firewalls
+    description: "OPNsense firewalls: health, VPN, aliases and filter rules"
   - name: switches
     description: "Aruba CX switches: inventory, health, ports, VLANs and MAC addresses"
 
@@ -2028,6 +2030,347 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/firewalls:
+    get:
+      tags: [firewalls]
+      operationId: listFirewalls
+      summary: List firewalls
+      description: |
+        Returns the firewalls on which the user holds at least `read` on any resource
+        (`firewall:<name>:*:read`), with version, uptime and memory. Cached for a minute.
+      responses:
+        "200":
+          description: Visible firewalls.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/health:
+    get:
+      tags: [firewalls]
+      operationId: getFirewallHealth
+      summary: Gateways and services of a firewall
+      description: Needs `firewall:<firewall>:system:read`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      responses:
+        "200":
+          description: The health.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallHealth" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/services/restart:
+    post:
+      tags: [firewalls]
+      operationId: restartFirewallService
+      summary: Restart a service
+      description: Needs `firewall:<firewall>:system:operate`. Audited as `firewall.service.restart`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: string, description: Service ID from the health response. }
+      responses:
+        "204": { description: The service was restarted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/vpn:
+    get:
+      tags: [firewalls]
+      operationId: getFirewallVPN
+      summary: WireGuard peers and IPsec tunnels
+      description: |
+        Peers and tunnels the user may read (`wireguard/<peer>`, `ipsec/<connection>`). A
+        part the firewall doesn't offer, or the API user may not read, is named in `errors`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      responses:
+        "200":
+          description: The VPN state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallVPN" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/wireguard/{uuid}:
+    put:
+      tags: [firewalls]
+      operationId: setFirewallPeer
+      summary: Enable or disable a WireGuard peer
+      description: |
+        Changes the peer and applies the WireGuard configuration. Needs
+        `firewall:<firewall>:wireguard/<peer name>:operate`. Audited as `firewall.wireguard.update`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+        - { name: uuid, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: The peer.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallPeer" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/ipsec/{name}/restart:
+    post:
+      tags: [firewalls]
+      operationId: restartFirewallTunnel
+      summary: Restart an IPsec tunnel
+      description: |
+        Disconnects and connects the connection; connecting is asynchronous. Needs
+        `firewall:<firewall>:ipsec/<name>:operate`. Audited as `firewall.ipsec.restart`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+        - { name: name, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: The tunnel is being restarted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/aliases:
+    get:
+      tags: [firewalls]
+      operationId: listFirewallAliases
+      summary: List aliases
+      description: Aliases the user may read (`firewall:<firewall>:alias/<name>:read`).
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      responses:
+        "200":
+          description: The aliases.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallAliasList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [firewalls]
+      operationId: createFirewallAlias
+      summary: Create an alias
+      description: |
+        Creates the alias and applies the aliases. Needs `firewall:<firewall>:alias/<name>:write`.
+        Audited as `firewall.alias.create`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FirewallAliasRequest" }
+      responses:
+        "201":
+          description: The alias.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallAlias" }
+        "400": { $ref: "#/components/responses/FirewallInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/FirewallRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/aliases/{uuid}:
+    put:
+      tags: [firewalls]
+      operationId: updateFirewallAlias
+      summary: Change an alias
+      description: |
+        A rename needs `write` on the old and the new name. Audited as `firewall.alias.update`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+        - { name: uuid, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FirewallAliasRequest" }
+      responses:
+        "200":
+          description: The alias.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallAlias" }
+        "400": { $ref: "#/components/responses/FirewallInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/FirewallConflict" }
+        "422": { $ref: "#/components/responses/FirewallRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [firewalls]
+      operationId: deleteFirewallAlias
+      summary: Delete an alias
+      description: OPNsense refuses aliases in use (422). Audited as `firewall.alias.delete`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+        - { name: uuid, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: The alias was deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/FirewallRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/rules:
+    get:
+      tags: [firewalls]
+      operationId: listFirewallRules
+      summary: List filter rules
+      description: |
+        Rules of the interfaces the user may read (`firewall:<firewall>:rule/<interface>:read`),
+        in their order. Legacy and automatic rules are read-only.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      responses:
+        "200":
+          description: The rules.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallRuleList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [firewalls]
+      operationId: createFirewallRule
+      summary: Create a filter rule
+      description: |
+        Creates the rule with a savepoint: dcdash applies it, checks over a new connection that
+        it still reaches the firewall and only then keeps it. Otherwise OPNsense restores the
+        previous rules within a minute (`rolledBack`). Needs
+        `firewall:<firewall>:rule/<interface>:write`. Audited as `firewall.rule.create`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FirewallRuleRequest" }
+      responses:
+        "200":
+          description: The outcome.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallRuleResult" }
+        "400": { $ref: "#/components/responses/FirewallInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/FirewallConflict" }
+        "422": { $ref: "#/components/responses/FirewallRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/firewalls/{firewall}/rules/{uuid}:
+    put:
+      tags: [firewalls]
+      operationId: updateFirewallRule
+      summary: Change a filter rule
+      description: |
+        Like creating; moving a rule to another interface needs `write` on both. Audited as
+        `firewall.rule.update`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+        - { name: uuid, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FirewallRuleRequest" }
+      responses:
+        "200":
+          description: The outcome.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallRuleResult" }
+        "400": { $ref: "#/components/responses/FirewallInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/FirewallConflict" }
+        "422": { $ref: "#/components/responses/FirewallRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [firewalls]
+      operationId: deleteFirewallRule
+      summary: Delete a filter rule
+      description: With a savepoint, like creating. Audited as `firewall.rule.delete`.
+      parameters:
+        - $ref: "#/components/parameters/FirewallName"
+        - { name: uuid, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The outcome.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FirewallRuleResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/FirewallConflict" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/projects:
     get:
       tags: [projects]
@@ -2184,10 +2527,26 @@ components:
     DNSZone: { name: zone, in: path, required: true, schema: { type: string }, description: Zone name without trailing dot. }
     DNSRecordID: { name: id, in: path, required: true, schema: { type: string } }
 
+    FirewallName: { name: firewall, in: path, required: true, schema: { type: string }, description: Firewall name from the configuration. }
     SwitchName: { name: switch, in: path, required: true, schema: { type: string }, description: Switch name from the configuration. }
     DHCPServer: { name: server, in: path, required: true, schema: { type: string }, description: Server name from the configuration. }
     DHCPReservationID: { name: id, in: path, required: true, schema: { type: string }, description: The id of the reservation as listed. }
   responses:
+    FirewallInvalid:
+      description: "Invalid request: invalid_request, invalid_alias or invalid_rule, with the reason as message."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    FirewallConflict:
+      description: "The alias type is read-only (alias_read_only); on a firewall without savepoints, the rule could cut dcdash off (protected_rule), or dcdash can't tell which interface it reaches the firewall through (guard_unknown)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    FirewallRejected:
+      description: "OPNsense rejected the change (rejected), with its messages."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     SwitchInvalid:
       description: "Invalid request: invalid_request, invalid_port, invalid_vlan or invalid_query, with the reason as message."
       content:
@@ -2508,7 +2867,7 @@ components:
         name: { type: string, examples: [database, directory, certificate] }
         kind:
           type: string
-          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox, switch).'
+          description: '"system" for dcdash itself, otherwise the module (proxmox, dns, dhcp, netbox, switch, firewall).'
         status: { type: string, enum: [ok, error] }
         detail: { type: string, description: A detail such as "valid until ..." or the error message, in English. }
         detailCode:
@@ -2521,7 +2880,9 @@ components:
             `checked`), `dns.cloudflare` (`count`), `dhcp.kea` (`version`), `dhcp.keaHA`
             (`version`, `ha`), `dhcp.partnerOutOfTouch` (`partner`), `directory.connected` (`server`,
             `count`), `directory.degraded` (`server`, `down`), `netbox.connected` (`version`), `switch.aoscx` (`model`, `hostname`, `firmware`),
-            `switch.unauthorized`, `switch.sessionLimit`, `switch.unavailable`, `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
+            `switch.unauthorized`, `switch.sessionLimit`, `switch.unavailable`, `firewall.opnsense` (`product`,
+            `version`, `gateways`), `firewall.gatewayDown` (`gateways`, `count`), `firewall.unauthorized`,
+            `firewall.forbidden`, `firewall.unavailable`, `projects.loaded` (`count`), `projects.invalid` (`count`, `first`). Times are RFC 3339.
           examples: [certificate.valid]
         detailParams:
           type: object
@@ -3354,6 +3715,193 @@ components:
         servers:
           type: array
           items: { $ref: "#/components/schemas/DHCPServer" }
+
+    Firewall:
+      type: object
+      required: [name, type, url, host, status]
+      properties:
+        name: { type: string }
+        type: { type: string, enum: [opnsense] }
+        url: { type: string, description: URL of the web interface from the configuration. }
+        host: { type: string, description: Host name or address, for SSH. }
+        status: { type: string, enum: [ok, unavailable] }
+        error: { type: string }
+        product: { type: string, examples: [OPNsense] }
+        version: { type: string, examples: [26.1.6] }
+        uptime: { type: string, description: As OPNsense formats it. }
+        memoryUsed: { type: integer, description: Bytes. }
+        memoryTotal: { type: integer, description: Bytes. }
+
+    FirewallList:
+      type: object
+      required: [firewalls]
+      properties:
+        firewalls: { type: array, items: { $ref: "#/components/schemas/Firewall" } }
+
+    FirewallGateway:
+      type: object
+      required: [name, address, status, detail]
+      properties:
+        name: { type: string }
+        address: { type: string }
+        status: { type: string, enum: [online, down, degraded] }
+        detail: { type: string, description: "OPNsense's state: none, down, force_down, delay, loss, delay+loss." }
+        delay: { type: string, examples: [1.2 ms] }
+        stddev: { type: string }
+        loss: { type: string, examples: [0.0 %] }
+
+    FirewallService:
+      type: object
+      required: [id, name, description, running, locked]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        running: { type: boolean }
+        locked: { type: boolean, description: OPNsense needs the service. }
+
+    FirewallHealth:
+      type: object
+      required: [gateways, services, canOperate]
+      properties:
+        gateways: { type: array, items: { $ref: "#/components/schemas/FirewallGateway" } }
+        services: { type: array, items: { $ref: "#/components/schemas/FirewallService" } }
+        canOperate: { type: boolean, description: The user may restart services. }
+
+    FirewallPeer:
+      type: object
+      required: [uuid, name, enabled, publicKey, latestHandshake, rxBytes, txBytes, status, canOperate]
+      properties:
+        uuid: { type: string }
+        name: { type: string }
+        enabled: { type: boolean }
+        publicKey: { type: string }
+        endpoint: { type: string }
+        allowedIps: { type: string }
+        interface: { type: string }
+        latestHandshake: { type: string, format: date-time, description: "0001-01-01T00:00:00Z if there was none." }
+        rxBytes: { type: integer }
+        txBytes: { type: integer }
+        status: { type: string, description: "online (handshake in the last 5 minutes), stale, offline, or empty." }
+        canOperate: { type: boolean }
+
+    FirewallChildSA:
+      type: object
+      required: [name, bytesIn, bytesOut]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        state: { type: string, examples: [INSTALLED] }
+        localTs: { type: string }
+        remoteTs: { type: string }
+        bytesIn: { type: integer }
+        bytesOut: { type: integer }
+
+    FirewallTunnel:
+      type: object
+      required: [name, description, connected, bytesIn, bytesOut, children, canOperate]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        connected: { type: boolean }
+        localAddrs: { type: string }
+        remoteAddrs: { type: string }
+        bytesIn: { type: integer }
+        bytesOut: { type: integer }
+        children: { type: array, items: { $ref: "#/components/schemas/FirewallChildSA" } }
+        canOperate: { type: boolean }
+
+    FirewallVPN:
+      type: object
+      required: [peers, tunnels, errors]
+      properties:
+        peers: { type: array, items: { $ref: "#/components/schemas/FirewallPeer" } }
+        tunnels: { type: array, items: { $ref: "#/components/schemas/FirewallTunnel" } }
+        errors:
+          type: object
+          description: Errors by part (wireguard, ipsec).
+          additionalProperties: { type: string }
+
+    FirewallAlias:
+      type: object
+      required: [uuid, name, type, enabled, content, description, canWrite, editable]
+      properties:
+        uuid: { type: string }
+        name: { type: string }
+        type: { type: string, examples: [host] }
+        enabled: { type: boolean }
+        content: { type: array, items: { type: string } }
+        description: { type: string }
+        canWrite: { type: boolean }
+        editable: { type: boolean, description: "dcdash edits host, network, port, url, urltable, mac and networkgroup aliases." }
+
+    FirewallAliasList:
+      type: object
+      required: [aliases, canCreate]
+      properties:
+        aliases: { type: array, items: { $ref: "#/components/schemas/FirewallAlias" } }
+        canCreate: { type: boolean }
+
+    FirewallAliasRequest:
+      type: object
+      required: [name, type, enabled, content]
+      properties:
+        name: { type: string, maxLength: 32 }
+        type: { type: string, enum: [host, network, port, url, urltable, mac, networkgroup] }
+        enabled: { type: boolean }
+        content: { type: array, items: { type: string }, maxItems: 4096 }
+        description: { type: string, maxLength: 255 }
+
+    FirewallRuleRequest:
+      type: object
+      required: [enabled, action, interface, direction, ipProtocol]
+      properties:
+        enabled: { type: boolean }
+        sequence: { type: integer, description: "Order (lower first), 1 to 999999. In a request, 0 or missing means after the last rule (create) or unchanged (update)." }
+        action: { type: string, enum: [pass, block, reject] }
+        quick: { type: boolean }
+        interface: { type: string, examples: [lan] }
+        direction: { type: string, enum: [in, out] }
+        ipProtocol: { type: string, enum: [inet, inet6, inet46] }
+        protocol: { type: string, examples: [any, TCP, UDP, TCP/UDP, ICMP] }
+        source: { type: string, description: "any, an address, a network, an alias or an interface network (lan)." }
+        sourceNot: { type: boolean }
+        sourcePort: { type: string }
+        destination: { type: string }
+        destinationNot: { type: boolean }
+        destinationPort: { type: string, description: Only with TCP or UDP. }
+        log: { type: boolean }
+        description: { type: string, maxLength: 255 }
+
+    FirewallRule:
+      allOf:
+        - $ref: "#/components/schemas/FirewallRuleRequest"
+        - type: object
+          required: [uuid, sequence, quick, protocol, source, sourceNot, sourcePort, destination, destinationNot, destinationPort, log, description, legacy, canWrite]
+          properties:
+            uuid: { type: string, description: Empty for legacy rules. }
+            legacy: { type: boolean, description: Legacy or automatic rule, read-only. }
+            canWrite: { type: boolean }
+
+    FirewallRuleList:
+      type: object
+      required: [rules, canCreate, noSavepoint]
+      properties:
+        rules: { type: array, items: { $ref: "#/components/schemas/FirewallRule" } }
+        canCreate: { type: boolean }
+        noSavepoint: { type: boolean, description: "The firewall has no savepoints (OPNsense 26.7 and later): nothing undoes a rule change, so dcdash doesn't change rules that could cut it off." }
+        protectedInterfaces: { type: array, items: { type: string }, description: "Without savepoints: the interfaces dcdash reaches the firewall through (and the configured protected_interfaces); dcdash doesn't change their rules, floating rules, or rules on interface groups." }
+        guardError: { type: string, description: "Without savepoints: why dcdash can't tell which interface it reaches the firewall through; it then doesn't change rules." }
+
+    FirewallRuleResult:
+      type: object
+      required: [kept, rolledBack]
+      properties:
+        kept: { type: boolean, description: The change is applied and kept. }
+        rolledBack: { type: boolean, description: dcdash couldn't reach the firewall after the change; OPNsense restores the previous rules within a minute. }
+        lockedOut: { type: boolean, description: "Without savepoints: dcdash couldn't reach the firewall after the change, and nothing undoes it." }
+        warning: { type: string }
+        rule: { $ref: "#/components/schemas/FirewallRule" }
 
     SwitchNeighbor:
       type: object

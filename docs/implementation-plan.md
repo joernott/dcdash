@@ -45,7 +45,7 @@ These apply to every task:
 | 11 | `sprint/11-vm-config-and-ui` | LDAP failover, VM configuration, built-in documentation, layout fixes, **v0.1.2** | v0.1.2 | done |
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
-| 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | planned |
+| 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
 
 ---
 
@@ -448,17 +448,23 @@ These apply to every task:
 
 ## Sprint 14 — OPNsense Firewalls and Release v0.2.0
 
-- [ ] **14.1** API research: OPNsense API (system status, gateways, services, WireGuard,
+- [x] **14.1** API research: OPNsense API (system status, gateways, services, WireGuard,
   IPsec, aliases, filter rules with savepoint and rollback); results in an ADR, amend this
   sprint if needed
-- [ ] **14.2** Configuration and client, health check (system, gateways, services) on the
+- [x] **14.2** Configuration and client, health check (system, gateways, services) on the
   overview page
-- [ ] **14.3** VPN status: WireGuard peers (last handshake, traffic) and IPsec tunnels
+- [x] **14.3** VPN status: WireGuard peers (last handshake, traffic) and IPsec tunnels
   (phase 1 and phase 2)
-- [ ] **14.4** Enable and disable WireGuard peers, restart IPsec tunnels
-- [ ] **14.5** Manage aliases
-- [ ] **14.6** Manage filter rules, applied with a savepoint so that a rule that cuts off
+- [x] **14.4** Enable and disable WireGuard peers, restart IPsec tunnels
+- [x] **14.5** Manage aliases
+- [x] **14.6** Manage filter rules, applied with a savepoint so that a rule that cuts off
   access is rolled back automatically
-- [ ] **14.7** Permissions and audit actions, navigation entry
-- [ ] **14.8** Tests: fake OPNsense server, manual test against a real firewall documented
-- [ ] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`
+- [x] **14.7** Permissions and audit actions, navigation entry
+- [x] **14.8** Tests: fake OPNsense server, manual test against a real firewall documented
+  - [x] **14.8.1** Test against a firewall with OPNsense 26.7 (ADR 0009, "Verification"):
+    list IPsec connections without a session, map the interface names of automatic rules,
+    detect missing savepoints and show the rules read-only
+  - [x] **14.8.2** Rule changes on OPNsense 26.7, to which the firewalls are updated: lockout
+    guard instead of the savepoint rollback, tested against the test firewall (replaces the
+    planned test of savepoints on 26.1 or Business Edition 26.4)
+- [x] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`
