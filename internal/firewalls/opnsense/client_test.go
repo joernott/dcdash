@@ -158,7 +158,7 @@ func TestRulesWithSavepoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ssh := opnsense.Rule{Enabled: true, Action: "pass", Quick: true, Interface: "lan", Direction: "in", IPProtocol: "inet",
+	ssh := opnsense.Rule{Enabled: true, Sequence: 20, Action: "pass", Quick: true, Interface: "lan", Direction: "in", IPProtocol: "inet",
 		Protocol: "TCP", Source: "lan", Destination: "any", DestinationPort: "22", Description: "ssh"}
 	if _, err := c.AddRule(ctx, ssh); err != nil {
 		t.Fatal(err)
@@ -176,7 +176,7 @@ func TestRulesWithSavepoint(t *testing.T) {
 
 	// A rule that cuts off the API is rolled back by the firewall.
 	rev, _ = c.Savepoint(ctx)
-	if _, err := c.AddRule(ctx, opnsense.Rule{Enabled: true, Action: "block", Interface: "lan", Direction: "in",
+	if _, err := c.AddRule(ctx, opnsense.Rule{Enabled: true, Sequence: 30, Action: "block", Interface: "lan", Direction: "in",
 		IPProtocol: "inet", Protocol: "any", Source: "any", Destination: "(self)"}); err != nil {
 		t.Fatal(err)
 	}

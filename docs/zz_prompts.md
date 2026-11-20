@@ -326,3 +326,9 @@ yes, continue with the rest of sprint 13 until you need input from me
   There is only one peer for Wireguard: dcdashtest" and one IPSEC tunnel (currently not connected, I need to set up a peer for it)
 you can use the test_wan_ipv6_test (opt1) interface and WAN1 (opt2) for tests
 4. Yes, the firewall is exclusively for you
+
+---
+
+## 2026-11-20 — Sprint 14 (OPNsense)
+
+Regarding 14.8.2: We will update the current firewalls to newer versions. Therefore please thest with the current device

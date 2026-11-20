@@ -22,7 +22,9 @@ All notable changes to dcdash are listed here. The format follows
   applied with a savepoint and rolled back by OPNsense if they cut off dcdash. Permissions
   `firewall:<name>:system|wireguard/<peer>|ipsec/<connection>|alias/<name>|rule/<interface>:<action>`,
   audited as `firewall.*`.
-  On OPNsense 26.7 and later, which have no savepoints, the rules are shown read-only.
+  OPNsense 26.7 and later have no savepoints: there, a lockout guard keeps dcdash from
+  changing the rules of the interface it reaches the firewall through, floating rules and rules
+  on interface groups (`protected_interfaces` for more).
 - **Switches:** Aruba CX switches (AOS-CX 10.x) in the `switches` section: inventory and
   health on the overview page; a Switches page with a compact overview of all switches like
   their front panels, the ports (state, VLANs, LLDP neighbors,

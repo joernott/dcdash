@@ -389,6 +389,7 @@ OPNsense firewalls, reached over their REST API. Default: no firewalls. See
 | `firewalls[].api_key` | string | none | API key of the dcdash user in OPNsense. Required. |
 | `firewalls[].api_secret` | secret | none | API secret of the key. Required. |
 | `firewalls[].timeout` | duration | `30s` | Timeout of a single request. `0` uses the default. Must not be negative. |
+| `firewalls[].protected_interfaces` | list of strings | none | Interface keys (`lan`, `opt1`, ...) whose rules dcdash doesn't change on a firewall without savepoints (OPNsense 26.7 and later), in addition to the interface it detects itself. Needed if dcdash reaches the firewall through a proxy or NAT. See [firewalls.md](firewalls.md#lockout-guard). |
 
 ## projects
 

@@ -229,17 +229,51 @@ describe('FirewallsView', () => {
     w.unmount()
   })
 
-  it('shows the rules read-only without savepoints', async () => {
+  it('names the protected interfaces without savepoints and reports a lockout', async () => {
     const { w, router } = await setup('/firewalls/fw1')
     api.on('GET /api/v1/firewalls/{firewall}/rules', () => [
       200,
-      { canCreate: false, noSavepoint: true, rules: [{ ...rule, canWrite: false }] },
+      {
+        canCreate: true,
+        noSavepoint: true,
+        protectedInterfaces: ['opt3'],
+        rules: [{ ...rule, interface: 'opt3', canWrite: false }, rule],
+      },
     ])
     await router.push('/firewalls/fw1?tab=rules')
     await flushPromises()
-    expect(w.get('[role="note"]').text()).toContain('no savepoints (removed in 26.7)')
+    expect(w.get('[role="note"]').text()).toContain('reaches the firewall through (opt3)')
+    const rows = w.get('tbody').findAll('tr')
+    expect(rows[0]!.findAll('button')).toHaveLength(0)
+    expect(rows[1]!.findAll('button').length).toBeGreaterThan(0)
+
+    api.on('PUT /api/v1/firewalls/{firewall}/rules/{uuid}', () => [
+      200,
+      { kept: false, rolledBack: false, lockedOut: true },
+    ])
+    await w.get('button[aria-label="Change rule web"]').trigger('click')
+    const dialog = w.findAll('dialog').find((d) => d.text().includes('Change the rule'))!
+    await dialog.get('form').trigger('submit')
+    await flushPromises()
+    expect(lastToast()).toContain('Without savepoints, nothing undoes the change')
+    w.unmount()
+  })
+
+  it('explains why rules are not changed when the guard fails', async () => {
+    const { w, router } = await setup('/firewalls/fw1')
+    api.on('GET /api/v1/firewalls/{firewall}/rules', () => [
+      200,
+      {
+        canCreate: false,
+        noSavepoint: true,
+        guardError: 'no route',
+        rules: [{ ...rule, canWrite: false }],
+      },
+    ])
+    await router.push('/firewalls/fw1?tab=rules')
+    await flushPromises()
+    expect(w.get('[role="note"]').text()).toContain('protected_interfaces')
     expect(w.findAll('button').some((b) => b.text() === 'Create rule')).toBe(false)
-    expect(w.get('tbody').findAll('button')).toHaveLength(0)
     w.unmount()
   })
 })

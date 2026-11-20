@@ -2819,7 +2819,7 @@ export interface components {
     }
     FirewallRuleRequest: {
       enabled: boolean
-      /** @description Order (lower first). */
+      /** @description Order (lower first), 1 to 999999. In a request, 0 or missing means after the last rule (create) or unchanged (update). */
       sequence?: number
       /** @enum {string} */
       action: 'pass' | 'block' | 'reject'
@@ -2859,14 +2859,20 @@ export interface components {
     FirewallRuleList: {
       rules: components['schemas']['FirewallRule'][]
       canCreate: boolean
-      /** @description The firewall has no savepoints (OPNsense 26.7 and later): dcdash shows its rules, but doesn't change them. */
+      /** @description The firewall has no savepoints (OPNsense 26.7 and later): nothing undoes a rule change, so dcdash doesn't change rules that could cut it off. */
       noSavepoint: boolean
+      /** @description Without savepoints: the interfaces dcdash reaches the firewall through (and the configured protected_interfaces); dcdash doesn't change their rules, floating rules, or rules on interface groups. */
+      protectedInterfaces?: string[]
+      /** @description Without savepoints: why dcdash can't tell which interface it reaches the firewall through; it then doesn't change rules. */
+      guardError?: string
     }
     FirewallRuleResult: {
       /** @description The change is applied and kept. */
       kept: boolean
       /** @description dcdash couldn't reach the firewall after the change; OPNsense restores the previous rules within a minute. */
       rolledBack: boolean
+      /** @description Without savepoints: dcdash couldn't reach the firewall after the change, and nothing undoes it. */
+      lockedOut?: boolean
       warning?: string
       rule?: components['schemas']['FirewallRule']
     }
@@ -3170,7 +3176,7 @@ export interface components {
         'application/json': components['schemas']['ErrorBody']
       }
     }
-    /** @description The alias type is read-only (alias_read_only), or the firewall has no savepoints for rules (no_savepoint). */
+    /** @description The alias type is read-only (alias_read_only); on a firewall without savepoints, the rule could cut dcdash off (protected_rule), or dcdash can't tell which interface it reaches the firewall through (guard_unknown). */
     FirewallConflict: {
       headers: {
         [name: string]: unknown

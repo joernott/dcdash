@@ -7,10 +7,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -292,6 +294,9 @@ func TestRules(t *testing.T) {
 	if st, code := e.do(t, "netops", "POST", "/api/v1/firewalls/fw1/rules", ssh, &res); st != 200 || !res.Kept || res.Rule == nil {
 		t.Fatalf("create: %d %s %+v", st, code, res)
 	}
+	if res.Rule.Sequence != 20 {
+		t.Errorf("sequence after the last rule (10): %d", res.Rule.Sequence)
+	}
 	time.Sleep(400 * time.Millisecond)
 	if len(e.fw1.AppliedRules()) != 2 {
 		t.Errorf("kept: %+v", e.fw1.AppliedRules())
@@ -334,15 +339,57 @@ func TestRules(t *testing.T) {
 	if st, _ := e.do(t, "admin", "DELETE", "/api/v1/firewalls/fw1/rules/r-1", nil, nil); st != 404 {
 		t.Errorf("deleted twice: %d", st)
 	}
-	// Without savepoints (OPNsense 26.7), dcdash doesn't change rules.
+	// Without savepoints (OPNsense 26.7), the lockout guard protects the interface dcdash
+	// reaches the firewall through (opt1 in the fake); the rules of lan can be changed.
 	e.fw1.Lock()
 	e.fw1.NoSavepoint = true
 	e.fw1.Unlock()
-	if st, code := e.do(t, "netops", "POST", "/api/v1/firewalls/fw1/rules", ssh, nil); st != 409 || code != "no_savepoint" {
-		t.Errorf("no savepoint: %d %s", st, code)
-	}
-	if st, _ := e.do(t, "netops", "GET", "/api/v1/firewalls/fw1/rules", nil, &l); st != 200 || !l.NoSavepoint || l.CanCreate ||
-		slices.ContainsFunc(l.Rules, func(r firewalls.RuleView) bool { return r.CanWrite }) {
+	if st, _ := e.do(t, "netops", "GET", "/api/v1/firewalls/fw1/rules", nil, &l); st != 200 || !l.NoSavepoint || !l.CanCreate ||
+		len(l.ProtectedInterfaces) != 1 || l.ProtectedInterfaces[0] != "opt1" || !l.Rules[1].CanWrite {
 		t.Errorf("rules without savepoints: %d %+v", st, l)
+	}
+	ssh.Description = "ssh without savepoint"
+	if st, code := e.do(t, "netops", "POST", "/api/v1/firewalls/fw1/rules", ssh, &res); st != 200 || !res.Kept {
+		t.Errorf("without savepoint: %d %s %+v", st, code, res)
+	}
+	mgmt := ssh
+	mgmt.Interface = "opt1"
+	if st, code := e.do(t, "admin", "POST", "/api/v1/firewalls/fw1/rules", mgmt, nil); st != 409 || code != "protected_rule" {
+		t.Errorf("protected interface: %d %s", st, code)
+	}
+	// A disabled rule changes nothing.
+	mgmt.Enabled = false
+	if st, code := e.do(t, "admin", "POST", "/api/v1/firewalls/fw1/rules", mgmt, &res); st != 200 || !res.Kept {
+		t.Errorf("disabled rule on the protected interface: %d %s", st, code)
+	}
+	if !slices.ContainsFunc(e.audited(t, firewalls.AuditRuleCreate), func(a audit.Entry) bool {
+		return a.Result == audit.ResultFailure && strings.Contains(fmt.Sprint(a.Details["error"]), "reaches the firewall through opt1")
+	}) {
+		t.Error("refused change not audited")
+	}
+	// A rule that cuts dcdash off anyway (the fake's CutsOff) is reported, not undone.
+	cut := firewalls.RuleRequest{Enabled: true, Action: "block", Quick: true, Interface: "lan", Direction: "in", IPProtocol: "inet",
+		Destination: "(self)", Description: "cut"}
+	if st, code := e.do(t, "netops", "POST", "/api/v1/firewalls/fw1/rules", cut, &res); st != 200 || !res.LockedOut || res.Kept {
+		t.Errorf("locked out: %d %s %+v", st, code, res)
+	}
+	if !slices.ContainsFunc(e.audited(t, firewalls.AuditRuleCreate), func(a audit.Entry) bool { return a.Details["lockedOut"] == true }) {
+		t.Error("lockout not audited")
+	}
+}
+
+func TestRulesGuardUnknown(t *testing.T) {
+	e := newAPIEnv(t)
+	e.fw1.Lock()
+	e.fw1.NoSavepoint, e.fw1.Routes = true, nil
+	e.fw1.Unlock()
+	var l firewalls.RuleList
+	if st, _ := e.do(t, "netops", "GET", "/api/v1/firewalls/fw1/rules", nil, &l); st != 200 || l.GuardError == "" || l.CanCreate ||
+		slices.ContainsFunc(l.Rules, func(r firewalls.RuleView) bool { return r.CanWrite }) {
+		t.Errorf("%d %+v", st, l)
+	}
+	ssh := firewalls.RuleRequest{Enabled: true, Action: "pass", Interface: "lan", Direction: "in", IPProtocol: "inet"}
+	if st, code := e.do(t, "netops", "POST", "/api/v1/firewalls/fw1/rules", ssh, nil); st != 409 || code != "guard_unknown" {
+		t.Errorf("guard unknown: %d %s", st, code)
 	}
 }

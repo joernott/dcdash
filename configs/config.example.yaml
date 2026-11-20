@@ -250,6 +250,9 @@ firewalls: []
 #    api_key: "..."
 #    api_secret: "file:/etc/dcdash/fw-core.secret"
 #    timeout: 30s
+#    # Without savepoints (OPNsense 26.7 and later): interfaces whose rules dcdash doesn't
+#    # change, in addition to the one it reaches the firewall through.
+#    protected_interfaces: []
 
 # Aruba CX switches (see docs/switches.md). Permissions use the name as instance:
 # "switch:sw-core:*:read" shows the switch, "switch:sw-core:port/1/1/*:write" changes ports,

@@ -59,8 +59,16 @@ can only be changed after migrating them in OPNsense.
 - **Rule changes with a savepoint:** dcdash creates a savepoint, makes the change, applies it
   with the revision, then checks with a new connection that it still reaches the firewall's
   API, and only then cancels the rollback. If the rule cuts off dcdash, OPNsense reverts it
-  after 60 seconds by itself. Without the savepoint calls (26.7 and later), dcdash refuses
-  rule changes; only reading is possible.
+  after 60 seconds by itself.
+- **Rule changes without savepoints** (26.7 and later, amended 2026-11-20, because the
+  firewalls are updated to 26.7): a lockout guard instead of the rollback. dcdash detects the
+  interfaces it reaches the firewall through (the route back to its own address on the
+  connection, and the interface with the address it connects to; `Status: Interfaces`,
+  `Diagnostics: Routing tables`) and doesn't change enabled rules on them, floating rules or
+  rules on interface groups, checking the rule before and after the change. Other rules are
+  changed and applied directly, followed by the reachability check; if it fails, dcdash
+  reports `lockedOut`. Through a proxy or NAT, the interfaces are configured
+  (`protected_interfaces`); if dcdash can't determine them, it doesn't change rules.
 - **Aliases and WireGuard** changes are applied with `reconfigure` right after the change.
 - **Permissions** `firewall:<name>:<resource>:<action>` with the resources `system`,
   `wireguard/<peer>`, `ipsec/<connection>`, `alias/<name>` and `rule/<interface>`.
@@ -93,14 +101,21 @@ integration test `TestOPNsense` and dcdash itself:
 - **26.7 has no savepoints:** `savepoint` returns 404, `apply` takes no revision and there is
   no `cancel_rollback`; there is no other rollback mechanism. A `GET` on `savepoint` answers
   `{"status": "error"}` on 26.1 without creating a savepoint, and 404 on 26.7: dcdash uses it
-  to detect the capability and shows the rules of such a firewall read-only.
+  to detect the capability.
+- **Lockout guard:** `interfaces/overview/interfaces_info` lists the interfaces with `identifier`,
+  `device` and `ipv4`/`ipv6` (`ipaddr` with prefix length), `diagnostics/interface/get_routes`
+  the routes (`destination` `default`, a network or an address, `netif`). dcdash
+  (10.15.44.48) reaches the firewall at 10.15.34.34 through opt3 (INFRA0, route 10.15.0.0/16):
+  rules on opt1 were created, changed and deleted (applied with `apply` without revision),
+  rules on opt3 refused. `add_rule` requires a sequence from 1 to 999999; dcdash puts rules
+  without one after the last rule.
 
 Not verified on a real firewall: the savepoint, apply and rollback calls (26.1 or Business
-Edition 26.4), and the version string of the Business Edition.
+Edition 26.4), which are no longer needed once the firewalls run 26.7.
 
 ## Open
 
-- The savepoint calls and the version string of the Business Edition 26.4.
+- None.
 
 ## Sources
 

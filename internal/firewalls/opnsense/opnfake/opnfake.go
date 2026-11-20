@@ -36,11 +36,15 @@ type Server struct {
 
 	Version, Product, Uptime string
 	Gateways                 []Gateway
-	Services                 []Service
-	Peers                    []Peer
-	Tunnels                  []Tunnel
-	Aliases                  []Alias
-	Rules                    []Rule
+	// Interfaces and Routes: by default, dcdash (127.0.0.1) reaches the fake through
+	// opt1 ("MGMT").
+	Interfaces []Interface
+	Routes     []Route
+	Services   []Service
+	Peers      []Peer
+	Tunnels    []Tunnel
+	Aliases    []Alias
+	Rules      []Rule
 	// LegacyRules are listed read-only.
 	LegacyRules []Rule
 
@@ -59,6 +63,15 @@ type Server struct {
 
 // Gateway is a gateway of the fake.
 type Gateway struct{ Name, Address, Status, Delay, Loss string }
+
+// Interface is an assigned interface of the fake; Addrs are addresses with prefix length.
+type Interface struct {
+	Key, Description, Device string
+	Addrs                    []string
+}
+
+// Route is a route of the fake; Destination is "default", a network or an address.
+type Route struct{ Destination, Device string }
 
 // Service is a service of the fake.
 type Service struct {
@@ -99,6 +112,11 @@ type Rule map[string]string
 func New(key, secret string) *Server {
 	s := &Server{Key: key, Secret: secret, RollbackAfter: 60 * time.Second,
 		Version: "26.1.6", Product: "OPNsense", Uptime: "3 days, 04:05:06",
+		Interfaces: []Interface{{Key: "wan", Description: "WAN", Device: "igb0", Addrs: []string{"198.51.100.2/24"}},
+			{Key: "lan", Description: "LAN", Device: "igb1", Addrs: []string{"192.0.2.1/24"}},
+			{Key: "opt1", Description: "MGMT", Device: "igb2", Addrs: []string{"127.0.0.1/8"}}},
+		Routes: []Route{{Destination: "default", Device: "igb0"}, {Destination: "192.0.2.0/24", Device: "igb1"},
+			{Destination: "127.0.0.0/8", Device: "igb2"}},
 		Gateways: []Gateway{{Name: "WAN_DHCP", Address: "198.51.100.1", Status: "none", Delay: "1.2 ms", Loss: "0.0 %"},
 			{Name: "WAN2", Address: "203.0.113.1", Status: "none", Delay: "~", Loss: "~"}},
 		Services: []Service{{ID: "configd", Name: "configd", Description: "System Configuration Daemon", Running: true, Locked: true},
@@ -232,6 +250,22 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, seg []string, bod
 		return ok(map[string]any{"uptime": s.Uptime})
 	case "diagnostics/system/system_resources":
 		return ok(map[string]any{"memory": map[string]any{"total": "8589934592", "used": "2147483648"}})
+	case "interfaces/overview/interfaces_info":
+		rows := []map[string]any{}
+		for _, i := range s.Interfaces {
+			v4 := []map[string]any{}
+			for _, a := range i.Addrs {
+				v4 = append(v4, map[string]any{"ipaddr": a})
+			}
+			rows = append(rows, map[string]any{"identifier": i.Key, "description": i.Description, "device": i.Device, "ipv4": v4, "ipv6": []any{}})
+		}
+		return ok(search(rows))
+	case "diagnostics/interface/get_routes":
+		rows := []map[string]any{}
+		for _, r := range s.Routes {
+			rows = append(rows, map[string]any{"proto": "ipv4", "destination": r.Destination, "netif": r.Device})
+		}
+		return ok(rows)
 	case "routes/gateway/status":
 		items := []map[string]any{}
 		for _, g := range s.Gateways {
@@ -528,6 +562,9 @@ func parseRule(body map[string]any) (Rule, map[string]string) {
 	}
 	if r["interface"] == "" {
 		v["rule.interface"] = "Option not in list."
+	}
+	if n, err := strconv.Atoi(r["sequence"]); err != nil || n < 1 || n > 999999 {
+		v["rule.sequence"] = "Sequence shall be between 1 and 999999."
 	}
 	if r["destination_port"] != "" && r["protocol"] != "TCP" && r["protocol"] != "UDP" && r["protocol"] != "TCP/UDP" {
 		v["rule.destination_port"] = "Ports are only valid for TCP and UDP."

@@ -460,10 +460,11 @@ These apply to every task:
 - [x] **14.6** Manage filter rules, applied with a savepoint so that a rule that cuts off
   access is rolled back automatically
 - [x] **14.7** Permissions and audit actions, navigation entry
-- [ ] **14.8** Tests: fake OPNsense server, manual test against a real firewall documented
+- [x] **14.8** Tests: fake OPNsense server, manual test against a real firewall documented
   - [x] **14.8.1** Test against a firewall with OPNsense 26.7 (ADR 0009, "Verification"):
     list IPsec connections without a session, map the interface names of automatic rules,
     detect missing savepoints and show the rules read-only
-  - [ ] **14.8.2** Savepoints and rollback against a firewall with OPNsense 26.1 or Business
-    Edition 26.4
+  - [x] **14.8.2** Rule changes on OPNsense 26.7, to which the firewalls are updated: lockout
+    guard instead of the savepoint rollback, tested against the test firewall (replaces the
+    planned test of savepoints on 26.1 or Business Edition 26.4)
 - [ ] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`

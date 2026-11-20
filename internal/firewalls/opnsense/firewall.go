@@ -259,8 +259,12 @@ func (c *Client) Savepoint(ctx context.Context) (string, error) {
 }
 
 // ApplyRules applies the changed rules with a savepoint revision: OPNsense
-// reverts them after 60 seconds unless CancelRollback is called.
+// reverts them after 60 seconds unless CancelRollback is called. Without a
+// revision (firewalls without savepoints), there is no rollback.
 func (c *Client) ApplyRules(ctx context.Context, revision string) error {
+	if revision == "" {
+		return c.Post(ctx, "/firewall/filter/apply", nil, nil)
+	}
 	return c.Post(ctx, "/firewall/filter/apply/"+url.PathEscape(revision), nil, nil)
 }
 

@@ -114,6 +114,10 @@ function outcome(res: Schemas['FirewallRuleResult']): boolean {
     toast.error(t('firewalls.rules.rolledBack', { firewall: props.firewall }))
     return false
   }
+  if (res.lockedOut) {
+    toast.error(t('firewalls.rules.lockedOut', { firewall: props.firewall }))
+    return false
+  }
   if (res.warning) toast.error(res.warning)
   else toast.success(t('firewalls.rules.kept'))
   return true
@@ -181,7 +185,13 @@ onMounted(load)
       role="note"
       class="rounded-md border border-warning px-3 py-2 text-sm"
     >
-      {{ t('firewalls.rules.noSavepoint') }}
+      {{
+        list.guardError
+          ? t('firewalls.rules.guardUnknown', { error: list.guardError })
+          : t('firewalls.rules.noSavepoint', {
+              interfaces: (list.protectedInterfaces ?? []).join(', '),
+            })
+      }}
     </p>
     <p v-else class="text-sm text-fg-muted">{{ t('firewalls.rules.savepointHint') }}</p>
     <div class="flex flex-wrap items-end gap-3">

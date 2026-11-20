@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
@@ -65,6 +66,9 @@ type Backend interface {
 	ApplyRules(ctx context.Context, revision string) error
 	CancelRollback(ctx context.Context, revision string) error
 	Reachable(ctx context.Context) error
+	Path(ctx context.Context) (local, remote netip.Addr, err error)
+	Interfaces(ctx context.Context) ([]opnsense.Interface, error)
+	Routes(ctx context.Context) ([]opnsense.Route, error)
 }
 
 type fw struct {
@@ -80,6 +84,9 @@ type fw struct {
 	probedAt time.Time
 	// spKnown: savepoints tells whether the firewall has savepoints.
 	spKnown, savepoints bool
+	// protected are the configured protected interfaces; guard the detected ones.
+	protected []string
+	guard     guard
 }
 
 // Service is the firewall API of dcdash.
@@ -103,7 +110,7 @@ func NewService(cfgs config.Firewalls, auditLog *audit.Log, log zerolog.Logger) 
 		if err != nil {
 			return nil, err
 		}
-		s.firewalls[c.Name] = &fw{backend: b, typ: c.Type, url: c.URL}
+		s.firewalls[c.Name] = &fw{backend: b, typ: c.Type, url: c.URL, protected: c.ProtectedInterfaces}
 		s.order = append(s.order, c.Name)
 	}
 	return s, nil
@@ -273,19 +280,22 @@ func (s *Service) handleFirewalls(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, out)
 }
 
-// hasSavepoints reports whether the firewall has savepoints, probed once and
-// corrected by every savepoint call. If the probe fails, it returns true:
+// hasSavepoints reports whether the firewall has savepoints, probed once (or
+// with fresh) and corrected by every savepoint call. If the probe fails, it returns true:
 // the change then reports the actual error.
-func (s *Service) hasSavepoints(ctx context.Context, x *fw) bool {
+func (s *Service) hasSavepoints(ctx context.Context, x *fw, fresh bool) bool {
 	x.mu.Lock()
 	known, has := x.spKnown, x.savepoints
 	x.mu.Unlock()
-	if known {
+	if known && !fresh {
 		return has
 	}
 	has, err := x.backend.HasSavepoints(ctx)
 	if err != nil {
 		s.log.Debug().Err(err).Str("firewall", x.backend.Name()).Msg("savepoint probe failed")
+		if known {
+			return has
+		}
 		return true
 	}
 	x.setSavepoints(has)

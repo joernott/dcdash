@@ -27,10 +27,12 @@ firewalls:
 ## Versions
 
 OPNsense has two release series a year in the community edition (26.1, 26.7) and two in the
-Business Edition (26.4, 26.10), which is based on the community release before it. Filter
-rule changes need the savepoint calls of the filter API, which OPNsense 26.7 removed: on
-such a firewall, dcdash shows the rules read-only with a note. dcdash checks this without
-changing anything. Everything else works the same on 26.1 and 26.7.
+Business Edition (26.4, 26.10), which is based on the community release before it. Up to 26.1
+(and Business Edition 26.4), dcdash applies rule changes with a savepoint, which OPNsense
+rolls back by itself if the change cuts dcdash off. OPNsense 26.7 removed the savepoints, and
+nothing undoes a rule change there: dcdash then protects the rules that could cut it off
+(see [Lockout guard](#lockout-guard)). dcdash checks which case applies without changing
+anything. Everything else works the same on 26.1 and 26.7.
 
 ## Prerequisites on the firewall
 
@@ -50,6 +52,7 @@ changing anything. Everything else works the same on 26.1 and 26.7.
    | VPN: IPsec: Connections | IPsec tunnels that are configured, but not loaded (optional) |
    | Firewall: Alias: Edit | Aliases |
    | Firewall: Rules [new] | Filter rules |
+   | Status: Interfaces, Diagnostics: Routing tables | Filter rules on OPNsense 26.7 and later (lockout guard) |
 
    Without a privilege, the part is shown as not available; the rest works.
 
@@ -113,6 +116,30 @@ every change of a rule, dcdash:
 
 Changes on the same firewall are made one after the other.
 
+### Lockout guard
+
+On a firewall without savepoints (OPNsense 26.7 and later), dcdash applies a rule change
+directly and then checks over a new connection that it still reaches the firewall. Nothing
+can undo a change that cuts it off, so dcdash doesn't change the rules that could:
+
+- the rules of the interface dcdash reaches the firewall through: the interface with the
+  route back to dcdash's address, and the interface whose address dcdash connects to,
+- floating rules (without interface) and rules on interface groups,
+- the interfaces in `protected_interfaces` of the firewall's configuration.
+
+This applies to the rule before and after the change, so a rule can't be moved to or from a
+protected interface either. Disabled rules change nothing and are not protected. The
+"Rules" tab names the protected interfaces; dcdash detects them again every five minutes.
+
+dcdash sees its own address on the connection. Through a proxy or NAT, the firewall sees
+another address: name the interface in `protected_interfaces` then. If dcdash can't detect
+the interface and none is configured (for example without the privileges "Status:
+Interfaces" and "Diagnostics: Routing tables"), it doesn't change rules on the firewall.
+
+If the firewall is unreachable after a change anyway, the page says so and the audit log
+records the change with `lockedOut`. Repair the rules in the firewall's web interface or on
+its console.
+
 ## Permissions
 
 Permissions have the form `firewall:<firewall>:<resource>:<action>`:
@@ -140,4 +167,4 @@ Examples: `firewall:*:wireguard/*:operate` (all WireGuard peers of all firewalls
 | `firewall.wireguard.update` | `target` is `<firewall>/wireguard/<peer>`; `details` contain the new and the previous state |
 | `firewall.ipsec.restart` | `target` is `<firewall>/ipsec/<connection>` |
 | `firewall.alias.create`, `firewall.alias.update`, `firewall.alias.delete` | `target` is `<firewall>/alias/<name>`; `details` contain type, content and the previous values |
-| `firewall.rule.create`, `firewall.rule.update`, `firewall.rule.delete` | `target` is `<firewall>/rule/<interface>`; `details` contain the rule, the previous rule, and `rolledBack` if OPNsense restores the previous rules |
+| `firewall.rule.create`, `firewall.rule.update`, `firewall.rule.delete` | `target` is `<firewall>/rule/<interface>`; `details` contain the rule, the previous rule, `rolledBack` if OPNsense restores the previous rules, and `lockedOut` if dcdash can't reach the firewall after a change without savepoint |

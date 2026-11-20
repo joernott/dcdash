@@ -527,9 +527,15 @@ type RuleList struct {
 	Rules []RuleView `json:"rules"`
 	// CanCreate: the user may create rules (write on some rule/<interface>).
 	CanCreate bool `json:"canCreate"`
-	// NoSavepoint: the firewall has no savepoints (OPNsense 26.7 and later), so dcdash
-	// doesn't change its rules.
+	// NoSavepoint: the firewall has no savepoints (OPNsense 26.7 and later), so there is
+	// no automatic rollback; the lockout guard protects some rules instead.
 	NoSavepoint bool `json:"noSavepoint"`
+	// ProtectedInterfaces (without savepoints): dcdash doesn't change the rules of these
+	// interfaces, floating rules and rules on interface groups.
+	ProtectedInterfaces []string `json:"protectedInterfaces,omitempty"`
+	// GuardError (without savepoints): dcdash can't tell which interface it reaches the
+	// firewall through, so it doesn't change rules at all.
+	GuardError string `json:"guardError,omitempty"`
 }
 
 func (s *Service) handleRules(w http.ResponseWriter, r *http.Request) {
@@ -543,13 +549,27 @@ func (s *Service) handleRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := RuleList{Rules: []RuleView{}, CanCreate: subj.Permissions.AllowsPrefix(Module, x.backend.Name(), "rule/", rbac.ActionWrite)}
-	out.NoSavepoint = !s.hasSavepoints(r.Context(), x)
-	out.CanCreate = out.CanCreate && !out.NoSavepoint
+	out.NoSavepoint = !s.hasSavepoints(r.Context(), x, true)
+	var g guard
+	if out.NoSavepoint {
+		if g, err = s.lockoutGuard(r.Context(), x); err != nil {
+			s.log.Warn().Err(err).Str("firewall", x.backend.Name()).Msg("lockout guard")
+			out.GuardError = err.Error()
+			out.CanCreate = false
+		} else {
+			out.ProtectedInterfaces = g.protectedKeys()
+		}
+	}
 	for _, rule := range rules {
 		res := RuleResource(rule.Interface)
-		if subj.Can(perm(x, res, rbac.ActionRead)) {
-			out.Rules = append(out.Rules, RuleView{Rule: rule, CanWrite: !rule.Legacy && !out.NoSavepoint && subj.Can(perm(x, res, rbac.ActionWrite))})
+		if !subj.Can(perm(x, res, rbac.ActionRead)) {
+			continue
 		}
+		can := !rule.Legacy && subj.Can(perm(x, res, rbac.ActionWrite))
+		if out.NoSavepoint {
+			can = can && out.GuardError == "" && g.check(rule) == nil
+		}
+		out.Rules = append(out.Rules, RuleView{Rule: rule, CanWrite: can})
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
 }
@@ -629,20 +649,30 @@ type RuleResult struct {
 	Kept bool `json:"kept"`
 	// RolledBack: dcdash could not reach the firewall after applying the change, so it left
 	// the rollback running: OPNsense restores the previous rules within a minute.
-	RolledBack bool      `json:"rolledBack"`
-	Warning    string    `json:"warning,omitempty"`
-	Rule       *RuleView `json:"rule,omitempty"`
+	RolledBack bool `json:"rolledBack"`
+	// LockedOut (without savepoints): dcdash could not reach the firewall after applying
+	// the change, and nothing undoes it. Despite the lockout guard, the change cut dcdash
+	// off, or the firewall is unreachable for another reason.
+	LockedOut bool      `json:"lockedOut,omitempty"`
+	Warning   string    `json:"warning,omitempty"`
+	Rule      *RuleView `json:"rule,omitempty"`
 }
 
 // applyRules makes a rule change with a savepoint: savepoint, change, apply with the
 // revision, check over a new connection that the firewall still answers, then cancel the
 // rollback. If the check fails, the rollback runs and OPNsense restores the rules.
-func (s *Service) applyRules(ctx context.Context, x *fw, change func() error) (RuleResult, error) {
+// Without savepoints, the lockout guard checks the affected rules (the old and the new
+// version) first, and nothing undoes the change.
+func (s *Service) applyRules(ctx context.Context, x *fw, affected []opnsense.Rule, change func() error) (RuleResult, error) {
+	if !s.hasSavepoints(ctx, x, false) {
+		return s.applyGuarded(ctx, x, affected, change)
+	}
 	rev, err := x.backend.Savepoint(ctx)
+	if errors.Is(err, opnsense.ErrNoSavepoint) {
+		x.setSavepoints(false)
+		return s.applyGuarded(ctx, x, affected, change)
+	}
 	if err != nil {
-		if errors.Is(err, opnsense.ErrNoSavepoint) {
-			x.setSavepoints(false)
-		}
 		return RuleResult{}, err
 	}
 	x.setSavepoints(true)
@@ -666,14 +696,47 @@ func (s *Service) applyRules(ctx context.Context, x *fw, change func() error) (R
 	return RuleResult{Kept: true}, nil
 }
 
+// applyGuarded makes a rule change on a firewall without savepoints: lockout guard,
+// change, apply, then check over a new connection that the firewall still answers.
+func (s *Service) applyGuarded(ctx context.Context, x *fw, affected []opnsense.Rule, change func() error) (RuleResult, error) {
+	g, err := s.lockoutGuard(ctx, x)
+	if err != nil {
+		return RuleResult{}, err
+	}
+	for _, r := range affected {
+		if err := g.check(r); err != nil {
+			return RuleResult{}, err
+		}
+	}
+	if err := change(); err != nil {
+		return RuleResult{}, err
+	}
+	if err := x.backend.ApplyRules(ctx, ""); err != nil {
+		return RuleResult{}, fmt.Errorf("apply: %w", err)
+	}
+	time.Sleep(s.settle)
+	check, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	if err := x.backend.Reachable(check); err != nil {
+		s.log.Error().Err(err).Str("firewall", x.backend.Name()).
+			Msg("firewall not reachable after a rule change without savepoint; nothing undoes it")
+		return RuleResult{LockedOut: true}, nil
+	}
+	return RuleResult{Kept: true}, nil
+}
+
 // ruleError writes the error of a rule change.
 func (s *Service) ruleError(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, opnsense.ErrNoSavepoint) {
-		httpx.WriteError(w, http.StatusConflict, "no_savepoint",
-			"this OPNsense version has no savepoints; dcdash changes rules only with an automatic rollback")
-		return
+	var pe *protectedError
+	switch {
+	case errors.As(err, &pe):
+		httpx.WriteError(w, http.StatusConflict, "protected_rule", pe.Reason)
+	case errors.Is(err, errGuardUnknown):
+		httpx.WriteError(w, http.StatusConflict, "guard_unknown",
+			err.Error()+"; dcdash doesn't change rules on this firewall without savepoints")
+	default:
+		s.writeError(w, r, err)
 	}
-	s.writeError(w, r, err)
 }
 
 func (s *Service) recordRule(r *http.Request, action, tgt string, res RuleResult, err error, details map[string]any) {
@@ -683,6 +746,9 @@ func (s *Service) recordRule(r *http.Request, action, tgt string, res RuleResult
 		result, details["error"] = audit.ResultFailure, err.Error()
 	case res.RolledBack:
 		result, details["rolledBack"] = audit.ResultFailure, true
+	case res.LockedOut:
+		// The change is made; dcdash lost the connection afterwards.
+		details["lockedOut"] = true
 	case res.Warning != "":
 		details["warning"] = res.Warning
 	}
@@ -708,8 +774,16 @@ func (s *Service) handleCreateRule(w http.ResponseWriter, r *http.Request) {
 	}
 	x.writeMu.Lock()
 	defer x.writeMu.Unlock()
+	if req.Sequence == 0 {
+		seq, err := s.nextSequence(r.Context(), x)
+		if err != nil {
+			s.writeError(w, r, err)
+			return
+		}
+		req.Sequence = seq
+	}
 	var uuid string
-	res, err := s.applyRules(r.Context(), x, func() (err error) {
+	res, err := s.applyRules(r.Context(), x, []opnsense.Rule{req.rule("")}, func() (err error) {
 		uuid, err = x.backend.AddRule(r.Context(), req.rule(""))
 		return err
 	})
@@ -723,6 +797,21 @@ func (s *Service) handleCreateRule(w http.ResponseWriter, r *http.Request) {
 		res.Rule = &RuleView{Rule: req.rule(uuid), CanWrite: true}
 	}
 	httpx.WriteJSON(w, http.StatusOK, res)
+}
+
+// nextSequence returns the sequence for a new rule without one: after the last rule.
+func (s *Service) nextSequence(ctx context.Context, x *fw) (int, error) {
+	rules, err := x.backend.Rules(ctx)
+	if err != nil {
+		return 0, err
+	}
+	last := 0
+	for _, r := range rules {
+		if !r.Legacy {
+			last = max(last, r.Sequence)
+		}
+	}
+	return min(last+10, 999999), nil
 }
 
 // findRule returns an editable rule by UUID, or writes an error.
@@ -762,12 +851,15 @@ func (s *Service) handleUpdateRule(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if req.Sequence == 0 {
+		req.Sequence = old.Sequence
+	}
 	// Moving a rule to another interface needs write on both.
 	if !auth.Check(w, r, perm(x, RuleResource(old.Interface), rbac.ActionWrite)) ||
 		!auth.Check(w, r, perm(x, RuleResource(req.Interface), rbac.ActionWrite)) {
 		return
 	}
-	res, err := s.applyRules(r.Context(), x, func() error { return x.backend.SetRule(r.Context(), req.rule(old.UUID)) })
+	res, err := s.applyRules(r.Context(), x, []opnsense.Rule{old, req.rule(old.UUID)}, func() error { return x.backend.SetRule(r.Context(), req.rule(old.UUID)) })
 	s.recordRule(r, AuditRuleUpdate, x.backend.Name()+"/"+RuleResource(old.Interface), res, err,
 		map[string]any{"uuid": old.UUID, "rule": req, "previous": old})
 	if err != nil {
@@ -791,7 +883,7 @@ func (s *Service) handleDeleteRule(w http.ResponseWriter, r *http.Request) {
 	if !ok || !auth.Check(w, r, perm(x, RuleResource(old.Interface), rbac.ActionWrite)) {
 		return
 	}
-	res, err := s.applyRules(r.Context(), x, func() error { return x.backend.DeleteRule(r.Context(), old.UUID) })
+	res, err := s.applyRules(r.Context(), x, []opnsense.Rule{old}, func() error { return x.backend.DeleteRule(r.Context(), old.UUID) })
 	s.recordRule(r, AuditRuleDelete, x.backend.Name()+"/"+RuleResource(old.Interface), res, err,
 		map[string]any{"uuid": old.UUID, "previous": old})
 	if err != nil {

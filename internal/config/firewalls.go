@@ -4,6 +4,7 @@ package config
 
 import (
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -33,6 +34,10 @@ type Firewall struct {
 	APISecret Secret `yaml:"api_secret"`
 	// Timeout of a single request.
 	Timeout Duration `yaml:"timeout"`
+	// ProtectedInterfaces are interface keys (opt1, lan, ...) whose rules dcdash
+	// doesn't change on a firewall without savepoints, in addition to the
+	// interface it reaches the firewall through, which it detects itself.
+	ProtectedInterfaces []string `yaml:"protected_interfaces"`
 }
 
 // DefaultFirewallTimeout is used when a firewall sets no timeout.
@@ -53,6 +58,9 @@ func (f Firewalls) applyDefaults() {
 		}
 	}
 }
+
+// interfaceKeyPattern matches OPNsense interface keys (lan, wan, opt1, ...).
+var interfaceKeyPattern = regexp.MustCompile(`^[A-Za-z0-9_.]{1,32}$`)
 
 func (f Firewalls) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
@@ -83,6 +91,11 @@ func (f Firewalls) validate(add func(string, ...any)) {
 		}
 		if fw.Timeout < 0 {
 			add("%s.timeout: must not be negative", pre)
+		}
+		for j, k := range fw.ProtectedInterfaces {
+			if !interfaceKeyPattern.MatchString(k) {
+				add("%s.protected_interfaces[%d] %q: an interface key such as lan or opt1", pre, j, k)
+			}
 		}
 	}
 }

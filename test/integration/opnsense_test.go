@@ -125,7 +125,7 @@ func TestOPNsense(t *testing.T) {
 		Description: "dcdash integration test " + suffix}
 	rev, err := c.Savepoint(ctx)
 	if errors.Is(err, opnsense.ErrNoSavepoint) {
-		t.Logf("no savepoints (OPNsense 26.7 or later): rule changes are refused, skipping them")
+		testRulesWithoutSavepoint(ctx, t, c, test)
 		return
 	}
 	if err != nil {
@@ -175,6 +175,60 @@ func TestOPNsense(t *testing.T) {
 	if err := c.CancelRollback(ctx, rev); err != nil {
 		t.Errorf("cancel rollback: %v", err)
 	}
+}
+
+// testRulesWithoutSavepoint creates, enables and deletes the test rule on a firewall
+// without savepoints (OPNsense 26.7), applying each change directly. The rule passes
+// traffic between two documentation addresses, so it changes nothing.
+func testRulesWithoutSavepoint(ctx context.Context, t *testing.T, c *opnsense.Client, test opnsense.Rule) {
+	t.Logf("no savepoints (OPNsense 26.7 or later): changing rules without rollback")
+	local, remote, err := c.Path(ctx)
+	t.Logf("path: dcdash %s -> firewall %s, error %v", local, remote, err)
+	ifaces, err := c.Interfaces(ctx)
+	if err != nil {
+		t.Fatalf("interfaces: %v", err)
+	}
+	for _, i := range ifaces {
+		t.Logf("  interface %s %q %s %v", i.Key, i.Description, i.Device, i.Prefixes)
+	}
+	routes, err := c.Routes(ctx)
+	if err != nil {
+		t.Fatalf("routes: %v", err)
+	}
+	t.Logf("%d routes", len(routes))
+	apply := func(step string) {
+		t.Helper()
+		if err := c.ApplyRules(ctx, ""); err != nil {
+			t.Fatalf("%s: apply: %v", step, err)
+		}
+		if err := c.Reachable(ctx); err != nil {
+			t.Fatalf("%s: not reachable: %v", step, err)
+		}
+	}
+	uuid, err := c.AddRule(ctx, test)
+	if err != nil {
+		t.Fatalf("add rule: %v", err)
+	}
+	apply("add")
+	t.Cleanup(func() {
+		if err := c.DeleteRule(ctx, uuid); err != nil && !errors.Is(err, opnsense.ErrNotFound) {
+			t.Errorf("delete rule: %v", err)
+		}
+		_ = c.ApplyRules(ctx, "")
+	})
+	test.UUID, test.Enabled = uuid, true
+	if err := c.SetRule(ctx, test); err != nil {
+		t.Fatalf("enable rule: %v", err)
+	}
+	apply("enable")
+	rules, _ := c.Rules(ctx)
+	if !slices.ContainsFunc(rules, func(r opnsense.Rule) bool { return r.UUID == uuid && r.Enabled && r.Interface == test.Interface }) {
+		t.Errorf("rule not enabled: %+v", rules)
+	}
+	if err := c.DeleteRule(ctx, uuid); err != nil {
+		t.Fatalf("delete rule: %v", err)
+	}
+	apply("delete")
 }
 
 // testPeer toggles a WireGuard peer and restores its state.

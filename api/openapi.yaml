@@ -2538,7 +2538,7 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorBody" }
     FirewallConflict:
-      description: "The alias type is read-only (alias_read_only), or the firewall has no savepoints for rules (no_savepoint)."
+      description: "The alias type is read-only (alias_read_only); on a firewall without savepoints, the rule could cut dcdash off (protected_rule), or dcdash can't tell which interface it reaches the firewall through (guard_unknown)."
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorBody" }
@@ -3857,7 +3857,7 @@ components:
       required: [enabled, action, interface, direction, ipProtocol]
       properties:
         enabled: { type: boolean }
-        sequence: { type: integer, description: Order (lower first). }
+        sequence: { type: integer, description: "Order (lower first), 1 to 999999. In a request, 0 or missing means after the last rule (create) or unchanged (update)." }
         action: { type: string, enum: [pass, block, reject] }
         quick: { type: boolean }
         interface: { type: string, examples: [lan] }
@@ -3889,7 +3889,9 @@ components:
       properties:
         rules: { type: array, items: { $ref: "#/components/schemas/FirewallRule" } }
         canCreate: { type: boolean }
-        noSavepoint: { type: boolean, description: "The firewall has no savepoints (OPNsense 26.7 and later): dcdash shows its rules, but doesn't change them." }
+        noSavepoint: { type: boolean, description: "The firewall has no savepoints (OPNsense 26.7 and later): nothing undoes a rule change, so dcdash doesn't change rules that could cut it off." }
+        protectedInterfaces: { type: array, items: { type: string }, description: "Without savepoints: the interfaces dcdash reaches the firewall through (and the configured protected_interfaces); dcdash doesn't change their rules, floating rules, or rules on interface groups." }
+        guardError: { type: string, description: "Without savepoints: why dcdash can't tell which interface it reaches the firewall through; it then doesn't change rules." }
 
     FirewallRuleResult:
       type: object
@@ -3897,6 +3899,7 @@ components:
       properties:
         kept: { type: boolean, description: The change is applied and kept. }
         rolledBack: { type: boolean, description: dcdash couldn't reach the firewall after the change; OPNsense restores the previous rules within a minute. }
+        lockedOut: { type: boolean, description: "Without savepoints: dcdash couldn't reach the firewall after the change, and nothing undoes it." }
         warning: { type: string }
         rule: { $ref: "#/components/schemas/FirewallRule" }
 

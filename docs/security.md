@@ -439,9 +439,12 @@ The instance is the firewall name; resources are `system`, `wireguard/<peer>`,
 | `firewall:<name>:alias/<name>:read`, `:write` | Seeing an alias, creating, changing and deleting it |
 | `firewall:<name>:rule/<interface>:read`, `:write` | Seeing the rules of an interface, creating, changing and deleting them |
 
-A user sees a firewall with `read` on any of its resources. Rule changes are always applied
-with a savepoint: if dcdash can't reach the firewall afterwards, OPNsense restores the
-previous rules within a minute. The privileges of the API user in OPNsense limit what dcdash
+A user sees a firewall with `read` on any of its resources. Rule changes are applied with a
+savepoint: if dcdash can't reach the firewall afterwards, OPNsense restores the previous rules
+within a minute. OPNsense 26.7 and later have no savepoints; there, dcdash doesn't change the
+rules of the interface it reaches the firewall through, floating rules and rules on interface
+groups, whatever the permissions allow (see
+[firewalls.md](firewalls.md#lockout-guard)). The privileges of the API user in OPNsense limit what dcdash
 can do at all. See [firewalls.md](firewalls.md).
 
 ## Audit log
@@ -512,7 +515,7 @@ entry can't be stored, it is written to the application log as an error instead.
 | `switch.vlan.create`, `switch.vlan.update`, `switch.vlan.delete` | A VLAN change on a switch; `target` is `<switch>/vlan/<id>`, `details` contain the ID, the name (and the previous name), whether the configuration was saved and the NetBox outcome |
 | `firewall.service.restart`, `firewall.wireguard.update`, `firewall.ipsec.restart` | A service or IPsec tunnel was restarted, or a WireGuard peer enabled or disabled; `target` is `<firewall>/service/<id>`, `<firewall>/ipsec/<connection>` or `<firewall>/wireguard/<peer>` |
 | `firewall.alias.create`, `firewall.alias.update`, `firewall.alias.delete` | An alias change; `target` is `<firewall>/alias/<name>`, `details` contain type, content and the previous values |
-| `firewall.rule.create`, `firewall.rule.update`, `firewall.rule.delete` | A filter rule change; `target` is `<firewall>/rule/<interface>`, `details` contain the rule, the previous rule and `rolledBack` if dcdash couldn't reach the firewall afterwards (the result is then a failure) |
+| `firewall.rule.create`, `firewall.rule.update`, `firewall.rule.delete` | A filter rule change; `target` is `<firewall>/rule/<interface>`, `details` contain the rule, the previous rule and `rolledBack` if dcdash couldn't reach the firewall afterwards and OPNsense restores the rules (the result is then a failure), or `lockedOut` if that happens on a firewall without savepoints (the change stays) |
 | `project.tags` | dcdash created or changed project tags in NetBox; actor `dcdash`, `details` list the created, changed and orphaned tags |
 
 ## Security review

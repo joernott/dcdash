@@ -53,6 +53,7 @@ firewalls:
     url: https://fw3.example.com
     api_key: k
     api_secret: s
+    protected_interfaces: [opt1, "bad key"]
 `))
 	if err == nil {
 		t.Fatal("expected errors")
@@ -60,7 +61,7 @@ firewalls:
 	for _, want := range []string{
 		`firewalls[0].name "FW:1"`, `firewalls[0].type "pfsense"`, `firewalls[0].url`, `firewalls[0].api_key: required`,
 		`firewalls[0].api_secret: required`, `firewalls[0].timeout`, `firewalls[1].url "http://fw2.example.com": http sends`,
-		`firewalls[2].name "fw2": duplicate`,
+		`firewalls[2].name "fw2": duplicate`, `firewalls[2].protected_interfaces[1] "bad key"`,
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("missing %q in\n%v", want, err)
