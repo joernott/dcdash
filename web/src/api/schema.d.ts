@@ -2859,6 +2859,8 @@ export interface components {
     FirewallRuleList: {
       rules: components['schemas']['FirewallRule'][]
       canCreate: boolean
+      /** @description The firewall has no savepoints (OPNsense 26.7 and later): dcdash shows its rules, but doesn't change them. */
+      noSavepoint: boolean
     }
     FirewallRuleResult: {
       /** @description The change is applied and kept. */

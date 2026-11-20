@@ -228,4 +228,18 @@ describe('FirewallsView', () => {
     expect(lastToast()).toBe('The rules were applied.')
     w.unmount()
   })
+
+  it('shows the rules read-only without savepoints', async () => {
+    const { w, router } = await setup('/firewalls/fw1')
+    api.on('GET /api/v1/firewalls/{firewall}/rules', () => [
+      200,
+      { canCreate: false, noSavepoint: true, rules: [{ ...rule, canWrite: false }] },
+    ])
+    await router.push('/firewalls/fw1?tab=rules')
+    await flushPromises()
+    expect(w.get('[role="note"]').text()).toContain('no savepoints (removed in 26.7)')
+    expect(w.findAll('button').some((b) => b.text() === 'Create rule')).toBe(false)
+    expect(w.get('tbody').findAll('button')).toHaveLength(0)
+    w.unmount()
+  })
 })

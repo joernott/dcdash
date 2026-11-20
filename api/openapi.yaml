@@ -3885,10 +3885,11 @@ components:
 
     FirewallRuleList:
       type: object
-      required: [rules, canCreate]
+      required: [rules, canCreate, noSavepoint]
       properties:
         rules: { type: array, items: { $ref: "#/components/schemas/FirewallRule" } }
         canCreate: { type: boolean }
+        noSavepoint: { type: boolean, description: "The firewall has no savepoints (OPNsense 26.7 and later): dcdash shows its rules, but doesn't change them." }
 
     FirewallRuleResult:
       type: object

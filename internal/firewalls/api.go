@@ -527,6 +527,9 @@ type RuleList struct {
 	Rules []RuleView `json:"rules"`
 	// CanCreate: the user may create rules (write on some rule/<interface>).
 	CanCreate bool `json:"canCreate"`
+	// NoSavepoint: the firewall has no savepoints (OPNsense 26.7 and later), so dcdash
+	// doesn't change its rules.
+	NoSavepoint bool `json:"noSavepoint"`
 }
 
 func (s *Service) handleRules(w http.ResponseWriter, r *http.Request) {
@@ -540,10 +543,12 @@ func (s *Service) handleRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := RuleList{Rules: []RuleView{}, CanCreate: subj.Permissions.AllowsPrefix(Module, x.backend.Name(), "rule/", rbac.ActionWrite)}
+	out.NoSavepoint = !s.hasSavepoints(r.Context(), x)
+	out.CanCreate = out.CanCreate && !out.NoSavepoint
 	for _, rule := range rules {
 		res := RuleResource(rule.Interface)
 		if subj.Can(perm(x, res, rbac.ActionRead)) {
-			out.Rules = append(out.Rules, RuleView{Rule: rule, CanWrite: !rule.Legacy && subj.Can(perm(x, res, rbac.ActionWrite))})
+			out.Rules = append(out.Rules, RuleView{Rule: rule, CanWrite: !rule.Legacy && !out.NoSavepoint && subj.Can(perm(x, res, rbac.ActionWrite))})
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
@@ -635,8 +640,12 @@ type RuleResult struct {
 func (s *Service) applyRules(ctx context.Context, x *fw, change func() error) (RuleResult, error) {
 	rev, err := x.backend.Savepoint(ctx)
 	if err != nil {
+		if errors.Is(err, opnsense.ErrNoSavepoint) {
+			x.setSavepoints(false)
+		}
 		return RuleResult{}, err
 	}
+	x.setSavepoints(true)
 	if err := change(); err != nil {
 		return RuleResult{}, err
 	}

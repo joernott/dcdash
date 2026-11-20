@@ -6,6 +6,7 @@ package integration
 
 import (
 	"context"
+	"errors"
 	"os"
 	"slices"
 	"strconv"
@@ -21,7 +22,9 @@ import (
 // TestOPNsense reads from a real OPNsense firewall (DCDASH_IT_OPN_URL, _FINGERPRINT, _KEY,
 // _SECRET). With DCDASH_IT_OPN_WRITE=1 it also creates and deletes a test alias and a
 // disabled test rule on the interface DCDASH_IT_OPN_RULE_IF (default lan), each rule change
-// with a savepoint. With DCDASH_IT_OPN_ROLLBACK=1 it checks that OPNsense rolls back a change
+// with a savepoint (skipped if the firewall has none), toggles the WireGuard peer
+// DCDASH_IT_OPN_PEER and back, and restarts the service DCDASH_IT_OPN_SERVICE and the IPsec
+// connection DCDASH_IT_OPN_TUNNEL (each if set). With DCDASH_IT_OPN_ROLLBACK=1 it checks that OPNsense rolls back a change
 // whose rollback isn't canceled (about 70 seconds). Disabled rules don't change the traffic.
 func TestOPNsense(t *testing.T) {
 	rawURL := os.Getenv("DCDASH_IT_OPN_URL")
@@ -99,6 +102,20 @@ func TestOPNsense(t *testing.T) {
 		t.Errorf("alias not changed: %+v", aliases)
 	}
 
+	if peer := os.Getenv("DCDASH_IT_OPN_PEER"); peer != "" {
+		testPeer(ctx, t, c, peer)
+	}
+	if svc := os.Getenv("DCDASH_IT_OPN_SERVICE"); svc != "" {
+		if err := c.RestartService(ctx, svc); err != nil {
+			t.Errorf("restart service %s: %v", svc, err)
+		}
+	}
+	if tn := os.Getenv("DCDASH_IT_OPN_TUNNEL"); tn != "" {
+		if err := c.RestartTunnel(ctx, tn); err != nil {
+			t.Errorf("restart tunnel %s: %v", tn, err)
+		}
+	}
+
 	iface := os.Getenv("DCDASH_IT_OPN_RULE_IF")
 	if iface == "" {
 		iface = "lan"
@@ -107,6 +124,10 @@ func TestOPNsense(t *testing.T) {
 		IPProtocol: "inet", Protocol: "TCP", Source: "192.0.2.1", Destination: "192.0.2.2", DestinationPort: "9",
 		Description: "dcdash integration test " + suffix}
 	rev, err := c.Savepoint(ctx)
+	if errors.Is(err, opnsense.ErrNoSavepoint) {
+		t.Logf("no savepoints (OPNsense 26.7 or later): rule changes are refused, skipping them")
+		return
+	}
 	if err != nil {
 		t.Fatalf("savepoint: %v", err)
 	}
@@ -153,5 +174,33 @@ func TestOPNsense(t *testing.T) {
 	}
 	if err := c.CancelRollback(ctx, rev); err != nil {
 		t.Errorf("cancel rollback: %v", err)
+	}
+}
+
+// testPeer toggles a WireGuard peer and restores its state.
+func testPeer(ctx context.Context, t *testing.T, c *opnsense.Client, name string) {
+	peers, err := c.Peers(ctx)
+	if err != nil {
+		t.Fatalf("peers: %v", err)
+	}
+	i := slices.IndexFunc(peers, func(p opnsense.Peer) bool { return p.Name == name })
+	if i < 0 {
+		t.Fatalf("peer %s not found", name)
+	}
+	p := peers[i]
+	if changed, err := c.SetPeerEnabled(ctx, p.UUID, !p.Enabled); err != nil || !changed {
+		t.Fatalf("toggle peer: %v %v", changed, err)
+	}
+	t.Cleanup(func() {
+		if _, err := c.SetPeerEnabled(ctx, p.UUID, p.Enabled); err != nil {
+			t.Errorf("restore peer: %v", err)
+		}
+	})
+	peers, _ = c.Peers(ctx)
+	if !slices.ContainsFunc(peers, func(q opnsense.Peer) bool { return q.UUID == p.UUID && q.Enabled != p.Enabled }) {
+		t.Errorf("peer not toggled: %+v", peers)
+	}
+	if changed, err := c.SetPeerEnabled(ctx, p.UUID, !p.Enabled); err != nil || changed {
+		t.Errorf("toggle again: %v %v", changed, err)
 	}
 }

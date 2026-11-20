@@ -12,7 +12,7 @@ dcdash manages OPNsense firewalls:
 
 Every change is recorded in the audit log. The design and the behavior it's based on are
 described in [ADR 0009](adr/0009-opnsense.md). The API calls were taken from the source of
-OPNsense 26.1; they are checked against a real firewall before the release.
+OPNsense 26.1 and checked against a firewall with OPNsense 26.7.
 
 ```yaml
 firewalls:
@@ -29,8 +29,8 @@ firewalls:
 OPNsense has two release series a year in the community edition (26.1, 26.7) and two in the
 Business Edition (26.4, 26.10), which is based on the community release before it. Filter
 rule changes need the savepoint calls of the filter API, which OPNsense 26.7 removed: on
-such a firewall, dcdash shows the rules but refuses to change them ("This OPNsense version
-has no savepoints").
+such a firewall, dcdash shows the rules read-only with a note. dcdash checks this without
+changing anything. Everything else works the same on 26.1 and 26.7.
 
 ## Prerequisites on the firewall
 
@@ -47,10 +47,15 @@ has no savepoints").
    | Status: Services | Services, restarting them |
    | VPN: WireGuard: Configuration, VPN: WireGuard: Status | WireGuard peers |
    | Status: IPsec | IPsec tunnels |
+   | VPN: IPsec: Connections | IPsec tunnels that are configured, but not loaded (optional) |
    | Firewall: Alias: Edit | Aliases |
    | Firewall: Rules [new] | Filter rules |
 
    Without a privilege, the part is shown as not available; the rest works.
+
+   The privileges for WireGuard also allow reading the private and pre-shared keys of the
+   WireGuard instances and peers; dcdash doesn't read them, but protect the API secret
+   accordingly.
 3. Rules created on the old rules page are read-only in dcdash. To change them, migrate them
    to the new rules page in OPNsense (Firewall > Rules [new], migration assistant).
 
@@ -79,8 +84,10 @@ are down.
 The "VPN" tab shows the WireGuard peers: online (handshake in the last 5 minutes), stale,
 offline or disabled, the last handshake, the traffic and the tunnel addresses. "Disable" and
 "Enable" change the peer and apply the WireGuard configuration. The IPsec tunnels show whether
-they are connected and their phase 2 entries; "Restart" disconnects and connects the tunnel,
-which takes a few seconds.
+they are connected and their phase 2 entries. With the privilege "VPN: IPsec: Connections",
+connections that strongSwan hasn't loaded (for example while IPsec is stopped) are listed
+too, as not connected. "Restart" disconnects and connects the tunnel, which takes a few
+seconds.
 
 ## Aliases
 
@@ -92,7 +99,9 @@ filter right away. OPNsense refuses to delete an alias that rules use.
 ## Filter rules
 
 The "Rules" tab lists the rules in their order, optionally of one interface. Legacy and
-automatic rules are marked read-only. For every change of a rule, dcdash:
+automatic rules are marked read-only. OPNsense names the interface of automatic rules by its
+description; dcdash shows the interface key (`opt1`) instead, as for the other rules. For
+every change of a rule, dcdash:
 
 1. creates a savepoint of the filter configuration,
 2. makes the change and applies it with the savepoint: OPNsense starts a 60-second timer,

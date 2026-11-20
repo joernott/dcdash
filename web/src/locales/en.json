@@ -760,6 +760,7 @@
       "deleteText": "The rule {rule} is deleted with a savepoint.",
       "apply": "Apply",
       "savepointHint": "dcdash applies every change with a savepoint and then checks that it can still reach the firewall. If not, OPNsense restores the previous rules within a minute.",
+      "noSavepoint": "This OPNsense version has no savepoints (removed in 26.7). Without the automatic rollback, a wrong rule could cut dcdash off, so the rules are shown read-only here.",
       "kept": "The rules were applied.",
       "rolledBack": "After the change, dcdash could not reach {firewall}. OPNsense restores the previous rules within a minute.",
       "actions": {

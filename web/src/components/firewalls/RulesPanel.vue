@@ -176,7 +176,14 @@ onMounted(load)
 
 <template>
   <div class="flex flex-col gap-3">
-    <p class="text-sm text-fg-muted">{{ t('firewalls.rules.savepointHint') }}</p>
+    <p
+      v-if="list?.noSavepoint"
+      role="note"
+      class="rounded-md border border-warning px-3 py-2 text-sm"
+    >
+      {{ t('firewalls.rules.noSavepoint') }}
+    </p>
+    <p v-else class="text-sm text-fg-muted">{{ t('firewalls.rules.savepointHint') }}</p>
     <div class="flex flex-wrap items-end gap-3">
       <BaseSelect v-model="iface" :label="t('firewalls.rules.interface')" :options="ifaceOptions" />
       <BaseButton v-if="list?.canCreate" @click="create">{{

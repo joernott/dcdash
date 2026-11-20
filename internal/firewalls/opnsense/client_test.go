@@ -94,8 +94,9 @@ func TestVPN(t *testing.T) {
 	if changed, err := c.SetPeerEnabled(ctx, "p-2", true); err != nil || changed || fake.Applied["wireguard"] != 1 {
 		t.Errorf("enable again: %v %v", changed, err)
 	}
+	fake.Tunnels = append(fake.Tunnels, opnfake.Tunnel{Name: "x-2", Description: "Laptop", Unloaded: true})
 	tunnels, err := c.Tunnels(ctx)
-	if err != nil || len(tunnels) != 1 || !tunnels[0].Connected || len(tunnels[0].Children) != 1 ||
+	if err != nil || len(tunnels) != 2 || tunnels[1].Name != "x-2" || tunnels[1].Connected || !tunnels[0].Connected || len(tunnels[0].Children) != 1 ||
 		tunnels[0].Children[0].State != "INSTALLED" || tunnels[0].BytesOut != 200 {
 		t.Fatalf("%+v %v", tunnels, err)
 	}
@@ -145,10 +146,13 @@ func TestRulesWithSavepoint(t *testing.T) {
 	fake.CutsOff = func(r opnfake.Rule) bool { return r["action"] == "block" && r["destination_net"] == "(self)" }
 	c := newClient(t, fake, "secret")
 	rules, err := c.Rules(ctx)
-	if err != nil || len(rules) != 2 || !rules[0].Legacy || rules[1].Legacy || rules[1].DestinationPort != "443" || !rules[1].Quick {
+	if err != nil || len(rules) != 2 || !rules[0].Legacy || rules[0].Interface != "lan" || rules[1].Legacy || rules[1].DestinationPort != "443" || !rules[1].Quick {
 		t.Fatalf("%+v %v", rules, err)
 	}
 
+	if has, err := c.HasSavepoints(ctx); err != nil || !has {
+		t.Errorf("has savepoints: %v %v", has, err)
+	}
 	// A kept change: savepoint, apply, cancel the rollback.
 	rev, err := c.Savepoint(ctx)
 	if err != nil {
@@ -194,6 +198,9 @@ func TestRulesWithSavepoint(t *testing.T) {
 	fake.NoSavepoint = true
 	if _, err := c.Savepoint(ctx); !errors.Is(err, opnsense.ErrNoSavepoint) {
 		t.Errorf("26.7: %v", err)
+	}
+	if has, err := c.HasSavepoints(ctx); err != nil || has {
+		t.Errorf("26.7 has savepoints: %v %v", has, err)
 	}
 }
 

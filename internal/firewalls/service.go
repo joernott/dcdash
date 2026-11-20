@@ -60,6 +60,7 @@ type Backend interface {
 	AddRule(ctx context.Context, r opnsense.Rule) (string, error)
 	SetRule(ctx context.Context, r opnsense.Rule) error
 	DeleteRule(ctx context.Context, uuid string) error
+	HasSavepoints(ctx context.Context) (bool, error)
 	Savepoint(ctx context.Context) (string, error)
 	ApplyRules(ctx context.Context, revision string) error
 	CancelRollback(ctx context.Context, revision string) error
@@ -77,6 +78,8 @@ type fw struct {
 	sys      opnsense.System
 	err      error
 	probedAt time.Time
+	// spKnown: savepoints tells whether the firewall has savepoints.
+	spKnown, savepoints bool
 }
 
 // Service is the firewall API of dcdash.
@@ -268,4 +271,29 @@ func (s *Service) handleFirewalls(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// hasSavepoints reports whether the firewall has savepoints, probed once and
+// corrected by every savepoint call. If the probe fails, it returns true:
+// the change then reports the actual error.
+func (s *Service) hasSavepoints(ctx context.Context, x *fw) bool {
+	x.mu.Lock()
+	known, has := x.spKnown, x.savepoints
+	x.mu.Unlock()
+	if known {
+		return has
+	}
+	has, err := x.backend.HasSavepoints(ctx)
+	if err != nil {
+		s.log.Debug().Err(err).Str("firewall", x.backend.Name()).Msg("savepoint probe failed")
+		return true
+	}
+	x.setSavepoints(has)
+	return has
+}
+
+func (x *fw) setSavepoints(has bool) {
+	x.mu.Lock()
+	x.spKnown, x.savepoints = true, has
+	x.mu.Unlock()
 }

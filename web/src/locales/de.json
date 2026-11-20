@@ -760,6 +760,7 @@
       "deleteText": "Die Regel {rule} wird mit einem Sicherungspunkt gelöscht.",
       "apply": "Anwenden",
       "savepointHint": "dcdash wendet jede Änderung mit einem Sicherungspunkt an und prüft dann, ob es die Firewall noch erreicht. Wenn nicht, stellt OPNsense innerhalb einer Minute die vorherigen Regeln wieder her.",
+      "noSavepoint": "Diese OPNsense-Version hat keine Sicherungspunkte (entfernt in 26.7). Ohne die automatische Rücknahme könnte eine falsche Regel dcdash aussperren, daher werden die Regeln hier nur angezeigt.",
       "kept": "Die Regeln wurden angewendet.",
       "rolledBack": "Nach der Änderung konnte dcdash {firewall} nicht mehr erreichen. OPNsense stellt innerhalb einer Minute die vorherigen Regeln wieder her.",
       "actions": {

@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -339,5 +340,9 @@ func TestRules(t *testing.T) {
 	e.fw1.Unlock()
 	if st, code := e.do(t, "netops", "POST", "/api/v1/firewalls/fw1/rules", ssh, nil); st != 409 || code != "no_savepoint" {
 		t.Errorf("no savepoint: %d %s", st, code)
+	}
+	if st, _ := e.do(t, "netops", "GET", "/api/v1/firewalls/fw1/rules", nil, &l); st != 200 || !l.NoSavepoint || l.CanCreate ||
+		slices.ContainsFunc(l.Rules, func(r firewalls.RuleView) bool { return r.CanWrite }) {
+		t.Errorf("rules without savepoints: %d %+v", st, l)
 	}
 }

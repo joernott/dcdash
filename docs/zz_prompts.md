@@ -315,3 +315,14 @@ yes, continue with the rest of sprint 13 until you need input from me
 1: yes, merge sprint 13 and start sprint 14. Please complete as many tasks as possible without a real OPNSense. Tomorrow I will try to provide you with one just for testing. We are mostly using OPNsense 26.4.2p4 or 26.4.2p5 versions.
 2: yes, please. Ideally a compact view with one column spanning 2 rows containing the switch name, a https and a ssh link to it and then 12 columns where you have port1 in the first row, port 2 below, then in the next column port 3 and 4 and so on and then 2 columns at the end with the sfp-ports 49-52. Each cell just shows either a green UP or red DOWN arrow and the vlan number below. If a switch has less than 24+4 ports, some columns are left blank. If it is one of the more rare 48 port switches, it'll take 4 rows.
 3: Please create the switch in the copy as it is only here for testing and won't be used in that configuration in the data center.
+
+---
+
+## 2026-11-20 — Sprint 14 (OPNsense)
+
+1: Key and secret are set
+2: The firewall has the IP 10.15.34.34
+3: Whatever you need, the firewall is a test device not used for anything except dcdash tests
+  There is only one peer for Wireguard: dcdashtest" and one IPSEC tunnel (currently not connected, I need to set up a peer for it)
+you can use the test_wan_ipv6_test (opt1) interface and WAN1 (opt2) for tests
+4. Yes, the firewall is exclusively for you

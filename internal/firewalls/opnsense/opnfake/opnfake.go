@@ -78,6 +78,8 @@ type Tunnel struct {
 	Name, Description, Remote string
 	Connected                 bool
 	Children                  []string
+	// Unloaded connections are configured, but have no session (strongSwan stopped).
+	Unloaded bool
 }
 
 // Alias is an alias of the fake.
@@ -111,7 +113,7 @@ func New(key, secret string) *Server {
 		Rules: []Rule{{"uuid": "r-1", "enabled": "1", "sequence": "10", "action": "pass", "quick": "1", "interface": "lan",
 			"direction": "in", "ipprotocol": "inet", "protocol": "TCP", "source_net": "any", "destination_net": "webservers",
 			"destination_port": "443", "description": "web"}},
-		LegacyRules: []Rule{{"enabled": "1", "sequence": "1", "action": "pass", "interface": "lan", "direction": "in",
+		LegacyRules: []Rule{{"uuid": "0f3a9c", "enabled": "1", "sequence": "1", "action": "pass", "interface": "LAN", "direction": "in",
 			"ipprotocol": "inet", "protocol": "any", "source_net": "lan", "destination_net": "any",
 			"description": "Default allow LAN to any rule", "legacy": "1"}},
 		Applied: map[string]int{}, savepoints: map[string][]Rule{}, timers: map[string]*time.Timer{}, fail: map[string]int{},
@@ -305,8 +307,17 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, seg []string, bod
 	case "ipsec/sessions/search_phase1":
 		rows := []map[string]any{}
 		for _, t := range s.Tunnels {
+			if t.Unloaded {
+				continue
+			}
 			rows = append(rows, map[string]any{"name": t.Name, "phase1desc": t.Description, "connected": t.Connected,
 				"remote-addrs": t.Remote, "bytes-in": 100, "bytes-out": 200})
+		}
+		return ok(search(rows))
+	case "ipsec/connections/search_connection":
+		rows := []map[string]any{}
+		for _, t := range s.Tunnels {
+			rows = append(rows, map[string]any{"uuid": t.Name, "enabled": "1", "description": t.Description, "remote_addrs": t.Remote})
 		}
 		return ok(search(rows))
 	case "ipsec/sessions/search_phase2":
@@ -387,6 +398,10 @@ func (s *Server) firewall(w http.ResponseWriter, cmd, arg string, post bool, bod
 			m := map[string]any{}
 			for k, v := range r {
 				m[k] = v
+			}
+			// OPNsense names the interface of automatic rules by its description.
+			if r["legacy"] == "" {
+				m["%interface"] = strings.ToUpper(r["interface"])
 			}
 			rows = append(rows, m)
 		}

@@ -4,8 +4,10 @@ package opnsense
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"sort"
 	"time"
 )
@@ -167,7 +169,41 @@ func (c *Client) Tunnels(ctx context.Context) ([]Tunnel, error) {
 		}
 		out = append(out, t)
 	}
+	out, err = c.addConfiguredTunnels(ctx, out)
+	if err != nil {
+		return nil, err
+	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out, nil
+}
+
+// addConfiguredTunnels adds the enabled connections (VPN > IPsec > Connections)
+// that have no session: the session list leaves out connections that aren't
+// loaded, for example while strongSwan is stopped. swanctl names these
+// connections by their UUID. Reading them needs the privilege "VPN: IPsec:
+// Connections"; without it, only the sessions are listed.
+func (c *Client) addConfiguredTunnels(ctx context.Context, out []Tunnel) ([]Tunnel, error) {
+	conns, err := searchAll[struct {
+		UUID        flexString `json:"uuid"`
+		Enabled     flexString `json:"enabled"`
+		Description flexString `json:"description"`
+		Local       flexString `json:"local_addrs"`
+		Remote      flexString `json:"remote_addrs"`
+	}](ctx, c, "/ipsec/connections/search_connection")
+	if errors.Is(err, ErrForbidden) || errors.Is(err, ErrNotFound) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	for _, cn := range conns {
+		name := string(cn.UUID)
+		if !cn.Enabled.bool() || slices.ContainsFunc(out, func(t Tunnel) bool { return t.Name == name }) {
+			continue
+		}
+		out = append(out, Tunnel{Name: name, Description: string(cn.Description), LocalAddrs: string(cn.Local),
+			RemoteAddrs: string(cn.Remote), Children: []ChildSA{}})
+	}
 	return out, nil
 }
 

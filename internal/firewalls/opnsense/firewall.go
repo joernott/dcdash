@@ -144,6 +144,7 @@ func (c *Client) Rules(ctx context.Context) ([]Rule, error) {
 		Action          flexString `json:"action"`
 		Quick           flexString `json:"quick"`
 		Interface       flexString `json:"interface"`
+		InterfaceName   flexString `json:"%interface"`
 		Direction       flexString `json:"direction"`
 		IPProtocol      flexString `json:"ipprotocol"`
 		Protocol        flexString `json:"protocol"`
@@ -160,8 +161,19 @@ func (c *Client) Rules(ctx context.Context) ([]Rule, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Automatic rules name the interface by its description; the others by its key
+	// (opt1) with the description in %interface.
+	keys := map[string]string{}
+	for _, r := range rows {
+		if r.InterfaceName != "" && !strings.Contains(string(r.Interface), ",") {
+			keys[string(r.InterfaceName)] = string(r.Interface)
+		}
+	}
 	out := make([]Rule, 0, len(rows))
 	for _, r := range rows {
+		if k, ok := keys[string(r.Interface)]; ok && r.InterfaceName == "" {
+			r.Interface = flexString(k)
+		}
 		seq, _ := strconv.Atoi(string(r.Sequence))
 		out = append(out, Rule{UUID: string(r.UUID), Enabled: r.Enabled.bool(), Sequence: seq, Action: string(r.Action),
 			Quick: r.Quick.bool(), Interface: string(r.Interface), Direction: string(r.Direction), IPProtocol: string(r.IPProtocol),
@@ -210,6 +222,20 @@ func (c *Client) DeleteRule(ctx context.Context, uuid string) error {
 		return fmt.Errorf("%w: rule %s (%s)", ErrNotFound, uuid, r.Result)
 	}
 	return nil
+}
+
+// HasSavepoints reports whether the firewall has the savepoint calls (removed
+// in OPNsense 26.7). A GET doesn't create a savepoint: OPNsense answers it
+// with a failed status, or 404 if the call doesn't exist.
+func (c *Client) HasSavepoints(ctx context.Context) (bool, error) {
+	err := c.Get(ctx, "/firewall/filter/savepoint", nil)
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
+	}
+	if err != nil && !errors.As(err, new(*ValidationError)) {
+		return false, err
+	}
+	return true, nil
 }
 
 // Savepoint creates a savepoint of the filter configuration and returns its
