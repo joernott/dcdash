@@ -6,6 +6,11 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-20
+
+NetBox as the common data source, projects, and the network: Aruba CX switches and OPNsense
+firewalls.
+
 ### Added
 
 - **NetBox:** NetBox 4.2 or later as a common data source (`netbox` section). The creation
@@ -143,7 +148,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/joernott/dcdash/releases/tag/v0.2.0
 [0.1.2]: https://github.com/joernott/dcdash/releases/tag/v0.1.2
 [0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1
 [0.1.0]: https://github.com/joernott/dcdash/releases/tag/v0.1.0

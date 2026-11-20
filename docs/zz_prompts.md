@@ -332,3 +332,15 @@ you can use the test_wan_ipv6_test (opt1) interface and WAN1 (opt2) for tests
 ## 2026-11-20 — Sprint 14 (OPNsense)
 
 Regarding 14.8.2: We will update the current firewalls to newer versions. Therefore please thest with the current device
+
+---
+
+## 2026-11-20 — Sprint 14 (OPNsense)
+
+As the dcdash user is a member of "admins", I've granted those privileges to the "admins" group.
+
+---
+
+## 2026-11-20 — Sprint 14 (OPNsense)
+
+yes, merge sprint 14 and tag v0.2.0
