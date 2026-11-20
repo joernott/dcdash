@@ -46,6 +46,7 @@ These apply to every task:
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
+| 15 | `sprint/15-overview-links` | Overview: compact tiles, UI, SSH and RDP links on the tiles | – | planned |
 
 ---
 
@@ -468,3 +469,20 @@ These apply to every task:
     guard instead of the savepoint rollback, tested against the test firewall (replaces the
     planned test of savepoints on 26.1 or Business Edition 26.4)
 - [x] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`
+
+## Sprint 15 — Overview: Compact Tiles and Access Links
+
+- [ ] **15.1** Overview page: narrower tiles, six next to each other on wide screens instead
+  of three (fewer on smaller screens); name, status and details must stay readable at that
+  width
+- [ ] **15.2** Configuration: optional settings `ui`, `ssh` and `rdp` for everything that
+  produces a tile on the overview page: Proxmox clusters, DNS servers, DHCP servers, NetBox,
+  switches, firewalls and the LDAP servers (user directory). `ui` is an `https://` (or
+  `http://`) URL, `ssh` and `rdp` a host with an optional port (and user for `ssh`);
+  validation and documentation
+- [ ] **15.3** API: the status checks return the configured links; OpenAPI
+- [ ] **15.4** Tiles: a small button for each set (non-empty) link, left of the status
+  element, like the https and ssh links of the switch overview; `ssh://` and an RDP link (the
+  form that Windows and the common RDP clients open is decided in this task); en/de labels,
+  light and dark mode, accessibility
+- [ ] **15.5** Tests, documentation (`configuration.md`, user guide), `CHANGELOG.md`
