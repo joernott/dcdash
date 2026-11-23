@@ -6,6 +6,12 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Frontend dependencies updated (Dependabot): Vue 3.5.46, vue-i18n 11.4.23, vue-router
+  5.5.1; for development and tests Playwright 1.65, vitest 5, jsdom 31, @types/node 26 (as
+  Node 26 in `.node-version`), oxlint 1.94 and Prettier 3.10.
+
 ## [0.2.1] - 2026-11-23
 
 A more compact, colored overview with links to the systems, icons on the buttons, and the

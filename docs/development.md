@@ -302,6 +302,9 @@ and patch updates of the Go modules, one for the npm packages in `web/`, one for
 Actions, and one per major update and per update of the container base image (pinned by
 digest). The CI runs on them like on any pull request; review the changelogs of major updates
 before merging.
+Dependabot leaves out major updates of TypeScript (until typescript-eslint and vue-tsc support
+TypeScript 7) and of `@types/node`, which follows the Node version in `.node-version`; raise
+both together by hand.
 
 ## Releases
 
