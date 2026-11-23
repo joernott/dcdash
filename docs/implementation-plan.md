@@ -568,13 +568,13 @@ network, and two current Samba AD domain controllers in the test labs.
 - [ ] **16.7** ~~The agent for the Samba DC, if 16.1 chooses it~~ Dropped: ADR 0010 chose
   the agentless way for every feature. An agent with the `DnsServer` PowerShell module is the
   fallback for zone management on Windows if the manual test there fails (later sprint).
-- [ ] **16.8** Self-service password change, like LTB Self Service Password: a page that
+- [x] **16.8** Self-service password change, like LTB Self Service Password: a page that
   every user of a configured directory can use without a dcdash role (directory, user name,
   current password, new password twice). The change uses the user's own credentials (LDAP or
   kpasswd, so that expired passwords and "must change" work); the domain's password policy
   is shown and its errors explained; rate limits and the domain lockout are respected, user
   names can't be enumerated, the audit log records the change without passwords; en/de
-- [ ] **16.9** Projects: project files name AD groups per directory; the project page shows
+- [x] **16.9** Projects: project files name AD groups per directory; the project page shows
   them with their members
 - [ ] **16.10** Permissions and audit actions (module `directory`, resources for users,
   groups and OUs), navigation entry, a "Directories" page with users and groups; color for

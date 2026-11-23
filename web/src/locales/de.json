@@ -139,7 +139,42 @@
     "verify": "Bestätigen",
     "useRecovery": "Wiederherstellungscode verwenden",
     "useCode": "Authenticator-App verwenden",
-    "restart": "Als anderer Benutzer anmelden"
+    "restart": "Als anderer Benutzer anmelden",
+    "changePassword": "Domänenpasswort ändern"
+  },
+  "password": {
+    "title": "Passwort ändern",
+    "intro": "Ändern Sie das Passwort Ihres Kontos in der Domäne. Dafür müssen Sie sich nicht bei dcdash anmelden, und es funktioniert auch, wenn Ihr Passwort abgelaufen ist oder geändert werden muss.",
+    "directory": "Domäne",
+    "username": "Benutzername",
+    "usernameHint": "Ihr Kontoname oder Ihre {'@'}{domain}-Adresse",
+    "current": "Aktuelles Passwort",
+    "new": "Neues Passwort",
+    "confirm": "Neues Passwort wiederholen",
+    "submit": "Passwort ändern",
+    "success": "Ihr Passwort wurde geändert. Verwenden Sie ab jetzt das neue Passwort, auch auf Ihren anderen Geräten.",
+    "mismatch": "Die neuen Passwörter stimmen nicht überein.",
+    "none": "Keine Domäne bietet hier die Passwortänderung an.",
+    "toLogin": "Zur Anmeldung bei dcdash",
+    "policy": {
+      "title": "Die Passwortregeln der Domäne",
+      "minLength": "Mindestens ein Zeichen | Mindestens {n} Zeichen",
+      "complexity": "Drei dieser vier: Großbuchstaben, Kleinbuchstaben, Ziffern, andere Zeichen; nicht Ihr Konto- oder Anzeigename",
+      "history": "Nicht dasselbe wie Ihr letztes Passwort | Nicht dasselbe wie eines Ihrer letzten {n} Passwörter",
+      "minAge": "Frühestens nach einer Stunde wieder änderbar | Frühestens nach {n} Stunden wieder änderbar"
+    },
+    "errors": {
+      "invalid_credentials": "Der Benutzername oder das aktuelle Passwort ist falsch.",
+      "same_password": "Das neue Passwort muss sich vom aktuellen unterscheiden.",
+      "too_many_attempts": "Zu viele Fehlversuche. Bitte warten Sie einige Minuten und versuchen Sie es erneut.",
+      "directory_unavailable": "Die Domäne ist gerade nicht erreichbar. Bitte versuchen Sie es später erneut.",
+      "password_policy_tooShort": "Das neue Passwort ist zu kurz.",
+      "password_policy_history": "Sie haben das neue Passwort schon einmal verwendet. Bitte wählen Sie ein anderes.",
+      "password_policy_tooYoung": "Ihr Passwort wurde erst kürzlich geändert und kann noch nicht wieder geändert werden.",
+      "password_policy_complexity": "Das neue Passwort ist nicht komplex genug. Verwenden Sie drei dieser vier: Großbuchstaben, Kleinbuchstaben, Ziffern, andere Zeichen, und nicht Ihren Namen.",
+      "password_policy_policy": "Das neue Passwort erfüllt die Regeln der Domäne nicht: Es ist vielleicht zu kurz, zu einfach oder wurde schon verwendet.",
+      "rejected": "Die Domäne hat die Änderung abgelehnt. Bitte wenden Sie sich an Ihre Administration."
+    }
   },
   "enroll": {
     "title": "Authenticator-App einrichten",
@@ -259,7 +294,6 @@
     "noClusters": "Ihnen steht kein Proxmox-Cluster zur Verfügung.",
     "nodes": "Knoten",
     "noNodes": "Keine Knoten sichtbar.",
-    "guests": "Virtuelle Maschinen und Container",
     "noGuests": "Keine virtuellen Maschinen oder Container passen zum Filter.",
     "search": "Suche (Name, ID, Tag)",
     "shown": "{n} von {total} angezeigt",
@@ -1208,6 +1242,10 @@
     "sourceError": "Konnte nicht gelesen werden: {error}",
     "empty": "Zu diesem Projekt gehört noch nichts.",
     "guests": "Virtuelle Maschinen und Container",
+    "groups": "Active-Directory-Gruppen",
+    "groupHidden": "Mitglieder für Sie nicht sichtbar",
+    "groupMissing": "Die Gruppe gibt es im Verzeichnis nicht",
+    "noMembers": "Keine Mitglieder",
     "remove": "Entfernen",
     "add": "NetBox-Objekte hinzufügen",
     "addHint": "Suchen Sie VLANs, Präfixe, IP-Adressen, IP-Bereiche, Switch-Ports oder virtuelle Maschinen in NetBox und fügen Sie sie dem Projekt hinzu. Gäste in Proxmox ordnen Sie auf ihrer Seite zu.",
@@ -1230,6 +1268,9 @@
       "guest": "Gast",
       "cluster": "Cluster",
       "status": "Status",
+      "group": "Gruppe",
+      "directory": "Verzeichnis",
+      "members": "Mitglieder",
       "object": "Objekt",
       "detail": "Details",
       "actions": "Aktionen"

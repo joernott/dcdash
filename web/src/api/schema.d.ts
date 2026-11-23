@@ -1975,6 +1975,52 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/password/directories': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Directories for the self-service password change
+     * @description No login needed. The directories with `self_service` and their password policy (left
+     *     out if the directory can't be reached). 404 if the self-service is off.
+     */
+    get: operations['listSelfServiceDirectories']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/password/change': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Change one's password (self-service)
+     * @description No login and no CSRF token needed (the origin and JSON checks apply). Changes the
+     *     password with the current one, also for users who must change it. Unknown users and
+     *     wrong passwords get the same answer (invalid_credentials), which takes at least a
+     *     second. Failures are limited per user and per client address like logins
+     *     (`auth.lockout`). Audited as `directory.password.change` with the user as actor
+     *     (source `self-service`), without the passwords.
+     */
+    post: operations['changeOwnPassword']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -2281,11 +2327,32 @@ export interface components {
     }
     ProjectPage: components['schemas']['Project'] & {
       guests: components['schemas']['ProjectGuest'][]
+      groups: components['schemas']['ProjectGroup'][]
       /** @description NetBox objects by type; missing without NetBox. */
       netbox?: {
         [key: string]: components['schemas']['ProjectObject'][]
       }
       errors: string[]
+    }
+    /**
+     * @description An Active Directory group of a project. Description and members only if the user may
+     *     read the group (`directory:<directory>:group/<name>:read`); missing tells that a
+     *     visible group doesn't exist.
+     */
+    ProjectGroup: {
+      directory: string
+      name: string
+      visible: boolean
+      missing?: boolean
+      description?: string
+      members?: {
+        dn: string
+        name: string
+        displayName?: string
+        /** @enum {string} */
+        kind: 'user' | 'group' | 'computer' | 'other'
+        disabled?: boolean
+      }[]
     }
     /**
      * @description Result of the write-back to NetBox after a change (missing if the change isn't written
@@ -2858,7 +2925,7 @@ export interface components {
       providers: {
         name: string
         /** @enum {string} */
-        kind: 'cloudflare' | 'bind'
+        kind: 'cloudflare' | 'bind' | 'ad'
         capabilities: components['schemas']['DNSCapabilities']
       }[]
     }
@@ -3602,6 +3669,22 @@ export interface components {
       /** @description Account names. */
       add?: string[]
       remove?: string[]
+    }
+    SelfServiceDirectoryList: {
+      directories: {
+        name: string
+        domain: string
+        policy?: components['schemas']['DirectoryPasswordPolicy']
+      }[]
+    }
+    SelfServicePasswordChange: {
+      directory: string
+      /** @description Account name or user principal name. */
+      username: string
+      /** Format: password */
+      currentPassword: string
+      /** Format: password */
+      newPassword: string
     }
   }
   responses: {
@@ -7405,6 +7488,102 @@ export interface operations {
       404: components['responses']['NotFound']
       422: components['responses']['DirectoryRejected']
       502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listSelfServiceDirectories: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The directories. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SelfServiceDirectoryList']
+        }
+      }
+      404: components['responses']['NotFound']
+      default: components['responses']['Error']
+    }
+  }
+  changeOwnPassword: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SelfServicePasswordChange']
+      }
+    }
+    responses: {
+      /** @description The password was changed. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Invalid request (invalid_request) or the same password twice (same_password). */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description The user name or the current password is wrong (invalid_credentials). */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      404: components['responses']['NotFound']
+      /**
+       * @description The password policy rejected the new password: password_policy_tooShort,
+       *     password_policy_history, password_policy_tooYoung, password_policy_complexity or
+       *     password_policy_policy (Windows doesn't say why), with the domain controller's
+       *     message; or rejected.
+       */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description Too many failed attempts (too_many_attempts); see Retry-After. */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description The directory is not available (directory_unavailable). */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
       default: components['responses']['Error']
     }
   }

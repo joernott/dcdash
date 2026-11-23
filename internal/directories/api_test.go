@@ -52,7 +52,7 @@ func newAPIEnv(t *testing.T) *apiEnv {
 		lab: adfake.New(config.Directory{Name: "lab", Type: config.DirectoryTypeSamba, Domain: "ad.test", BaseDN: "DC=ad,DC=test",
 			ManagedOUs: []string{labOU}}),
 		corp: adfake.New(config.Directory{Name: "corp", Type: config.DirectoryTypeWindows, Domain: "corp.test", BaseDN: "DC=corp,DC=test",
-			ManagedOUs: []string{"DC=corp,DC=test"}}),
+			ManagedOUs: []string{"DC=corp,DC=test"}, SelfService: new(bool)}),
 	}
 	e.lab.AddUser(usersCN, "Administrator", "Admin-1234", true)
 	e.lab.AddUser(usersCN, "outside", "Outside-1234", false)

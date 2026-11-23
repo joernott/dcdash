@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -24,6 +25,17 @@ const useRecovery = ref(false)
 const error = ref('')
 const busy = ref(false)
 const codeInput = useTemplateRef<InstanceType<typeof BaseInput>>('codeInput')
+
+// A link to the self-service password change, if a directory offers it.
+const selfService = ref(false)
+onMounted(async () => {
+  try {
+    selfService.value =
+      (await unwrap(api.GET('/api/v1/password/directories'))).directories.length > 0
+  } catch {
+    // Off (404) or not reachable: no link.
+  }
+})
 
 // The TOTP step is shown when the password was verified in this or an earlier page load.
 const totpStep = computed(() => session.stage === 'totp')
@@ -96,6 +108,11 @@ function restart() {
       />
       <BaseButton type="submit" :loading="busy">{{ t('login.submit') }}</BaseButton>
     </form>
+    <p v-if="!totpStep && selfService" class="mt-6 text-sm">
+      <RouterLink :to="{ name: 'password' }" class="text-primary hover:underline">{{
+        t('login.changePassword')
+      }}</RouterLink>
+    </p>
 
     <form v-else class="flex flex-col gap-4" @submit.prevent="submitCode">
       <p class="text-sm text-fg-muted">

@@ -136,11 +136,12 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		a.statusChecks = append(a.statusChecks, fwSvc.StatusChecks()...)
 		a.routes = append(a.routes, fwSvc.Register)
 	}
+	var dirSvc *directories.Service
 	if len(cfg.Directories) > 0 {
-		dirSvc, err := directories.NewService(cfg.Directories, auditLog, log)
-		if err != nil {
+		if dirSvc, err = directories.NewService(cfg.Directories, auditLog, log); err != nil {
 			return nil, err
 		}
+		dirSvc.EnableSelfService(lockoutPolicy(cfg.Auth.Lockout.User), lockoutPolicy(cfg.Auth.Lockout.IP))
 		a.statusChecks = append(a.statusChecks, dirSvc.StatusChecks()...)
 		a.routes = append(a.routes, dirSvc.Register)
 	}
@@ -206,8 +207,12 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		pve.SetProjects(projects)
 		projects.SetGuestSource(pve)
 	}
+	if dirSvc != nil {
+		// Active Directory groups of projects (task 16.9).
+		projects.SetGroupSource(dirSvc)
+	}
 	a.middleware = append(a.middleware,
-		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
+		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath, directories.ChangePasswordPath))
 	return a, nil
 }
 

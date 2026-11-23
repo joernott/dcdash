@@ -2928,6 +2928,78 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/password/directories:
+    get:
+      tags: [directories]
+      operationId: listSelfServiceDirectories
+      summary: Directories for the self-service password change
+      description: |
+        No login needed. The directories with `self_service` and their password policy (left
+        out if the directory can't be reached). 404 if the self-service is off.
+      security: []
+      responses:
+        "200":
+          description: The directories.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SelfServiceDirectoryList" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/password/change:
+    post:
+      tags: [directories]
+      operationId: changeOwnPassword
+      summary: Change one's password (self-service)
+      description: |
+        No login and no CSRF token needed (the origin and JSON checks apply). Changes the
+        password with the current one, also for users who must change it. Unknown users and
+        wrong passwords get the same answer (invalid_credentials), which takes at least a
+        second. Failures are limited per user and per client address like logins
+        (`auth.lockout`). Audited as `directory.password.change` with the user as actor
+        (source `self-service`), without the passwords.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SelfServicePasswordChange" }
+      responses:
+        "204": { description: The password was changed. }
+        "400":
+          description: "Invalid request (invalid_request) or the same password twice (same_password)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401":
+          description: "The user name or the current password is wrong (invalid_credentials)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422":
+          description: |
+            The password policy rejected the new password: password_policy_tooShort,
+            password_policy_history, password_policy_tooYoung, password_policy_complexity or
+            password_policy_policy (Windows doesn't say why), with the domain controller's
+            message; or rejected.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          description: "Too many failed attempts (too_many_attempts); see Retry-After."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "503":
+          description: "The directory is not available (directory_unavailable)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -3454,14 +3526,40 @@ components:
       allOf:
         - $ref: "#/components/schemas/Project"
         - type: object
-          required: [guests, errors]
+          required: [guests, groups, errors]
           properties:
             guests: { type: array, items: { $ref: "#/components/schemas/ProjectGuest" } }
+            groups: { type: array, items: { $ref: "#/components/schemas/ProjectGroup" } }
             netbox:
               type: object
               description: NetBox objects by type; missing without NetBox.
               additionalProperties: { type: array, items: { $ref: "#/components/schemas/ProjectObject" } }
             errors: { type: array, items: { type: string } }
+
+    ProjectGroup:
+      type: object
+      description: |
+        An Active Directory group of a project. Description and members only if the user may
+        read the group (`directory:<directory>:group/<name>:read`); missing tells that a
+        visible group doesn't exist.
+      required: [directory, name, visible]
+      properties:
+        directory: { type: string }
+        name: { type: string }
+        visible: { type: boolean }
+        missing: { type: boolean }
+        description: { type: string }
+        members:
+          type: array
+          items:
+            type: object
+            required: [dn, name, kind]
+            properties:
+              dn: { type: string }
+              name: { type: string }
+              displayName: { type: string }
+              kind: { type: string, enum: [user, group, computer, other] }
+              disabled: { type: boolean }
 
     NetBoxResult:
       type: object
@@ -4872,3 +4970,27 @@ components:
       properties:
         add: { type: array, items: { type: string }, description: Account names. }
         remove: { type: array, items: { type: string } }
+
+    SelfServiceDirectoryList:
+      type: object
+      required: [directories]
+      properties:
+        directories:
+          type: array
+          items:
+            type: object
+            required: [name, domain]
+            properties:
+              name: { type: string }
+              domain: { type: string }
+              policy: { $ref: "#/components/schemas/DirectoryPasswordPolicy" }
+
+    SelfServicePasswordChange:
+      type: object
+      required: [directory, username, currentPassword, newPassword]
+      additionalProperties: false
+      properties:
+        directory: { type: string }
+        username: { type: string, description: Account name or user principal name. }
+        currentPassword: { type: string, format: password, maxLength: 256 }
+        newPassword: { type: string, format: password, maxLength: 256 }

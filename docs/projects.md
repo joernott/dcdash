@@ -16,6 +16,8 @@ most 55 characters.
 title: Webshop relaunch   # display name and name of the NetBox tag; default project-<name>
 color: 2196f3             # color of the NetBox tag (6 hex digits); default 9e9e9e
 description: The new web shop
+groups:                   # Active Directory groups of the project, by directory
+  lab: [shop-admins, shop-devs]   # directories[].name: [sAMAccountName, ...]
 ```
 
 All fields are optional; unknown fields are refused, so that typos are noticed. Titles must
@@ -28,6 +30,15 @@ the overview page and the projects page show the error. dcdash never writes the 
 
 Deleting a file removes the project from dcdash. Its tag stays in NetBox and on the objects;
 the projects page lists it as orphaned. Delete it in NetBox when it is no longer needed.
+
+### Active Directory groups
+
+`groups` names the groups of the project per directory configured under
+[`directories`](configuration.md#directories). The project page lists them with their
+description and direct members. Members are only shown to users who may read the group
+(`directory:<directory>:group/<name>:read`); others see the group name only. A group that
+doesn't exist, or a directory that isn't configured, is reported on the page. The groups are
+not changed by dcdash; manage their members on the Directories page.
 
 ## Tags in NetBox
 

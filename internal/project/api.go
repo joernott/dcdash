@@ -4,13 +4,17 @@ package project
 
 import (
 	"errors"
+	"maps"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/rs/zerolog/hlog"
 
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
+	"github.com/joernott/dcdash/internal/directories"
+	"github.com/joernott/dcdash/internal/directories/ad"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/netbox"
 	"github.com/joernott/dcdash/internal/rbac"
@@ -28,6 +32,9 @@ const (
 
 // SetGuestSource connects the Proxmox module; nil if not configured.
 func (s *Service) SetGuestSource(g GuestSource) { s.guests = g }
+
+// SetGroupSource connects the directories module; nil if not configured.
+func (s *Service) SetGroupSource(g GroupSource) { s.groups = g }
 
 // Register adds the routes of the module.
 func (s *Service) Register(mux *http.ServeMux) {
@@ -111,8 +118,22 @@ type Page struct {
 	// NetBox are the NetBox objects by type (vm, ip, iprange, prefix, vlan,
 	// interface); missing without NetBox.
 	NetBox map[string][]ObjectView `json:"netbox,omitempty"`
+	// Groups are the Active Directory groups of the project file.
+	Groups []GroupView `json:"groups"`
 	// Errors are sources that couldn't be read.
 	Errors []string `json:"errors"`
+}
+
+// GroupView is an Active Directory group of a project. Description and Members are only
+// set if the user may read the group (Visible); Missing tells that a visible group
+// doesn't exist.
+type GroupView struct {
+	Directory   string      `json:"directory"`
+	Name        string      `json:"name"`
+	Visible     bool        `json:"visible"`
+	Missing     bool        `json:"missing,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Members     []ad.Member `json:"members,omitempty"`
 }
 
 func (s *Service) handleProject(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +143,8 @@ func (s *Service) handleProject(w http.ResponseWriter, r *http.Request) {
 	}
 	subj := auth.SubjectFromContext(r.Context())
 	out := Page{View: View{Project: p, Tag: p.Tag(), CanWrite: subj.Can(permission(p.Name, rbac.ActionWrite))},
-		Guests: []GuestView{}, Errors: []string{}}
+		Guests: []GuestView{}, Groups: []GroupView{}, Errors: []string{}}
+	out.Groups, out.Errors = s.projectGroups(r, subj, p, out.Errors)
 	if s.guests != nil {
 		gs, errs := s.guests.ProjectGuests(r.Context(), p.Tag())
 		for _, g := range gs {
@@ -152,6 +174,37 @@ func (s *Service) handleProject(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// projectGroups reads the groups of a project that the user may see; errors are added to
+// errs.
+func (s *Service) projectGroups(r *http.Request, subj *rbac.Subject, p Project, errs []string) ([]GroupView, []string) {
+	out := []GroupView{}
+	dirs := slices.Sorted(maps.Keys(p.Groups))
+	for _, dir := range dirs {
+		for _, name := range p.Groups[dir] {
+			g := GroupView{Directory: dir, Name: name,
+				Visible: subj.Can(rbac.P(directories.Module, dir, directories.GroupResource(name), rbac.ActionRead))}
+			if g.Visible && s.groups != nil {
+				group, err := s.groups.ProjectGroup(r.Context(), dir, name)
+				switch {
+				case err == nil:
+					g.Name, g.Description, g.Members = group.Name, group.Description, group.Members
+				case errors.Is(err, ad.ErrNotFound):
+					g.Missing = true
+				case errors.Is(err, directories.ErrUnknownDirectory):
+					errs = append(errs, "directory "+dir+" is not configured")
+				default:
+					errs = append(errs, "directory "+dir+": "+err.Error())
+				}
+			}
+			out = append(out, g)
+		}
+		if s.groups == nil {
+			errs = append(errs, "directory "+dir+" is not configured")
+		}
+	}
+	return out, slices.Compact(errs)
 }
 
 func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {

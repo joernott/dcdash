@@ -27,7 +27,9 @@ func write(t *testing.T, dir, name, content string) {
 
 func TestLoad(t *testing.T) {
 	dir := t.TempDir()
-	write(t, dir, "webshop.yaml", "title: Webshop relaunch\ncolor: \"#2196F3\"\ndescription: New shop\n")
+	write(t, dir, "webshop.yaml", "title: Webshop relaunch\ncolor: \"#2196F3\"\ndescription: New shop\ngroups:\n  lab: [shop-admins, shop-devs]\n")
+	write(t, dir, "groups.yaml", "groups:\n  Lab: [x]\n")
+	write(t, dir, "groups2.yaml", "groups:\n  lab: [\"a,b\"]\n")
 	write(t, dir, "intranet.yaml", "")
 	write(t, dir, "Bad_Name.yaml", "title: x\n")
 	write(t, dir, "color.yaml", "color: blue\n")
@@ -36,14 +38,15 @@ func TestLoad(t *testing.T) {
 	write(t, dir, "notes.txt", "ignored")
 	ps, errs := project.Load(dir)
 	if len(ps) != 2 || ps[0].Name != "intranet" || ps[0].Title != "project-intranet" || ps[0].Color != project.DefaultColor ||
-		ps[1].Name != "webshop" || ps[1].Title != "Webshop relaunch" || ps[1].Color != "2196f3" || ps[1].Tag() != "project-webshop" {
+		ps[1].Name != "webshop" || ps[1].Title != "Webshop relaunch" || ps[1].Color != "2196f3" || ps[1].Tag() != "project-webshop" || len(ps[1].Groups["lab"]) != 2 {
 		t.Errorf("projects: %+v", ps)
 	}
 	all := ""
 	for _, e := range errs {
 		all += e.Error() + "\n"
 	}
-	for _, want := range []string{"Bad_Name.yaml: the file name", `color.yaml: color "blue"`, "typo.yaml:", `zcopy.yaml: the title "Webshop relaunch" is used by webshop.yaml`} {
+	for _, want := range []string{"Bad_Name.yaml: the file name", `color.yaml: color "blue"`, "typo.yaml:", `zcopy.yaml: the title "Webshop relaunch" is used by webshop.yaml`,
+		`groups.yaml: groups: "Lab" is not a directory name`, `groups2.yaml: groups.lab: "a,b" is not a group name`} {
 		if !strings.Contains(all, want) {
 			t.Errorf("missing %q in:\n%s", want, all)
 		}

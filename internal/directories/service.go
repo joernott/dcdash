@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
@@ -21,6 +22,7 @@ import (
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/directories/ad"
 	"github.com/joernott/dcdash/internal/httpx"
+	"github.com/joernott/dcdash/internal/lockout"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/status"
 )
@@ -68,6 +70,9 @@ type Service struct {
 	order []string
 	audit *audit.Log
 	log   zerolog.Logger
+	// ssUsers and ssIPs limit self-service password changes; nil: self-service is off.
+	ssUsers, ssIPs *lockout.Limiter
+	ssDelay        time.Duration
 }
 
 // NewService creates the service for the configured directories.
@@ -133,6 +138,7 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PATCH "+base+"/groups/{name}", s.handleUpdateGroup)
 	mux.HandleFunc("DELETE "+base+"/groups/{name}", s.handleDeleteGroup)
 	mux.HandleFunc("POST "+base+"/groups/{name}/members", s.handleMembers)
+	s.registerSelfService(mux)
 }
 
 // DirectoryView describes a directory in GET /api/v1/directories.

@@ -139,7 +139,42 @@
     "verify": "Verify",
     "useRecovery": "Use a recovery code",
     "useCode": "Use the authenticator app",
-    "restart": "Log in as another user"
+    "restart": "Log in as another user",
+    "changePassword": "Change your domain password"
+  },
+  "password": {
+    "title": "Change password",
+    "intro": "Change the password of your account in the domain. You don't need to log in to dcdash for this, and it also works if your password has expired or must be changed.",
+    "directory": "Domain",
+    "username": "User name",
+    "usernameHint": "Your account name or {'@'}{domain} address",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Repeat the new password",
+    "submit": "Change password",
+    "success": "Your password was changed. Use the new password from now on, also on your other devices.",
+    "mismatch": "The new passwords don't match.",
+    "none": "No domain offers the password change here.",
+    "toLogin": "To the dcdash login",
+    "policy": {
+      "title": "The domain's password rules",
+      "minLength": "At least one character | At least {n} characters",
+      "complexity": "Three of these four: upper case letters, lower case letters, digits, other characters; not your account or display name",
+      "history": "Not the same as your last password | Not the same as one of your last {n} passwords",
+      "minAge": "Can be changed again after an hour at the earliest | Can be changed again after {n} hours at the earliest"
+    },
+    "errors": {
+      "invalid_credentials": "The user name or the current password is wrong.",
+      "same_password": "The new password must differ from the current one.",
+      "too_many_attempts": "Too many failed attempts. Please wait a few minutes and try again.",
+      "directory_unavailable": "The domain is not reachable right now. Please try again later.",
+      "password_policy_tooShort": "The new password is too short.",
+      "password_policy_history": "You used the new password before. Please choose another one.",
+      "password_policy_tooYoung": "Your password was changed only recently and can't be changed again yet.",
+      "password_policy_complexity": "The new password is not complex enough. Use three of these four: upper case letters, lower case letters, digits, other characters, and not your name.",
+      "password_policy_policy": "The new password doesn't meet the domain's rules: it may be too short, too simple, or used before.",
+      "rejected": "The domain rejected the change. Please contact your administrator."
+    }
   },
   "enroll": {
     "title": "Set up an authenticator app",
@@ -259,7 +294,6 @@
     "noClusters": "No Proxmox cluster is available to you.",
     "nodes": "Nodes",
     "noNodes": "No nodes visible.",
-    "guests": "Virtual machines and containers",
     "noGuests": "No virtual machines or containers match the filter.",
     "search": "Search (name, ID, tag)",
     "shown": "{n} of {total} shown",
@@ -1208,6 +1242,10 @@
     "sourceError": "Could not be read: {error}",
     "empty": "Nothing belongs to this project yet.",
     "guests": "Virtual machines and containers",
+    "groups": "Active Directory groups",
+    "groupHidden": "Members not visible to you",
+    "groupMissing": "The group doesn't exist in the directory",
+    "noMembers": "No members",
     "remove": "Remove",
     "add": "Add NetBox objects",
     "addHint": "Search for VLANs, prefixes, IP addresses, IP ranges, switch ports or virtual machines in NetBox and add them to the project. Guests in Proxmox are added on their pages.",
@@ -1230,6 +1268,9 @@
       "guest": "Guest",
       "cluster": "Cluster",
       "status": "Status",
+      "group": "Group",
+      "directory": "Directory",
+      "members": "Members",
       "object": "Object",
       "detail": "Details",
       "actions": "Actions"

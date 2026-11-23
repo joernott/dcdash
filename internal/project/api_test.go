@@ -17,6 +17,8 @@ import (
 	"github.com/joernott/dcdash/internal/audit"
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
+	"github.com/joernott/dcdash/internal/directories"
+	"github.com/joernott/dcdash/internal/directories/ad"
 	"github.com/joernott/dcdash/internal/netbox/nbfake"
 	"github.com/joernott/dcdash/internal/project"
 	"github.com/joernott/dcdash/internal/rbac"
@@ -163,3 +165,61 @@ func TestProjectAPI(t *testing.T) {
 }
 
 func itoa(i int64) string { b, _ := json.Marshal(i); return string(b) }
+
+// groupSource is a directory "lab" with the group shop-admins.
+type groupSource struct{}
+
+func (groupSource) ProjectGroup(_ context.Context, dir, name string) (ad.Group, error) {
+	switch {
+	case dir != "lab":
+		return ad.Group{}, directories.ErrUnknownDirectory
+	case name != "shop-admins":
+		return ad.Group{}, &ad.Error{Kind: ad.ErrNotFound}
+	}
+	return ad.Group{Name: "Shop-Admins", Description: "Shop administrators", Members: []ad.Member{{Name: "alice", Kind: "user"}}}, nil
+}
+
+func TestProjectGroups(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	write(t, dir, "webshop.yaml", "groups:\n  lab: [shop-admins, shop-gone, secret]\n  corp: [x]\n")
+	st, err := store.Open(ctx, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	auditLog := audit.New(st.DB(), zerolog.Nop())
+	s := project.New(ctx, config.Projects{Dir: dir}, nil, auditLog, zerolog.Nop())
+	s.SetGroupSource(groupSource{})
+	mux := http.NewServeMux()
+	s.Register(mux)
+	set, _ := rbac.ParseSet([]string{"project:webshop:objects:read", "directory:lab:group/shop-*:read", "directory:corp:*:read"})
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux.ServeHTTP(w, r.WithContext(auth.WithSubject(r.Context(), &rbac.Subject{Username: "u", Permissions: set})))
+	})
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/projects/webshop", nil))
+	var page project.Page
+	if err := json.Unmarshal(rec.Body.Bytes(), &page); err != nil {
+		t.Fatalf("%v: %s", err, rec.Body)
+	}
+	byName := map[string]project.GroupView{}
+	for _, g := range page.Groups {
+		byName[g.Directory+"/"+g.Name] = g
+	}
+	if len(page.Groups) != 4 {
+		t.Fatalf("groups: %+v", page.Groups)
+	}
+	if g := byName["lab/Shop-Admins"]; !g.Visible || g.Missing || g.Description != "Shop administrators" || len(g.Members) != 1 {
+		t.Errorf("shop-admins: %+v", g)
+	}
+	if g := byName["lab/shop-gone"]; !g.Visible || !g.Missing {
+		t.Errorf("shop-gone: %+v", g)
+	}
+	if g := byName["lab/secret"]; g.Visible || g.Members != nil {
+		t.Errorf("secret: %+v", g)
+	}
+	if len(page.Errors) != 1 || page.Errors[0] != "directory corp is not configured" {
+		t.Errorf("errors: %v", page.Errors)
+	}
+}
