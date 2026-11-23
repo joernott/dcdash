@@ -579,7 +579,7 @@ network, and two current Samba AD domain controllers in the test labs.
 - [x] **16.10** Permissions and audit actions (module `directory`, resources for users,
   groups and OUs), navigation entry, a "Directories" page with users and groups; color for
   the overview tile; en/de, light and dark mode
-- [ ] **16.11** Tests: unit tests with the fake, integration and e2e tests with the Samba
+- [x] **16.11** Tests: unit tests with the fake, integration and e2e tests with the Samba
   container, a manual test against a lab Samba DC (and the Windows DC, as far as possible)
   documented
 - [ ] **16.12** Documentation (`directories.md`, configuration, security, permission

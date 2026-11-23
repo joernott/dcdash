@@ -108,11 +108,6 @@ function restart() {
       />
       <BaseButton type="submit" :loading="busy">{{ t('login.submit') }}</BaseButton>
     </form>
-    <p v-if="!totpStep && selfService" class="mt-6 text-sm">
-      <RouterLink :to="{ name: 'password' }" class="text-primary hover:underline">{{
-        t('login.changePassword')
-      }}</RouterLink>
-    </p>
 
     <form v-else class="flex flex-col gap-4" @submit.prevent="submitCode">
       <p class="text-sm text-fg-muted">
@@ -140,5 +135,11 @@ function restart() {
         </button>
       </div>
     </form>
+
+    <p v-if="!totpStep && selfService" class="mt-6 text-sm">
+      <RouterLink :to="{ name: 'password' }" class="text-primary hover:underline">{{
+        t('login.changePassword')
+      }}</RouterLink>
+    </p>
   </AuthLayout>
 </template>

@@ -296,6 +296,7 @@
     "noClusters": "No Proxmox cluster is available to you.",
     "nodes": "Nodes",
     "noNodes": "No nodes visible.",
+    "guests": "Virtual machines and containers",
     "noGuests": "No virtual machines or containers match the filter.",
     "search": "Search (name, ID, tag)",
     "shown": "{n} of {total} shown",

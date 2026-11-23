@@ -296,6 +296,7 @@
     "noClusters": "Ihnen steht kein Proxmox-Cluster zur Verfügung.",
     "nodes": "Knoten",
     "noNodes": "Keine Knoten sichtbar.",
+    "guests": "Virtuelle Maschinen und Container",
     "noGuests": "Keine virtuellen Maschinen oder Container passen zum Filter.",
     "search": "Suche (Name, ID, Tag)",
     "shown": "{n} von {total} angezeigt",
