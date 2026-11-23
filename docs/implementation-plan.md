@@ -47,6 +47,7 @@ These apply to every task:
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
+| 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | – | planned |
 
 ---
 
@@ -524,3 +525,54 @@ These apply to every task:
 - [x] **15.15** Overview: a check that fails with an HTTP 4xx response (Kea control agents
   answer 408 now and then) is repeated once after `status.retry_delay` (default 1 s) before
   the tile shows the result
+
+## Sprint 16 — Active Directory and Samba
+
+Two scenarios: a Windows domain with a Windows Server 2019 domain controller in the airgapped
+network, and two current Samba AD domain controllers in the test labs.
+
+- [ ] **16.1** API research, results in an ADR (amend this sprint if needed). Compare per
+  feature and scenario:
+  - **Agentless:** LDAPS for users, groups and passwords (`unicodePwd`, which needs an
+    encrypted connection), DNS records with RFC 2136 updates signed with GSS-TSIG
+    (Kerberos), DNS zones as `dnsZone` objects in the `DomainDnsZones` partition, or the
+    DNS RPC protocol (MS-DNSP) that `samba-tool dns` uses; kpasswd for expired passwords.
+    Works the same for Windows and Samba and needs nothing on the domain controllers.
+  - **Agent on the Samba DC:** a small dcdash agent (Go, mTLS) that wraps `samba-tool` for
+    what the agentless way can't do well; not available for the Windows DC unless an
+    equivalent (PowerShell) agent runs there, which the airgapped network may not allow.
+  - Verify the decision against a lab Samba DC; note what can't be checked on Windows.
+- [ ] **16.2** Configuration: a `directories` section for several AD domains (name, type
+  `windows` or `samba`, LDAPS URLs with failover like `auth.ldap`, base DN, service account,
+  TLS, Kerberos realm and KDCs, the OUs dcdash may manage, protected accounts and groups);
+  how it relates to the login directory (`auth.ldap`); overview tile and status check per
+  directory
+- [ ] **16.3** Client for users and groups (search, read, create, change, delete) and a test
+  setup: a fake for unit tests and a Samba AD DC container for integration and e2e tests
+- [ ] **16.4** Users: create (OU, sAMAccountName, UPN, names, initial password, must change
+  at next logon), lock and unlock, disable and enable, delete, reset the password (optionally
+  "must change"); built-in and protected accounts (Administrator, krbtgt, members of
+  privileged groups) only with `admin`
+- [ ] **16.5** Groups: create, change (name, description, scope and type) and delete groups,
+  add and remove members; built-in groups protected
+- [ ] **16.6** DNS: AD-integrated zones and records as DNS provider type `ad` on the existing
+  DNS page (Windows DNS and Samba's internal DNS), zones created and deleted as decided in
+  16.1
+- [ ] **16.7** The agent for the Samba DC, if 16.1 chooses it: API, mTLS, packaging
+  (systemd), security model, documentation
+- [ ] **16.8** Self-service password change, like LTB Self Service Password: a page that
+  every user of a configured directory can use without a dcdash role (directory, user name,
+  current password, new password twice). The change uses the user's own credentials (LDAP or
+  kpasswd, so that expired passwords and "must change" work); the domain's password policy
+  is shown and its errors explained; rate limits and the domain lockout are respected, user
+  names can't be enumerated, the audit log records the change without passwords; en/de
+- [ ] **16.9** Projects: project files name AD groups per directory; the project page shows
+  them with their members
+- [ ] **16.10** Permissions and audit actions (module `directory`, resources for users,
+  groups and OUs), navigation entry, a "Directories" page with users and groups; color for
+  the overview tile; en/de, light and dark mode
+- [ ] **16.11** Tests: unit tests with the fake, integration and e2e tests with the Samba
+  container, a manual test against a lab Samba DC (and the Windows DC, as far as possible)
+  documented
+- [ ] **16.12** Documentation (`directories.md`, configuration, security, permission
+  reference, user guide), OpenAPI, `CHANGELOG.md`

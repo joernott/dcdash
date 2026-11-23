@@ -432,3 +432,23 @@ yes, go through the dependabot PRs starting with #1
 ## 2026-11-23 — after Sprint 15 (Dependabot)
 
 yes, merge it with a merge commit and push
+
+---
+
+## 2026-11-23 — after Sprint 15 (maintenance)
+
+clean up the disk on the dev VM
+
+---
+
+## 2026-11-23 — Sprint 16 (planning)
+
+sprint 16 will have active directory and samba support as a focus. As Samba does not provide an API to interact with external tools but has samba-tool on the samba AD server, many applications build wrappers around that. Please also consider creating an agent that runs on the samba domain controller as a possible alternative.
+
+We currently have two scenarios we need to support: A Windows domain running on a Windows Server 2019 domain controller in our airgapped network and two up-to-date samba active directory servers running in the two test labs.
+
+I want to implement the following features:
+- Managing DNS zones and records
+- Managing Users and groups (creating, locking, deleting users, reset passwords for users, managing group membership, creating, modifying and deleting groups)
+- Offer a "change password" via LDAP feature similar to what https://github.com/ltb-project/self-service-password offers, that is available for every user in one of the configured active directories
+- groups can be associated with projects in the config files and show on a project page
