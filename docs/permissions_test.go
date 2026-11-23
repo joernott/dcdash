@@ -16,13 +16,14 @@ import (
 
 // modulePackages maps the modules of permissions to the packages that check them.
 var modulePackages = map[string]string{
-	"proxmox":  "proxmox",
-	"dns":      "dns",
-	"dhcp":     "dhcp",
-	"netbox":   "netbox",
-	"project":  "project",
-	"switch":   "switches",
-	"firewall": "firewalls",
+	"proxmox":   "proxmox",
+	"dns":       "dns",
+	"dhcp":      "dhcp",
+	"netbox":    "netbox",
+	"project":   "project",
+	"switch":    "switches",
+	"firewall":  "firewalls",
+	"directory": "directories",
 }
 
 var (

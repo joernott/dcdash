@@ -1710,6 +1710,271 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/directories': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List directories
+     * @description Returns the Active Directory domains on which the user holds at least `read` on any
+     *     resource (`directory:<name>:*:read`).
+     */
+    get: operations['listDirectories']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/containers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Containers users and groups can be created in
+     * @description The organizational units and containers below `managed_ous`.
+     */
+    get: operations['listDirectoryContainers']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/policy': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Password policy of the domain */
+    get: operations['getDirectoryPolicy']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/users': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List users
+     * @description Users the user may read (`directory:<directory>:user/<name>:read`), sorted by account name.
+     */
+    get: operations['listDirectoryUsers']
+    put?: never
+    /**
+     * Create a user
+     * @description Creates the user with a password in a managed container. Needs
+     *     `directory:<directory>:user/<name>:write`. Audited as `directory.user.create` (without
+     *     the password).
+     */
+    post: operations['createDirectoryUser']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/users/{name}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A user */
+    get: operations['getDirectoryUser']
+    put?: never
+    post?: never
+    /**
+     * Delete a user
+     * @description Needs `write` on the user. Audited as `directory.user.delete`.
+     */
+    delete: operations['deleteDirectoryUser']
+    options?: never
+    head?: never
+    /**
+     * Change a user
+     * @description Changes the given attributes; an empty string removes one. Needs `write` on the user
+     *     (and `admin` if it is protected); the user must be in a managed container. Audited as
+     *     `directory.user.update`.
+     */
+    patch: operations['updateDirectoryUser']
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/users/{name}/enable': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Enable a user
+     * @description Needs `operate` on the user. Audited as `directory.user.enable`.
+     */
+    post: operations['enableDirectoryUser']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/users/{name}/disable': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Disable a user
+     * @description Disabled users can't log in. Needs `operate` on the user. Audited as `directory.user.disable`.
+     */
+    post: operations['disableDirectoryUser']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/users/{name}/unlock': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Unlock a user
+     * @description Clears a lockout caused by failed logins. Needs `operate` on the user. Audited as `directory.user.unlock`.
+     */
+    post: operations['unlockDirectoryUser']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/users/{name}/password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Reset a user's password
+     * @description Sets a new password (an administrative reset, without the old one). Needs `operate` on
+     *     the user. Audited as `directory.user.password` (without the password).
+     */
+    post: operations['resetDirectoryUserPassword']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/groups': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List groups
+     * @description Groups the user may read (`directory:<directory>:group/<name>:read`), without members.
+     */
+    get: operations['listDirectoryGroups']
+    put?: never
+    /**
+     * Create a group
+     * @description Needs `directory:<directory>:group/<name>:write`. Audited as `directory.group.create`.
+     */
+    post: operations['createDirectoryGroup']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/groups/{name}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** A group with its direct members */
+    get: operations['getDirectoryGroup']
+    put?: never
+    post?: never
+    /**
+     * Delete a group
+     * @description Needs `write` on the group. Audited as `directory.group.delete`.
+     */
+    delete: operations['deleteDirectoryGroup']
+    options?: never
+    head?: never
+    /**
+     * Change or rename a group
+     * @description A rename needs `write` on the old and the new name. AD allows changing a global or
+     *     domain local group only to universal and back (422 otherwise). Audited as
+     *     `directory.group.update`.
+     */
+    patch: operations['updateDirectoryGroup']
+    trace?: never
+  }
+  '/api/v1/directories/{directory}/groups/{name}/members': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add and remove members
+     * @description Adds and removes direct members by account name (users, groups, computers). Adding a
+     *     member twice or removing a non-member is no error. Needs `write` on the group. Audited
+     *     as `directory.group.members`.
+     */
+    post: operations['changeDirectoryGroupMembers']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -3176,8 +3441,197 @@ export interface components {
       /** @description Required for updates. */
       version?: string
     }
+    DirectoryList: {
+      directories: components['schemas']['Directory'][]
+    }
+    Directory: {
+      name: string
+      /** @enum {string} */
+      type: 'samba' | 'windows'
+      domain: string
+      /** @description Containers dcdash may change objects in. */
+      managedOUs: string[]
+      canCreateUsers: boolean
+      canCreateGroups: boolean
+    }
+    DirectoryContainerList: {
+      containers: {
+        dn: string
+        name: string
+      }[]
+    }
+    DirectoryPasswordPolicy: {
+      minLength: number
+      /** @description Three of: upper case, lower case, digits, other characters; not the account or display name. */
+      complexity: boolean
+      /** @description Number of previous passwords that can't be reused. */
+      history: number
+      /** @description Seconds before a password may be changed again; 0 for none. */
+      minAge: number
+      /** @description Seconds until a password expires; 0 for never. */
+      maxAge: number
+      /** @description Failed logins that lock an account; 0 for none. */
+      lockoutThreshold: number
+      /** @description Seconds an account stays locked. */
+      lockoutDuration: number
+    }
+    DirectoryUserList: {
+      users: components['schemas']['DirectoryUser'][]
+      /** @description There are more matches than limit. */
+      truncated: boolean
+    }
+    DirectoryUser: {
+      dn: string
+      /** @description The account name (sAMAccountName). */
+      name: string
+      upn?: string
+      givenName?: string
+      surname?: string
+      displayName?: string
+      mail?: string
+      description?: string
+      disabled: boolean
+      /** @description Locked out by failed logins. */
+      lockedOut: boolean
+      mustChangePassword: boolean
+      passwordExpired: boolean
+      passwordNeverExpires: boolean
+      /** Format: date-time */
+      passwordLastSet?: string
+      /**
+       * Format: date-time
+       * @description lastLogonTimestamp: replicated, up to two weeks behind.
+       */
+      lastLogon?: string
+      /** Format: date-time */
+      created?: string
+      /** Format: date-time */
+      changed?: string
+      /** @description DNs of the groups the user is a direct member of (without the primary group). */
+      groups: string[]
+      /** @description In a container dcdash manages. */
+      managed: boolean
+      /** @description Built-in or privileged, or configured as protected: changes need admin. */
+      protected: boolean
+      /** @description The user may disable */
+      canOperate: boolean
+      /** @description The user may change and delete it. */
+      canWrite: boolean
+    }
+    DirectoryNewUser: {
+      /** @description DN of a managed container. */
+      ou: string
+      /** @description The account name (sAMAccountName). */
+      name: string
+      /** @description Default: name@domain. */
+      upn?: string
+      givenName?: string
+      surname?: string
+      displayName?: string
+      mail?: string
+      description?: string
+      /** Format: password */
+      password: string
+      mustChangePassword?: boolean
+      disabled?: boolean
+    }
+    /** @description Missing attributes stay; an empty string removes one (not upn). */
+    DirectoryUserChange: {
+      upn?: string
+      givenName?: string
+      surname?: string
+      displayName?: string
+      mail?: string
+      description?: string
+    }
+    DirectoryPasswordReset: {
+      /** Format: password */
+      password: string
+      mustChangePassword?: boolean
+    }
+    DirectoryGroupList: {
+      groups: components['schemas']['DirectoryGroup'][]
+      truncated: boolean
+    }
+    DirectoryGroup: {
+      dn: string
+      /** @description The account name (sAMAccountName). */
+      name: string
+      description?: string
+      mail?: string
+      scope: components['schemas']['DirectoryGroupScope']
+      /** @description A security group (else a distribution group). */
+      security: boolean
+      /** Format: date-time */
+      created?: string
+      /** Format: date-time */
+      changed?: string
+      managed: boolean
+      protected: boolean
+      canWrite: boolean
+      /** @description Direct members; only for a single group. */
+      members?: {
+        dn: string
+        name: string
+        displayName?: string
+        /** @enum {string} */
+        kind: 'user' | 'group' | 'computer' | 'other'
+        disabled?: boolean
+      }[]
+    }
+    /** @enum {string} */
+    DirectoryGroupScope: 'global' | 'domainLocal' | 'universal'
+    DirectoryNewGroup: {
+      /** @description DN of a managed container. */
+      ou: string
+      name: string
+      description?: string
+      mail?: string
+      scope?: components['schemas']['DirectoryGroupScope']
+      security?: boolean
+    }
+    DirectoryGroupChange: {
+      /** @description Renames the group (CN and sAMAccountName). */
+      name?: string
+      description?: string
+      mail?: string
+      scope?: components['schemas']['DirectoryGroupScope']
+      security?: boolean
+    }
+    DirectoryMembersChange: {
+      /** @description Account names. */
+      add?: string[]
+      remove?: string[]
+    }
   }
   responses: {
+    /** @description Invalid request: invalid_request, invalid_user, invalid_group, invalid_password or invalid_members, with the reason as message. */
+    DirectoryInvalid: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description A user or group with the account name exists (exists). */
+    DirectoryExists: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
+    /** @description The domain controller rejected the change: password_policy (with the reason, e.g. too short, in the history, too young) or rejected (with its message). */
+    DirectoryRejected: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorBody']
+      }
+    }
     /** @description Invalid request: invalid_request, invalid_alias or invalid_rule, with the reason as message. */
     FirewallInvalid: {
       headers: {
@@ -3426,6 +3880,13 @@ export interface components {
     DNSRecordID: string
     /** @description Firewall name from the configuration. */
     FirewallName: string
+    /** @description Directory name from the configuration. */
+    DirectoryName: string
+    /** @description Account name (sAMAccountName). */
+    DirectoryAccount: string
+    /** @description Only objects whose account name, names, mail address or description contain this text. */
+    DirectoryQuery: string
+    DirectoryLimit: number
     /** @description Switch name from the configuration. */
     SwitchName: string
     /** @description Server name from the configuration. */
@@ -6381,6 +6842,568 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listDirectories: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Visible directories. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      default: components['responses']['Error']
+    }
+  }
+  listDirectoryContainers: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The containers, parents before their children. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryContainerList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getDirectoryPolicy: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The password policy. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryPasswordPolicy']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listDirectoryUsers: {
+    parameters: {
+      query?: {
+        /** @description Only objects whose account name, names, mail address or description contain this text. */
+        q?: components['parameters']['DirectoryQuery']
+        limit?: components['parameters']['DirectoryLimit']
+      }
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The users. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUserList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryNewUser']
+      }
+    }
+    responses: {
+      /** @description The user. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      400: components['responses']['DirectoryInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DirectoryExists']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user was deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryUserChange']
+      }
+    }
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      400: components['responses']['DirectoryInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  enableDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  disableDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  unlockDirectoryUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  resetDirectoryUserPassword: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryPasswordReset']
+      }
+    }
+    responses: {
+      /** @description The user. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryUser']
+        }
+      }
+      400: components['responses']['DirectoryInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  listDirectoryGroups: {
+    parameters: {
+      query?: {
+        /** @description Only objects whose account name, names, mail address or description contain this text. */
+        q?: components['parameters']['DirectoryQuery']
+        limit?: components['parameters']['DirectoryLimit']
+      }
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The groups. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryGroupList']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  createDirectoryGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryNewGroup']
+      }
+    }
+    responses: {
+      /** @description The group. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryGroup']
+        }
+      }
+      400: components['responses']['DirectoryInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DirectoryExists']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  getDirectoryGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The group. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryGroup']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  deleteDirectoryGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The group was deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  updateDirectoryGroup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryGroupChange']
+      }
+    }
+    responses: {
+      /** @description The group. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryGroup']
+        }
+      }
+      400: components['responses']['DirectoryInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['DirectoryExists']
+      422: components['responses']['DirectoryRejected']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  changeDirectoryGroupMembers: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Directory name from the configuration. */
+        directory: components['parameters']['DirectoryName']
+        /** @description Account name (sAMAccountName). */
+        name: components['parameters']['DirectoryAccount']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DirectoryMembersChange']
+      }
+    }
+    responses: {
+      /** @description The group. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DirectoryGroup']
+        }
+      }
+      400: components['responses']['DirectoryInvalid']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      422: components['responses']['DirectoryRejected']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }

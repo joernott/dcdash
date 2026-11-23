@@ -6,9 +6,11 @@ the permission format work is described in [security.md](security.md#roles-and-p
 
 A permission has four segments, `module:instance:resource:action`:
 
-- **module**: `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `switch`, `firewall` or `system`.
+- **module**: `proxmox`, `dns`, `dhcp`, `netbox`, `project`, `switch`, `firewall`, `directory`
+  or `system`.
 - **instance**: the name of the configured backend (cluster, provider, server, switch,
-  firewall, NetBox), the project name for `project`, and always `core` for `system`.
+  firewall, directory, NetBox), the project name for `project`, and always `core` for
+  `system`.
 - **resource**: an object of the backend, as listed below.
 - **action**: `read` < `operate` < `console` < `write` < `admin`. A higher action includes
   the lower ones, so `write` on a zone also allows reading it. `*` as action means `admin`.
@@ -118,6 +120,25 @@ Instance: the firewall name (`firewalls[].name`).
 | `firewall:<firewall>:alias/<name>:write` | Creating, changing and deleting the alias |
 | `firewall:<firewall>:rule/<interface>:read` | Seeing the filter rules of the interface |
 | `firewall:<firewall>:rule/<interface>:write` | Creating, changing and deleting the rules of the interface (see the lockout guard in [firewalls.md](firewalls.md#lockout-guard)) |
+
+## Directories
+
+Instance: the directory name (`directories[].name`). Resources use the account name
+(`sAMAccountName`) in lower case, because matching is case-sensitive and AD names are not:
+`directory:lab:user/svc-*:write`. Only users and groups in the containers dcdash manages
+(`managed_ous`) can be changed; protected ones (built-in and privileged accounts and
+groups, members of privileged groups, and `protected_users` and `protected_groups`) also
+need `admin`. The self-service password page needs no permission.
+
+| Permission | Allows |
+|---|---|
+| `directory:<directory>:user/<name>:read` | Seeing the user |
+| `directory:<directory>:user/<name>:operate` | Disabling, enabling and unlocking the user, resetting its password |
+| `directory:<directory>:user/<name>:write` | Creating, changing and deleting the user |
+| `directory:<directory>:user/<name>:admin` | The above on a protected user |
+| `directory:<directory>:group/<name>:read` | Seeing the group and its members |
+| `directory:<directory>:group/<name>:write` | Creating, changing (also renaming, which needs `write` on the new name) and deleting the group, adding and removing members |
+| `directory:<directory>:group/<name>:admin` | The above on a protected group |
 
 ## System
 

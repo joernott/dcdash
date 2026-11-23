@@ -14,6 +14,7 @@ import (
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/dhcp"
+	"github.com/joernott/dcdash/internal/directories"
 	"github.com/joernott/dcdash/internal/dns"
 	"github.com/joernott/dcdash/internal/dns/bind"
 	"github.com/joernott/dcdash/internal/dns/cloudflare"
@@ -131,6 +132,14 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		}
 		a.statusChecks = append(a.statusChecks, fwSvc.StatusChecks()...)
 		a.routes = append(a.routes, fwSvc.Register)
+	}
+	if len(cfg.Directories) > 0 {
+		dirSvc, err := directories.NewService(cfg.Directories, auditLog, log)
+		if err != nil {
+			return nil, err
+		}
+		a.statusChecks = append(a.statusChecks, dirSvc.StatusChecks()...)
+		a.routes = append(a.routes, dirSvc.Register)
 	}
 	var switchSvc *switches.Service
 	if len(cfg.Switches) > 0 {

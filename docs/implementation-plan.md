@@ -550,15 +550,16 @@ network, and two current Samba AD domain controllers in the test labs.
   accounts and groups, self-service); completely independent of the login directory
   (`auth.ldap`), which may point to the same domain (moved to 16.3: overview tile
   and status check)
-- [ ] **16.3** Client for users and groups (search, read, create, change, delete) and a test
+- [x] **16.3** Client for users and groups (search, read, create, change, delete) and a test
   setup: a fake for unit tests and a Samba AD DC container for integration and e2e tests;
-  overview tile and status check per directory
-- [ ] **16.4** Users: create (OU, sAMAccountName, UPN, names, initial password, must change
+  overview tile and status check per directory (its color: 16.10)
+- [x] **16.4** Users: create (OU, sAMAccountName, UPN, names, initial password, must change
   at next logon), lock and unlock, disable and enable, delete, reset the password (optionally
   "must change"); built-in and protected accounts (Administrator, krbtgt, members of
-  privileged groups) only with `admin`
-- [ ] **16.5** Groups: create, change (name, description, scope and type) and delete groups,
-  add and remove members; built-in groups protected
+  privileged groups) only with `admin`; API and permissions here, the page in 16.10. AD has
+  no administrative lock: "lock" is disable, "unlock" clears a lockout by failed logins
+- [x] **16.5** Groups: create, change (name, description, scope and type) and delete groups,
+  add and remove members; built-in groups protected; API here, the page in 16.10
 - [ ] **16.6** DNS: AD-integrated zones and records as DNS provider type `ad` on the existing
   DNS page (Windows DNS and Samba's internal DNS), referencing a directory by name with the
   DNS server's host name; zones created and deleted as decided in 16.1 (`ad.manage_zones`)
