@@ -29,6 +29,9 @@ type Check struct {
 	// Detail is like Check, but returns a detail the web interface can
 	// translate. Its errors may be *Error for the same purpose.
 	Detail func(ctx context.Context) (Detail, error)
+	// Type is the kind of system within the module, e.g. "bind" or "cloudflare" for
+	// dns; empty if the module has only one.
+	Type string
 	// Links are the system's own interfaces, shown as buttons on its tile.
 	Links *Links
 }
@@ -65,6 +68,8 @@ type Component struct {
 	DetailParams map[string]string `json:"detailParams,omitempty"`
 	// LatencyMS is how long the check took.
 	LatencyMS int64 `json:"latencyMs"`
+	// Type is the kind of system within the module ("bind", "cloudflare" for dns).
+	Type string `json:"type,omitempty"`
 	// Links are the system's web interface, SSH and RDP addresses, if configured.
 	Links *Links `json:"links,omitempty"`
 }
@@ -107,7 +112,7 @@ func (s *Service) Run(ctx context.Context) Report {
 			start := time.Now()
 			d, err := c.run(cctx)
 			comp := Component{Name: c.Name, Kind: c.Kind, Status: "ok", Detail: d.Text, DetailCode: d.Code,
-				DetailParams: d.Params, LatencyMS: time.Since(start).Milliseconds(), Links: c.Links}
+				DetailParams: d.Params, LatencyMS: time.Since(start).Milliseconds(), Type: c.Type, Links: c.Links}
 			if err != nil {
 				comp.Status, comp.Detail, comp.DetailCode, comp.DetailParams = "error", err.Error(), "", nil
 				var ce *Error

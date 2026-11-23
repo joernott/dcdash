@@ -42,6 +42,24 @@
   --dc-success: #15803d;
   --dc-warning: #a16207;
   --dc-focus: #2563eb;
+  /* Colors of the systems (overview tiles, DNS zones): text and lines; the background is a
+     tint of their base color (--dc-sys-*-base, --dc-sys-tint). Each reaches 4.5:1 on its tint (systems.spec.ts). */
+  --dc-sys-tint: 10%;
+  --dc-sys-proxmox: #b502b6;
+  --dc-sys-bind: #0066cc;
+  --dc-sys-cloudflare: #ab5308;
+  --dc-sys-kea: #007b35;
+  --dc-sys-netbox: #00766f;
+  --dc-sys-switch: #1c7d7e;
+  --dc-sys-firewall: #be3b18;
+  /* The base colors the tints are made of (the same in both modes). */
+  --dc-sys-proxmox-base: #d302d4;
+  --dc-sys-bind-base: #0066cc;
+  --dc-sys-cloudflare-base: #f48120;
+  --dc-sys-kea-base: #008037;
+  --dc-sys-netbox-base: #00857d;
+  --dc-sys-switch-base: #90e5e6;
+  --dc-sys-firewall-base: #e34a21;
 }
 
 :root.dark {
@@ -60,6 +78,41 @@
   --dc-success: #4ade80;
   --dc-warning: #facc15;
   --dc-focus: #93c5fd;
+  --dc-sys-tint: 15%;
+  --dc-sys-proxmox: #f102f2;
+  --dc-sys-bind: #148aff;
+  --dc-sys-cloudflare: #f48120;
+  --dc-sys-kea: #00a446;
+  --dc-sys-netbox: #009f95;
+  --dc-sys-switch: #90e5e6;
+  --dc-sys-firewall: #e6603c;
+  --dc-sys-proxmox-base: #d302d4;
+  --dc-sys-bind-base: #0066cc;
+  --dc-sys-cloudflare-base: #f48120;
+  --dc-sys-kea-base: #008037;
+  --dc-sys-netbox-base: #00857d;
+  --dc-sys-switch-base: #90e5e6;
+  --dc-sys-firewall-base: #e34a21;
+}
+
+/* A system's tile or row: set --sys to one of the --dc-sys-* colors. In the components layer,
+   so that utilities (border-danger on a failing tile) take precedence. */
+@layer components {
+  .sys-tint {
+    border-color: var(--sys);
+    background-color: color-mix(
+      in srgb,
+      var(--sys-base) var(--dc-sys-tint),
+      var(--dc-surface-raised)
+    );
+  }
+  .sys-text {
+    color: var(--sys);
+  }
+  /* Small button for a link to a system's own interface (overview tiles). */
+  .link-button {
+    @apply rounded border border-border bg-surface px-1.5 py-0.5 text-xs font-medium text-fg hover:border-primary hover:text-primary;
+  }
 }
 
 @layer base {

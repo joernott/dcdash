@@ -152,6 +152,8 @@ proxmox:
   clusters:
     - name: lab
       endpoints: [{url: "https://$PVE_LISTEN", fingerprint: "$PVE_FP"}]
+      ui: "https://pve.example.com:8006"
+      ssh: "root@pve.example.com"
       token_id: "dcdash@pve!e2e"
       token_secret: "e2e-test-only"
       console: {username: "console@pve", password: "console-e2e"}
@@ -183,6 +185,9 @@ netbox:
 firewalls:
   - name: fw1
     url: "https://$OPN_LISTEN"
+    ui: "https://fw1.example.com"
+    ssh: "fw1.example.com"
+    rdp: "jump.example.com"
     tls: {fingerprint: "$PVE_FP"}
     api_key: e2e-key
     api_secret: "opn-e2e-test-only"

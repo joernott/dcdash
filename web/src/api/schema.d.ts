@@ -1898,6 +1898,8 @@ export interface components {
       }
       /** Format: int64 */
       latencyMs: number
+      /** @description The kind of system within the module, for dns `bind` or `cloudflare`; missing for the other modules. */
+      type?: string
       /** @description The system's own interfaces from the configuration (`ui`, `ssh`, `rdp`); missing if none is set. */
       links?: {
         /** @description URL of the web interface. */

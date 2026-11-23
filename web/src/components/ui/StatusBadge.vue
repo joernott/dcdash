@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-/** A colored status label; the color is never the only signal (the text is always shown). */
+/**
+ * A colored status label; the color is never the only signal (the text is always shown). Its
+ * own background keeps the contrast on tinted tiles.
+ */
 const props = defineProps<{ status: 'ok' | 'warning' | 'error' | 'unknown'; label: string }>()
 
 const styles = {
@@ -13,7 +16,7 @@ const styles = {
 
 <template>
   <span
-    class="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium"
+    class="inline-flex items-center gap-1.5 rounded-full border bg-surface px-2 py-0.5 text-xs font-medium"
     :class="styles[props.status]"
   >
     <span class="size-2 rounded-full bg-current" aria-hidden="true" />

@@ -28,10 +28,17 @@ app; you set it up again at your next login.
 
 ## Overview
 
-The overview shows the state of dcdash and of every connected backend: the database, the
-user directory, the certificate, each Proxmox cluster, DNS provider and DHCP server. A red
-tile names the problem; the response time shows how long the check took. The page refreshes
-every 30 seconds.
+The overview shows the state of dcdash and of every connected system, one tile each: first
+dcdash itself (database, user directory, certificate, projects), then each Proxmox cluster,
+DNS provider, DHCP server, NetBox, switch and firewall. The tiles of the systems have the
+system's color (Proxmox purple, bind9 blue, Cloudflare orange, Kea green, NetBox teal,
+switches cyan, OPNsense red), and the bottom line names the system and the response time of
+the check. A tile with a red border names the problem. The page refreshes every 30 seconds.
+
+If the configuration names a system's own interfaces, its tile shows buttons left of the
+status: **UI** opens the web interface in a new tab, **SSH** the SSH client registered in
+your operating system, and **RDP** downloads a Remote Desktop file that your RDP client
+opens (see [configuration.md](configuration.md#general-rules)).
 
 The **Documentation** link in the top bar opens this documentation inside dcdash, in the
 version that matches the running release. It is available in English only.

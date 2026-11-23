@@ -472,7 +472,7 @@ These apply to every task:
 
 ## Sprint 15 — Overview, Colors and Icons
 
-- [ ] **15.1** Overview page: narrower tiles, six next to each other on wide screens instead
+- [x] **15.1** Overview page: narrower tiles, six next to each other on wide screens instead
   of three (fewer on smaller screens); name, status and details must stay readable at that
   width
 - [x] **15.2** Configuration: optional settings `ui`, `ssh` and `rdp` for everything that
@@ -481,12 +481,12 @@ These apply to every task:
   `http://`) URL, `ssh` and `rdp` a host with an optional port (and user for `ssh`);
   validation and documentation
 - [x] **15.3** API: the status checks return the configured links; OpenAPI
-- [ ] **15.4** Tiles: a small button for each set (non-empty) link, left of the status
+- [x] **15.4** Tiles: a small button for each set (non-empty) link, left of the status
   element, like the https and ssh links of the switch overview; `ssh://` and an RDP link (the
   form that Windows and the common RDP clients open is decided in this task); en/de labels,
   light and dark mode, accessibility
-- [ ] **15.5** Tests and documentation for 15.1 to 15.4 (`configuration.md`, user guide)
-- [ ] **15.6** Colors per system on the overview page instead of the group headings:
+- [x] **15.5** Tests and documentation for 15.1 to 15.4 (`configuration.md`, user guide)
+- [x] **15.6** Colors per system on the overview page instead of the group headings:
   name and border in the system's color, background a transparent tint of it (10 % in light,
   15 % in dark mode); dcdash's own tiles keep their colors. Base colors Kea DHCP `#008037`,
   bind9 `#0066CC`, Cloudflare `#F48120`, NetBox `#00857D`, Proxmox `#D302D4`, switches
