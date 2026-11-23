@@ -134,7 +134,7 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 			}
 
 			opts.Routes = append(slices.Clone(opts.Routes), app.routes...)
-			statusSvc := status.New(app.statusChecks...)
+			statusSvc := status.New(withLinks(cfg, app.statusChecks)...)
 			opts.Routes = append(opts.Routes, func(mux *http.ServeMux) { statusSvc.Register(mux, auth.RequireAuthenticated) })
 			opts.Middleware = append(slices.Clone(opts.Middleware), app.middleware...)
 			if cfg.Metrics.Enabled {

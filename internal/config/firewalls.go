@@ -38,6 +38,8 @@ type Firewall struct {
 	// doesn't change on a firewall without savepoints, in addition to the
 	// interface it reaches the firewall through, which it detects itself.
 	ProtectedInterfaces []string `yaml:"protected_interfaces"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // DefaultFirewallTimeout is used when a firewall sets no timeout.
@@ -66,6 +68,7 @@ func (f Firewalls) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, fw := range f {
 		pre := "firewalls[" + strconv.Itoa(i) + "]"
+		fw.Links.validate(pre+".", add)
 		if !instanceNamePattern.MatchString(fw.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, fw.Name)
 		} else if seen[fw.Name] {

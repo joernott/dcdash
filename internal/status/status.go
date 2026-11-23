@@ -29,6 +29,8 @@ type Check struct {
 	// Detail is like Check, but returns a detail the web interface can
 	// translate. Its errors may be *Error for the same purpose.
 	Detail func(ctx context.Context) (Detail, error)
+	// Links are the system's own interfaces, shown as buttons on its tile.
+	Links *Links
 }
 
 // Detail is the result of a successful check: English text for logs and API
@@ -63,6 +65,18 @@ type Component struct {
 	DetailParams map[string]string `json:"detailParams,omitempty"`
 	// LatencyMS is how long the check took.
 	LatencyMS int64 `json:"latencyMs"`
+	// Links are the system's web interface, SSH and RDP addresses, if configured.
+	Links *Links `json:"links,omitempty"`
+}
+
+// Links are the addresses of a system's own interfaces.
+type Links struct {
+	// UI is the URL of the web interface.
+	UI string `json:"ui,omitempty"`
+	// SSH is an ssh:// URL.
+	SSH string `json:"ssh,omitempty"`
+	// RDP is host[:port] for a Remote Desktop connection.
+	RDP string `json:"rdp,omitempty"`
 }
 
 // Report is the response of GET /api/v1/status.
@@ -93,7 +107,7 @@ func (s *Service) Run(ctx context.Context) Report {
 			start := time.Now()
 			d, err := c.run(cctx)
 			comp := Component{Name: c.Name, Kind: c.Kind, Status: "ok", Detail: d.Text, DetailCode: d.Code,
-				DetailParams: d.Params, LatencyMS: time.Since(start).Milliseconds()}
+				DetailParams: d.Params, LatencyMS: time.Since(start).Milliseconds(), Links: c.Links}
 			if err != nil {
 				comp.Status, comp.Detail, comp.DetailCode, comp.DetailParams = "error", err.Error(), "", nil
 				var ce *Error

@@ -58,6 +58,8 @@ type NetBox struct {
 	Site      string `yaml:"site"`
 	// VRF (name) of the IP addresses; empty is the global table.
 	VRF string `yaml:"vrf"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // Enabled reports whether NetBox is configured.
@@ -97,6 +99,7 @@ func (n NetBox) validate(proxmox Proxmox, add func(string, ...any)) {
 	if !n.Enabled() {
 		return
 	}
+	n.Links.validate("netbox.", add)
 	if !instanceNamePattern.MatchString(n.Name) {
 		add("netbox.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", n.Name)
 	}

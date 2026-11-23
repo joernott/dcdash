@@ -44,6 +44,8 @@ type Switch struct {
 	NetBoxDevice string `yaml:"netbox_device"`
 	// Timeout of a single request.
 	Timeout Duration `yaml:"timeout"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // DefaultSwitchTimeout is used when a switch sets no timeout.
@@ -69,6 +71,7 @@ func (s Switches) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, sw := range s {
 		pre := "switches[" + strconv.Itoa(i) + "]"
+		sw.Links.validate(pre+".", add)
 		if !instanceNamePattern.MatchString(sw.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, sw.Name)
 		} else if seen[sw.Name] {

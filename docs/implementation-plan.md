@@ -475,12 +475,12 @@ These apply to every task:
 - [ ] **15.1** Overview page: narrower tiles, six next to each other on wide screens instead
   of three (fewer on smaller screens); name, status and details must stay readable at that
   width
-- [ ] **15.2** Configuration: optional settings `ui`, `ssh` and `rdp` for everything that
+- [x] **15.2** Configuration: optional settings `ui`, `ssh` and `rdp` for everything that
   produces a tile on the overview page: Proxmox clusters, DNS servers, DHCP servers, NetBox,
   switches, firewalls and the LDAP servers (user directory). `ui` is an `https://` (or
   `http://`) URL, `ssh` and `rdp` a host with an optional port (and user for `ssh`);
   validation and documentation
-- [ ] **15.3** API: the status checks return the configured links; OpenAPI
+- [x] **15.3** API: the status checks return the configured links; OpenAPI
 - [ ] **15.4** Tiles: a small button for each set (non-empty) link, left of the status
   element, like the https and ssh links of the switch overview; `ssh://` and an RDP link (the
   form that Windows and the common RDP clients open is decided in this task); en/de labels,

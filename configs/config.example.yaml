@@ -157,6 +157,11 @@ audit:
 proxmox:
   clusters: []
 #  - name: lab
+#    # Buttons on the overview tile (optional; every entry with a tile has them):
+#    # web interface, ssh:// link ([user@]host[:port]) and RDP file (host[:port]).
+#    ui: https://pve1.example.com:8006
+#    ssh: root@pve1.example.com
+#    rdp: ""
 #    # API URLs of the cluster nodes, tried in order.
 #    endpoints:
 #      - url: https://pve1.example.com:8006

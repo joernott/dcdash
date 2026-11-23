@@ -43,6 +43,8 @@ type DHCPServer struct {
 	// HAGroup groups the servers of a Kea HA pair (same family). Empty: the
 	// server is standalone.
 	HAGroup string `yaml:"ha_group"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // DefaultDHCPTimeout is used when a server sets no timeout.
@@ -61,6 +63,7 @@ func (d DHCP) validate(add func(string, ...any)) {
 	groups := map[string]string{} // HA group -> family
 	for i, s := range d.Servers {
 		pre := "dhcp.servers[" + strconv.Itoa(i) + "]"
+		s.Links.validate(pre+".", add)
 		if !instanceNamePattern.MatchString(s.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, s.Name)
 		} else if seen[s.Name] {
