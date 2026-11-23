@@ -48,7 +48,8 @@
       "dhcp": "DHCP",
       "netbox": "NetBox",
       "switch": "Switches",
-      "firewall": "Firewalls"
+      "firewall": "Firewalls",
+      "directory": "Verzeichnisse"
     },
     "components": {
       "database": "Datenbank",
@@ -68,7 +69,13 @@
       "dns": {
         "bind": "bind9 auf {server}, keine Zonen | bind9 auf {server}, eine Zone | bind9 auf {server}, {count} Zonen",
         "bindChecked": "bind9 auf {server}, keine Zonen, {checked} OK | bind9 auf {server}, eine Zone, {checked} OK | bind9 auf {server}, {count} Zonen, {checked} OK",
-        "cloudflare": "Cloudflare, keine Zonen | Cloudflare, eine Zone | Cloudflare, {count} Zonen"
+        "cloudflare": "Cloudflare, keine Zonen | Cloudflare, eine Zone | Cloudflare, {count} Zonen",
+        "ad": "AD-DNS auf {server}, keine Zonen | AD-DNS auf {server}, eine Zone | AD-DNS auf {server}, {count} Zonen"
+      },
+      "ad": {
+        "connected": "{domain}, ein Domänencontroller | {domain}, {count} Domänencontroller",
+        "degraded": "{domain}; nicht erreichbar: {down}",
+        "unavailable": "Kein Domänencontroller ist erreichbar"
       },
       "dhcp": {
         "kea": "Kea {version}",
@@ -963,7 +970,8 @@
     "provider": "Anbieter",
     "kinds": {
       "cloudflare": "Cloudflare",
-      "bind": "bind9"
+      "bind": "bind9",
+      "ad": "Active Directory"
     },
     "noProviders": "Ihnen steht kein DNS-Anbieter zur Verfügung.",
     "zones": "Zonen",

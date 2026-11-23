@@ -48,7 +48,8 @@
       "dhcp": "DHCP",
       "netbox": "NetBox",
       "switch": "Switches",
-      "firewall": "Firewalls"
+      "firewall": "Firewalls",
+      "directory": "Directories"
     },
     "components": {
       "database": "Database",
@@ -68,7 +69,13 @@
       "dns": {
         "bind": "bind9 at {server}, no zones | bind9 at {server}, one zone | bind9 at {server}, {count} zones",
         "bindChecked": "bind9 at {server}, no zones, {checked} OK | bind9 at {server}, one zone, {checked} OK | bind9 at {server}, {count} zones, {checked} OK",
-        "cloudflare": "Cloudflare, no zones | Cloudflare, one zone | Cloudflare, {count} zones"
+        "cloudflare": "Cloudflare, no zones | Cloudflare, one zone | Cloudflare, {count} zones",
+        "ad": "AD DNS at {server}, no zones | AD DNS at {server}, one zone | AD DNS at {server}, {count} zones"
+      },
+      "ad": {
+        "connected": "{domain}, one domain controller | {domain}, {count} domain controllers",
+        "degraded": "{domain}; not reachable: {down}",
+        "unavailable": "No domain controller is reachable"
       },
       "dhcp": {
         "kea": "Kea {version}",
@@ -963,7 +970,8 @@
     "provider": "Provider",
     "kinds": {
       "cloudflare": "Cloudflare",
-      "bind": "bind9"
+      "bind": "bind9",
+      "ad": "Active Directory"
     },
     "noProviders": "No DNS provider is available to you.",
     "zones": "Zones",

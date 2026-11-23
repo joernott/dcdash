@@ -560,9 +560,11 @@ network, and two current Samba AD domain controllers in the test labs.
   no administrative lock: "lock" is disable, "unlock" clears a lockout by failed logins
 - [x] **16.5** Groups: create, change (name, description, scope and type) and delete groups,
   add and remove members; built-in groups protected; API here, the page in 16.10
-- [ ] **16.6** DNS: AD-integrated zones and records as DNS provider type `ad` on the existing
+- [x] **16.6** DNS: AD-integrated zones and records as DNS provider type `ad` on the existing
   DNS page (Windows DNS and Samba's internal DNS), referencing a directory by name with the
-  DNS server's host name; zones created and deleted as decided in 16.1 (`ad.manage_zones`)
+  DNS server's host name; zones created and deleted as decided in 16.1 (`ad.manage_zones`).
+  Samba doesn't increment the SOA serial and refuses update prerequisites, so the version
+  of a zone comes from the directory (`uSNChanged`)
 - [ ] **16.7** ~~The agent for the Samba DC, if 16.1 chooses it~~ Dropped: ADR 0010 chose
   the agentless way for every feature. An agent with the `DnsServer` PowerShell module is the
   fallback for zone management on Windows if the manual test there fails (later sprint).

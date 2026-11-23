@@ -113,3 +113,43 @@ directories:
 		}
 	}
 }
+
+func TestADDNSProvider(t *testing.T) {
+	base := testKeyYAML + `
+server:
+  tls: {mode: none}
+directories:
+  - name: lab
+    type: samba
+    domain: ad.example.com
+    servers: [{url: "ldaps://dc1.ad.example.com"}]
+    bind_dn: svc@ad.example.com
+    bind_password: s
+dns:
+  providers:
+`
+	cfg, err := Parse(strings.NewReader(base + `
+    - name: lab-dns
+      type: ad
+      ad: {directory: lab, server: dc1.ad.example.com, resolver: "10.0.0.1:5353", manage_zones: true}
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := cfg.DNS.Providers[0]; p.AD.Directory != "lab" || p.AD.Server != "dc1.ad.example.com" || !p.AD.ManageZones {
+		t.Errorf("provider: %+v", p)
+	}
+	_, err = Parse(strings.NewReader(base + `
+    - name: a
+      type: ad
+      ad: {directory: nope, server: 10.0.0.1, resolver: dc1}
+    - name: b
+      type: ad
+`))
+	for _, want := range []string{`dns.providers[0].ad.directory "nope": no such directory`, `dns.providers[0].ad.server "10.0.0.1"`,
+		`dns.providers[1].ad.directory: required`, `dns.providers[1].ad.server ""`, `dns.providers[0].ad.resolver "dc1"`} {
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("missing %q in\n%v", want, err)
+		}
+	}
+}

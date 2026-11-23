@@ -3,6 +3,7 @@ module github.com/joernott/dcdash
 go 1.27
 
 require (
+	github.com/bodgit/tsig v1.3.1
 	github.com/cloudflare/cloudflare-go/v6 v6.10.0
 	github.com/go-acme/lego/v5 v5.6.0
 	github.com/go-ldap/ldap/v3 v3.4.15
@@ -26,7 +27,6 @@ require (
 	github.com/alexbrainman/sspi v0.0.0-20250919150558-7d374ff0d59e // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bodgit/gssapi v0.0.4 // indirect
-	github.com/bodgit/tsig v1.3.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect

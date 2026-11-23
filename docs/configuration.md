@@ -278,14 +278,15 @@ unit `K`, `M`, `G` or `T` (also `MiB`, `GiB`): `512M`, `32G`.
 
 ## dns
 
-DNS providers: Cloudflare accounts and bind9 primaries. Default: no providers. See
+DNS providers: Cloudflare accounts, bind9 primaries and the DNS of Active Directory domains.
+Default: no providers. See
 [dns.md](dns.md).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `dns.providers[].name` | string | none | Unique name, used in the UI and in permissions (`dns:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
 | `dns.providers[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
-| `dns.providers[].type` | string | none | `cloudflare` or `bind`. Required. Only the section of that type is validated. |
+| `dns.providers[].type` | string | none | `cloudflare`, `bind` or `ad`. Required. Only the section of that type is validated. |
 | `dns.providers[].timeout` | duration | `15s` | Timeout of a single request to the backend. `0` uses the default. Must not be negative. |
 
 ### Type cloudflare
@@ -334,6 +335,18 @@ See [dns.md](dns.md#bind9).
 
 The default of `new_zones.options` is
 `update-policy { grant <tsig_key>. zonesub ANY; }; allow-transfer { key <tsig_key>.; };`.
+
+### Type ad
+
+The AD-integrated DNS of a domain in [`directories`](#directories). See
+[dns.md](dns.md#active-directory).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `dns.providers[].ad.directory` | string | none | Name of the directory (`directories[].name`) whose service account and Kerberos settings dcdash uses. Required. |
+| `dns.providers[].ad.server` | string | none | Host name of a domain controller running DNS. dcdash sends updates to it on port 53; Kerberos needs the name (`DNS/<server>`), not an address. Required. |
+| `dns.providers[].ad.resolver` | string | empty | DNS server (`IP[:port]`, usually the domain controller) that resolves `server`, if dcdash's host doesn't use the AD DNS. Empty: the system resolver. |
+| `dns.providers[].ad.manage_zones` | bool | `false` | Allows creating and deleting zones. Verified on Samba only, see [ADR 0010](adr/0010-active-directory.md#windows). |
 
 ## dhcp
 

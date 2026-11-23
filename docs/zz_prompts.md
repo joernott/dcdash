@@ -463,3 +463,15 @@ I want to implement the following features:
 4. An agent is acceptable in both envirnments. dcdash will be deployed in the airgapped network on a server that can reach the AD server in that network.
 5. The self service page should be reachable without loggin in to dcdash. Our firewall takes care that only internal users from internal networks can reach dcdash anyway.
 6. Yes, the directory in auth.ldap is one of the domains. I would prefer the auth.ldap setting to be completely independent from the management of Active directories. There are users who have an account in all three, some with identical user names, some with different user names and definitely with different passwords, checking logins against all configured domains would lead to confusion.
+
+---
+
+## 2026-11-23 — Sprint 16 (Active Directory and Samba)
+
+The VM is quite busy (>100% CPU, 93% RAM. Should I resize it before going ahead?
+
+---
+
+## 2026-11-23 — Sprint 16 (Active Directory and Samba)
+
+The VM is back with 8 GiB RAM and 4 cores. I don't want to overcommit on memory on the proxmox host, so I have to limit it. Please rerun the test and go ahead with the remaining tasks in this sprint

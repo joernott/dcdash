@@ -1,11 +1,13 @@
-# DNS: Cloudflare and bind9
+# DNS: Cloudflare, bind9 and Active Directory
 
-dcdash manages DNS zones and records in Cloudflare accounts and on bind9 primary servers.
+dcdash manages DNS zones and records in Cloudflare accounts, on bind9 primary servers and in
+the AD-integrated DNS of Active Directory domains (see [Active Directory](#active-directory)).
 Users see the zones they may read, change records with `write`, and create or delete zones
 with `admin` (see [security.md](security.md#dns-permissions)). Every change is recorded in
 the audit log.
 
-Each provider in the configuration is one Cloudflare account or one bind9 primary:
+Each provider in the configuration is one Cloudflare account, one bind9 primary or one
+domain; Cloudflare and bind9 look like this:
 
 ```yaml
 dns:
@@ -250,6 +252,45 @@ If a step fails, dcdash undoes the earlier ones. Deleting a zone works the other
 
 The user must type the zone name to confirm. dcdash deletes only zones from the catalog zone.
 Zones defined in `named.conf` stay untouched.
+
+## Active Directory
+
+A provider of type `ad` manages the AD-integrated zones of a Windows or Samba domain
+configured under [`directories`](configuration.md#directories), with its service account
+([ADR 0010](adr/0010-active-directory.md)):
+
+```yaml
+dns:
+  providers:
+    - name: lab-dns
+      type: ad
+      ad:
+        directory: lab                       # directories[].name
+        server: dc1.ad.example.com           # a domain controller running DNS
+        resolver: 192.0.2.10                 # optional: resolves server if the host can't
+        manage_zones: true                   # optional: create and delete zones
+```
+
+- **Reading:** dcdash reads the zones (`dnsZone` objects in the DNS partitions) and their
+  records (`dnsNode` objects) via LDAP, because Samba refuses zone transfers.
+- **Records:** dcdash changes records with RFC 2136 updates signed with GSS-TSIG, as Windows
+  clients register themselves. The service account needs the right to change the zone's
+  records: membership in `DnsAdmins`, or rights on the zone objects.
+- **Kerberos:** it uses the realm and KDCs of the directory and the service principal
+  `DNS/<server>`. dcdash's clock must be within five minutes of the domain controller's.
+- **Versions:** Samba doesn't increment the SOA serial on updates, so the version of a zone is
+  taken from the directory (the highest `uSNChanged` of its nodes). The version is per domain
+  controller. Samba also doesn't support the prerequisites with which dcdash makes bind9
+  updates atomic, so a change made by someone else between dcdash's check and its update
+  isn't detected.
+- **Deleted records:** when the last record of a name is deleted, the domain controller keeps
+  the name as a tombstone until scavenging removes it; dcdash doesn't show it.
+- **Zones:** with `manage_zones`, dcdash creates a zone in the domain's DNS partition with an
+  SOA and an NS record naming `server`, and copies the zone settings (for example secure
+  dynamic updates) from the domain's own zone. Deleting a zone deletes all its records. The
+  domain's own zone and `_msdcs` zones can't be deleted. On Windows, the DNS server picks up
+  new zones from the directory by polling, which can take a few minutes. This was only
+  verified on Samba.
 
 ## Troubleshooting
 

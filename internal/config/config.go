@@ -240,6 +240,12 @@ func (c *Config) Validate() error {
 	c.Switches.validate(add)
 	c.Firewalls.validate(add)
 	c.Directories.validate(add)
+	// AD DNS providers use a configured directory.
+	for i, p := range c.DNS.Providers {
+		if p.Type == DNSTypeAD && p.AD.Directory != "" && !slices.ContainsFunc(c.Directories, func(d Directory) bool { return d.Name == p.AD.Directory }) {
+			add("dns.providers[%d].ad.directory %q: no such directory", i, p.AD.Directory)
+		}
+	}
 	c.NetBox.validate(c.Proxmox, add)
 	c.Projects.validate(add)
 	c.Status.validate(add)

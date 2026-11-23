@@ -4043,7 +4043,7 @@ components:
             required: [name, kind, capabilities]
             properties:
               name: { type: string }
-              kind: { type: string, enum: [cloudflare, bind] }
+              kind: { type: string, enum: [cloudflare, bind, ad] }
               capabilities: { $ref: "#/components/schemas/DNSCapabilities" }
 
     DNSZone:

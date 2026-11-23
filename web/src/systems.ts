@@ -18,6 +18,7 @@ export type System = (typeof SYSTEMS)[number]
 export function systemOf(c: { kind: string; type?: string }): System | null {
   switch (c.kind) {
     case 'dns':
+      if (c.type === 'ad') return null // colored in task 16.10
       return c.type === 'cloudflare' ? 'cloudflare' : 'bind'
     case 'dhcp':
       return 'kea'
