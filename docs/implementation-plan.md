@@ -47,7 +47,7 @@ These apply to every task:
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
-| 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | – | planned |
+| 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | – | in progress |
 
 ---
 
@@ -531,7 +531,7 @@ These apply to every task:
 Two scenarios: a Windows domain with a Windows Server 2019 domain controller in the airgapped
 network, and two current Samba AD domain controllers in the test labs.
 
-- [ ] **16.1** API research, results in an ADR (amend this sprint if needed). Compare per
+- [x] **16.1** API research, results in an ADR (amend this sprint if needed). Compare per
   feature and scenario:
   - **Agentless:** LDAPS for users, groups and passwords (`unicodePwd`, which needs an
     encrypted connection), DNS records with RFC 2136 updates signed with GSS-TSIG
@@ -542,10 +542,13 @@ network, and two current Samba AD domain controllers in the test labs.
     what the agentless way can't do well; not available for the Windows DC unless an
     equivalent (PowerShell) agent runs there, which the airgapped network may not allow.
   - Verify the decision against a lab Samba DC; note what can't be checked on Windows.
+  - Result: [ADR 0010](adr/0010-active-directory.md), agentless for every feature, verified
+    on the lab Samba DC; zone management on Windows is unverified and behind a setting.
 - [ ] **16.2** Configuration: a `directories` section for several AD domains (name, type
   `windows` or `samba`, LDAPS URLs with failover like `auth.ldap`, base DN, service account,
-  TLS, Kerberos realm and KDCs, the OUs dcdash may manage, protected accounts and groups);
-  how it relates to the login directory (`auth.ldap`); overview tile and status check per
+  TLS, Kerberos realm, KDCs and the DNS host name, the OUs dcdash may manage, protected
+  accounts and groups, `dns.manage_zones`); completely independent of the login directory
+  (`auth.ldap`), which may point to the same domain; overview tile and status check per
   directory
 - [ ] **16.3** Client for users and groups (search, read, create, change, delete) and a test
   setup: a fake for unit tests and a Samba AD DC container for integration and e2e tests
@@ -558,8 +561,9 @@ network, and two current Samba AD domain controllers in the test labs.
 - [ ] **16.6** DNS: AD-integrated zones and records as DNS provider type `ad` on the existing
   DNS page (Windows DNS and Samba's internal DNS), zones created and deleted as decided in
   16.1
-- [ ] **16.7** The agent for the Samba DC, if 16.1 chooses it: API, mTLS, packaging
-  (systemd), security model, documentation
+- [ ] **16.7** ~~The agent for the Samba DC, if 16.1 chooses it~~ Dropped: ADR 0010 chose
+  the agentless way for every feature. An agent with the `DnsServer` PowerShell module is the
+  fallback for zone management on Windows if the manual test there fails (later sprint).
 - [ ] **16.8** Self-service password change, like LTB Self Service Password: a page that
   every user of a configured directory can use without a dcdash role (directory, user name,
   current password, new password twice). The change uses the user's own credentials (LDAP or

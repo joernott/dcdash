@@ -452,3 +452,14 @@ I want to implement the following features:
 - Managing Users and groups (creating, locking, deleting users, reset passwords for users, managing group membership, creating, modifying and deleting groups)
 - Offer a "change password" via LDAP feature similar to what https://github.com/ltb-project/self-service-password offers, that is available for every user in one of the configured active directories
 - groups can be associated with projects in the config files and show on a project page
+
+---
+
+## 2026-11-23 — Sprint 16 (Active Directory and Samba)
+
+1. dcdash currently uses one of the Samba DCs (10.15.44.3) for its LDAP authentication, The user and password  for the bind user are already in the config. I have added DCDASH_IT_AD_ADMIN and DCDASH_IT_AD_ADMIN_PASSWORD with the administrator user. You can use all existing OUs on the server and work in the windows.test.sf.thse.net domain as long as you keep existing users/groups and DNS records as they are. Use "dcdashdev" as prefix andthere should not be any collisions.
+2. Yes
+3. At the moment, we don't have a windows DC available that is reachable by you
+4. An agent is acceptable in both envirnments. dcdash will be deployed in the airgapped network on a server that can reach the AD server in that network.
+5. The self service page should be reachable without loggin in to dcdash. Our firewall takes care that only internal users from internal networks can reach dcdash anyway.
+6. Yes, the directory in auth.ldap is one of the domains. I would prefer the auth.ldap setting to be completely independent from the management of Active directories. There are users who have an account in all three, some with identical user names, some with different user names and definitely with different passwords, checking logins against all configured domains would lead to confusion.
