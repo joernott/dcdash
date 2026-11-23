@@ -281,7 +281,8 @@ are rejected, so typos are caught early.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `main` and `sprint/**` and on pull requests:
+`.github/workflows/ci.yml` runs on pushes to `main`, `sprint/**` and `deps/**` (combined
+dependency updates) and on pull requests:
 
 1. **Go:** golangci-lint and `go test -race ./...`
 2. **Integration:** `scripts/integration-test.sh` with bind9, Pebble and step-ca containers
