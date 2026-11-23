@@ -281,7 +281,8 @@ are rejected, so typos are caught early.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `main` and `sprint/**` and on pull requests:
+`.github/workflows/ci.yml` runs on pushes to `main`, `sprint/**` and `deps/**` (combined
+dependency updates) and on pull requests:
 
 1. **Go:** golangci-lint and `go test -race ./...`
 2. **Integration:** `scripts/integration-test.sh` with bind9, Pebble and step-ca containers
@@ -302,6 +303,9 @@ and patch updates of the Go modules, one for the npm packages in `web/`, one for
 Actions, and one per major update and per update of the container base image (pinned by
 digest). The CI runs on them like on any pull request; review the changelogs of major updates
 before merging.
+Dependabot leaves out major updates of TypeScript (until typescript-eslint and vue-tsc support
+TypeScript 7) and of `@types/node`, which follows the Node version in `.node-version`; raise
+both together by hand.
 
 ## Releases
 

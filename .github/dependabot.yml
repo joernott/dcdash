@@ -26,6 +26,14 @@ updates:
     groups:
       web-minor:
         update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 (the native compiler) is not supported by typescript-eslint and vue-tsc
+      # yet (2026-11-23); remove this when both support it.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # @types/node follows the Node version in .node-version; raise both together.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
