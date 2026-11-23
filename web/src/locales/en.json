@@ -29,7 +29,8 @@
     "netbox": "NetBox",
     "projects": "Projects",
     "switches": "Switches",
-    "firewalls": "Firewalls"
+    "firewalls": "Firewalls",
+    "directories": "Directories"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -115,7 +116,8 @@
       "kea": "Kea DHCP",
       "netbox": "NetBox",
       "switch": "Aruba CX",
-      "firewall": "OPNsense"
+      "firewall": "OPNsense",
+      "directory": "Active Directory"
     },
     "links": {
       "ui": "UI",
@@ -998,7 +1000,13 @@
     "guest_running": "Stop the guest before deleting it.",
     "confirmation_mismatch": "The confirmation does not match the name.",
     "config_changed": "The configuration was changed in the meantime. Please reload it and try again.",
-    "no_free_slot": "There is no free slot on this bus."
+    "no_free_slot": "There is no free slot on this bus.",
+    "password_policy": "The domain's password policy rejected the password: {message}",
+    "directory_forbidden": "The domain refused the change; dcdash's service account lacks the right: {message}",
+    "invalid_user": "Invalid user: {message}",
+    "invalid_group": "Invalid group: {message}",
+    "invalid_members": "Invalid members: {message}",
+    "invalid_password": "Invalid password: {message}"
   },
   "dns": {
     "provider": "Provider",
@@ -1290,6 +1298,92 @@
       "prefix": "Prefix",
       "vlan": "VLAN",
       "interface": "Switch port"
+    }
+  },
+  "directories": {
+    "directory": "Directory",
+    "none": "No directory is available to you.",
+    "types": { "samba": "Samba Active Directory", "windows": "Windows Active Directory" },
+    "managed": "dcdash changes objects in: {ous}",
+    "views": "Views",
+    "tabs": { "users": "Users", "groups": "Groups" },
+    "actions": "Actions",
+    "search": "Search",
+    "searchButton": "Search",
+    "truncated": "Only the first entries are shown. Narrow the search to see the others.",
+    "container": "Container",
+    "description": "Description",
+    "delete": "Delete",
+    "users": {
+      "name": "Account name",
+      "nameHint": "At most 20 characters, no spaces at the start or end",
+      "upn": "User principal name",
+      "upnHint": "Default: <account name>{'@'}{domain}",
+      "givenName": "First name",
+      "surname": "Last name",
+      "displayName": "Display name",
+      "mail": "Email",
+      "state": "State",
+      "searchHint": "Name or email",
+      "password": "Initial password",
+      "newPassword": "New password",
+      "mustChange": "Must change the password at the next logon",
+      "createDisabled": "Create disabled",
+      "create": "Create a user",
+      "createTitle": "New user",
+      "editTitle": "Change {name}",
+      "editLabel": "Change {name}",
+      "deleteLabel": "Delete {name}",
+      "deleteTitle": "Delete {name}?",
+      "deleteText": "The account {dn} is deleted. This can't be undone.",
+      "enableLabel": "Enable {name}",
+      "disableLabel": "Disable {name}",
+      "unlockLabel": "Unlock {name}",
+      "resetLabel": "Reset the password of {name}",
+      "resetTitle": "Reset the password of {name}",
+      "reset": "Reset password",
+      "saved": "{name} was saved.",
+      "deleted": "{name} was deleted.",
+      "enabled": "{name} was enabled.",
+      "disabled": "{name} was disabled and can't log in any more.",
+      "unlocked": "{name} was unlocked.",
+      "resetDone": "The password of {name} was reset.",
+      "states": {
+        "disabled": "disabled",
+        "lockedOut": "locked out",
+        "expired": "password expired",
+        "mustChange": "must change password",
+        "protected": "protected",
+        "unmanaged": "read-only"
+      }
+    },
+    "groups": {
+      "name": "Group name",
+      "scope": "Scope",
+      "scopeHint": "Global and domain local groups can only be changed to universal and back.",
+      "scopes": { "global": "Global", "domainLocal": "Domain local", "universal": "Universal" },
+      "security": "Security group",
+      "distribution": "Distribution group",
+      "searchHint": "Name or description",
+      "create": "Create a group",
+      "createTitle": "New group",
+      "editTitle": "Change {name}",
+      "editLabel": "Change {name}",
+      "deleteLabel": "Delete {name}",
+      "deleteTitle": "Delete {name}?",
+      "deleteText": "The group {dn} is deleted. Its members stay. This can't be undone.",
+      "saved": "{name} was saved.",
+      "deleted": "{name} was deleted.",
+      "membersLabel": "Members of {name}",
+      "membersTitle": "Members of {name}",
+      "noMembers": "The group has no direct members.",
+      "member": "Member",
+      "kind": "Kind",
+      "kinds": { "user": "User", "group": "Group", "computer": "Computer", "other": "Other" },
+      "removeLabel": "Remove {name} from the group",
+      "addMember": "Add a member",
+      "addMemberHint": "Account name of a user, group or computer",
+      "addMemberButton": "Add"
     }
   }
 }

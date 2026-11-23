@@ -35,6 +35,7 @@ export class FakeApi {
     GET: (path: string, init?: Init) => this.call('GET', path, init),
     POST: (path: string, init?: Init) => this.call('POST', path, init),
     PUT: (path: string, init?: Init) => this.call('PUT', path, init),
+    PATCH: (path: string, init?: Init) => this.call('PATCH', path, init),
     DELETE: (path: string, init?: Init) => this.call('DELETE', path, init),
   }
 }

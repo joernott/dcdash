@@ -576,7 +576,7 @@ network, and two current Samba AD domain controllers in the test labs.
   names can't be enumerated, the audit log records the change without passwords; en/de
 - [x] **16.9** Projects: project files name AD groups per directory; the project page shows
   them with their members
-- [ ] **16.10** Permissions and audit actions (module `directory`, resources for users,
+- [x] **16.10** Permissions and audit actions (module `directory`, resources for users,
   groups and OUs), navigation entry, a "Directories" page with users and groups; color for
   the overview tile; en/de, light and dark mode
 - [ ] **16.11** Tests: unit tests with the fake, integration and e2e tests with the Samba

@@ -29,7 +29,8 @@
     "netbox": "NetBox",
     "projects": "Projekte",
     "switches": "Switches",
-    "firewalls": "Firewalls"
+    "firewalls": "Firewalls",
+    "directories": "Verzeichnisse"
   },
   "home": {
     "welcome": "Willkommen, {name}",
@@ -115,7 +116,8 @@
       "kea": "Kea DHCP",
       "netbox": "NetBox",
       "switch": "Aruba CX",
-      "firewall": "OPNsense"
+      "firewall": "OPNsense",
+      "directory": "Active Directory"
     },
     "links": {
       "ui": "UI",
@@ -998,7 +1000,13 @@
     "guest_running": "Halten Sie den Gast an, bevor Sie ihn löschen.",
     "confirmation_mismatch": "Die Bestätigung stimmt nicht mit dem Namen überein.",
     "config_changed": "Die Konfiguration wurde zwischenzeitlich geändert. Bitte laden Sie sie neu und versuchen Sie es erneut.",
-    "no_free_slot": "Auf diesem Bus ist kein Platz mehr frei."
+    "no_free_slot": "Auf diesem Bus ist kein Platz mehr frei.",
+    "password_policy": "Die Passwortrichtlinie der Domäne hat das Passwort abgelehnt: {message}",
+    "directory_forbidden": "Die Domäne hat die Änderung abgelehnt; dem Dienstkonto von dcdash fehlt das Recht: {message}",
+    "invalid_user": "Ungültiger Benutzer: {message}",
+    "invalid_group": "Ungültige Gruppe: {message}",
+    "invalid_members": "Ungültige Mitglieder: {message}",
+    "invalid_password": "Ungültiges Passwort: {message}"
   },
   "dns": {
     "provider": "Anbieter",
@@ -1290,6 +1298,92 @@
       "prefix": "Präfix",
       "vlan": "VLAN",
       "interface": "Switch-Port"
+    }
+  },
+  "directories": {
+    "directory": "Verzeichnis",
+    "none": "Ihnen steht kein Verzeichnis zur Verfügung.",
+    "types": { "samba": "Samba Active Directory", "windows": "Windows Active Directory" },
+    "managed": "dcdash ändert Objekte in: {ous}",
+    "views": "Ansichten",
+    "tabs": { "users": "Benutzer", "groups": "Gruppen" },
+    "actions": "Aktionen",
+    "search": "Suche",
+    "searchButton": "Suchen",
+    "truncated": "Es werden nur die ersten Einträge angezeigt. Grenzen Sie die Suche ein, um die übrigen zu sehen.",
+    "container": "Container",
+    "description": "Beschreibung",
+    "delete": "Löschen",
+    "users": {
+      "name": "Kontoname",
+      "nameHint": "Höchstens 20 Zeichen, keine Leerzeichen am Anfang oder Ende",
+      "upn": "Benutzerprinzipalname",
+      "upnHint": "Standard: <Kontoname>{'@'}{domain}",
+      "givenName": "Vorname",
+      "surname": "Nachname",
+      "displayName": "Anzeigename",
+      "mail": "E-Mail",
+      "state": "Zustand",
+      "searchHint": "Name oder E-Mail",
+      "password": "Anfangspasswort",
+      "newPassword": "Neues Passwort",
+      "mustChange": "Muss das Passwort bei der nächsten Anmeldung ändern",
+      "createDisabled": "Deaktiviert anlegen",
+      "create": "Benutzer anlegen",
+      "createTitle": "Neuer Benutzer",
+      "editTitle": "{name} ändern",
+      "editLabel": "{name} ändern",
+      "deleteLabel": "{name} löschen",
+      "deleteTitle": "{name} löschen?",
+      "deleteText": "Das Konto {dn} wird gelöscht. Das lässt sich nicht rückgängig machen.",
+      "enableLabel": "{name} aktivieren",
+      "disableLabel": "{name} deaktivieren",
+      "unlockLabel": "{name} entsperren",
+      "resetLabel": "Passwort von {name} zurücksetzen",
+      "resetTitle": "Passwort von {name} zurücksetzen",
+      "reset": "Passwort zurücksetzen",
+      "saved": "{name} wurde gespeichert.",
+      "deleted": "{name} wurde gelöscht.",
+      "enabled": "{name} wurde aktiviert.",
+      "disabled": "{name} wurde deaktiviert und kann sich nicht mehr anmelden.",
+      "unlocked": "{name} wurde entsperrt.",
+      "resetDone": "Das Passwort von {name} wurde zurückgesetzt.",
+      "states": {
+        "disabled": "deaktiviert",
+        "lockedOut": "gesperrt",
+        "expired": "Passwort abgelaufen",
+        "mustChange": "muss Passwort ändern",
+        "protected": "geschützt",
+        "unmanaged": "nur lesbar"
+      }
+    },
+    "groups": {
+      "name": "Gruppenname",
+      "scope": "Bereich",
+      "scopeHint": "Globale und lokale Domänengruppen lassen sich nur in universelle Gruppen ändern und zurück.",
+      "scopes": { "global": "Global", "domainLocal": "Lokal (Domäne)", "universal": "Universal" },
+      "security": "Sicherheitsgruppe",
+      "distribution": "Verteilergruppe",
+      "searchHint": "Name oder Beschreibung",
+      "create": "Gruppe anlegen",
+      "createTitle": "Neue Gruppe",
+      "editTitle": "{name} ändern",
+      "editLabel": "{name} ändern",
+      "deleteLabel": "{name} löschen",
+      "deleteTitle": "{name} löschen?",
+      "deleteText": "Die Gruppe {dn} wird gelöscht. Ihre Mitglieder bleiben erhalten. Das lässt sich nicht rückgängig machen.",
+      "saved": "{name} wurde gespeichert.",
+      "deleted": "{name} wurde gelöscht.",
+      "membersLabel": "Mitglieder von {name}",
+      "membersTitle": "Mitglieder von {name}",
+      "noMembers": "Die Gruppe hat keine direkten Mitglieder.",
+      "member": "Mitglied",
+      "kind": "Art",
+      "kinds": { "user": "Benutzer", "group": "Gruppe", "computer": "Computer", "other": "Andere" },
+      "removeLabel": "{name} aus der Gruppe entfernen",
+      "addMember": "Mitglied hinzufügen",
+      "addMemberHint": "Kontoname eines Benutzers, einer Gruppe oder eines Computers",
+      "addMemberButton": "Hinzufügen"
     }
   }
 }

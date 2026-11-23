@@ -9,7 +9,8 @@ or are notable for other reasons.
 
 The icons on the buttons are from [Font Awesome Free](https://fontawesome.com) 7 by
 Fonticons, Inc.: arrow-rotate-left, arrows-rotate, bolt-lightning, bookmark, display,
-magnifying-glass, pencil, plus, power-off (solid), moon and trash-can (regular).
+key, lock-open, magnifying-glass, pencil, plus, power-off, users (solid), moon and trash-can
+(regular).
 
 - Icons: [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
   (CC BY 4.0). dcdash uses the path data of the icons unchanged, drawn in the current text
