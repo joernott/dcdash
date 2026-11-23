@@ -100,7 +100,13 @@ func TestFingerprintPinning(t *testing.T) {
 		}
 	}
 
-	wrong := "00" + strings.ReplaceAll(fp, ":", "")[2:]
+	// Another first byte (the random certificate's fingerprint may start with 00).
+	hexFP := strings.ReplaceAll(fp, ":", "")
+	first := "00"
+	if strings.HasPrefix(hexFP, first) {
+		first = "ff"
+	}
+	wrong := first + hexFP[2:]
 	cfg, err := ClientConfig(config.TLSClient{Fingerprint: wrong}, "localhost")
 	if err != nil {
 		t.Fatal(err)
