@@ -34,5 +34,6 @@ export async function expectAccessible(page: Page, name: string) {
     if (v.length > 0) found[dark ? 'dark' : 'light'] = v
   }
   await html.evaluate((el, d) => el.classList.toggle('dark', d), wasDark)
+  await page.waitForTimeout(250)
   expect.soft(found, `accessibility violations on ${name}`).toEqual({})
 }

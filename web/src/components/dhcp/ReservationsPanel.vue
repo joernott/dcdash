@@ -7,7 +7,9 @@ import { api, unwrap } from '@/api/client'
 import { ApiError } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import ReservationDialog from '@/components/dhcp/ReservationDialog.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -147,9 +149,14 @@ onMounted(load)
         <BaseInput v-model="text" :label="t('dhcp.filterReservations')" type="search" />
       </form>
       <div class="flex gap-3">
-        <BaseButton variant="secondary" :loading="loading" @click="load">
-          {{ t('home.refresh') }}
-        </BaseButton>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="load"
+        />
         <BaseButton v-if="canAdd" variant="primary" @click="dialog?.create()">
           {{ t('dhcp.addReservation') }}
         </BaseButton>
@@ -210,12 +217,20 @@ onMounted(load)
             role="group"
             :aria-label="t('dhcp.actionsFor', { name: label(row as DhcpReservation) })"
           >
-            <BaseButton size="sm" variant="secondary" @click="dialog?.edit(row as DhcpReservation)">
-              {{ t('dhcp.edit') }}
-            </BaseButton>
-            <BaseButton size="sm" variant="danger" @click="askDelete(row as DhcpReservation)">
-              {{ t('dhcp.delete') }}
-            </BaseButton>
+            <IconButton
+              icon="edit"
+              :label="t('dhcp.edit')"
+              size="sm"
+              variant="secondary"
+              @click="dialog?.edit(row as DhcpReservation)"
+            />
+            <IconButton
+              icon="delete"
+              :label="t('dhcp.delete')"
+              size="sm"
+              variant="danger"
+              @click="askDelete(row as DhcpReservation)"
+            />
           </div>
           <span v-else class="text-xs text-fg-muted">{{ t('dhcp.readOnly') }}</span>
         </template>
@@ -240,9 +255,9 @@ onMounted(load)
         <BaseButton variant="secondary" @click="deleteOpen = false">{{
           t('common.cancel')
         }}</BaseButton>
-        <BaseButton variant="danger" :loading="busy" @click="remove">{{
-          t('dhcp.delete')
-        }}</BaseButton>
+        <BaseButton variant="danger" :loading="busy" @click="remove">
+          <AppIcon name="delete" />{{ t('dhcp.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </section>

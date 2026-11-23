@@ -9,6 +9,7 @@ import DiskDialog, { type DiskChange } from '@/components/proxmox/DiskDialog.vue
 import NetworkDialog from '@/components/proxmox/NetworkDialog.vue'
 import OptionsDialog from '@/components/proxmox/OptionsDialog.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -471,18 +472,20 @@ defineExpose({ load })
                 </BaseButton>
               </template>
               <template v-else>
-                <BaseButton
+                <IconButton
+                  icon="edit"
+                  :label="t('proxmox.hardware.edit')"
                   size="sm"
                   variant="secondary"
                   @click="diskDialog?.edit(hw, row as HardwareDisk)"
-                >
-                  {{ t('proxmox.hardware.edit') }}
-                </BaseButton>
+                />
                 <BaseButton size="sm" variant="secondary" @click="askDetach(row as HardwareDisk)">
                   {{ t('proxmox.hardware.detach') }}
                 </BaseButton>
               </template>
-              <BaseButton
+              <IconButton
+                icon="delete"
+                :label="t('proxmox.hardware.delete')"
                 v-if="canAdmin"
                 size="sm"
                 variant="danger"
@@ -493,9 +496,7 @@ defineExpose({ load })
                     : undefined
                 "
                 @click="askDeleteDisk(row as HardwareDisk)"
-              >
-                {{ t('proxmox.hardware.delete') }}
-              </BaseButton>
+              />
             </div>
           </template>
         </DataTable>
@@ -542,20 +543,20 @@ defineExpose({ load })
               role="group"
               :aria-label="t('proxmox.hardware.actionsFor', { item: (row as NetworkDevice).key })"
             >
-              <BaseButton
+              <IconButton
+                icon="edit"
+                :label="t('proxmox.hardware.edit')"
                 size="sm"
                 variant="secondary"
                 @click="netDialog?.edit(hw, row as NetworkDevice)"
-              >
-                {{ t('proxmox.hardware.edit') }}
-              </BaseButton>
-              <BaseButton
+              />
+              <IconButton
+                icon="delete"
+                :label="t('proxmox.hardware.remove')"
                 size="sm"
                 variant="danger"
                 @click="askRemoveNetwork(row as NetworkDevice)"
-              >
-                {{ t('proxmox.hardware.remove') }}
-              </BaseButton>
+              />
             </div>
           </template>
         </DataTable>

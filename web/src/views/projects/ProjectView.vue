@@ -7,6 +7,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -279,9 +280,14 @@ watch(name, () => void load(), { immediate: true })
           <div class="w-72">
             <BaseInput v-model="query" :label="t('projects.search')" inputmode="search" />
           </div>
-          <BaseButton type="submit" variant="secondary" :loading="searching">
-            {{ t('projects.searchButton') }}
-          </BaseButton>
+          <IconButton
+            icon="search"
+            :label="t('projects.searchButton')"
+            size="md"
+            type="submit"
+            variant="secondary"
+            :loading="searching"
+          />
         </form>
         <ul v-if="results" class="flex flex-col gap-2" data-testid="project-results">
           <li v-if="results.length === 0" class="text-fg-muted">{{ t('projects.noResults') }}</li>

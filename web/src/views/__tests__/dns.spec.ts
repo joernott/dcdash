@@ -15,7 +15,7 @@ import ZoneView from '../dns/ZoneView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, apiError } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -123,12 +123,15 @@ describe('DnsView', () => {
     expect(router.currentRoute.value.params.provider).toBe('cf')
     await flushPromises()
     expect(w.findAll('tbody tr')).toHaveLength(2)
+    // The rows have the Cloudflare color.
+    expect(w.get('tbody tr').classes()).toContain('sys-tint')
+    expect(w.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
     expect(w.text()).toContain('Delegate the zone at the registrar to: ada.ns.cloudflare.com')
     expect(w.text()).toContain('Create zone')
 
     await w.findAll('tbody button')[0]!.trigger('click')
     const dialog = w.findAll('dialog')[1]!
-    const submit = dialog.findAll('button').find((b) => b.text() === 'Delete zone')!
+    const submit = dialog.findAll('button').find((b) => buttonName(b) === 'Delete zone')!
     expect(submit.attributes('disabled')).toBeDefined()
     await dialog.get('input').setValue('example.org')
     expect(submit.attributes('disabled')).toBeUndefined()
@@ -164,6 +167,7 @@ describe('ZoneView', () => {
     await flushPromises()
     const rows = w.findAll('tbody tr')
     expect(rows).toHaveLength(3)
+    expect(rows[1]!.attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
     expect(rows[0]!.text()).toContain('read-only')
     expect(rows[1]!.text()).toContain('www')
     expect(rows[1]!.text()).toContain('proxied')
@@ -172,7 +176,7 @@ describe('ZoneView', () => {
 
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add record')!
+      .find((b) => buttonName(b) === 'Add record')!
       .trigger('click')
     const dialog = w.findAll('dialog')[0]!
     const inputs = dialog.findAll('input')
@@ -206,13 +210,13 @@ describe('ZoneView', () => {
     await w
       .findAll('tbody tr')[2]!
       .findAll('button')
-      .find((b) => b.text() === 'Löschen')!
+      .find((b) => buttonName(b) === 'Löschen')!
       .trigger('click')
     const dialog = w.findAll('dialog')[1]!
     expect(dialog.text()).toContain('Den MX-Eintrag @ löschen?')
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Löschen')!
+      .find((b) => buttonName(b) === 'Löschen')!
       .trigger('click')
     await flushPromises()
     expect(dialog.text()).toContain('Die Daten wurden inzwischen geändert.')

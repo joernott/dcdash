@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -89,9 +90,14 @@ onMounted(load)
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <BaseButton variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="md"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <p
       v-if="error"
@@ -140,17 +146,16 @@ onMounted(load)
         </template>
         <template #cell-actions="{ row }">
           <div class="flex justify-end">
-            <BaseButton
+            <IconButton
+              icon="reboot"
               v-if="health.canOperate"
               size="sm"
               variant="secondary"
-              :aria-label="
+              :label="
                 t('firewalls.health.restartLabel', { service: (row as FirewallService).name })
               "
               @click="askRestart(row as FirewallService)"
-            >
-              {{ t('firewalls.health.restart') }}
-            </BaseButton>
+            />
           </div>
         </template>
       </DataTable>

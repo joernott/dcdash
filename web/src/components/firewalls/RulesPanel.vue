@@ -5,7 +5,9 @@ import { useI18n } from 'vue-i18n'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -196,12 +198,21 @@ onMounted(load)
     <p v-else class="text-sm text-fg-muted">{{ t('firewalls.rules.savepointHint') }}</p>
     <div class="flex flex-wrap items-end gap-3">
       <BaseSelect v-model="iface" :label="t('firewalls.rules.interface')" :options="ifaceOptions" />
-      <BaseButton v-if="list?.canCreate" @click="create">{{
-        t('firewalls.rules.create')
-      }}</BaseButton>
-      <BaseButton variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="add"
+        :label="t('firewalls.rules.create')"
+        size="md"
+        v-if="list?.canCreate"
+        @click="create"
+      />
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="md"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <p
       v-if="error"
@@ -259,30 +270,28 @@ onMounted(load)
       </template>
       <template #cell-actions="{ row }">
         <div v-if="(row as Rule).canWrite" class="flex justify-end gap-2">
-          <BaseButton
+          <IconButton
+            icon="edit"
             size="sm"
             variant="secondary"
-            :aria-label="
+            :label="
               t('firewalls.rules.editLabel', {
                 rule: (row as Rule).description || (row as Rule).uuid,
               })
             "
             @click="edit(row as Rule)"
-          >
-            {{ t('switches.edit') }}
-          </BaseButton>
-          <BaseButton
+          />
+          <IconButton
+            icon="delete"
             size="sm"
             variant="danger"
-            :aria-label="
+            :label="
               t('firewalls.rules.deleteLabel', {
                 rule: (row as Rule).description || (row as Rule).uuid,
               })
             "
             @click="askDelete(row as Rule)"
-          >
-            {{ t('firewalls.delete') }}
-          </BaseButton>
+          />
         </div>
       </template>
     </DataTable>
@@ -380,8 +389,8 @@ onMounted(load)
           {{ t('common.cancel') }}
         </BaseButton>
         <BaseButton variant="danger" :loading="busy" @click="remove">
-          {{ t('firewalls.delete') }}
-        </BaseButton>
+          <AppIcon name="delete" />{{ t('firewalls.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </div>

@@ -13,7 +13,7 @@ import FirewallsView from '../firewalls/FirewallsView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -163,7 +163,7 @@ describe('FirewallsView', () => {
     const dialog = w.findAll('dialog').find((d) => d.text().includes('Restart unbound?'))!
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Restart')!
+      .find((b) => buttonName(b) === 'Restart')!
       .trigger('click')
     await flushPromises()
     expect(restarted).toEqual({ id: 'unbound' })
@@ -220,7 +220,7 @@ describe('FirewallsView', () => {
     ])
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Create rule')!
+      .find((b) => buttonName(b) === 'Create rule')!
       .trigger('click')
     const create = w.findAll('dialog').find((d) => d.text().includes('Create a rule'))!
     await create.get('form').trigger('submit')
@@ -273,7 +273,7 @@ describe('FirewallsView', () => {
     await router.push('/firewalls/fw1?tab=rules')
     await flushPromises()
     expect(w.get('[role="note"]').text()).toContain('protected_interfaces')
-    expect(w.findAll('button').some((b) => b.text() === 'Create rule')).toBe(false)
+    expect(w.findAll('button').some((b) => buttonName(b) === 'Create rule')).toBe(false)
     w.unmount()
   })
 })

@@ -217,3 +217,12 @@ func TestReservations(t *testing.T) {
 		t.Error("reservation added without a host database")
 	}
 }
+
+func TestHTTPError(t *testing.T) {
+	var err error = &kea.HTTPError{Command: "status-get", Status: 408}
+	var h interface{ HTTPStatus() int }
+	if !errors.Is(err, kea.ErrUnavailable) || !errors.As(err, &h) || h.HTTPStatus() != 408 ||
+		err.Error() != kea.ErrUnavailable.Error()+": status-get: HTTP 408" {
+		t.Errorf("%v", err)
+	}
+}

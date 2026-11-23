@@ -6,6 +6,43 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-23
+
+A more compact, colored overview with links to the systems, icons on the buttons, and the
+complete permission reference.
+
+### Added
+
+- **Links on the overview tiles:** optional settings `ui`, `ssh` and `rdp` for the LDAP
+  directory, Proxmox clusters, DNS providers, DHCP servers, NetBox, switches and firewalls.
+  The tile shows a button for each: the web interface, an `ssh://` link, and a Remote Desktop
+  file (`.rdp`). The status API returns them as `links`.
+- **Permission reference:** [docs/permissions.md](docs/permissions.md) lists every permission
+  a role can contain, with example roles; a test keeps it in line with the code.
+- **Dependabot** for the Go modules, the npm packages, the GitHub Actions and the container
+  base image.
+- A build check that the web interface loads nothing from other hosts.
+- [NOTICE.md](NOTICE.md) with the third-party works that need attribution.
+- **Overview checks:** a check that fails with an HTTP 4xx response, such as 408 from a Kea
+  control agent, is repeated once after `status.retry_delay` (default 1 s) before the tile
+  shows an error.
+
+### Changed
+
+- **Overview:** up to six tiles per row, in the colors of their systems (Proxmox, bind9,
+  Cloudflare, Kea, NetBox, switches, OPNsense), instead of the group headings. The bottom line
+  names the system. The status API returns the DNS provider type as `type`.
+- **DNS:** the rows of zones and records have the color of the provider.
+- **Icons instead of text** on many buttons (Font Awesome Free): power actions and console of
+  VMs and containers, Ctrl+Alt+Del, refresh, search, add, edit, delete, show leases, and the
+  firewall's restart, enable and disable. The text stays as tooltip and accessible name.
+- The built-in documentation also shows the NetBox, project, switch, firewall and
+  permission pages.
+
+### Fixed
+
+- Proxmox: `read` on `task/<node>/<id>` returned an empty response instead of the task.
+
 ## [0.2.0] - 2026-11-20
 
 NetBox as the common data source, projects, and the network: Aruba CX switches and OPNsense
@@ -148,7 +185,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/joernott/dcdash/releases/tag/v0.2.1
 [0.2.0]: https://github.com/joernott/dcdash/releases/tag/v0.2.0
 [0.1.2]: https://github.com/joernott/dcdash/releases/tag/v0.1.2
 [0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1

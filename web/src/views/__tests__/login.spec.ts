@@ -16,7 +16,7 @@ import App from '@/App.vue'
 import { createAppRouter } from '@/router'
 import { useSessionStore } from '@/stores/session'
 import { FakeApi, apiError, sessionInfo } from '@/__tests__/fakeApi'
-import { memoryStorage, mountWith } from '@/__tests__/helpers'
+import { memoryStorage, mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 let router: Router
@@ -121,7 +121,7 @@ describe('login', () => {
     const w = await mountAt('/login')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Use a recovery code')!
+      .find((b) => buttonName(b) === 'Use a recovery code')!
       .trigger('click')
     await w.get('input').setValue('abcd-efgh-jkmn-pqrs')
     await w.get('form').trigger('submit')
@@ -164,7 +164,7 @@ describe('enrollment', () => {
     expect(w.get('ul[aria-label="Recovery codes"]').text()).toContain('aaaa-bbbb-cccc-dddd')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Continue')!
+      .find((b) => buttonName(b) === 'Continue')!
       .trigger('click')
     await flushPromises()
     await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('home'))
@@ -182,7 +182,7 @@ describe('session expiry', () => {
       .trigger('click')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Log out')!
+      .find((b) => buttonName(b) === 'Log out')!
       .trigger('click')
     await flushPromises()
     await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('login'))

@@ -28,10 +28,25 @@ app; you set it up again at your next login.
 
 ## Overview
 
-The overview shows the state of dcdash and of every connected backend: the database, the
-user directory, the certificate, each Proxmox cluster, DNS provider and DHCP server. A red
-tile names the problem; the response time shows how long the check took. The page refreshes
-every 30 seconds.
+The overview shows the state of dcdash and of every connected system, one tile each: first
+dcdash itself (database, user directory, certificate, projects), then each Proxmox cluster,
+DNS provider, DHCP server, NetBox, switch and firewall. The tiles of the systems have the
+system's color (Proxmox purple, bind9 blue, Cloudflare orange, Kea green, NetBox teal,
+switches cyan, OPNsense red), and the bottom line names the system and the response time of
+the check. A tile with a red border names the problem. If a system answers a check with a
+client error (HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once
+more after a second before showing the error. The page refreshes every 30 seconds.
+
+If the configuration names a system's own interfaces, its tile shows buttons left of the
+status: **UI** opens the web interface in a new tab, **SSH** the SSH client registered in
+your operating system, and **RDP** downloads a Remote Desktop file that your RDP client
+opens (see [configuration.md](configuration.md#general-rules)).
+
+Many buttons show an icon instead of a text: refresh (two arrows in a circle), search
+(magnifying glass), add (plus), edit (pencil), delete (trash can), and on virtual machines
+start (green power symbol), shut down (red power symbol), reboot (arrow), suspend (moon), stop
+(lightning) and console (screen). Hover over a button to see what it does; screen readers
+read the same text.
 
 The **Documentation** link in the top bar opens this documentation inside dcdash, in the
 version that matches the running release. It is available in English only.
@@ -82,7 +97,8 @@ cluster, choose it at the top.
 ## DNS
 
 The DNS page lists the zones of a provider (Cloudflare or bind9). Click a zone for its
-records.
+records. The rows of zones and records have the provider's color: orange for Cloudflare,
+blue for bind9.
 
 - **Records:** add, change and delete A, AAAA, CNAME, MX, TXT, SRV, PTR, NS and CAA records.
   Other types, such as SOA, are shown read-only. Names are relative to the zone ("www" for

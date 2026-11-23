@@ -16,7 +16,7 @@ import GuestProjects from '@/components/projects/GuestProjects.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -148,7 +148,7 @@ describe('Projects', () => {
     const results = w.get('[data-testid="project-results"]')
     await results
       .findAll('button')
-      .find((b) => b.text() === 'Add')!
+      .find((b) => buttonName(b) === 'Add')!
       .trigger('click')
     await flushPromises()
     expect(added).toBe('{"type":"prefix","id":3}')
@@ -157,7 +157,7 @@ describe('Projects', () => {
 
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Remove')!
+      .find((b) => buttonName(b) === 'Remove')!
       .trigger('click')
     await flushPromises()
     expect(removed).toBe('ip/5')
@@ -204,7 +204,7 @@ describe('Projects', () => {
     expect(w.text()).toContain('Intranet')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Change projects')!
+      .find((b) => buttonName(b) === 'Change projects')!
       .trigger('click')
     const boxes = w.get('dialog').findAll('input[type="checkbox"]')
     // Intranet is shown because it is assigned, but the user may not change it.

@@ -10,7 +10,7 @@ import GuestActions from '@/components/proxmox/GuestActions.vue'
 import PowerActionDialog from '@/components/proxmox/PowerActionDialog.vue'
 import TaskList from '@/components/proxmox/TaskList.vue'
 import UsageBar from '@/components/proxmox/UsageBar.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -163,9 +163,14 @@ onBeforeUnmount(() => clearInterval(timer))
           :options="clusterOptions"
           @update:model-value="selectCluster"
         />
-        <BaseButton variant="secondary" :loading="loading" @click="load">
-          {{ t('home.refresh') }}
-        </BaseButton>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="load"
+        />
         <RouterLink
           v-if="canCreate"
           :to="{ name: 'proxmox-create', params: { cluster } }"

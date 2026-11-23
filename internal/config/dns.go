@@ -34,6 +34,8 @@ type DNSProvider struct {
 	Timeout    Duration      `yaml:"timeout"`
 	Cloudflare DNSCloudflare `yaml:"cloudflare"`
 	Bind       Bind          `yaml:"bind"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // DefaultDNSTimeout is used when a provider sets no timeout.
@@ -191,6 +193,7 @@ func (d DNS) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, p := range d.Providers {
 		pre := "dns.providers[" + strconv.Itoa(i) + "]"
+		validateLinks(p.Links, pre+".", add)
 		if !instanceNamePattern.MatchString(p.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, p.Name)
 		} else if seen[p.Name] {

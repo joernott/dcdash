@@ -13,7 +13,7 @@ import SessionsView from '../admin/SessionsView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, type Init } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -55,12 +55,12 @@ describe('AuditView', () => {
 
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Ältere Einträge laden')!
+      .find((b) => buttonName(b) === 'Ältere Einträge laden')!
       .trigger('click')
     await flushPromises()
     expect(w.findAll('tbody tr')).toHaveLength(3)
     expect(w.get('tbody').text()).toContain('Abgelehnt')
-    expect(w.findAll('button').some((b) => b.text() === 'Ältere Einträge laden')).toBe(false)
+    expect(w.findAll('button').some((b) => buttonName(b) === 'Ältere Einträge laden')).toBe(false)
 
     const inputs = w.findAll('input')
     await inputs[0]!.setValue('bob')
@@ -120,7 +120,7 @@ describe('SessionsView', () => {
     const w = await mountAs(['system:core:sessions:read'], ['viewer'])
     expect(w.findAll('tbody tr')).toHaveLength(2)
     expect(w.get('tbody').text()).toContain('Waiting for code')
-    expect(w.findAll('button').some((b) => b.text() === 'Terminate')).toBe(false)
+    expect(w.findAll('button').some((b) => buttonName(b) === 'Terminate')).toBe(false)
     expect(w.text()).not.toContain('Reset authenticator app')
     w.unmount()
   })
@@ -138,7 +138,7 @@ describe('SessionsView', () => {
     expect(deleted).toEqual([])
     await w
       .findAll('dialog button')
-      .find((b) => b.text() === 'Confirm')!
+      .find((b) => buttonName(b) === 'Confirm')!
       .trigger('click')
     await flushPromises()
     expect(deleted).toEqual(['/api/v1/admin/sessions/{id} s2'])
@@ -157,7 +157,7 @@ describe('SessionsView', () => {
     await form.trigger('submit')
     await w
       .findAll('dialog button')
-      .find((b) => b.text() === 'Confirm')!
+      .find((b) => buttonName(b) === 'Confirm')!
       .trigger('click')
     await flushPromises()
     expect(deleted).toEqual([['/api/v1/admin/users/{username}/totp', { username: 'bob' }]])

@@ -5,7 +5,9 @@ import { useI18n } from 'vue-i18n'
 
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -147,9 +149,15 @@ onMounted(() => {
       <form class="flex flex-wrap items-end gap-3" role="search" @submit.prevent="search">
         <BaseSelect v-model="by" :label="t('dhcp.searchBy')" :options="keyOptions" />
         <BaseInput v-model="query" :label="t('dhcp.searchValue')" type="search" />
-        <BaseButton type="submit" variant="primary" :loading="loading" :disabled="!query.trim()">
-          {{ t('dhcp.search') }}
-        </BaseButton>
+        <IconButton
+          icon="search"
+          :label="t('dhcp.search')"
+          size="md"
+          type="submit"
+          variant="primary"
+          :loading="loading"
+          :disabled="!query.trim()"
+        />
       </form>
       <BaseSelect
         :model-value="subnet"
@@ -200,15 +208,14 @@ onMounted(() => {
           {{ d(new Date((row as DhcpLease).expires), 'short') }}
         </template>
         <template #cell-actions="{ row }">
-          <BaseButton
+          <IconButton
+            icon="delete"
             v-if="(row as DhcpLease).canDelete"
             size="sm"
             variant="danger"
-            :aria-label="t('dhcp.deleteLeaseFor', { address: leaseAddress(row as DhcpLease) })"
+            :label="t('dhcp.deleteLeaseFor', { address: leaseAddress(row as DhcpLease) })"
             @click="askDelete(row as DhcpLease)"
-          >
-            {{ t('dhcp.delete') }}
-          </BaseButton>
+          />
         </template>
       </DataTable>
     </template>
@@ -227,9 +234,9 @@ onMounted(() => {
         <BaseButton variant="secondary" @click="deleteOpen = false">{{
           t('common.cancel')
         }}</BaseButton>
-        <BaseButton variant="danger" :loading="busy" @click="remove">{{
-          t('dhcp.delete')
-        }}</BaseButton>
+        <BaseButton variant="danger" :loading="busy" @click="remove">
+          <AppIcon name="delete" />{{ t('dhcp.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </section>

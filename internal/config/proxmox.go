@@ -34,6 +34,8 @@ type ProxmoxCluster struct {
 	Console ProxmoxConsole `yaml:"console"`
 	// Provisioning allows creating and deleting guests (optional).
 	Provisioning ProxmoxProvisioning `yaml:"provisioning"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // ProxmoxEndpoint is the API URL of one node.
@@ -83,6 +85,7 @@ func (p Proxmox) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, c := range p.Clusters {
 		pre := "proxmox.clusters[" + strconv.Itoa(i) + "]"
+		validateLinks(c.Links, pre+".", add)
 		switch {
 		case !instanceNamePattern.MatchString(c.Name):
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, c.Name)

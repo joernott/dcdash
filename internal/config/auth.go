@@ -170,6 +170,8 @@ type LDAP struct {
 	Attributes LDAPAttributes `yaml:"attributes"`
 	// Timeout for connecting and for each operation.
 	Timeout Duration `yaml:"timeout"`
+	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
+	Links `yaml:",inline"`
 }
 
 // LDAPServer is one directory server.
@@ -278,6 +280,7 @@ func (l *LDAP) validateURL(key, raw string, add func(string, ...any)) {
 
 func (l *LDAP) validate(add func(string, ...any)) {
 	const p = "auth.ldap."
+	validateLinks(l.Links, p, add)
 	switch {
 	case l.URL != "" && len(l.Servers) > 0:
 		add(p + "url and servers: set only one of them")

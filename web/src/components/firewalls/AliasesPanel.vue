@@ -5,7 +5,9 @@ import { useI18n } from 'vue-i18n'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -159,12 +161,21 @@ onMounted(load)
         :placeholder="t('firewalls.aliases.filterHint')"
         inputmode="search"
       />
-      <BaseButton v-if="list?.canCreate" @click="create">
-        {{ t('firewalls.aliases.create') }}
-      </BaseButton>
-      <BaseButton variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="add"
+        :label="t('firewalls.aliases.create')"
+        size="md"
+        v-if="list?.canCreate"
+        @click="create"
+      />
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="md"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <p
       v-if="error"
@@ -196,22 +207,20 @@ onMounted(load)
           v-if="(row as Alias).canWrite && (row as Alias).editable"
           class="flex justify-end gap-2"
         >
-          <BaseButton
+          <IconButton
+            icon="edit"
             size="sm"
             variant="secondary"
-            :aria-label="t('firewalls.aliases.editLabel', { name: (row as Alias).name })"
+            :label="t('firewalls.aliases.editLabel', { name: (row as Alias).name })"
             @click="edit(row as Alias)"
-          >
-            {{ t('switches.edit') }}
-          </BaseButton>
-          <BaseButton
+          />
+          <IconButton
+            icon="delete"
             size="sm"
             variant="danger"
-            :aria-label="t('firewalls.aliases.deleteLabel', { name: (row as Alias).name })"
+            :label="t('firewalls.aliases.deleteLabel', { name: (row as Alias).name })"
             @click="askDelete(row as Alias)"
-          >
-            {{ t('firewalls.delete') }}
-          </BaseButton>
+          />
         </div>
       </template>
     </DataTable>
@@ -283,8 +292,8 @@ onMounted(load)
           {{ t('common.cancel') }}
         </BaseButton>
         <BaseButton variant="danger" :loading="busy" @click="remove">
-          {{ t('firewalls.delete') }}
-        </BaseButton>
+          <AppIcon name="delete" />{{ t('firewalls.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </div>

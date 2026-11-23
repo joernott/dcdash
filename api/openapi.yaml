@@ -2889,6 +2889,16 @@ components:
           description: Parameters of detailCode.
           additionalProperties: { type: string }
         latencyMs: { type: integer, format: int64 }
+        type:
+          type: string
+          description: The kind of system within the module, for dns `bind` or `cloudflare`; missing for the other modules.
+        links:
+          type: object
+          description: The system's own interfaces from the configuration (`ui`, `ssh`, `rdp`); missing if none is set.
+          properties:
+            ui: { type: string, description: URL of the web interface. }
+            ssh: { type: string, description: "ssh:// URL, e.g. ssh://root@pve1.example.com." }
+            rdp: { type: string, description: "host[:port] for a Remote Desktop connection." }
 
     NetBoxGuestComparison:
       type: object

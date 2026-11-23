@@ -6,7 +6,7 @@ import { RouterLink } from 'vue-router'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import type { MacResult } from '@/switches/switches'
@@ -54,9 +54,14 @@ async function search() {
         placeholder="bc:24:11:12:34:56"
         inputmode="search"
       />
-      <BaseButton type="submit" :loading="busy" :disabled="!query.trim()">
-        {{ t('switches.mac.search') }}
-      </BaseButton>
+      <IconButton
+        icon="search"
+        :label="t('switches.mac.search')"
+        size="md"
+        type="submit"
+        :loading="busy"
+        :disabled="!query.trim()"
+      />
     </form>
     <p
       v-if="error"

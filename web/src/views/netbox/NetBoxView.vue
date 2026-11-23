@@ -6,7 +6,9 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -287,14 +289,14 @@ watch([cluster, canRead], () => void load(), { immediate: true })
             >
               {{ t('netbox.apply') }}
             </BaseButton>
-            <BaseButton
+            <IconButton
+              icon="delete"
+              :label="t('netbox.delete')"
               v-if="(row as GuestDiff).state === 'extra' && (row as GuestDiff).tagged"
               size="sm"
               variant="danger"
               @click="deleting = row as GuestDiff"
-            >
-              {{ t('netbox.delete') }}
-            </BaseButton>
+            />
           </div>
         </template>
       </DataTable>
@@ -347,8 +349,8 @@ watch([cluster, canRead], () => void load(), { immediate: true })
           t('common.cancel')
         }}</BaseButton>
         <BaseButton variant="danger" :loading="busy !== ''" @click="removeVM">
-          {{ t('netbox.delete') }}
-        </BaseButton>
+          <AppIcon name="delete" />{{ t('netbox.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </div>

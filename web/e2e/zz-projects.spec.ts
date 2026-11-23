@@ -22,7 +22,7 @@ test('projects: list, NetBox objects and a guest', async ({ page }) => {
 
   // A prefix from NetBox.
   await page.getByLabel('Object type').selectOption('prefix')
-  await page.getByLabel('Search', { exact: true }).fill('192.0.2')
+  await page.getByRole('textbox', { name: 'Search', exact: true }).fill('192.0.2')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await page.getByTestId('project-results').getByRole('button', { name: 'Add' }).click()
   await expect(page.getByText('192.0.2.0/24 was added to the project.')).toBeVisible()

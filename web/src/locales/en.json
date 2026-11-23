@@ -99,6 +99,24 @@
         "connected": "Connected to {server} | Connected to {server}, all {count} servers reachable",
         "degraded": "Connected to {server}; not reachable: {down}"
       }
+    },
+    "tiles": "Systems",
+    "systems": {
+      "proxmox": "Proxmox",
+      "bind": "bind9",
+      "cloudflare": "Cloudflare",
+      "kea": "Kea DHCP",
+      "netbox": "NetBox",
+      "switch": "Aruba CX",
+      "firewall": "OPNsense"
+    },
+    "links": {
+      "ui": "UI",
+      "ssh": "SSH",
+      "rdp": "RDP",
+      "uiLabel": "Open the web interface of {name}",
+      "sshLabel": "Connect to {name} with SSH",
+      "rdpLabel": "Download the Remote Desktop file for {name}"
     }
   },
   "login": {
@@ -921,14 +939,13 @@
     "invalid_query": "The search is invalid: {message}",
     "vlan_in_use": "The VLAN is still in use: {message}",
     "default_vlan": "VLAN 1 cannot be deleted.",
-    "rejected": "The switch rejected the change: {message}",
+    "rejected": "The server did not accept the change: {message}",
     "invalid_alias": "The alias is invalid: {message}",
     "invalid_rule": "The rule is invalid: {message}",
     "protected_rule": "dcdash doesn't change this rule: on a firewall without savepoints, it could cut dcdash off.",
     "guard_unknown": "dcdash can't tell which interface it reaches the firewall through, so it doesn't change rules on this firewall without savepoints.",
     "alias_read_only": "Aliases of this type are changed in OPNsense.",
     "unsupported": "This is not supported here: {message}",
-    "rejected": "The server did not accept the change: {message}",
     "invalid_record": "Invalid entry: {message}",
     "confirmation_required": "Please confirm by typing the zone name.",
     "invalid_reservation": "Invalid reservation: {message}",

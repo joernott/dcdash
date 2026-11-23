@@ -7,7 +7,9 @@ import { useRoute } from 'vue-router'
 import { api, ApiError, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import RecordDialog from '@/components/dns/RecordDialog.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -21,6 +23,7 @@ import {
   type RecordFilter,
 } from '@/dns/records'
 import { useSessionStore } from '@/stores/session'
+import { systemOf, systemStyle, type System } from '@/systems'
 import { netboxFailure } from '@/netbox/netbox'
 import { useToastStore } from '@/stores/toast'
 
@@ -34,6 +37,8 @@ const dialog = useTemplateRef<InstanceType<typeof RecordDialog>>('dialog')
 const provider = computed(() => String(route.params.provider))
 const zone = computed(() => String(route.params.zone))
 const recordSet = ref<Schemas['DNSRecordSet'] | null>(null)
+// The provider's system (bind or cloudflare): the record rows have its color.
+const system = ref<System | null>(null)
 const capabilities = ref<Capabilities>({
   proxied: false,
   comments: false,
@@ -78,7 +83,10 @@ async function load() {
     ])
     recordSet.value = rs
     const p = pl.providers.find((x) => x.name === provider.value)
-    if (p) capabilities.value = p.capabilities
+    if (p) {
+      capabilities.value = p.capabilities
+      system.value = systemOf({ kind: 'dns', type: p.kind })
+    }
     error.value = ''
   } catch (e) {
     error.value = errorMessage(i18n, e)
@@ -151,16 +159,22 @@ onMounted(load)
     <div class="flex flex-wrap items-end justify-between gap-4">
       <h1 class="text-2xl font-semibold">{{ zone }}</h1>
       <div class="flex flex-wrap items-end gap-3">
-        <BaseButton variant="secondary" :loading="loading" @click="load">
-          {{ t('home.refresh') }}
-        </BaseButton>
-        <BaseButton
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="load"
+        />
+        <IconButton
+          icon="add"
+          :label="t('dns.addRecord')"
+          size="md"
           v-if="canWrite && recordSet"
           variant="primary"
           @click="dialog?.create(recordSet.version)"
-        >
-          {{ t('dns.addRecord') }}
-        </BaseButton>
+        />
       </div>
     </div>
 
@@ -185,6 +199,8 @@ onMounted(load)
         :columns="columns"
         :rows="records"
         :row-key="(r: DnsRecord) => r.id"
+        :row-class="() => (system ? 'sys-tint' : 'even:bg-surface-raised')"
+        :row-style="() => systemStyle(system)"
         :caption="t('dns.records')"
         :empty="t('dns.noRecords')"
       >
@@ -210,12 +226,20 @@ onMounted(load)
             role="group"
             :aria-label="t('dns.actionsFor', { name: relativeName((row as DnsRecord).name, zone) })"
           >
-            <BaseButton size="sm" variant="secondary" @click="dialog?.edit(row as DnsRecord)">
-              {{ t('dns.edit') }}
-            </BaseButton>
-            <BaseButton size="sm" variant="danger" @click="askDelete(row as DnsRecord)">
-              {{ t('dns.delete') }}
-            </BaseButton>
+            <IconButton
+              icon="edit"
+              :label="t('dns.edit')"
+              size="sm"
+              variant="secondary"
+              @click="dialog?.edit(row as DnsRecord)"
+            />
+            <IconButton
+              icon="delete"
+              :label="t('dns.delete')"
+              size="sm"
+              variant="danger"
+              @click="askDelete(row as DnsRecord)"
+            />
           </div>
           <span v-else class="text-xs text-fg-muted">{{ t('dns.readOnly') }}</span>
         </template>
@@ -249,8 +273,8 @@ onMounted(load)
           t('common.cancel')
         }}</BaseButton>
         <BaseButton variant="danger" :loading="busy" @click="removeRecord">
-          {{ t('dns.delete') }}
-        </BaseButton>
+          <AppIcon name="delete" />{{ t('dns.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </div>

@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import UsageBar from '@/components/proxmox/UsageBar.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import {
   formatCount,
@@ -95,13 +95,13 @@ function count(n: number): string {
         </div>
       </template>
       <template #cell-actions="{ row }">
-        <BaseButton
+        <IconButton
+          icon="leases"
+          :label="t('dhcp.showLeases')"
           size="sm"
           variant="secondary"
           @click="emit('showLeases', (row as DhcpSubnet).id)"
-        >
-          {{ t('dhcp.showLeases') }}
-        </BaseButton>
+        />
       </template>
     </DataTable>
   </section>

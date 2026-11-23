@@ -36,8 +36,9 @@ import (
 // order. Developer documents (concept, plan, prompts, development) are left
 // out; links to them point to GitHub.
 var Pages = []string{
-	"user-guide", "admin-guide", "installation", "configuration", "security",
-	"certificates", "proxmox", "dns", "dhcp", "monitoring",
+	"user-guide", "admin-guide", "installation", "configuration", "security", "permissions",
+	"certificates", "proxmox", "dns", "dhcp", "netbox", "projects", "switches", "firewalls",
+	"monitoring",
 }
 
 // IDPrefix is put in front of heading IDs and of fragments of links.

@@ -6,7 +6,7 @@ import { RouterLink } from 'vue-router'
 
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import {
   OVERVIEW_COLUMNS,
   overviewLayout,
@@ -78,9 +78,14 @@ defineExpose({ load })
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center gap-3">
       <p class="text-sm text-fg-muted">{{ t('switches.overview.hint') }}</p>
-      <BaseButton size="sm" variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="sm"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <div class="overflow-x-auto rounded-md border border-border">
       <table class="text-center text-xs">

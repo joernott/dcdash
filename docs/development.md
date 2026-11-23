@@ -286,7 +286,9 @@ are rejected, so typos are caught early.
 1. **Go:** golangci-lint and `go test -race ./...`
 2. **Integration:** `scripts/integration-test.sh` with bind9, Pebble and step-ca containers
 3. **Frontend:** lint, format and translation check, type check, unit tests, check that the
-   generated API types are current, build
+   generated API types are current, build, and a check that the built UI loads nothing from
+   other hosts (`web/scripts/check-embedded.mjs`: scripts, styles, fonts and images are
+   embedded in the binary, so dcdash works without internet access)
 4. **Build:** builds the binary with the embedded frontend, runs a smoke test and uploads
    the binary as an artifact
 5. **End-to-end:** the Playwright tests against the built binary, with the fakes and the full
@@ -294,6 +296,12 @@ are rejected, so typos are caught early.
    WCAG 2.1 AA violations (axe-core, light and dark mode)
 6. **Dependency audit:** `govulncheck` (Go, reachable code only) and `npm audit` (all
    frontend dependencies, including build tools)
+
+`.github/dependabot.yml` opens pull requests against `main` every Monday: one for the minor
+and patch updates of the Go modules, one for the npm packages in `web/`, one for the GitHub
+Actions, and one per major update and per update of the container base image (pinned by
+digest). The CI runs on them like on any pull request; review the changelogs of major updates
+before merging.
 
 ## Releases
 

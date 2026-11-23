@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { ageSeconds, formatAge, formatBytes, type Peer, type Tunnel } from '@/firewalls/firewalls'
@@ -114,9 +114,14 @@ onMounted(load)
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <BaseButton variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="md"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <p
       v-if="error"
@@ -151,12 +156,12 @@ onMounted(load)
         </template>
         <template #cell-actions="{ row }">
           <div class="flex justify-end">
-            <BaseButton
+            <IconButton
               v-if="(row as Peer).canOperate"
-              size="sm"
-              :variant="(row as Peer).enabled ? 'danger' : 'secondary'"
+              icon="power"
+              :tone="(row as Peer).enabled ? 'danger' : 'success'"
               :loading="busy === (row as Peer).uuid"
-              :aria-label="
+              :label="
                 t(
                   (row as Peer).enabled
                     ? 'firewalls.vpn.disableLabel'
@@ -167,9 +172,7 @@ onMounted(load)
                 )
               "
               @click="setPeer(row as Peer, !(row as Peer).enabled)"
-            >
-              {{ (row as Peer).enabled ? t('firewalls.vpn.disable') : t('firewalls.vpn.enable') }}
-            </BaseButton>
+            />
           </div>
         </template>
       </DataTable>
@@ -206,16 +209,15 @@ onMounted(load)
         </template>
         <template #cell-actions="{ row }">
           <div class="flex justify-end">
-            <BaseButton
+            <IconButton
+              icon="reboot"
               v-if="(row as Tunnel).canOperate"
               size="sm"
               variant="secondary"
               :loading="busy === (row as Tunnel).name"
-              :aria-label="t('firewalls.vpn.restartLabel', { tunnel: (row as Tunnel).name })"
+              :label="t('firewalls.vpn.restartLabel', { tunnel: (row as Tunnel).name })"
               @click="restart(row as Tunnel)"
-            >
-              {{ t('firewalls.vpn.restart') }}
-            </BaseButton>
+            />
           </div>
         </template>
       </DataTable>

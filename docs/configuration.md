@@ -63,6 +63,19 @@ shown below as `<prefix>.tls.*`:
 | `<prefix>.tls.cert_file` | string | empty | Client certificate (PEM), for servers that require one. Set together with `key_file`. |
 | `<prefix>.tls.key_file` | string | empty | Key of the client certificate (PEM). Set together with `cert_file`. |
 
+**Links on the overview page.** Every entry that produces a tile on the overview page (the
+LDAP directory, Proxmox clusters, DNS providers, DHCP servers, NetBox, switches and
+firewalls) can name the system's own interfaces. The tile then shows a button for each one,
+shown below as `<prefix>.*`:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `<prefix>.ui` | string | empty | URL of the system's web interface, `https://...` or `http://...`, without user and password. |
+| `<prefix>.ssh` | string | empty | `[user@]host[:port]` for an `ssh://` link, which opens the SSH client registered in the operating system. |
+| `<prefix>.rdp` | string | empty | `host[:port]` for Remote Desktop: the button downloads a connection file (`.rdp`) that the Remote Desktop client opens. |
+
+Example: `ui: https://pve1.example.com:8006`, `ssh: root@pve1.example.com`, `rdp: dc1.example.com`.
+
 ## server
 
 The HTTP(S) listener. See [certificates.md](certificates.md) for TLS.
@@ -125,6 +138,7 @@ keys are validated only then. See [security.md](security.md#ldap).
 |---|---|---|---|
 | `auth.ldap.url` | string | empty (LDAP off) | `ldaps://host[:port]`, or `ldap://host[:port]` with `start_tls` or `insecure`. For several servers use `servers` instead. |
 | `auth.ldap.servers` | list | empty | Several directory servers for failover, instead of `url`. Each entry has `url` (as above) and an optional `fingerprint`, which pins that server's certificate and overrides `tls.fingerprint` (Samba creates a different certificate on each domain controller). dcdash uses the server that worked last; if it can't be reached (network or TLS error), the next servers are tried in order. A wrong password never causes a failover. The overview page names servers that are not reachable. |
+| `auth.ldap.ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `auth.ldap.start_tls` | bool | `false` | Upgrades an `ldap://` connection to TLS. Not possible with `ldaps://`. |
 | `auth.ldap.insecure` | bool | `false` | Allows `ldap://` without StartTLS, which sends passwords in clear text. For tests only. |
 | `auth.ldap.tls.*` | | | TLS client settings, see [General rules](#general-rules). |
@@ -194,7 +208,8 @@ holds the `root` role. See [security.md](security.md#break-glass-account).
 ## roles
 
 A list of roles that map directory groups to permissions. Default: empty (only the built-in
-`root` role exists). See [security.md](security.md#roles-and-permissions).
+`root` role exists). See [security.md](security.md#roles-and-permissions); all permissions are
+listed in [permissions.md](permissions.md).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -224,6 +239,7 @@ Proxmox VE clusters. Default: no clusters. See [proxmox.md](proxmox.md).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `proxmox.clusters[].name` | string | none | Unique name, used in the UI and in permissions (`proxmox:<name>:...`). Lower-case letters, digits, `.`, `-` and `_`, at most 64 characters, starting with a letter or digit. Required. |
+| `proxmox.clusters[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `proxmox.clusters[].endpoints[].url` | string | none | API URL of a node, `https://host[:port]` without a path. At least one endpoint is required. Endpoints are tried in order; see [proxmox.md](proxmox.md#failover). |
 | `proxmox.clusters[].endpoints[].fingerprint` | string | empty | Pins this node's certificate (SHA-256). Overrides `tls.fingerprint` of the cluster. |
 | `proxmox.clusters[].tls.*` | | | TLS client settings for all endpoints, see [General rules](#general-rules). Typically `ca_file` with the cluster CA. See [proxmox.md](proxmox.md#certificates). |
@@ -268,6 +284,7 @@ DNS providers: Cloudflare accounts and bind9 primaries. Default: no providers. S
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `dns.providers[].name` | string | none | Unique name, used in the UI and in permissions (`dns:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
+| `dns.providers[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `dns.providers[].type` | string | none | `cloudflare` or `bind`. Required. Only the section of that type is validated. |
 | `dns.providers[].timeout` | duration | `15s` | Timeout of a single request to the backend. `0` uses the default. Must not be negative. |
 
@@ -326,6 +343,7 @@ socket. Default: no servers. See [dhcp.md](dhcp.md).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `dhcp.servers[].name` | string | none | Unique name, used in the UI and in permissions (`dhcp:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
+| `dhcp.servers[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `dhcp.servers[].family` | string | none | `v4` (kea-dhcp4) or `v6` (kea-dhcp6). Required. |
 | `dhcp.servers[].url` | string | none | URL of the control socket, `https://host[:port]` without a path. Required. See [dhcp.md](dhcp.md#control-socket). |
 | `dhcp.servers[].insecure` | bool | `false` | Allows an `http://` URL, which sends the password in clear text. For tests only. |
@@ -344,6 +362,7 @@ NetBox as a common data source with write-back. Disabled without `url`. See
 |---|---|---|---|
 | `netbox.name` | string | `netbox` | Name in the UI and in permissions (`netbox:<name>:...`). Same rules as `proxmox.clusters[].name`. |
 | `netbox.url` | string | empty (disabled) | URL of NetBox without `/api`, `https://host[:port][/path]`. |
+| `netbox.ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `netbox.insecure` | bool | `false` | Allows an `http://` URL, which sends the token in clear text. For tests only. |
 | `netbox.tls.*` | | | TLS client settings, see [General rules](#general-rules). |
 | `netbox.token` | secret | none | API token: a v2 token `nbt_<key>.<token>` (sent as `Bearer`) or a v1 token (sent as `Token`). Required. |
@@ -364,6 +383,7 @@ Aruba CX switches, reached over their REST API. Default: no switches. See
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `switches[].name` | string | none | Unique name, used in the UI and in permissions (`switch:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
+| `switches[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `switches[].type` | string | `aoscx` | Type of the switch API. Only `aoscx` (Aruba CX, AOS-CX 10.x) so far. |
 | `switches[].url` | string | none | URL of the switch, `https://host[:port]` without a path. Required. |
 | `switches[].insecure` | bool | `false` | Allows an `http://` URL, which sends the password in clear text. For tests only. |
@@ -382,6 +402,7 @@ OPNsense firewalls, reached over their REST API. Default: no firewalls. See
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `firewalls[].name` | string | none | Unique name, used in the UI and in permissions (`firewall:<name>:...`). Same rules as `proxmox.clusters[].name`. Required. |
+| `firewalls[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
 | `firewalls[].type` | string | `opnsense` | Type of the firewall API. Only `opnsense` so far. |
 | `firewalls[].url` | string | none | URL of the web interface, `https://host[:port]` without a path. Required. |
 | `firewalls[].insecure` | bool | `false` | Allows an `http://` URL, which sends the API secret in clear text. For tests only. |
@@ -399,6 +420,14 @@ Projects group objects with the tag `project-<name>`. See [projects.md](projects
 |---|---|---|---|
 | `projects.dir` | string | `/etc/dcdash/projects` | Directory with one file `<name>.yaml` per project. A missing directory means no projects. |
 | `projects.reload_interval` | duration | `1m` | How often the directory is read again. `0` reads it only at startup. Must not be negative. |
+
+## status
+
+The checks of the overview page.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `status.retry_delay` | duration | `1s` | If a check fails with an HTTP 4xx response (for example 408 when a Kea control agent runs into a timeout), dcdash waits this long and checks once more; only the second result is shown. `0` checks again at once; at most `10s`. Errors without such a response, like a server that can't be reached, are shown at once. |
 
 ## metrics
 

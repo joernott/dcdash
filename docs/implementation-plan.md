@@ -46,6 +46,7 @@ These apply to every task:
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
+| 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 
 ---
 
@@ -468,3 +469,58 @@ These apply to every task:
     guard instead of the savepoint rollback, tested against the test firewall (replaces the
     planned test of savepoints on 26.1 or Business Edition 26.4)
 - [x] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`
+
+## Sprint 15 — Overview, Colors, Icons and Release v0.2.1
+
+- [x] **15.1** Overview page: narrower tiles, six next to each other on wide screens instead
+  of three (fewer on smaller screens); name, status and details must stay readable at that
+  width
+- [x] **15.2** Configuration: optional settings `ui`, `ssh` and `rdp` for everything that
+  produces a tile on the overview page: Proxmox clusters, DNS servers, DHCP servers, NetBox,
+  switches, firewalls and the LDAP servers (user directory). `ui` is an `https://` (or
+  `http://`) URL, `ssh` and `rdp` a host with an optional port (and user for `ssh`);
+  validation and documentation
+- [x] **15.3** API: the status checks return the configured links; OpenAPI
+- [x] **15.4** Tiles: a small button for each set (non-empty) link, left of the status
+  element, like the https and ssh links of the switch overview; `ssh://` and an RDP link (the
+  form that Windows and the common RDP clients open is decided in this task); en/de labels,
+  light and dark mode, accessibility
+- [x] **15.5** Tests and documentation for 15.1 to 15.4 (`configuration.md`, user guide)
+- [x] **15.6** Colors per system on the overview page instead of the group headings:
+  name and border in the system's color, background a transparent tint of it (10 % in light,
+  15 % in dark mode); dcdash's own tiles keep their colors. Base colors Kea DHCP `#008037`,
+  bind9 `#0066CC`, Cloudflare `#F48120`, NetBox `#00857D`, Proxmox `#D302D4`, switches
+  `#90E5E6`, OPNsense `#E34A21`. As text they need 4.5:1 on the tinted background, so they
+  are adjusted per mode (agreed 2026-11-23, light / dark): Kea `#007B35` / `#00A446`, bind9 `#0066CC` /
+  `#148AFF`, Cloudflare `#AB5308` / `#F48120`, NetBox `#00766F` / `#009F95`, Proxmox `#B502B6` /
+  `#F102F2`, switches `#1C7D7E` / `#90E5E6`, OPNsense `#BE3B18` / `#E6603C`. Color is not the only cue
+  (the system type stays readable on the tile and as accessible name); a test checks the
+  contrast of all colors in both modes
+- [x] **15.7** DNS zones: rows highlighted in the Cloudflare or bind9 color
+- [x] **15.8** All resources embedded in the binary: the UI loads nothing from elsewhere
+  (fonts, icons, scripts, styles); a build check fails on external URLs in the built UI
+- [x] **15.9** Icons instead of text on buttons, from Font Awesome Free, bundled as SVG
+  (license CC BY 4.0 for the icons, MIT for the code; named in the third-party notices). An
+  icon button with the former text as accessible name and tooltip (en/de), light and dark mode:
+  - Proxmox overview and VM detail page: start `power-off` in green, shut down `power-off` in
+    red, reboot `arrow-rotate-left`, suspend `moon` (regular), stop `bolt-lightning`, console
+    `display`
+  - Everywhere: delete `trash-can` (regular), refresh `arrows-rotate`, search
+    `magnifying-glass`
+  - Console page: Ctrl+Alt+Del as an own icon like Proxmox's (two small squares centered in
+    the lower half, one in the upper half slightly to the right, like the keys on a keyboard)
+- [x] **15.10** Icons on the DNS zone page (refresh, add record `plus`, edit `pencil`, delete)
+  and the DHCP page (show leases `bookmark`)
+- [x] **15.11** Icons on the firewall page: restart like the VMs' reboot, enable and disable
+  with the power icon, create rules and aliases with `plus`, edit `pencil`, delete
+  `trash-can`. Text buttons stay for "Update NetBox" and "Compare" on the NetBox page and for
+  "Apply" and "Reset" in the audit log
+- [x] **15.12** Documentation: complete list of the permissions that roles can contain (all
+  modules, resources and actions, with examples); a test checks it against the permissions
+  the code checks
+- [x] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in
+  `web/`, the GitHub Actions and the base images of `packaging/Dockerfile`
+- [x] **15.13** `CHANGELOG.md`
+- [x] **15.15** Overview: a check that fails with an HTTP 4xx response (Kea control agents
+  answer 408 now and then) is repeated once after `status.retry_delay` (default 1 s) before
+  the tile shows the result

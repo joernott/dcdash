@@ -55,6 +55,9 @@ type Error struct {
 	Text string
 }
 
+// HTTPStatus returns the HTTP status code (see status.HTTPStatusError).
+func (e *Error) HTTPStatus() int { return e.Status }
+
 func (e *Error) Error() string {
 	msg := fmt.Sprintf("aoscx: %s %s: HTTP %d", e.Method, e.Path, e.Status)
 	if e.Text != "" {

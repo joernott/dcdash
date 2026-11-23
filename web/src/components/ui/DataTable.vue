@@ -16,6 +16,10 @@ const props = withDefaults(
     caption?: string
     loading?: boolean
     empty?: string
+    /** Classes of a row, instead of the alternating background (e.g. sys-tint). */
+    rowClass?: (row: Row) => string
+    /** Inline style of a row (e.g. the system color for sys-tint). */
+    rowStyle?: (row: Row) => Record<string, string>
   }>(),
   { caption: '', loading: false, empty: '' },
 )
@@ -63,7 +67,9 @@ function value(row: Row, key: string): string {
         <tr
           v-for="row in props.loading ? [] : props.rows"
           :key="props.rowKey(row)"
-          class="border-t border-border even:bg-surface-raised"
+          class="border-t border-border"
+          :class="props.rowClass ? props.rowClass(row) : 'even:bg-surface-raised'"
+          :style="props.rowStyle?.(row)"
         >
           <td v-for="c in props.columns" :key="c.key" class="px-3 py-2 align-top" :class="c.class">
             <slot :name="`cell-${c.key}`" :row="row">{{ value(row, c.key) }}</slot>

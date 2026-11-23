@@ -21,7 +21,14 @@ beforeEach(() => {
 const report = {
   checkedAt: '2026-11-13T10:00:00Z',
   components: [
-    { name: 'pve-a', kind: 'proxmox', status: 'ok', detail: '3 nodes', latencyMs: 12 },
+    {
+      name: 'pve-a',
+      kind: 'proxmox',
+      status: 'ok',
+      detail: '3 nodes',
+      latencyMs: 12,
+      links: { ui: 'https://pve-a.example.com:8006', ssh: 'ssh://root@pve-a.example.com' },
+    },
     { name: 'database', kind: 'system', status: 'ok', detail: '', latencyMs: 1 },
     {
       name: 'directory',
@@ -29,26 +36,45 @@ const report = {
       status: 'error',
       detail: 'connection refused',
       latencyMs: 5000,
+      links: { rdp: 'dc1.example.com' },
     },
   ],
 }
 
 describe('HomeView', () => {
-  it('shows a tile per component, grouped with dcdash first', async () => {
+  it('shows a colored tile per component, dcdash first, with links', async () => {
     api.on('GET /api/v1/status', () => [200, report])
     const w = mountWith(HomeView, { locale: 'de' })
     await flushPromises()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['dcdash', 'Proxmox'])
-    expect(w.findAll('h3').map((h) => h.text())).toEqual([
+    expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Datenbank',
       'Benutzerverzeichnis',
       'pve-a',
     ])
     expect(w.get('[role="status"]').text()).toContain('Eine Komponente hat ein Problem.')
-    const directory = w.findAll('li').find((li) => li.text().includes('Benutzerverzeichnis'))!
+    const tiles = w.findAll('li')
+    const directory = tiles.find((li) => li.text().includes('Benutzerverzeichnis'))!
     expect(directory.text()).toContain('connection refused')
     expect(directory.text()).toContain('5.000 ms')
     expect(directory.classes()).toContain('border-danger')
+    expect(directory.classes()).not.toContain('sys-tint')
+    expect(
+      directory.get('button[title="Remotedesktop-Datei für directory herunterladen"]').text(),
+    ).toBe('RDP: Remotedesktop-Datei für directory herunterladen')
+
+    const pve = tiles.find((li) => li.text().includes('pve-a'))!
+    expect(pve.classes()).toContain('sys-tint')
+    expect(pve.attributes('data-system')).toBe('proxmox')
+    expect(pve.attributes('style')).toContain('--sys: var(--dc-sys-proxmox)')
+    expect(pve.text()).toMatch(/Proxmox · \D*12 ms/)
+    expect(pve.get('a[title="Weboberfläche von pve-a öffnen"]').attributes()).toMatchObject({
+      href: 'https://pve-a.example.com:8006',
+      target: '_blank',
+    })
+    expect(pve.get('a[title="Mit SSH zu pve-a verbinden"]').attributes('href')).toBe(
+      'ssh://root@pve-a.example.com',
+    )
+    expect(pve.find('button[title^="Remotedesktop"]').exists()).toBe(false)
   })
 
   it('translates coded details', async () => {
@@ -130,7 +156,7 @@ describe('HomeView', () => {
     await flushPromises()
     expect(w.get('[role="alert"]').text()).toContain('internal error')
     api.on('GET /api/v1/status', () => [200, report])
-    await w.get('button').trigger('click')
+    await w.get('button[aria-label="Refresh"], button:not([aria-label])').trigger('click')
     await flushPromises()
     expect(w.find('[role="alert"]').exists()).toBe(false)
     expect(w.get('[role="status"]').text()).toContain('One component has a problem.')
