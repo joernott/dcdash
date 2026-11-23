@@ -515,7 +515,7 @@ These apply to every task:
   with the power icon, create rules and aliases with `plus`, edit `pencil`, delete
   `trash-can`. Text buttons stay for "Update NetBox" and "Compare" on the NetBox page and for
   "Apply" and "Reset" in the audit log
-- [ ] **15.12** Documentation: complete list of the permissions that roles can contain (all
+- [x] **15.12** Documentation: complete list of the permissions that roles can contain (all
   modules, resources and actions, with examples); a test checks it against the permissions
   the code checks
 - [x] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in

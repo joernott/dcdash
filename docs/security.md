@@ -253,7 +253,8 @@ auth:
 
 ## Roles and permissions
 
-Roles map directory groups to permissions:
+Roles map directory groups to permissions. [permissions.md](permissions.md) lists every
+permission a role can contain, with example roles.
 
 ```yaml
 auth:
@@ -326,6 +327,7 @@ The instance is the cluster name from the configuration. Resources:
 | `lxc/<vmid>` | A container | `read`, `operate`, `console` (terminal), `admin` (create and delete) |
 | `node/<name>` | A node | `read` (list, usage); `admin` for the node shell |
 | `storage/<node>/<storage>` | A storage | `read` |
+| `task/<node>/<task>` | A task | `read`: any task, also of guests the user can't see (tasks of a guest or node are readable with `read` on it anyway) |
 
 Examples: `proxmox:lab:*:read` (everything in cluster `lab`, read-only),
 `proxmox:lab:qemu/1*:operate` (power actions on VMs whose ID starts with 1),

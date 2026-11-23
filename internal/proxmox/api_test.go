@@ -30,6 +30,7 @@ var testUsers = map[string][]string{
 	"viewer":   {"proxmox:lab:*:read"},
 	"operator": {"proxmox:lab:qemu/10*:operate", "proxmox:lab:node/pve1:read"},
 	"console":  {"proxmox:lab:lxc/200:console"},
+	"tasks":    {"proxmox:lab:task/*:read"},
 	"other":    {"proxmox:other:*:admin", "dns:*:*:admin"},
 }
 
@@ -202,6 +203,10 @@ func TestActionsAndTasks(t *testing.T) {
 	// The console user may not read tasks of VM 102.
 	if code := e.do(t, "console", "GET", base+"/lab/tasks/"+ref.UPID, nil); code != 403 {
 		t.Errorf("task without read: %d", code)
+	}
+	// read on task/* allows every task.
+	if code := e.do(t, "tasks", "GET", base+"/lab/tasks/"+ref.UPID, &task); code != 200 || task.Type != "qmstart" {
+		t.Errorf("task with task/*: %d %+v", code, task)
 	}
 	if code := e.do(t, "viewer", "GET", base+"/lab/tasks/UPID:bad", nil); code != 400 {
 		t.Errorf("bad upid: %d", code)

@@ -208,7 +208,8 @@ holds the `root` role. See [security.md](security.md#break-glass-account).
 ## roles
 
 A list of roles that map directory groups to permissions. Default: empty (only the built-in
-`root` role exists). See [security.md](security.md#roles-and-permissions).
+`root` role exists). See [security.md](security.md#roles-and-permissions); all permissions are
+listed in [permissions.md](permissions.md).
 
 | Key | Type | Default | Description |
 |---|---|---|---|

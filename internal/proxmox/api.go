@@ -399,14 +399,14 @@ func (s *Service) handleTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// A guest task needs read on the guest (VM or container: Proxmox IDs
-	// are unique across both), other tasks read on the node.
+	// are unique across both), other tasks read on the node. read on
+	// task/<node>/<id> (e.g. task/*) allows any task.
 	readable := subj.Can(rbac.P(Module, c.Name(), nodeResource(u.Node), rbac.ActionRead))
 	if id := u.VMID(); id > 0 {
 		readable = subj.Can(rbac.P(Module, c.Name(), guestResource(TypeQEMU, id), rbac.ActionRead)) ||
 			subj.Can(rbac.P(Module, c.Name(), guestResource(TypeLXC, id), rbac.ActionRead))
 	}
-	if !readable {
-		auth.Check(w, r, rbac.P(Module, c.Name(), "task/"+u.Node+"/"+u.ID, rbac.ActionRead))
+	if !readable && !auth.Check(w, r, rbac.P(Module, c.Name(), "task/"+u.Node+"/"+u.ID, rbac.ActionRead)) {
 		return
 	}
 	st, err := c.Task(r.Context(), u)
