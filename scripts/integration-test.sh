@@ -11,7 +11,10 @@
 # in ${DCDASH_IT_ENV_FILE:-~/.config/dcdash-it.env} (kept outside the repository).
 #   DCDASH_IT_AD_URL, _BIND_DN, _BIND_PASSWORD, _BASE_DN, _FINGERPRINT: directory access
 #   DCDASH_IT_AD_ROOT_USER, _ROOT_PASSWORD: a member of dashroot for the TOTP login test
-# The tests never send wrong passwords for existing accounts (AD lockout policy).
+#   DCDASH_IT_AD_ADMIN, _ADMIN_PASSWORD: an account that may manage OU=dcdashdev-test below
+#     _BASE_DN, for the directory tests (users and groups with the prefix dcdashdev-)
+# The tests never send wrong passwords for existing accounts (AD lockout policy), only
+# for the test users they create.
 #
 # Tests against a real Proxmox VE cluster run when DCDASH_IT_PVE_* are set (see
 # test/integration/proxmox_test.go): _URL, _FINGERPRINT, _TOKEN_ID, _TOKEN_SECRET;
@@ -81,6 +84,7 @@ echo "==> Fetching CA certificates"
 docker cp "$("${COMPOSE[@]}" ps -q pebble):/test/certs/pebble.minica.pem" "$WORK/pebble-ca.pem"
 docker cp "$("${COMPOSE[@]}" ps -q step-ca):/home/step/certs/root_ca.crt" "$WORK/step-ca-root.pem"
 docker cp "$("${COMPOSE[@]}" ps -q openldap):/certs/cert.pem" "$WORK/openldap-cert.pem"
+docker cp "$("${COMPOSE[@]}" ps -q samba-dc):/var/lib/samba/private/tls/cert.pem" "$WORK/samba-cert.pem"
 
 export DCDASH_IT_DNS=10.77.0.53:53
 export DCDASH_IT_PEBBLE_DIRECTORY=https://localhost:14000/dir
@@ -102,13 +106,21 @@ export DCDASH_IT_KEA6_URL=http://10.77.0.68:8000
 export DCDASH_IT_KEA_HA1_URL=http://10.77.0.69:8000
 export DCDASH_IT_KEA_HA2_URL=http://10.77.0.70:8000
 export DCDASH_IT_KEA_PASSWORD=kea-api-test-only
+# Samba AD DC of the test environment (test/integration/samba).
+export DCDASH_IT_SAMBA_URL=ldaps://10.77.0.88
+DCDASH_IT_SAMBA_FINGERPRINT=$(openssl x509 -in "$WORK/samba-cert.pem" -noout -fingerprint -sha256 | cut -d= -f2)
+export DCDASH_IT_SAMBA_FINGERPRINT
+export DCDASH_IT_SAMBA_DOMAIN=ad.dcdash.test
+export DCDASH_IT_SAMBA_BIND_DN=svc-dcdash@ad.dcdash.test
+export DCDASH_IT_SAMBA_BIND_PASSWORD=Svc-test-only1
+export DCDASH_IT_SAMBA_OU=OU=dcdash,DC=ad,DC=dcdash,DC=test
 
 # rndc on the host (bind9-utils); DCDASH_IT_RNDC may point elsewhere.
 export DCDASH_IT_RNDC="${DCDASH_IT_RNDC:-$(command -v rndc || true)}"
 
 # The settings of the test environment for other tools (scripts/e2e-full.sh). Written
 # before the private settings below are loaded, so it contains only test values.
-export -p | grep -E ' DCDASH_IT_(DNS|PEBBLE|STEPCA|OPENLDAP|BIND|KEA|RNDC)' > "$WORK/env.sh"
+export -p | grep -E ' DCDASH_IT_(DNS|PEBBLE|STEPCA|OPENLDAP|BIND|KEA|RNDC|SAMBA)' > "$WORK/env.sh"
 
 ENV_FILE="${DCDASH_IT_ENV_FILE:-$HOME/.config/dcdash-it.env}"
 if [[ -f "$ENV_FILE" ]]; then
