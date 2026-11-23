@@ -12,6 +12,7 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import { zonePermission, type DnsZone } from '@/dns/records'
+import { systemOf, systemStyle } from '@/systems'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 
@@ -32,6 +33,10 @@ const search = ref('')
 
 const providerName = computed(() => String(route.params.provider ?? ''))
 const provider = computed(() => providers.value.find((p) => p.name === providerName.value))
+// The provider's system (bind or cloudflare): the zone rows have its color.
+const zoneSystem = computed(() =>
+  provider.value ? systemOf({ kind: 'dns', type: provider.value.kind }) : null,
+)
 const providerOptions = computed(() =>
   providers.value.map((p) => ({ value: p.name, label: `${p.name} (${t(`dns.kinds.${p.kind}`)})` })),
 )
@@ -212,6 +217,8 @@ onMounted(async () => {
         :columns="columns"
         :rows="shownZones"
         :row-key="(z: DnsZone) => z.name"
+        :row-class="() => (zoneSystem ? 'sys-tint' : 'even:bg-surface-raised')"
+        :row-style="() => systemStyle(zoneSystem)"
         :caption="t('dns.zones')"
         :empty="t('dns.noZones')"
       >

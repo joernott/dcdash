@@ -496,7 +496,7 @@ These apply to every task:
   `#F102F2`, switches `#1C7D7E` / `#90E5E6`, OPNsense `#BE3B18` / `#E6603C`. Color is not the only cue
   (the system type stays readable on the tile and as accessible name); a test checks the
   contrast of all colors in both modes
-- [ ] **15.7** DNS zones: rows highlighted in the Cloudflare or bind9 color
+- [x] **15.7** DNS zones: rows highlighted in the Cloudflare or bind9 color
 - [x] **15.8** All resources embedded in the binary: the UI loads nothing from elsewhere
   (fonts, icons, scripts, styles); a build check fails on external URLs in the built UI
 - [ ] **15.9** Icons instead of text on buttons, from Font Awesome Free, bundled as SVG

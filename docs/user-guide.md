@@ -89,7 +89,8 @@ cluster, choose it at the top.
 ## DNS
 
 The DNS page lists the zones of a provider (Cloudflare or bind9). Click a zone for its
-records.
+records. The rows of zones and records have the provider's color: orange for Cloudflare,
+blue for bind9.
 
 - **Records:** add, change and delete A, AAAA, CNAME, MX, TXT, SRV, PTR, NS and CAA records.
   Other types, such as SOA, are shown read-only. Names are relative to the zone ("www" for

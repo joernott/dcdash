@@ -123,6 +123,9 @@ describe('DnsView', () => {
     expect(router.currentRoute.value.params.provider).toBe('cf')
     await flushPromises()
     expect(w.findAll('tbody tr')).toHaveLength(2)
+    // The rows have the Cloudflare color.
+    expect(w.get('tbody tr').classes()).toContain('sys-tint')
+    expect(w.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
     expect(w.text()).toContain('Delegate the zone at the registrar to: ada.ns.cloudflare.com')
     expect(w.text()).toContain('Create zone')
 
@@ -164,6 +167,7 @@ describe('ZoneView', () => {
     await flushPromises()
     const rows = w.findAll('tbody tr')
     expect(rows).toHaveLength(3)
+    expect(rows[1]!.attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
     expect(rows[0]!.text()).toContain('read-only')
     expect(rows[1]!.text()).toContain('www')
     expect(rows[1]!.text()).toContain('proxied')
