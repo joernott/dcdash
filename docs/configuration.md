@@ -412,6 +412,33 @@ OPNsense firewalls, reached over their REST API. Default: no firewalls. See
 | `firewalls[].timeout` | duration | `30s` | Timeout of a single request. `0` uses the default. Must not be negative. |
 | `firewalls[].protected_interfaces` | list of strings | none | Interface keys (`lan`, `opt1`, ...) whose rules dcdash doesn't change on a firewall without savepoints (OPNsense 26.7 and later), in addition to the interface it detects itself. Needed if dcdash reaches the firewall through a proxy or NAT. See [firewalls.md](firewalls.md#lockout-guard). |
 
+## directories
+
+Active Directory domains (Windows or Samba) whose users and groups dcdash manages, and whose
+users can change their password on the self-service page. Default: none. They are
+independent of the login directory [`auth.ldap`](#authldap), even if it points to one of
+them: dcdash never checks a login against `directories`. See
+[ADR 0010](adr/0010-active-directory.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `directories[].name` | string | none | Unique name, used in the UI, in permissions (`directory:<name>:...`) and in project files. Same rules as `proxmox.clusters[].name`. Required. |
+| `directories[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
+| `directories[].type` | string | none | `samba` or `windows`. Required. |
+| `directories[].domain` | string | none | DNS name of the domain, for example `ad.example.com`. Required. |
+| `directories[].servers[].url` | string | none | Domain controllers, tried in order. Only `ldaps://host[:port]`: setting passwords needs an encrypted connection. At least one is required. |
+| `directories[].servers[].fingerprint` | string | empty | Pins this server's certificate (SHA-256), for example Samba's self-signed one, which differs per domain controller. |
+| `directories[].tls.*` | | | TLS client settings, see [General rules](#general-rules). |
+| `directories[].bind_dn` | string | none | Service account dcdash manages the domain with, as DN or user principal name (`svc-dcdash@ad.example.com`). Required. It needs delegated rights on the managed containers, see [directories.md](directories.md). |
+| `directories[].bind_password` | secret | none | Password of the service account. Required. |
+| `directories[].base_dn` | string | from `domain` | DN of the domain, `DC=ad,DC=example,DC=com`. |
+| `directories[].managed_ous` | list of DNs | `base_dn` | Containers in which dcdash may create, change and delete users and groups. Each must be below `base_dn`. Users and groups elsewhere are shown read-only. |
+| `directories[].protected_users`, `.protected_groups` | list of strings | none | `sAMAccountName`s that can only be changed with the `admin` action, in addition to the built-in accounts and groups. |
+| `directories[].kerberos.realm` | string | `domain` in upper case | Kerberos realm, used for signed DNS updates. |
+| `directories[].kerberos.kdcs` | list of strings | the hosts of `servers`, port 88 | KDCs as `host[:port]`. |
+| `directories[].self_service` | bool | `true` | Offers the domain on the self-service password page. |
+| `directories[].timeout` | duration | `10s` | Timeout for connecting and for each operation. `0` uses the default. Must not be negative. |
+
 ## projects
 
 Projects group objects with the tag `project-<name>`. See [projects.md](projects.md).

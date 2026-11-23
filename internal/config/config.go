@@ -32,22 +32,23 @@ const (
 
 // Config is the root of the configuration file.
 type Config struct {
-	Server    Server    `yaml:"server"`
-	Auth      Auth      `yaml:"auth"`
-	Roles     []Role    `yaml:"roles"`
-	Audit     Audit     `yaml:"audit"`
-	Proxmox   Proxmox   `yaml:"proxmox"`
-	DNS       DNS       `yaml:"dns"`
-	DHCP      DHCP      `yaml:"dhcp"`
-	NetBox    NetBox    `yaml:"netbox"`
-	Switches  Switches  `yaml:"switches"`
-	Firewalls Firewalls `yaml:"firewalls"`
-	Projects  Projects  `yaml:"projects"`
-	Status    Status    `yaml:"status"`
-	Metrics   Metrics   `yaml:"metrics"`
-	Security  Security  `yaml:"security"`
-	Log       Log       `yaml:"log"`
-	DataDir   string    `yaml:"data_dir"`
+	Server      Server      `yaml:"server"`
+	Auth        Auth        `yaml:"auth"`
+	Roles       []Role      `yaml:"roles"`
+	Audit       Audit       `yaml:"audit"`
+	Proxmox     Proxmox     `yaml:"proxmox"`
+	DNS         DNS         `yaml:"dns"`
+	DHCP        DHCP        `yaml:"dhcp"`
+	NetBox      NetBox      `yaml:"netbox"`
+	Switches    Switches    `yaml:"switches"`
+	Firewalls   Firewalls   `yaml:"firewalls"`
+	Directories Directories `yaml:"directories"`
+	Projects    Projects    `yaml:"projects"`
+	Status      Status      `yaml:"status"`
+	Metrics     Metrics     `yaml:"metrics"`
+	Security    Security    `yaml:"security"`
+	Log         Log         `yaml:"log"`
+	DataDir     string      `yaml:"data_dir"`
 }
 
 // Security configures the protection of data at rest.
@@ -159,6 +160,7 @@ func Parse(r io.Reader) (*Config, error) {
 	cfg.DNS.applyDefaults()
 	cfg.Switches.applyDefaults()
 	cfg.Firewalls.applyDefaults()
+	cfg.Directories.applyDefaults()
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -237,6 +239,7 @@ func (c *Config) Validate() error {
 	c.DHCP.validate(add)
 	c.Switches.validate(add)
 	c.Firewalls.validate(add)
+	c.Directories.validate(add)
 	c.NetBox.validate(c.Proxmox, add)
 	c.Projects.validate(add)
 	c.Status.validate(add)

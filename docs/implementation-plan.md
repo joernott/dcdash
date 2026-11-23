@@ -544,14 +544,15 @@ network, and two current Samba AD domain controllers in the test labs.
   - Verify the decision against a lab Samba DC; note what can't be checked on Windows.
   - Result: [ADR 0010](adr/0010-active-directory.md), agentless for every feature, verified
     on the lab Samba DC; zone management on Windows is unverified and behind a setting.
-- [ ] **16.2** Configuration: a `directories` section for several AD domains (name, type
+- [x] **16.2** Configuration: a `directories` section for several AD domains (name, type
   `windows` or `samba`, LDAPS URLs with failover like `auth.ldap`, base DN, service account,
-  TLS, Kerberos realm, KDCs and the DNS host name, the OUs dcdash may manage, protected
-  accounts and groups, `dns.manage_zones`); completely independent of the login directory
-  (`auth.ldap`), which may point to the same domain; overview tile and status check per
-  directory
+  TLS, Kerberos realm and KDCs, the OUs dcdash may manage, protected
+  accounts and groups, self-service); completely independent of the login directory
+  (`auth.ldap`), which may point to the same domain (moved to 16.3: overview tile
+  and status check)
 - [ ] **16.3** Client for users and groups (search, read, create, change, delete) and a test
-  setup: a fake for unit tests and a Samba AD DC container for integration and e2e tests
+  setup: a fake for unit tests and a Samba AD DC container for integration and e2e tests;
+  overview tile and status check per directory
 - [ ] **16.4** Users: create (OU, sAMAccountName, UPN, names, initial password, must change
   at next logon), lock and unlock, disable and enable, delete, reset the password (optionally
   "must change"); built-in and protected accounts (Administrator, krbtgt, members of
@@ -559,8 +560,8 @@ network, and two current Samba AD domain controllers in the test labs.
 - [ ] **16.5** Groups: create, change (name, description, scope and type) and delete groups,
   add and remove members; built-in groups protected
 - [ ] **16.6** DNS: AD-integrated zones and records as DNS provider type `ad` on the existing
-  DNS page (Windows DNS and Samba's internal DNS), zones created and deleted as decided in
-  16.1
+  DNS page (Windows DNS and Samba's internal DNS), referencing a directory by name with the
+  DNS server's host name; zones created and deleted as decided in 16.1 (`ad.manage_zones`)
 - [ ] **16.7** ~~The agent for the Samba DC, if 16.1 chooses it~~ Dropped: ADR 0010 chose
   the agentless way for every feature. An agent with the `DnsServer` PowerShell module is the
   fallback for zone management on Windows if the manual test there fails (later sprint).

@@ -87,8 +87,8 @@ Not verified, because no Windows DC is reachable. Expected differences:
 - **Zones created via LDAP:** the Windows DNS server reads AD-integrated zones from the
   directory and picks up new ones by polling (default every 180 seconds), so a new zone may
   take a few minutes to answer. Microsoft documents only `dnscmd`, PowerShell and RPC for
-  creating zones, so this is the riskiest part; it is behind a per-directory setting
-  (`dns.manage_zones`) and listed in the manual test. If it fails on Windows, zone management
+  creating zones, so this is the riskiest part; it is behind a setting of the DNS
+  provider (`ad.manage_zones`) and listed in the manual test. If it fails on Windows, zone management
   for Windows moves to an agent with the `DnsServer` PowerShell module in a later sprint.
 - Records via GSS-TSIG are the way Windows clients register themselves and work in zones
   with "secure only" dynamic updates.
