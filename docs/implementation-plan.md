@@ -497,7 +497,7 @@ These apply to every task:
   (the system type stays readable on the tile and as accessible name); a test checks the
   contrast of all colors in both modes
 - [ ] **15.7** DNS zones: rows highlighted in the Cloudflare or bind9 color
-- [ ] **15.8** All resources embedded in the binary: the UI loads nothing from elsewhere
+- [x] **15.8** All resources embedded in the binary: the UI loads nothing from elsewhere
   (fonts, icons, scripts, styles); a build check fails on external URLs in the built UI
 - [ ] **15.9** Icons instead of text on buttons, from Font Awesome Free, bundled as SVG
   (license CC BY 4.0 for the icons, MIT for the code; named in the third-party notices). An
