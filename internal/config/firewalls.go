@@ -68,7 +68,7 @@ func (f Firewalls) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, fw := range f {
 		pre := "firewalls[" + strconv.Itoa(i) + "]"
-		fw.Links.validate(pre+".", add)
+		validateLinks(fw.Links, pre+".", add)
 		if !instanceNamePattern.MatchString(fw.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, fw.Name)
 		} else if seen[fw.Name] {

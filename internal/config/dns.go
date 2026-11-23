@@ -193,7 +193,7 @@ func (d DNS) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, p := range d.Providers {
 		pre := "dns.providers[" + strconv.Itoa(i) + "]"
-		p.Links.validate(pre+".", add)
+		validateLinks(p.Links, pre+".", add)
 		if !instanceNamePattern.MatchString(p.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, p.Name)
 		} else if seen[p.Name] {

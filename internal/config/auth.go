@@ -280,7 +280,7 @@ func (l *LDAP) validateURL(key, raw string, add func(string, ...any)) {
 
 func (l *LDAP) validate(add func(string, ...any)) {
 	const p = "auth.ldap."
-	l.Links.validate(p, add)
+	validateLinks(l.Links, p, add)
 	switch {
 	case l.URL != "" && len(l.Servers) > 0:
 		add(p + "url and servers: set only one of them")

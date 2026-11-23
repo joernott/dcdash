@@ -520,4 +520,4 @@ These apply to every task:
   the code checks
 - [x] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in
   `web/`, the GitHub Actions and the base images of `packaging/Dockerfile`
-- [ ] **15.13** `CHANGELOG.md`
+- [x] **15.13** `CHANGELOG.md`

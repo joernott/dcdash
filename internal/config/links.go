@@ -51,7 +51,8 @@ func validHostPort(s string) bool {
 	return hostPattern.MatchString(host)
 }
 
-func (l Links) validate(pre string, add func(string, ...any)) {
+// validateLinks checks the links of a configuration entry; pre is the key prefix.
+func validateLinks(l Links, pre string, add func(string, ...any)) {
 	if l.UI != "" {
 		u, err := url.Parse(l.UI)
 		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil {

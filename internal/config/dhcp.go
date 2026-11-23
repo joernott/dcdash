@@ -63,7 +63,7 @@ func (d DHCP) validate(add func(string, ...any)) {
 	groups := map[string]string{} // HA group -> family
 	for i, s := range d.Servers {
 		pre := "dhcp.servers[" + strconv.Itoa(i) + "]"
-		s.Links.validate(pre+".", add)
+		validateLinks(s.Links, pre+".", add)
 		if !instanceNamePattern.MatchString(s.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, s.Name)
 		} else if seen[s.Name] {

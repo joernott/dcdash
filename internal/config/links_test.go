@@ -26,7 +26,7 @@ func TestLinksValidate(t *testing.T) {
 		{Links{RDP: "dc1:"}, "rdp"},
 	} {
 		var errs []string
-		c.links.validate("x.", func(f string, a ...any) { errs = append(errs, f) })
+		validateLinks(c.links, "x.", func(f string, a ...any) { errs = append(errs, f) })
 		switch {
 		case c.bad == "" && len(errs) > 0:
 			t.Errorf("%+v: unexpected %v", c.links, errs)

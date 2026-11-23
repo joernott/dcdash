@@ -47,7 +47,7 @@ function square(x: number, y: number, size: number, r: number): string {
 const ctrlAltDel: Icon = {
   width: 512,
   height: 512,
-  paths: [square(112, 280, 128, 24), square(272, 280, 128, 24), square(320, 104, 128, 24)],
+  paths: [square(72, 272, 168, 32), square(272, 272, 168, 32), square(320, 72, 168, 32)],
 }
 
 export const icons = {

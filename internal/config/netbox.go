@@ -99,7 +99,7 @@ func (n NetBox) validate(proxmox Proxmox, add func(string, ...any)) {
 	if !n.Enabled() {
 		return
 	}
-	n.Links.validate("netbox.", add)
+	validateLinks(n.Links, "netbox.", add)
 	if !instanceNamePattern.MatchString(n.Name) {
 		add("netbox.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", n.Name)
 	}

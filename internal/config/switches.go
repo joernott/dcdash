@@ -71,7 +71,7 @@ func (s Switches) validate(add func(string, ...any)) {
 	seen := map[string]bool{}
 	for i, sw := range s {
 		pre := "switches[" + strconv.Itoa(i) + "]"
-		sw.Links.validate(pre+".", add)
+		validateLinks(sw.Links, pre+".", add)
 		if !instanceNamePattern.MatchString(sw.Name) {
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, sw.Name)
 		} else if seen[sw.Name] {
