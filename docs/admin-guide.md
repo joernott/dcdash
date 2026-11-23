@@ -15,6 +15,7 @@ documents.
 | NetBox as a common data source | [netbox.md](netbox.md) |
 | Switches: Aruba CX | [switches.md](switches.md) |
 | Firewalls: OPNsense | [firewalls.md](firewalls.md) |
+| Directories: Active Directory and Samba | [directories.md](directories.md) |
 | Projects: grouping objects with tags | [projects.md](projects.md) |
 | Health endpoints and Prometheus metrics | [monitoring.md](monitoring.md) |
 | Using the web interface | [user-guide.md](user-guide.md) |
@@ -34,6 +35,7 @@ and keep its secrets in files readable only for dcdash (`file:` in the configura
 | NetBox 4.2 or later | An API token with object permissions for virtual machines, interfaces, disks, MAC and IP addresses; a tag; a cluster per Proxmox cluster | [netbox.md](netbox.md#prerequisites-in-netbox) |
 | Aruba CX (AOS-CX 10.x) | The REST API enabled (`https-server rest access-mode read-write`) and an account with the role `administrators` | [switches.md](switches.md#prerequisites-on-the-switch) |
 | OPNsense 26.1 or Business Edition 26.4 | A user with an API key and the privileges for the parts dcdash should manage | [firewalls.md](firewalls.md#prerequisites-on-the-firewall) |
+| Active Directory (Windows or Samba) | LDAPS on the domain controllers and a service account with delegated rights on the managed OUs; for AD DNS also rights on the zones | [directories.md](directories.md#the-service-account) |
 | ACME CA (optional) | Access to the CA; for DNS-01 a DNS provider token | [certificates.md](certificates.md) |
 
 Each module is optional: configure only the backends you want to manage.

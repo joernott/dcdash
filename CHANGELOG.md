@@ -6,6 +6,31 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Active Directory and Samba** (`directories`), without software on the domain controllers
+  ([ADR 0010](docs/adr/0010-active-directory.md), [docs/directories.md](docs/directories.md)):
+  - A Directories page:
+    - users: create, change, disable and enable, unlock, reset passwords, delete;
+    - groups: create, change, rename, delete, members.
+  - Protection: built-in and privileged objects need `admin`; objects outside `managed_ous`
+    are read-only.
+  - Permissions `directory:<name>:user/<account>:...` and `group/<account>`.
+  - An overview tile per domain.
+- **Self-service password change** at `/password`, linked from the login page: users of a
+  domain change their password without a dcdash login, also when it expired or must be
+  changed. Unknown users and wrong passwords get the same answer; failures are rate-limited.
+- **AD-integrated DNS:** DNS provider type `ad`.
+  - Zones and records are read via LDAP; records are changed with GSS-TSIG signed updates.
+  - Zones are created and deleted with `manage_zones`.
+- **Project groups:** project files can name AD groups per directory; the project page shows
+  them with their members.
+- A Samba AD DC in the integration and end-to-end test environment.
+
+### Fixed
+
+- A test of certificate pinning failed for 1 in 256 random certificates.
+
 ### Changed
 
 - Frontend dependencies updated (Dependabot): Vue 3.5.46, vue-i18n 11.4.23, vue-router

@@ -582,5 +582,5 @@ network, and two current Samba AD domain controllers in the test labs.
 - [x] **16.11** Tests: unit tests with the fake, integration and e2e tests with the Samba
   container, a manual test against a lab Samba DC (and the Windows DC, as far as possible)
   documented
-- [ ] **16.12** Documentation (`directories.md`, configuration, security, permission
+- [x] **16.12** Documentation (`directories.md`, configuration, security, permission
   reference, user guide), OpenAPI, `CHANGELOG.md`
