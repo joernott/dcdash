@@ -491,7 +491,7 @@ These apply to every task:
   15 % in dark mode); dcdash's own tiles keep their colors. Base colors Kea DHCP `#008037`,
   bind9 `#0066CC`, Cloudflare `#F48120`, NetBox `#00857D`, Proxmox `#D302D4`, switches
   `#90E5E6`, OPNsense `#E34A21`. As text they need 4.5:1 on the tinted background, so they
-  are adjusted per mode (proposed, light / dark): Kea `#007B35` / `#00A446`, bind9 `#0066CC` /
+  are adjusted per mode (agreed 2026-11-23, light / dark): Kea `#007B35` / `#00A446`, bind9 `#0066CC` /
   `#148AFF`, Cloudflare `#AB5308` / `#F48120`, NetBox `#00766F` / `#009F95`, Proxmox `#B502B6` /
   `#F102F2`, switches `#1C7D7E` / `#90E5E6`, OPNsense `#BE3B18` / `#E6603C`. Color is not the only cue
   (the system type stays readable on the tile and as accessible name); a test checks the
@@ -518,4 +518,6 @@ These apply to every task:
 - [ ] **15.12** Documentation: complete list of the permissions that roles can contain (all
   modules, resources and actions, with examples); a test checks it against the permissions
   the code checks
+- [ ] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in
+  `web/`, the GitHub Actions and the base images of `packaging/Dockerfile`
 - [ ] **15.13** `CHANGELOG.md`

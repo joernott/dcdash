@@ -401,3 +401,10 @@ I have more things to add to that sprint first:
 - Keep the text buttons for apply and reset on the audit log
 
 In the documentation, create a complete list of permissions that can be defined for roles
+
+---
+
+## 2026-11-23 — Sprint 15 (planning)
+
+use your suggested colors.
+Also add a task to create a dependabot.yml file for the project
