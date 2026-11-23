@@ -6,7 +6,9 @@ import { useI18n } from 'vue-i18n'
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import VlanDialog from '@/components/switches/VlanDialog.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import { netboxFailure } from '@/netbox/netbox'
@@ -95,9 +97,14 @@ onMounted(load)
       <BaseButton v-if="canCreate" @click="dialog?.create()">{{
         t('switches.vlan.create')
       }}</BaseButton>
-      <BaseButton variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="md"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <p
       v-if="error"
@@ -126,15 +133,14 @@ onMounted(load)
           >
             {{ t('switches.vlan.rename') }}
           </BaseButton>
-          <BaseButton
+          <IconButton
+            icon="delete"
             v-if="(row as SwitchVlan).id !== 1 && usage(row as SwitchVlan).length === 0"
             size="sm"
             variant="danger"
-            :aria-label="t('switches.vlan.deleteLabel', { id: (row as SwitchVlan).id })"
+            :label="t('switches.vlan.deleteLabel', { id: (row as SwitchVlan).id })"
             @click="askDelete(row as SwitchVlan)"
-          >
-            {{ t('switches.vlan.delete') }}
-          </BaseButton>
+          />
         </div>
       </template>
     </DataTable>
@@ -155,8 +161,8 @@ onMounted(load)
           t('common.cancel')
         }}</BaseButton>
         <BaseButton variant="danger" :loading="deleteBusy" @click="remove">
-          {{ t('switches.vlan.delete') }}
-        </BaseButton>
+          <AppIcon name="delete" />{{ t('switches.vlan.delete') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </div>

@@ -17,7 +17,7 @@ import { options } from '@/proxmox/__tests__/fixtures'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, apiError } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -298,12 +298,12 @@ describe('Deleting a guest', () => {
     ])
     const w = mount(router, GuestView, ['proxmox:lab:qemu/5*:admin'])
     await flushPromises()
-    const del = pageButtons(w).find((b) => b.text() === 'Delete')!
+    const del = pageButtons(w).find((b) => buttonName(b) === 'Delete')!
     expect(del.attributes('disabled')).toBeUndefined()
     await del.trigger('click')
     const dialog = w.findAll('dialog').find((d) => d.text().includes('Delete guest'))!
     expect(dialog.text()).toContain('app1 (5000) is deleted with all its disks.')
-    const submit = dialog.findAll('button').find((b) => b.text() === 'Delete')!
+    const submit = dialog.findAll('button').find((b) => buttonName(b) === 'Delete')!
     expect(submit.attributes('disabled')).toBeDefined()
     await dialog.get('input:not([type="checkbox"])').setValue('app1')
     expect(submit.attributes('disabled')).toBeUndefined()
@@ -326,14 +326,14 @@ describe('Deleting a guest', () => {
     ])
     let w = mount(router, GuestView, ['proxmox:lab:*:admin'])
     await flushPromises()
-    const del = pageButtons(w).find((b) => b.text() === 'Delete')!
+    const del = pageButtons(w).find((b) => buttonName(b) === 'Delete')!
     expect(del.attributes('disabled')).toBeDefined()
     expect(w.text()).toContain('Stop the guest to delete it.')
     w.unmount()
 
     w = mount(router, GuestView, ['proxmox:lab:*:console'])
     await flushPromises()
-    expect(pageButtons(w).some((b) => b.text() === 'Delete')).toBe(false)
+    expect(pageButtons(w).some((b) => buttonName(b) === 'Delete')).toBe(false)
     w.unmount()
   })
 })
@@ -419,7 +419,7 @@ describe('CreateGuestView with DHCP and DNS', () => {
     expect(w.text()).not.toContain('Add DHCPv6 reservation')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add DHCPv4 reservation')!
+      .find((b) => buttonName(b) === 'Add DHCPv4 reservation')!
       .trigger('click')
     const res = w.get('[data-testid="reservation-0"]')
     expect((res.findAll('input')[0]!.element as HTMLInputElement).value).toBe('192.0.2.50')
@@ -429,11 +429,11 @@ describe('CreateGuestView with DHCP and DNS', () => {
     expect(w.text()).not.toContain('other.org')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add A record')!
+      .find((b) => buttonName(b) === 'Add A record')!
       .trigger('click')
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add PTR record')!
+      .find((b) => buttonName(b) === 'Add PTR record')!
       .trigger('click')
     const ptr = w.get('[data-testid="record-1"]')
     expect(ptr.findAll('select').map((s) => (s.element as HTMLSelectElement).value)).toContain(
@@ -536,7 +536,7 @@ describe('CreateGuestView with DHCP and DNS', () => {
     // A second device in the same VLAN gets the next free address.
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add network device')!
+      .find((b) => buttonName(b) === 'Add network device')!
       .trigger('click')
     await field('VLAN', 1).setValue('100')
     await field('IPv4', 1).setValue('static')

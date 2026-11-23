@@ -30,6 +30,7 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE
+      - NOTICE.md
       - README.md
       - CHANGELOG.md
       - configs/config.example.yaml
@@ -72,6 +73,9 @@ nfpms:
         file_info: {mode: 0o644}
       - src: LICENSE
         dst: /usr/share/doc/dcdash/copyright
+        file_info: {mode: 0o644}
+      - src: NOTICE.md
+        dst: /usr/share/doc/dcdash/NOTICE.md
         file_info: {mode: 0o644}
       - src: README.md
         dst: /usr/share/doc/dcdash/README.md

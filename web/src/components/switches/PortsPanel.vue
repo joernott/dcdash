@@ -8,7 +8,7 @@ import { errorMessage } from '@/api/errors'
 import ProjectChips from '@/components/projects/ProjectChips.vue'
 import PortDialog from '@/components/switches/PortDialog.vue'
 import PortProjectsDialog from '@/components/switches/PortProjectsDialog.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -91,9 +91,14 @@ defineExpose({ load })
         :placeholder="t('switches.filterHint')"
         inputmode="search"
       />
-      <BaseButton variant="secondary" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        size="md"
+        variant="secondary"
+        :loading="loading"
+        @click="load"
+      />
     </div>
     <p
       v-if="error"
@@ -156,28 +161,26 @@ defineExpose({ load })
       <template #cell-projects="{ row }">
         <div v-if="(row as SwitchPort).netbox" class="flex flex-wrap items-center gap-2">
           <ProjectChips :names="(row as SwitchPort).netbox!.projects" />
-          <BaseButton
+          <IconButton
+            icon="edit"
             v-if="projects.writable.length"
             size="sm"
             variant="ghost"
-            :aria-label="t('switches.editProjects', { port: (row as SwitchPort).name })"
+            :label="t('switches.editProjects', { port: (row as SwitchPort).name })"
             @click="projectDialog?.edit(row as SwitchPort)"
-          >
-            {{ t('projects.edit') }}
-          </BaseButton>
+          />
         </div>
       </template>
       <template #cell-actions="{ row }">
         <div class="flex justify-end">
-          <BaseButton
+          <IconButton
+            icon="edit"
             v-if="(row as SwitchPort).canOperate"
             size="sm"
             variant="secondary"
-            :aria-label="t('switches.editPort', { port: (row as SwitchPort).name })"
+            :label="t('switches.editPort', { port: (row as SwitchPort).name })"
             @click="dialog?.edit(row as SwitchPort)"
-          >
-            {{ t('switches.edit') }}
-          </BaseButton>
+          />
         </div>
       </template>
     </DataTable>

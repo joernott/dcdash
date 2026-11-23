@@ -13,7 +13,7 @@ import SwitchesView from '../switches/SwitchesView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, apiError } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -194,7 +194,7 @@ describe('SwitchesView', () => {
     await w.get('button[aria-label="Change port 1/1/1"]').trigger('click')
     const dialog = w.get('dialog')
     expect(dialog.text()).toContain('This port leads to another switch')
-    const save = dialog.findAll('button').find((b) => b.text() === 'Save')!
+    const save = dialog.findAll('button').find((b) => buttonName(b) === 'Save')!
     expect(save.attributes('disabled')).toBeDefined()
     await dialog.findAll('input[type="checkbox"]')[0]!.setValue(false)
     await last(dialog.findAll('input[type="checkbox"]'))!.setValue(true)
@@ -219,7 +219,7 @@ describe('SwitchesView', () => {
       w
         .get('tbody')
         .findAll('button')
-        .filter((b) => b.text() === 'Delete'),
+        .filter((b) => buttonName(b).startsWith('Delete VLAN')),
     ).toHaveLength(1)
 
     const created: string[] = []
@@ -237,7 +237,7 @@ describe('SwitchesView', () => {
     })
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Create VLAN')!
+      .find((b) => buttonName(b) === 'Create VLAN')!
       .trigger('click')
     const dialog = w.findAll('dialog').find((d) => d.text().includes('Create a VLAN'))!
     await dialog.findAll('input')[0]!.setValue('4001')

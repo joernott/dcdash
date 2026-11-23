@@ -10,7 +10,7 @@ import AliasesPanel from '@/components/firewalls/AliasesPanel.vue'
 import HealthPanel from '@/components/firewalls/HealthPanel.vue'
 import RulesPanel from '@/components/firewalls/RulesPanel.vue'
 import VpnPanel from '@/components/firewalls/VpnPanel.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatBytes, type FirewallInfo } from '@/firewalls/firewalls'
@@ -78,9 +78,14 @@ onMounted(load)
           :options="options"
           @update:model-value="select"
         />
-        <BaseButton variant="secondary" :loading="loading" @click="load">
-          {{ t('home.refresh') }}
-        </BaseButton>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="load"
+        />
       </div>
     </div>
 

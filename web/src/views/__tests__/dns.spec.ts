@@ -15,7 +15,7 @@ import ZoneView from '../dns/ZoneView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, apiError } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -131,7 +131,7 @@ describe('DnsView', () => {
 
     await w.findAll('tbody button')[0]!.trigger('click')
     const dialog = w.findAll('dialog')[1]!
-    const submit = dialog.findAll('button').find((b) => b.text() === 'Delete zone')!
+    const submit = dialog.findAll('button').find((b) => buttonName(b) === 'Delete zone')!
     expect(submit.attributes('disabled')).toBeDefined()
     await dialog.get('input').setValue('example.org')
     expect(submit.attributes('disabled')).toBeUndefined()
@@ -176,7 +176,7 @@ describe('ZoneView', () => {
 
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add record')!
+      .find((b) => buttonName(b) === 'Add record')!
       .trigger('click')
     const dialog = w.findAll('dialog')[0]!
     const inputs = dialog.findAll('input')
@@ -210,13 +210,13 @@ describe('ZoneView', () => {
     await w
       .findAll('tbody tr')[2]!
       .findAll('button')
-      .find((b) => b.text() === 'Löschen')!
+      .find((b) => buttonName(b) === 'Löschen')!
       .trigger('click')
     const dialog = w.findAll('dialog')[1]!
     expect(dialog.text()).toContain('Den MX-Eintrag @ löschen?')
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Löschen')!
+      .find((b) => buttonName(b) === 'Löschen')!
       .trigger('click')
     await flushPromises()
     expect(dialog.text()).toContain('Die Daten wurden inzwischen geändert.')

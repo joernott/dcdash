@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -113,8 +114,8 @@ defineExpose({ ask })
         :loading="busy"
         :disabled="confirm.trim() !== expected"
       >
-        {{ t('proxmox.delete.action') }}
-      </BaseButton>
+        <AppIcon name="delete" />{{ t('proxmox.delete.action') }}</BaseButton
+      >
     </template>
   </BaseModal>
 </template>

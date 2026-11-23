@@ -13,7 +13,7 @@ import DhcpView from '../dhcp/DhcpView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, apiError } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -197,7 +197,7 @@ describe('DhcpView', () => {
     expect(dialog.text()).toContain('also deleted on the HA partner kea4-b')
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Delete')!
+      .find((b) => buttonName(b) === 'Delete')!
       .trigger('click')
     await flushPromises()
     const toasts = useToastStore().toasts.map((t) => t.message)
@@ -219,7 +219,7 @@ describe('DhcpView', () => {
     await flushPromises()
     await w
       .findAll('tbody button')
-      .find((b) => b.text() === 'Show leases')!
+      .find((b) => buttonName(b) === 'Show leases')!
       .trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.query).toEqual({ tab: 'leases', subnet: '1' })
@@ -254,7 +254,7 @@ describe('DhcpView', () => {
 
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Add reservation')!
+      .find((b) => buttonName(b) === 'Add reservation')!
       .trigger('click')
     let dialog = w.get('dialog[open]')
     // Only the writable subnet is offered.
@@ -287,7 +287,7 @@ describe('DhcpView', () => {
     expect(dialog.text()).toContain('Invalid reservation: invalid_reservation')
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Cancel')!
+      .find((b) => buttonName(b) === 'Cancel')!
       .trigger('click')
 
     const loads = api.calls.filter((c) => c.route.endsWith('/reservations')).length
@@ -296,7 +296,7 @@ describe('DhcpView', () => {
     expect(dialog.text()).toContain('Delete the reservation scanner?')
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Delete')!
+      .find((b) => buttonName(b) === 'Delete')!
       .trigger('click')
     await flushPromises()
     expect(dialog.text()).toContain('The data was changed in the meantime.')

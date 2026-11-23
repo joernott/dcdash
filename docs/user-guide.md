@@ -40,6 +40,12 @@ status: **UI** opens the web interface in a new tab, **SSH** the SSH client regi
 your operating system, and **RDP** downloads a Remote Desktop file that your RDP client
 opens (see [configuration.md](configuration.md#general-rules)).
 
+Many buttons show an icon instead of a text: refresh (two arrows in a circle), search
+(magnifying glass), add (plus), edit (pencil), delete (trash can), and on virtual machines
+start (green power symbol), shut down (red power symbol), reboot (arrow), suspend (moon), stop
+(lightning) and console (screen). Hover over a button to see what it does; screen readers
+read the same text.
+
 The **Documentation** link in the top bar opens this documentation inside dcdash, in the
 version that matches the running release. It is available in English only.
 

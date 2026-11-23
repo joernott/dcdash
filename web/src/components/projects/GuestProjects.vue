@@ -8,6 +8,7 @@ import { errorMessage } from '@/api/errors'
 import ProjectChips from '@/components/projects/ProjectChips.vue'
 import ProjectPicker from '@/components/projects/ProjectPicker.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { netboxFailure } from '@/netbox/netbox'
 import { projectsOfTags, useProjectsStore } from '@/stores/projects'
@@ -69,9 +70,14 @@ onMounted(() => void store.load())
   <div class="flex flex-wrap items-center gap-3">
     <ProjectChips v-if="current.length" :names="current" />
     <span v-else class="text-fg-muted">{{ t('projects.noneAssigned') }}</span>
-    <BaseButton v-if="editable" size="sm" variant="secondary" @click="edit">
-      {{ t('projects.edit') }}
-    </BaseButton>
+    <IconButton
+      icon="edit"
+      :label="t('projects.edit')"
+      v-if="editable"
+      size="sm"
+      variant="secondary"
+      @click="edit"
+    />
     <BaseModal v-model:open="open" :title="t('projects.editTitle')">
       <form id="guest-projects" class="flex flex-col gap-4" @submit.prevent="save">
         <ProjectPicker v-model="selected" />

@@ -9,7 +9,7 @@ import { errorMessage } from '@/api/errors'
 import LeasesPanel from '@/components/dhcp/LeasesPanel.vue'
 import ReservationsPanel from '@/components/dhcp/ReservationsPanel.vue'
 import SubnetsPanel from '@/components/dhcp/SubnetsPanel.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import type { DhcpServer, DhcpSubnet } from '@/dhcp/dhcp'
 
@@ -126,9 +126,14 @@ onMounted(refresh)
           :options="serverOptions"
           @update:model-value="selectServer"
         />
-        <BaseButton variant="secondary" :loading="loading" @click="refresh">
-          {{ t('home.refresh') }}
-        </BaseButton>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="refresh"
+        />
       </div>
     </div>
 

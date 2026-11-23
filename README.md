@@ -69,4 +69,6 @@ For developers:
 
 ## License
 
-dcdash is licensed under the [GNU General Public License v3.0 or later](LICENSE).
+dcdash is licensed under the [GNU General Public License v3.0 or later](LICENSE). It bundles
+third-party works, among them the icons of Font Awesome Free (CC BY 4.0); see
+[NOTICE.md](NOTICE.md).

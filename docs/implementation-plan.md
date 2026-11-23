@@ -499,7 +499,7 @@ These apply to every task:
 - [x] **15.7** DNS zones: rows highlighted in the Cloudflare or bind9 color
 - [x] **15.8** All resources embedded in the binary: the UI loads nothing from elsewhere
   (fonts, icons, scripts, styles); a build check fails on external URLs in the built UI
-- [ ] **15.9** Icons instead of text on buttons, from Font Awesome Free, bundled as SVG
+- [x] **15.9** Icons instead of text on buttons, from Font Awesome Free, bundled as SVG
   (license CC BY 4.0 for the icons, MIT for the code; named in the third-party notices). An
   icon button with the former text as accessible name and tooltip (en/de), light and dark mode:
   - Proxmox overview and VM detail page: start `power-off` in green, shut down `power-off` in
@@ -509,9 +509,9 @@ These apply to every task:
     `magnifying-glass`
   - Console page: Ctrl+Alt+Del as an own icon like Proxmox's (two small squares centered in
     the lower half, one in the upper half slightly to the right, like the keys on a keyboard)
-- [ ] **15.10** Icons on the DNS zone page (refresh, add record `plus`, edit `pencil`, delete)
+- [x] **15.10** Icons on the DNS zone page (refresh, add record `plus`, edit `pencil`, delete)
   and the DHCP page (show leases `bookmark`)
-- [ ] **15.11** Icons on the firewall page: restart like the VMs' reboot, enable and disable
+- [x] **15.11** Icons on the firewall page: restart like the VMs' reboot, enable and disable
   with the power icon, create rules and aliases with `plus`, edit `pencil`, delete
   `trash-can`. Text buttons stay for "Update NetBox" and "Compare" on the NetBox page and for
   "Apply" and "Reset" in the audit log

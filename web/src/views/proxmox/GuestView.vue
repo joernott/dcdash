@@ -13,7 +13,7 @@ import HardwarePanel from '@/components/proxmox/HardwarePanel.vue'
 import PowerActionDialog from '@/components/proxmox/PowerActionDialog.vue'
 import TaskList from '@/components/proxmox/TaskList.vue'
 import UsageBar from '@/components/proxmox/UsageBar.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatBytes, ratio, statusStyle, uptimeParts, type PowerAction } from '@/proxmox/guests'
 import { guestWritePermission } from '@/proxmox/hardware'
@@ -136,15 +136,16 @@ onBeforeUnmount(() => clearInterval(timer))
         </div>
         <div class="flex flex-wrap items-start gap-1.5">
           <GuestActions :cluster="cluster" :guest="guest" size="md" @action="act" />
-          <BaseButton
+          <IconButton
             v-if="canDelete"
+            icon="delete"
+            :label="t('proxmox.delete.action')"
+            size="md"
             variant="danger"
             :disabled="guest.status !== 'stopped'"
             :aria-describedby="guest.status !== 'stopped' ? 'delete-hint' : undefined"
             @click="askDelete"
-          >
-            {{ t('proxmox.delete.action') }}
-          </BaseButton>
+          />
         </div>
       </div>
 

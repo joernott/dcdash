@@ -16,7 +16,7 @@ import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { useProxmoxTasksStore } from '@/stores/proxmoxTasks'
 import { FakeApi, sessionInfo, apiError, type Init } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -109,7 +109,7 @@ describe('ProxmoxView', () => {
     expect(w.findAll('tbody tr')).toHaveLength(3)
     // Read only: no action buttons, no console, no shell.
     expect(w.findAll('tbody button')).toHaveLength(0)
-    expect(w.text()).not.toContain('Console')
+    expect(w.find('a[aria-label="Console"]').exists()).toBe(false)
     expect(w.text()).not.toContain('Shell')
     expect(w.get('[role="meter"][aria-label="Memory"]').attributes('aria-valuenow')).toBe('13')
 
@@ -161,23 +161,23 @@ describe('ProxmoxView', () => {
     ])
     await flushPromises()
     const rows = w.findAll('tbody tr')
-    expect(rows[0]!.findAll('button').map((b) => b.text())).toEqual([
+    expect(rows[0]!.findAll('button').map(buttonName)).toEqual([
       'Shut down',
       'Reboot',
       'Suspend',
       'Stop',
     ])
-    expect(rows[1]!.findAll('button').map((b) => b.text())).toEqual(['Start'])
+    expect(rows[1]!.findAll('button').map(buttonName)).toEqual(['Start'])
     // console includes operate (action hierarchy); shell needs admin on the node.
     expect(rows[2]!.findAll('button')).toHaveLength(4)
-    expect(rows[2]!.text()).toContain('Console')
+    expect(rows[2]!.find('a[aria-label="Console"]').exists()).toBe(true)
     expect(w.text()).toContain('Shell')
 
     await rows[1]!.get('button').trigger('click')
     expect(w.get('dialog').text()).toContain('Start db (102)?')
     await w
       .findAll('dialog button')
-      .find((b) => b.text() === 'Start')!
+      .find((b) => buttonName(b) === 'Start')!
       .trigger('click')
     await flushPromises()
     expect(posted).toContain('"action":"start"')
@@ -199,8 +199,8 @@ describe('ProxmoxView', () => {
     await flushPromises()
     const rows = w.findAll('tbody tr')
     // VNC works with the API token, terminals need the console user.
-    expect(rows[0]!.text()).toContain('Console')
-    expect(rows[2]!.text()).not.toContain('Console')
+    expect(rows[0]!.find('a[aria-label="Console"]').exists()).toBe(true)
+    expect(rows[2]!.find('a[aria-label="Console"]').exists()).toBe(false)
     expect(w.text()).not.toContain('Shell')
     w.unmount()
   })

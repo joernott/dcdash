@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import {
   consoleSocketURL,
@@ -204,14 +205,12 @@ onBeforeUnmount(() => cleanup?.())
         <StatusBadge :status="badge[state]" :label="t(`proxmox.consoleStates.${state}`)" />
       </div>
       <div class="flex flex-wrap gap-2">
-        <BaseButton
+        <IconButton
           v-if="kind === 'vnc' && state === 'connected'"
-          variant="secondary"
-          size="sm"
+          icon="ctrlAltDel"
+          :label="t('proxmox.ctrlAltDel')"
           @click="rfb?.sendCtrlAltDel()"
-        >
-          {{ t('proxmox.ctrlAltDel') }}
-        </BaseButton>
+        />
         <BaseButton variant="secondary" size="sm" @click="fullscreen">
           {{ t('proxmox.fullscreen') }}
         </BaseButton>

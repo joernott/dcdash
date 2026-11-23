@@ -6,7 +6,9 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -188,9 +190,14 @@ onMounted(async () => {
           :options="providerOptions"
           @update:model-value="selectProvider"
         />
-        <BaseButton variant="secondary" :loading="loading" @click="loadZones">
-          {{ t('home.refresh') }}
-        </BaseButton>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="loadZones"
+        />
         <BaseButton v-if="canCreate" variant="primary" @click="openCreate">
           {{ t('dns.createZone') }}
         </BaseButton>
@@ -243,7 +250,9 @@ onMounted(async () => {
           </span>
         </template>
         <template #cell-actions="{ row }">
-          <BaseButton
+          <IconButton
+            icon="delete"
+            :label="t('dns.deleteZone')"
             v-if="
               provider?.capabilities.zoneCreate &&
               session.can(zonePermission(providerName, (row as DnsZone).name, 'admin'))
@@ -251,9 +260,7 @@ onMounted(async () => {
             size="sm"
             variant="danger"
             @click="askDelete(row as DnsZone)"
-          >
-            {{ t('dns.deleteZone') }}
-          </BaseButton>
+          />
         </template>
       </DataTable>
     </section>
@@ -305,8 +312,8 @@ onMounted(async () => {
           :loading="busy"
           :disabled="confirmName.trim().toLowerCase() !== deleteZone?.name"
         >
-          {{ t('dns.deleteZone') }}
-        </BaseButton>
+          <AppIcon name="delete" />{{ t('dns.deleteZone') }}</BaseButton
+        >
       </template>
     </BaseModal>
   </div>

@@ -14,7 +14,7 @@ import NetBoxView from '../netbox/NetBoxView.vue'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 import { FakeApi, sessionInfo, apiError } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 
 let api: FakeApi
 beforeEach(() => {
@@ -99,7 +99,7 @@ describe('NetBoxView', () => {
       w
         .get('tbody')
         .findAll('button')
-        .filter((b) => b.text() === text)
+        .filter((b) => buttonName(b) === text)
     expect(buttons('Update NetBox')).toHaveLength(2)
     expect(buttons('Delete from NetBox')).toHaveLength(1)
 
@@ -124,7 +124,7 @@ describe('NetBoxView', () => {
     expect(dialog.text()).toContain('old exists only in NetBox')
     await dialog
       .findAll('button')
-      .find((b) => b.text() === 'Delete from NetBox')!
+      .find((b) => buttonName(b) === 'Delete from NetBox')!
       .trigger('click')
     await flushPromises()
     expect(deleted).toBe(7)
@@ -134,7 +134,7 @@ describe('NetBoxView', () => {
 
   it('compares addresses on request', async () => {
     const { w } = await setup(['netbox:netbox:sync:read'])
-    expect(w.findAll('button').some((b) => b.text() === 'Update NetBox')).toBe(false)
+    expect(w.findAll('button').some((b) => buttonName(b) === 'Update NetBox')).toBe(false)
     api.on('GET /api/v1/netbox/compare/addresses', () => [
       200,
       {
@@ -153,7 +153,7 @@ describe('NetBoxView', () => {
     ])
     await w
       .findAll('button')
-      .find((b) => b.text() === 'Compare')!
+      .find((b) => buttonName(b) === 'Compare')!
       .trigger('click')
     await flushPromises()
     expect(w.text()).toContain('DHCP reservation (kea4)')

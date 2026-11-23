@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSessionStore } from '@/stores/session'
 import { downloadRdp, systemOf, systemStyle, type System } from '@/systems'
@@ -105,9 +105,14 @@ onUnmounted(() => clearInterval(timer))
           </template>
         </p>
       </div>
-      <BaseButton variant="secondary" size="sm" :loading="loading" @click="load">
-        {{ t('home.refresh') }}
-      </BaseButton>
+      <IconButton
+        icon="refresh"
+        :label="t('home.refresh')"
+        variant="secondary"
+        size="sm"
+        :loading="loading"
+        @click="load"
+      />
     </div>
 
     <p

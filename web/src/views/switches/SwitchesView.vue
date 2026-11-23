@@ -10,7 +10,7 @@ import MacSearchPanel from '@/components/switches/MacSearchPanel.vue'
 import OverviewPanel from '@/components/switches/OverviewPanel.vue'
 import PortsPanel from '@/components/switches/PortsPanel.vue'
 import VlansPanel from '@/components/switches/VlansPanel.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { uptimeDays, type SwitchInfo } from '@/switches/switches'
@@ -85,9 +85,14 @@ onMounted(load)
           :options="options"
           @update:model-value="select"
         />
-        <BaseButton variant="secondary" :loading="loading" @click="load">
-          {{ t('home.refresh') }}
-        </BaseButton>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
+          variant="secondary"
+          :loading="loading"
+          @click="load"
+        />
       </div>
     </div>
 

@@ -11,7 +11,7 @@ vi.mock('@/api/client', async (importOriginal) => ({
 import HardwarePanel from '@/components/proxmox/HardwarePanel.vue'
 import { hardware } from '@/proxmox/__tests__/fixtures'
 import { FakeApi } from '@/__tests__/fakeApi'
-import { mountWith } from '@/__tests__/helpers'
+import { mountWith, buttonName } from '@/__tests__/helpers'
 import { useToastStore } from '@/stores/toast'
 
 const base = 'GET /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/hardware'
@@ -39,7 +39,7 @@ function button(w: VueWrapper, scope: string, text: string) {
   return w
     .findAll(`${scope} button`)
     .filter((b) => !b.element.closest('dialog') || scope === 'dialog')
-    .find((b) => b.text() === text)!
+    .find((b) => buttonName(b) === text)!
 }
 
 describe('HardwarePanel', () => {
@@ -129,10 +129,10 @@ describe('HardwarePanel', () => {
       .find((r) => r.find('td').exists() && r.get('td').text().startsWith('unused0'))!
     await row
       .findAll('button')
-      .find((b) => b.text() === 'Delete')!
+      .find((b) => buttonName(b) === 'Delete')!
       .trigger('click')
     const d = dialog(w, 'Delete disk')
-    const submit = d.findAll('button').find((b) => b.text() === 'Delete')!
+    const submit = d.findAll('button').find((b) => buttonName(b) === 'Delete')!
     expect(submit.attributes('disabled')).toBeDefined()
     await d.get('input').setValue('unused0')
     expect(submit.attributes('disabled')).toBeUndefined()
@@ -154,7 +154,7 @@ describe('HardwarePanel', () => {
       .find((r) => r.find('td').exists() && r.get('td').text().startsWith('net0'))!
     await row
       .findAll('button')
-      .find((b) => b.text() === 'Entfernen')!
+      .find((b) => buttonName(b) === 'Entfernen')!
       .trigger('click')
     const d = dialog(w, 'Netzwerkgerät entfernen')
     await d.get('form').trigger('submit')

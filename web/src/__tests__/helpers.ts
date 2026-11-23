@@ -36,3 +36,11 @@ export function memoryStorage(): Storage {
     setItem: (k, v) => void data.set(k, String(v)),
   }
 }
+
+/** The accessible name of a button: its aria-label (icon buttons), or its text. */
+export function buttonName(b: {
+  attributes(key: string): string | undefined
+  text(): string
+}): string {
+  return b.attributes('aria-label') ?? b.text()
+}
