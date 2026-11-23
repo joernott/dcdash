@@ -6,6 +6,11 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-23
+
+A more compact, colored overview with links to the systems, icons on the buttons, and the
+complete permission reference.
+
 ### Added
 
 - **Links on the overview tiles:** optional settings `ui`, `ssh` and `rdp` for the LDAP
@@ -180,7 +185,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/joernott/dcdash/releases/tag/v0.2.1
 [0.2.0]: https://github.com/joernott/dcdash/releases/tag/v0.2.0
 [0.1.2]: https://github.com/joernott/dcdash/releases/tag/v0.1.2
 [0.1.1]: https://github.com/joernott/dcdash/releases/tag/v0.1.1

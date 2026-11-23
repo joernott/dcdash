@@ -46,7 +46,7 @@ These apply to every task:
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
-| 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | – | in progress |
+| 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 
 ---
 
@@ -470,7 +470,7 @@ These apply to every task:
     planned test of savepoints on 26.1 or Business Edition 26.4)
 - [x] **14.9** Documentation, `CHANGELOG.md`, tag `v0.2.0`
 
-## Sprint 15 — Overview, Colors and Icons
+## Sprint 15 — Overview, Colors, Icons and Release v0.2.1
 
 - [x] **15.1** Overview page: narrower tiles, six next to each other on wide screens instead
   of three (fewer on smaller screens); name, status and details must stay readable at that
