@@ -33,7 +33,9 @@ dcdash itself (database, user directory, certificate, projects), then each Proxm
 DNS provider, DHCP server, NetBox, switch and firewall. The tiles of the systems have the
 system's color (Proxmox purple, bind9 blue, Cloudflare orange, Kea green, NetBox teal,
 switches cyan, OPNsense red), and the bottom line names the system and the response time of
-the check. A tile with a red border names the problem. The page refreshes every 30 seconds.
+the check. A tile with a red border names the problem. If a system answers a check with a
+client error (HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once
+more after a second before showing the error. The page refreshes every 30 seconds.
 
 If the configuration names a system's own interfaces, its tile shows buttons left of the
 status: **UI** opens the web interface in a new tab, **SSH** the SSH client registered in

@@ -93,3 +93,45 @@ func TestCodedDetails(t *testing.T) {
 		}
 	}
 }
+
+type httpErr int
+
+func (e httpErr) Error() string   { return fmt.Sprintf("HTTP %d", int(e)) }
+func (e httpErr) HTTPStatus() int { return int(e) }
+
+// A check that fails with a 4xx response is repeated once after the retry delay; other
+// errors are reported at once.
+func TestRetryOnClientError(t *testing.T) {
+	var flaky, broken, down int
+	s := New(
+		Check{Name: "flaky", Kind: "dhcp", Check: func(context.Context) (string, error) {
+			if flaky++; flaky == 1 {
+				return "", fmt.Errorf("kea: %w", httpErr(408))
+			}
+			return "Kea 3.0", nil
+		}},
+		Check{Name: "broken", Kind: "dhcp", Check: func(context.Context) (string, error) {
+			broken++
+			return "", &Error{Code: "x", Err: httpErr(404)}
+		}},
+		Check{Name: "down", Kind: "dhcp", Check: func(context.Context) (string, error) {
+			down++
+			return "", httpErr(503)
+		}},
+	)
+	s.SetRetryDelay(50 * time.Millisecond)
+	start := time.Now()
+	rep := s.Run(context.Background())
+	if took := time.Since(start); took < 50*time.Millisecond {
+		t.Errorf("no wait before the retry: %s", took)
+	}
+	if c := rep.Components[0]; c.Status != "ok" || c.Detail != "Kea 3.0" || flaky != 2 {
+		t.Errorf("flaky: %+v after %d attempts", c, flaky)
+	}
+	if c := rep.Components[1]; c.Status != "error" || c.DetailCode != "x" || broken != 2 {
+		t.Errorf("broken: %+v after %d attempts", c, broken)
+	}
+	if c := rep.Components[2]; c.Status != "error" || down != 1 {
+		t.Errorf("down: %+v after %d attempts (5xx is not repeated)", c, down)
+	}
+}

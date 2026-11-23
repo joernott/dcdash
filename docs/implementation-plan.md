@@ -521,3 +521,6 @@ These apply to every task:
 - [x] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in
   `web/`, the GitHub Actions and the base images of `packaging/Dockerfile`
 - [x] **15.13** `CHANGELOG.md`
+- [x] **15.15** Overview: a check that fails with an HTTP 4xx response (Kea control agents
+  answer 408 now and then) is repeated once after `status.retry_delay` (default 1 s) before
+  the tile shows the result

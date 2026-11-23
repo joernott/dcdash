@@ -421,6 +421,14 @@ Projects group objects with the tag `project-<name>`. See [projects.md](projects
 | `projects.dir` | string | `/etc/dcdash/projects` | Directory with one file `<name>.yaml` per project. A missing directory means no projects. |
 | `projects.reload_interval` | duration | `1m` | How often the directory is read again. `0` reads it only at startup. Must not be negative. |
 
+## status
+
+The checks of the overview page.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `status.retry_delay` | duration | `1s` | If a check fails with an HTTP 4xx response (for example 408 when a Kea control agent runs into a timeout), dcdash waits this long and checks once more; only the second result is shown. `0` checks again at once; at most `10s`. Errors without such a response, like a server that can't be reached, are shown at once. |
+
 ## metrics
 
 The optional Prometheus endpoint `/metrics`. The other keys are validated only when

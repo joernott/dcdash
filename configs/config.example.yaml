@@ -315,6 +315,11 @@ projects:
   dir: /etc/dcdash/projects
   reload_interval: 1m
 
+# Overview checks: a check that fails with an HTTP 4xx response (e.g. 408 from Kea) is
+# repeated once after this delay.
+status:
+  retry_delay: 1s
+
 # Prometheus metrics at /metrics (see docs/monitoring.md).
 metrics:
   enabled: false

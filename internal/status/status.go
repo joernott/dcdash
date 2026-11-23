@@ -93,24 +93,52 @@ type Report struct {
 // Timeout limits each check.
 const Timeout = 5 * time.Second
 
+// DefaultRetryDelay is the wait before a check that failed with a 4xx response is repeated.
+const DefaultRetryDelay = time.Second
+
+// HTTPStatusError is implemented by errors of backends that answered with an HTTP status,
+// for example a Kea control agent with 408 when it runs into a timeout of its own.
+type HTTPStatusError interface {
+	HTTPStatus() int
+}
+
+// clientError reports whether err is a 4xx answer of a backend. Such errors are often
+// transient (408, 429), so the check is repeated once before it is reported.
+func clientError(err error) bool {
+	var h HTTPStatusError
+	return errors.As(err, &h) && h.HTTPStatus() >= 400 && h.HTTPStatus() < 500
+}
+
 // Service runs the checks.
 type Service struct {
-	checks []Check
+	checks     []Check
+	retryDelay time.Duration
 }
 
 // New creates the service.
-func New(checks ...Check) *Service { return &Service{checks: checks} }
+func New(checks ...Check) *Service { return &Service{checks: checks, retryDelay: DefaultRetryDelay} }
 
-// Run runs all checks concurrently and returns their results in order.
+// SetRetryDelay changes the wait before a check that failed with a 4xx response is repeated;
+// 0 or less repeats it at once.
+func (s *Service) SetRetryDelay(d time.Duration) { s.retryDelay = max(d, 0) }
+
+// Run runs all checks concurrently and returns their results in order. A check that fails
+// with a 4xx response is repeated once after the retry delay; the second result counts.
 func (s *Service) Run(ctx context.Context) Report {
 	res := make([]Component, len(s.checks))
 	var wg sync.WaitGroup
 	for i, c := range s.checks {
 		wg.Go(func() {
-			cctx, cancel := context.WithTimeout(ctx, Timeout)
-			defer cancel()
-			start := time.Now()
-			d, err := c.run(cctx)
+			start, d, err := attempt(ctx, c)
+			if clientError(err) {
+				t := time.NewTimer(s.retryDelay)
+				select {
+				case <-ctx.Done():
+				case <-t.C:
+					start, d, err = attempt(ctx, c)
+				}
+				t.Stop()
+			}
 			comp := Component{Name: c.Name, Kind: c.Kind, Status: "ok", Detail: d.Text, DetailCode: d.Code,
 				DetailParams: d.Params, LatencyMS: time.Since(start).Milliseconds(), Type: c.Type, Links: c.Links}
 			if err != nil {
@@ -125,6 +153,15 @@ func (s *Service) Run(ctx context.Context) Report {
 	}
 	wg.Wait()
 	return Report{Components: res, CheckedAt: time.Now().UTC().Truncate(time.Second)}
+}
+
+// attempt runs a check once with its own timeout and returns when it started.
+func attempt(ctx context.Context, c Check) (time.Time, Detail, error) {
+	cctx, cancel := context.WithTimeout(ctx, Timeout)
+	defer cancel()
+	start := time.Now()
+	d, err := c.run(cctx)
+	return start, d, err
 }
 
 func (c Check) run(ctx context.Context) (Detail, error) {

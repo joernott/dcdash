@@ -18,6 +18,9 @@ All notable changes to dcdash are listed here. The format follows
   base image.
 - A build check that the web interface loads nothing from other hosts.
 - [NOTICE.md](NOTICE.md) with the third-party works that need attribution.
+- **Overview checks:** a check that fails with an HTTP 4xx response, such as 408 from a Kea
+  control agent, is repeated once after `status.retry_delay` (default 1 s) before the tile
+  shows an error.
 
 ### Changed
 

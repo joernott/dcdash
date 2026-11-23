@@ -40,6 +40,9 @@ type Error struct {
 	Errors map[string]string
 }
 
+// HTTPStatus returns the HTTP status code (see status.HTTPStatusError).
+func (e *Error) HTTPStatus() int { return e.Status }
+
 func (e *Error) Error() string {
 	msg := fmt.Sprintf("proxmox: %d %s", e.Status, e.Message)
 	for k, v := range e.Errors {

@@ -71,6 +71,23 @@ func (e *Error) Is(target error) bool {
 	return false
 }
 
+// HTTPError is an HTTP status other than 200 from the control agent, for example 408 when
+// it runs into a timeout talking to the server. It is ErrUnavailable.
+type HTTPError struct {
+	Command string
+	Status  int
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("%s: %s: HTTP %d", ErrUnavailable, e.Command, e.Status)
+}
+
+// Unwrap makes the error ErrUnavailable.
+func (e *HTTPError) Unwrap() error { return ErrUnavailable }
+
+// HTTPStatus returns the status code (see status.HTTPStatusError).
+func (e *HTTPError) HTTPStatus() int { return e.Status }
+
 // Response is the answer to a command.
 type Response struct {
 	Result    int             `json:"result"`
@@ -166,7 +183,7 @@ func (c *Client) Do(ctx context.Context, command string, args, out any) (Respons
 	case resp.StatusCode == http.StatusUnauthorized:
 		return Response{}, fmt.Errorf("%w: %s", ErrUnauthorized, command)
 	case resp.StatusCode != http.StatusOK:
-		return Response{}, fmt.Errorf("%w: %s: HTTP %d", ErrUnavailable, command, resp.StatusCode)
+		return Response{}, &HTTPError{Command: command, Status: resp.StatusCode}
 	case len(data) > maxResponse:
 		return Response{}, fmt.Errorf("kea: %s: response larger than %d bytes", command, maxResponse)
 	}

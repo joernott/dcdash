@@ -414,3 +414,9 @@ Also add a task to create a dependabot.yml file for the project
 ## 2026-11-23 — Sprint 15 (Overview, colors and icons)
 
 yes, start with sprint 15
+
+---
+
+## 2026-11-23 — Sprint 15 (Overview, colors and icons)
+
+There is one more issue we should address in sprint 15. I have noticed that the kea tiles on the overview show 408 errors once in a while. Please add a routine that waits for a configurable timeout (default 1s) and then checks the status again if any of those status icons return a 4xx response before showing the final result.. Then go ahead squash merge the sprint and release v0.2.1

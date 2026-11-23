@@ -5,6 +5,7 @@ package config
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLinksValidate(t *testing.T) {
@@ -69,5 +70,20 @@ switches:
 `))
 	if err == nil || !strings.Contains(err.Error(), `switches[0].rdp "not valid"`) {
 		t.Errorf("want rdp error: %v", err)
+	}
+}
+
+func TestStatusRetryDelay(t *testing.T) {
+	cfg, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\n"))
+	if err != nil || cfg.Status.RetryDelay != Duration(time.Second) {
+		t.Fatalf("default: %v %v", cfg.Status.RetryDelay, err)
+	}
+	cfg, err = Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nstatus:\n  retry_delay: 0s\n"))
+	if err != nil || cfg.Status.RetryDelay != 0 {
+		t.Errorf("0: %v %v", cfg.Status.RetryDelay, err)
+	}
+	if _, err := Parse(strings.NewReader(testKeyYAML + "server:\n  tls: {mode: none}\nstatus:\n  retry_delay: 1m\n")); err == nil ||
+		!strings.Contains(err.Error(), "status.retry_delay") {
+		t.Errorf("1m: %v", err)
 	}
 }

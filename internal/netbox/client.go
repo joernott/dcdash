@@ -43,6 +43,9 @@ type APIError struct {
 	Fields map[string][]string
 }
 
+// HTTPStatus returns the HTTP status code (see status.HTTPStatusError).
+func (e *APIError) HTTPStatus() int { return e.Status }
+
 func (e *APIError) Error() string {
 	msg := e.Detail
 	if len(e.Fields) > 0 {

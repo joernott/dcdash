@@ -16,6 +16,7 @@ import (
 	"slices"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -135,6 +136,7 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 
 			opts.Routes = append(slices.Clone(opts.Routes), app.routes...)
 			statusSvc := status.New(withLinks(cfg, app.statusChecks)...)
+			statusSvc.SetRetryDelay(time.Duration(cfg.Status.RetryDelay))
 			opts.Routes = append(opts.Routes, func(mux *http.ServeMux) { statusSvc.Register(mux, auth.RequireAuthenticated) })
 			opts.Middleware = append(slices.Clone(opts.Middleware), app.middleware...)
 			if cfg.Metrics.Enabled {

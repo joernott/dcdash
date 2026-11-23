@@ -43,6 +43,7 @@ type Config struct {
 	Switches  Switches  `yaml:"switches"`
 	Firewalls Firewalls `yaml:"firewalls"`
 	Projects  Projects  `yaml:"projects"`
+	Status    Status    `yaml:"status"`
 	Metrics   Metrics   `yaml:"metrics"`
 	Security  Security  `yaml:"security"`
 	Log       Log       `yaml:"log"`
@@ -106,6 +107,7 @@ func Default() Config {
 		Audit:    defaultAudit(),
 		NetBox:   defaultNetBox(),
 		Projects: defaultProjects(),
+		Status:   defaultStatus(),
 		Log:      Log{Level: "info", Format: "json"},
 		DataDir:  "/var/lib/dcdash",
 	}
@@ -237,6 +239,7 @@ func (c *Config) Validate() error {
 	c.Firewalls.validate(add)
 	c.NetBox.validate(c.Proxmox, add)
 	c.Projects.validate(add)
+	c.Status.validate(add)
 	c.Metrics.validate(add)
 	if !c.Security.EncryptionKey.IsSet() {
 		add("security.encryption_key: required (generate one with `dcdash gen-key`)")
