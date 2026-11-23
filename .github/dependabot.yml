@@ -1,0 +1,48 @@
+# Dependabot version updates: weekly pull requests against main, grouped so that a week's
+# minor and patch updates of an ecosystem arrive as one pull request. Major updates come one
+# by one, because they may need code changes. Security updates are not limited by this file.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(go)"
+    groups:
+      go-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(web)"
+    groups:
+      web-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "deps(ci)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The base image in packaging/Dockerfile is pinned by digest; Dependabot updates the digest.
+  - package-ecosystem: docker
+    directory: /packaging
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "deps(docker)"

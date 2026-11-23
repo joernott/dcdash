@@ -408,3 +408,9 @@ In the documentation, create a complete list of permissions that can be defined 
 
 use your suggested colors.
 Also add a task to create a dependabot.yml file for the project
+
+---
+
+## 2026-11-23 — Sprint 15 (Overview, colors and icons)
+
+yes, start with sprint 15

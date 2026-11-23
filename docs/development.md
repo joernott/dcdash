@@ -295,6 +295,12 @@ are rejected, so typos are caught early.
 6. **Dependency audit:** `govulncheck` (Go, reachable code only) and `npm audit` (all
    frontend dependencies, including build tools)
 
+`.github/dependabot.yml` opens pull requests against `main` every Monday: one for the minor
+and patch updates of the Go modules, one for the npm packages in `web/`, one for the GitHub
+Actions, and one per major update and per update of the container base image (pinned by
+digest). The CI runs on them like on any pull request; review the changelogs of major updates
+before merging.
+
 ## Releases
 
 Releases are built by [GoReleaser](https://goreleaser.com/) (`.goreleaser.yaml`) when a tag

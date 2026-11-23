@@ -46,7 +46,7 @@ These apply to every task:
 | 12 | `sprint/12-netbox` | NetBox as common data source with write-back, projects | v0.2.0 | done |
 | 13 | `sprint/13-aruba-cx` | Aruba CX 6x00 switches: VLANs, ports, MAC search | v0.2.0 | done |
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
-| 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | – | planned |
+| 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | – | in progress |
 
 ---
 
@@ -518,6 +518,6 @@ These apply to every task:
 - [ ] **15.12** Documentation: complete list of the permissions that roles can contain (all
   modules, resources and actions, with examples); a test checks it against the permissions
   the code checks
-- [ ] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in
+- [x] **15.14** `.github/dependabot.yml`: updates for the Go modules, the npm packages in
   `web/`, the GitHub Actions and the base images of `packaging/Dockerfile`
 - [ ] **15.13** `CHANGELOG.md`
