@@ -14,23 +14,26 @@ export interface NavItem {
 }
 
 /**
- * The main navigation. Modules (Proxmox, DNS, DHCP) are added in their sprints
- * with `module`, so that users only see modules they may use.
+ * The main navigation: the modules, each only for users who may use it. The overview has no
+ * entry: the name "dcdash" leads there.
  */
 export const navigation: NavItem[] = [
-  { name: 'home', label: 'nav.home' },
-  { name: 'proxmox', label: 'nav.proxmox', module: { name: 'proxmox', action: 'read' } },
-  { name: 'dns', label: 'nav.dns', module: { name: 'dns', action: 'read' } },
-  { name: 'dhcp', label: 'nav.dhcp', module: { name: 'dhcp', action: 'read' } },
-  { name: 'netbox', label: 'nav.netbox', module: { name: 'netbox', action: 'read' } },
   { name: 'projects', label: 'nav.projects', module: { name: 'project', action: 'read' } },
-  { name: 'switches', label: 'nav.switches', module: { name: 'switch', action: 'read' } },
-  { name: 'firewalls', label: 'nav.firewalls', module: { name: 'firewall', action: 'read' } },
   {
     name: 'directories',
     label: 'nav.directories',
     module: { name: 'directory', action: 'read' },
   },
+  { name: 'netbox', label: 'nav.netbox', module: { name: 'netbox', action: 'read' } },
+  { name: 'proxmox', label: 'nav.proxmox', module: { name: 'proxmox', action: 'read' } },
+  { name: 'dns', label: 'nav.dns', module: { name: 'dns', action: 'read' } },
+  { name: 'dhcp', label: 'nav.dhcp', module: { name: 'dhcp', action: 'read' } },
+  { name: 'firewalls', label: 'nav.firewalls', module: { name: 'firewall', action: 'read' } },
+  { name: 'switches', label: 'nav.switches', module: { name: 'switch', action: 'read' } },
+]
+
+/** The administration pages, on the right next to the documentation. */
+export const adminNavigation: NavItem[] = [
   { name: 'audit', label: 'nav.audit', permission: PERMISSIONS.auditRead },
   { name: 'sessions', label: 'nav.sessions', permission: PERMISSIONS.sessionsRead },
 ]

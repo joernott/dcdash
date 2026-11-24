@@ -78,7 +78,7 @@ test('theme and language follow the user to the next login', async ({ page }) =>
   await expectTheme(page, true)
   await page.getByLabel('Language').selectOption('de')
   await expectAccessible(page, 'user menu (German)')
-  await expect(page.getByRole('link', { name: 'Übersicht' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Projekte' })).toBeVisible()
   await page.keyboard.press('Escape')
   await page.screenshot({ path: '../.e2e/screenshots/overview-dark-de.png', fullPage: true })
 
@@ -96,7 +96,7 @@ test('theme and language follow the user to the next login', async ({ page }) =>
   await page2.getByRole('button', { name: 'Use a recovery code' }).click()
   await page2.getByRole('textbox', { name: 'Recovery code' }).fill(recoveryCodes[0]!)
   await page2.getByRole('button', { name: 'Verify' }).click()
-  await expect(page2.getByRole('link', { name: 'Übersicht' })).toBeVisible()
+  await expect(page2.getByRole('link', { name: 'Projekte' })).toBeVisible()
   await expectTheme(page2, true)
   await other.close()
 })
