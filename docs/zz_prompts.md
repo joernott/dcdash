@@ -539,3 +539,17 @@ ok, that was the issue, the kunden domain exists withut the "sf"
 ## 2026-11-24 — Sprint 17 (Configuration directory)
 
 Another task for sprint 17: The AD zones don't show on the DNS tab but I have the DNS tiles on the overview and manage_zones is set to true
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+I have 2 directories configured:
+1. The directory tile shows "windows.test.sf.thse.net, one domain controller"
+    The DNS tile shows "AD DNS at dc1.windows.test.sf.thse.net, 2 zones"
+2. The directory tile shows "windows.kunden.thse.net, one domain controller"
+   The DNS tile shows "AD DNS at dc1.windows.kunden.sf.thse.net, 2 zones"
+
+My user is member of the "dashroot" group that is listed as root_group under auth
+
+ldbsearch does not exist on the samba dc
