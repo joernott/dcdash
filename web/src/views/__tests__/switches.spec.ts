@@ -305,9 +305,12 @@ describe('switch overview', () => {
         .get('h1')
         .element.parentElement!.parentElement!.querySelector('button[aria-label="Refresh"]'),
     ).not.toBeNull()
-    // The filter and the device search on one line.
-    const toolbar = w.get('form[role="search"]').element.parentElement!
-    expect(toolbar.querySelector('select')).not.toBeNull()
+    // Filter, device search and refresh on the line of the heading, as on the DNS page.
+    const top = w.get('h1').element.parentElement!.parentElement!
+    const form = top.querySelector('form[role="search"]')!
+    expect(form.querySelector('select')).not.toBeNull()
+    expect(form.querySelector('input[inputmode="search"]')).not.toBeNull()
+    expect(form.querySelector('button[aria-label="Refresh"]')).not.toBeNull()
     expect(w.findAll('tbody')).toHaveLength(2)
     // A larger name, which opens the details page.
     const link = w.get('a[href="/switches/sw1"]')

@@ -4,12 +4,13 @@ import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import { api, unwrap } from '@/api/client'
+import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
-import MacSearchPanel from '@/components/switches/MacSearchPanel.vue'
+import MacResults from '@/components/switches/MacResults.vue'
 import OverviewPanel from '@/components/switches/OverviewPanel.vue'
 import PortsPanel from '@/components/switches/PortsPanel.vue'
 import VlansPanel from '@/components/switches/VlansPanel.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import LinkButtons from '@/components/ui/LinkButtons.vue'
@@ -53,6 +54,8 @@ const filterOptions = computed(() => [
     label: s.hostname ? `${s.name} (${s.hostname})` : s.name,
   })),
 ])
+// The overview of all switches (no switch chosen, some configured).
+const overviewShown = computed(() => !name.value && switches.value.length > 0)
 const shown = computed(() =>
   filter.value ? switches.value.filter((s) => s.name === filter.value) : switches.value,
 )
@@ -76,6 +79,28 @@ async function refresh() {
   await (name.value ? panel.value?.load() : overview.value?.load())
 }
 
+// Find a device: a MAC address on all switches.
+const macQuery = ref('')
+const macResult = ref<Schemas['SwitchMACSearch'] | null>(null)
+const macBusy = ref(false)
+const macError = ref('')
+
+async function searchMac() {
+  if (!macQuery.value.trim()) return
+  macBusy.value = true
+  macError.value = ''
+  try {
+    macResult.value = await unwrap(
+      api.GET('/api/v1/switches/macs', { params: { query: { q: macQuery.value } } }),
+    )
+  } catch (e) {
+    macResult.value = null
+    macError.value = errorMessage(i18n, e)
+  } finally {
+    macBusy.value = false
+  }
+}
+
 function selectTab(next: Tab) {
   void router.replace({ query: { tab: next } })
 }
@@ -95,8 +120,9 @@ onMounted(load)
       class="-mb-4 self-start text-sm text-primary hover:underline"
       >← {{ t('switches.back') }}</RouterLink
     >
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div class="flex flex-wrap items-center gap-3">
+    <!-- The heading and, on the right, filter, device search and refresh. -->
+    <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+      <div class="flex flex-wrap items-center gap-3" :class="overviewShown ? 'sm:pt-7' : ''">
         <h1 class="text-2xl font-semibold">{{ name || t('nav.switches') }}</h1>
         <template v-if="current">
           <span v-if="current.hostname && current.hostname !== name" class="text-fg-muted">{{
@@ -109,7 +135,42 @@ onMounted(load)
           <LinkButtons :name="current.name" :ui="current.url" :ssh="sshUrl(current.host)" />
         </template>
       </div>
+      <form
+        v-if="overviewShown"
+        class="flex flex-wrap items-start gap-3"
+        role="search"
+        @submit.prevent="searchMac"
+      >
+        <BaseSelect v-model="filter" :label="t('switches.switch')" :options="filterOptions" />
+        <BaseInput
+          v-model="macQuery"
+          :label="t('switches.mac.query')"
+          :hint="t('switches.mac.queryHint')"
+          placeholder="bc:24:11:12:34:56"
+          inputmode="search"
+        />
+        <!-- Aligned with the fields below their labels. -->
+        <div class="flex gap-3 pt-6">
+          <IconButton
+            icon="search"
+            :label="t('switches.mac.search')"
+            size="md"
+            type="submit"
+            :loading="macBusy"
+            :disabled="!macQuery.trim()"
+          />
+          <IconButton
+            icon="refresh"
+            :label="t('home.refresh')"
+            size="md"
+            variant="secondary"
+            :loading="loading"
+            @click="refresh"
+          />
+        </div>
+      </form>
       <IconButton
+        v-else
         icon="refresh"
         :label="t('home.refresh')"
         size="md"
@@ -132,11 +193,14 @@ onMounted(load)
 
     <!-- Overview: every switch, the dropdown only filters. -->
     <template v-else-if="!name && switches.length > 0">
-      <MacSearchPanel>
-        <template #before>
-          <BaseSelect v-model="filter" :label="t('switches.switch')" :options="filterOptions" />
-        </template>
-      </MacSearchPanel>
+      <p
+        v-if="macError"
+        role="alert"
+        class="rounded-md border border-danger px-3 py-2 text-sm text-danger"
+      >
+        {{ macError }}
+      </p>
+      <MacResults v-if="macResult" :result="macResult" />
       <OverviewPanel ref="overview" :switches="shown" />
     </template>
 

@@ -187,7 +187,7 @@ for ports that are up, ▼ for the others, with the VLAN below. The "Switch" sel
 it only filters the overview; "Refresh" is at the top right. The UI and SSH buttons lead to
 the switch itself.
 
-**Find a device** is on the same line as the selection: enter (part of) a MAC address.
+**Find a device** is on the same line as the selection and the heading: enter (part of) a MAC address.
 "Connected here" marks the port the device is plugged into; "Behind another switch" marks
 uplinks.
 
