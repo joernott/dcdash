@@ -7,7 +7,7 @@ require (
 	github.com/cloudflare/cloudflare-go/v6 v6.10.0
 	github.com/go-acme/lego/v5 v5.6.0
 	github.com/go-ldap/ldap/v3 v3.4.15
-	github.com/gorilla/websocket v1.5.3
+	github.com/gorilla/websocket v1.5.4-0.20240701034025-d67f41855da4
 	github.com/miekg/dns v1.1.73
 	github.com/pkg/sftp v1.13.12
 	github.com/prometheus/client_golang v1.25.0

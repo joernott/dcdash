@@ -33,7 +33,7 @@ archives:
       - NOTICE.md
       - README.md
       - CHANGELOG.md
-      - configs/config.example.yaml
+      - configs/config.d/*.yaml
       - packaging/systemd/dcdash.service
       - docs/*.md
       - docs/adr/*.md
@@ -61,15 +61,20 @@ nfpms:
       - dst: /etc/dcdash
         type: dir
         file_info: {mode: 0o750, owner: root, group: dcdash}
-      - src: configs/config.example.yaml
-        dst: /etc/dcdash/config.yaml
+      - dst: /etc/dcdash/config.d
+        type: dir
+        file_info: {mode: 0o750, owner: root, group: dcdash}
+      # The example configuration as configuration files: an upgrade asks before replacing
+      # a changed file. An upgrade from 0.3 keeps reading /etc/dcdash/config.yaml.
+      - src: configs/config.d/*.yaml
+        dst: /etc/dcdash/config.d/
         type: config|noreplace
         file_info: {mode: 0o640, owner: root, group: dcdash}
       - src: packaging/systemd/dcdash.service
         dst: /usr/lib/systemd/system/dcdash.service
         file_info: {mode: 0o644}
-      - src: configs/config.example.yaml
-        dst: /usr/share/doc/dcdash/config.example.yaml
+      - src: configs/config.d/*.yaml
+        dst: /usr/share/doc/dcdash/config.d/
         file_info: {mode: 0o644}
       - src: LICENSE
         dst: /usr/share/doc/dcdash/copyright
@@ -87,6 +92,9 @@ nfpms:
       postremove: packaging/scripts/postremove.sh
     rpm:
       group: Applications/System
+      scripts:
+        # rpm saves the changed /etc/dcdash/config.yaml of 0.3 as .rpmsave: restore it.
+        posttrans: packaging/scripts/posttrans.sh
     deb:
       fields:
         Bugs: https://github.com/joernott/dcdash/issues

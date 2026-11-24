@@ -1,0 +1,34 @@
+# Proxmox VE clusters (see docs/proxmox.md). The API token needs the Proxmox
+# privileges for what dcdash should do: PVEAuditor to read, PVEVMUser for power
+# actions and consoles. Permissions in dcdash use the cluster name as instance,
+# e.g. "proxmox:lab:qemu/*:operate". One file per cluster works as well.
+
+proxmox:
+  clusters: []
+#  - name: lab
+#    # Buttons on the overview tile (optional; every entry with a tile has them):
+#    # web interface, ssh:// link ([user@]host[:port]) and RDP file (host[:port]).
+#    ui: https://pve1.example.com:8006
+#    ssh: root@pve1.example.com
+#    # UI and SSH buttons on the node tiles of the Proxmox page; {node} is the node name.
+#    # Default: the endpoint whose host is the node name (pve1 -> pve1.example.com).
+#    node_links:
+#      ui: https://{node}.example.com:8006
+#      ssh: root@{node}.example.com
+#    # API URLs of the cluster nodes, tried in order.
+#    endpoints:
+#      - url: https://pve1.example.com:8006
+#      - url: https://pve2.example.com:8006
+#        # Pins this node's certificate (SHA-256, `pvenode cert info`) instead of tls.
+#        fingerprint: ""
+#    # The cluster CA, copied from /etc/pve/pve-root-ca.pem.
+#    tls: {ca_file: /etc/dcdash/pve-lab-ca.pem}
+#    token_id: "dcdash@pve!dcdash"
+#    token_secret: "file:/etc/dcdash/pve-lab.token"
+#    timeout: 15s
+#    # Optional Proxmox user for container and node consoles, which do not
+#    # accept API tokens (see docs/proxmox.md). Without it, dcdash offers only
+#    # the VNC consoles of VMs.
+#    console:
+#      username: "dcdash-console@pve"
+#      password: "file:/etc/dcdash/pve-lab-console.password"

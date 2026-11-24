@@ -1,0 +1,9 @@
+# Protection of data at rest (see docs/security.md).
+
+security:
+  # Key (base64, 32 bytes) for secrets stored in the database, e.g. TOTP seeds.
+  # Generate one with `dcdash gen-key`. Keep it in its own file, e.g. "file:/etc/dcdash/encryption.key".
+  # Losing the key makes the stored secrets unreadable (users must enroll TOTP again).
+  encryption_key: "file:/etc/dcdash/encryption.key"
+  # After changing the key, list the old one here until all data is re-encrypted.
+  previous_encryption_keys: []

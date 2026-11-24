@@ -1,0 +1,72 @@
+# dcdash example configuration: a directory of YAML files.
+#
+# dcdash reads every *.yaml file of the configuration directory (default /etc/dcdash/config.d,
+# override with --config or DCDASH_CONFIG) in alphabetical order and merges them:
+#   - sections (mappings) are merged key by key, so a section can be split across files;
+#   - lists are joined in file order, so that, for example, each switch can have its own file
+#     (80_switches-core.yaml, 81_switch-sw42.yaml, ...);
+#   - a value set in two files to different values is an error naming both files.
+# Hidden files, subdirectories and other extensions (*.yaml.dpkg-old, *.bak) are ignored.
+# Check the result with: dcdash config validate
+#
+# Keep the files readable for the dcdash user only (chmod 0640).
+# Secret values (passwords, tokens, keys) can be given as
+#   "env:NAME"    -> value of the environment variable NAME
+#   "file:/path"  -> content of the file
+# or literally.
+
+server:
+  # Address and port to listen on.
+  listen: ":8443"
+  # Optional plain HTTP listener that redirects to HTTPS, e.g. ":80". Empty disables it.
+  # redirect_listen: ":80"
+  # max-age of the Strict-Transport-Security header (0 disables it).
+  hsts_max_age: 4320h
+  # Reverse proxies (IPs or CIDR ranges) whose X-Forwarded-For header is trusted
+  # to determine the client IP address (used for logging and login lockout).
+  trusted_proxies: []
+  read_header_timeout: 10s
+  shutdown_timeout: 15s
+
+  # See docs/certificates.md for all options and examples.
+  tls:
+    # acme:  request and renew the certificate from an ACME CA (Let's Encrypt, step-ca, ...).
+    # files: certificate and key from PEM files, reloaded when they change.
+    # none:  plain HTTP; only for development or behind a TLS-terminating proxy.
+    mode: files
+    cert_file: /etc/dcdash/tls/cert.pem
+    key_file: /etc/dcdash/tls/key.pem
+    # How often the files are checked for changes; 0 disables reloading.
+    reload_interval: 1m
+
+    # Used with mode: acme.
+    # acme:
+    #   directory_url: https://acme-v02.api.letsencrypt.org/directory
+    #   email: admin@example.com
+    #   # Must be true: accepts the terms of service of the CA.
+    #   accept_tos: true
+    #   domains: [dcdash.example.com]
+    #   key_type: EC256
+    #   # Additional trusted root for the ACME server (e.g. the step-ca root).
+    #   ca_file: ""
+    #   renew_before: 720h
+    #   # External account binding, if the CA requires it.
+    #   eab:
+    #     key_id: ""
+    #     hmac_key: ""
+    #   dns:
+    #     # cloudflare or rfc2136
+    #     provider: cloudflare
+    #     cloudflare:
+    #       # e.g. "file:/etc/dcdash/cloudflare-acme.token" or "env:CLOUDFLARE_ACME_TOKEN"
+    #       api_token: "file:/etc/dcdash/cloudflare-acme.token"
+    #     rfc2136:
+    #       nameserver: ""
+    #       tsig_key: ""
+    #       tsig_secret: ""
+    #       tsig_algorithm: hmac-sha256
+    #     # Resolvers for zone lookup and propagation checks (default: system resolvers).
+    #     resolvers: []
+    #     # 0: provider default.
+    #     propagation_timeout: 0s
+    #     disable_authoritative_check: false

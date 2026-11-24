@@ -254,10 +254,11 @@ they create.
 
 ## Configuration
 
-See `configs/config.example.yaml` for all options. Check a configuration with:
+See `configs/config.d` for all options (one file per section; dcdash merges the `*.yaml`
+files of the directory, see `docs/configuration.md`). Check a configuration with:
 
 ```sh
-dcdash --config /etc/dcdash/config.yaml config validate
+dcdash --config /etc/dcdash/config.d config validate
 ```
 
 Secrets can be given as `env:NAME` or `file:/path` instead of literal values. Unknown keys
@@ -325,9 +326,10 @@ Releases are built by [GoReleaser](https://goreleaser.com/) (`.goreleaser.yaml`)
 
 - Archives with the binary, the documentation, the example configuration and the systemd
   unit for Linux amd64 and arm64.
-- `.deb` and `.rpm` packages (`packaging/`): the user `dcdash`, `/etc/dcdash/config.yaml` from
-  the example, an encryption key generated at the first installation, and the hardened
-  systemd unit `packaging/systemd/dcdash.service`. The service is not started automatically.
+- `.deb` and `.rpm` packages (`packaging/`): the user `dcdash`, `/etc/dcdash/config.d` from
+  the example (the rpm restores a changed `config.yaml` of 0.3 in `posttrans`), an
+  encryption key generated at the first installation, and the hardened systemd unit
+  `packaging/systemd/dcdash.service`. The service is not started automatically.
 - `SHA256SUMS` for all files.
 - The container image `ghcr.io/joernott/dcdash` (`packaging/Dockerfile`, distroless, user
   `nonroot`) for both architectures, tagged with the version, `<major>.<minor>` and `latest`.

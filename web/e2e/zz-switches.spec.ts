@@ -15,14 +15,32 @@ test('switch ports, VLANs, projects and MAC search', async ({ page }) => {
   await expect(page.getByText('6000 24G 4SFP Swch sw-e2e, AOS-CX PL.10.08.1010')).toBeVisible()
 
   await page.getByRole('link', { name: 'Switches', exact: true }).click()
-  await expect(page).toHaveURL(/\/switches\/sw1$/)
+  // No redirect to the first switch: the overview of all switches, without tabs.
+  await expect(page).toHaveURL(/\/switches$/)
+  await expect(page.getByRole('tablist')).toHaveCount(0)
   // The overview: sw1 like its front panel.
   const overview = page.getByRole('table', { name: 'Overview' })
-  await expect(overview.getByRole('link', { name: 'sw1' })).toBeVisible()
+  await expect(overview.getByRole('link', { name: 'sw1', exact: true })).toBeVisible()
+  // The same UI and SSH buttons as on the overview page; the UI opens a new tab.
+  await expect(
+    overview.getByRole('link', { name: /Open the web interface of sw1/ }),
+  ).toHaveAttribute('target', '_blank')
   await expect(overview.getByText('1/1/2: Up, VLAN 10, app1')).toBeAttached()
   await expectAccessible(page, 'Switch overview')
   await page.screenshot({ path: '../.e2e/screenshots/switches-overview.png', fullPage: true })
-  await page.getByRole('tab', { name: 'Ports' }).click()
+  // The device search is on the overview, next to the filter.
+  await page.getByLabel('MAC address').fill('bc:24:11:00:00:01')
+  await page.getByRole('button', { name: 'Search' }).click()
+  const hits = page.getByRole('table', { name: 'Find a device' })
+  await expect(hits.getByRole('row').filter({ hasText: '1/1/2' })).toContainText('Connected here')
+  await expectAccessible(page, 'MAC search')
+  await page.getByLabel('Switch', { exact: true }).selectOption('sw1')
+  await expect(page).toHaveURL(/\/switches\?switch=sw1$/)
+
+  // The name opens the details page with the ports.
+  await overview.getByRole('link', { name: 'sw1', exact: true }).click()
+  await expect(page).toHaveURL(/\/switches\/sw1$/)
+  await expect(page.getByRole('heading', { name: 'sw1', level: 1 })).toBeVisible()
   const ports = page.getByRole('table', { name: 'Ports' })
   await expect(ports.getByRole('row').filter({ hasText: 'core-sw' })).toContainText('uplink')
   await expectAccessible(page, 'Switch ports')
@@ -63,11 +81,4 @@ test('switch ports, VLANs, projects and MAC search', async ({ page }) => {
     .getByRole('button', { name: 'Delete' })
     .click()
   await expect(page.getByText('VLAN 4001 was deleted.')).toBeVisible()
-
-  await page.getByRole('tab', { name: 'Find a device' }).click()
-  await page.getByLabel('MAC address').fill('bc:24:11:00:00:01')
-  await page.getByRole('button', { name: 'Search' }).click()
-  const hits = page.getByRole('table', { name: 'Find a device' })
-  await expect(hits.getByRole('row').filter({ hasText: '1/1/2' })).toContainText('Connected here')
-  await expectAccessible(page, 'MAC search')
 })

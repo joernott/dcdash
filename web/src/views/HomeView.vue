@@ -6,9 +6,10 @@ import { useI18n } from 'vue-i18n'
 import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import IconButton from '@/components/ui/IconButton.vue'
+import LinkButtons from '@/components/ui/LinkButtons.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSessionStore } from '@/stores/session'
-import { downloadRdp, systemOf, systemStyle, type System } from '@/systems'
+import { systemOf, systemStyle, type System } from '@/systems'
 
 type Report = Schemas['StatusReport']
 type Component = Schemas['StatusComponent']
@@ -41,15 +42,22 @@ async function load() {
 const tiles = computed(() => {
   const all = [...(report.value?.components ?? [])]
   const rank = (k: string) => (k === 'system' ? '' : k)
-  return all
-    .map((c, i) => ({ c, i }))
-    .sort((a, b) => rank(a.c.kind).localeCompare(rank(b.c.kind)) || a.i - b.i)
-    .map(({ c }) => ({ ...c, system: systemOf(c) }))
+  return (
+    all
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => rank(a.c.kind).localeCompare(rank(b.c.kind)) || a.i - b.i)
+      // All DNS tiles have the color of bind9, whatever the provider; the bottom line names it.
+      .map(({ c }) => ({
+        ...c,
+        system: c.kind === 'dns' ? ('bind' as const) : systemOf(c),
+        named: systemOf(c),
+      }))
+  )
 })
 
 /** Name of the kind of system on a tile, so that the color is not the only cue. */
-function systemLabel(c: { kind: string; system: System | null }) {
-  return c.system ? t(`home.systems.${c.system}`) : label(`home.kinds.${c.kind}`, c.kind)
+function systemLabel(c: { kind: string; named: System | null }) {
+  return c.named ? t(`home.systems.${c.named}`) : label(`home.kinds.${c.kind}`, c.kind)
 }
 
 const failing = computed(
@@ -138,42 +146,24 @@ onUnmounted(() => clearInterval(timer))
         :style="systemStyle(c.system)"
         :data-system="c.system ?? 'dcdash'"
       >
-        <h2 class="font-medium break-words" :class="{ 'sys-text': c.system }">
-          {{ label(`home.components.${c.name}`, c.name) }}
-        </h2>
-        <div class="my-1 flex flex-wrap items-center justify-end gap-1">
-          <a
-            v-if="c.links?.ui"
-            :href="c.links.ui"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="link-button"
-            :title="t('home.links.uiLabel', { name: c.name })"
-            >{{ t('home.links.ui')
-            }}<span class="sr-only">: {{ t('home.links.uiLabel', { name: c.name }) }}</span></a
-          >
-          <a
-            v-if="c.links?.ssh"
-            :href="c.links.ssh"
-            class="link-button"
-            :title="t('home.links.sshLabel', { name: c.name })"
-            >{{ t('home.links.ssh')
-            }}<span class="sr-only">: {{ t('home.links.sshLabel', { name: c.name }) }}</span></a
-          >
-          <button
-            v-if="c.links?.rdp"
-            type="button"
-            class="link-button"
-            :title="t('home.links.rdpLabel', { name: c.name })"
-            @click="downloadRdp(c.name, c.links.rdp)"
-          >
-            {{ t('home.links.rdp')
-            }}<span class="sr-only">: {{ t('home.links.rdpLabel', { name: c.name }) }}</span>
-          </button>
-          <StatusBadge
-            :status="c.status === 'ok' ? 'ok' : 'error'"
-            :label="c.status === 'ok' ? t('home.ok') : t('home.error')"
-          />
+        <!-- Heading, links and status in one line; the links wrap below a long name. -->
+        <div class="mb-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <h2 class="min-w-0 font-medium break-words" :class="{ 'sys-text': c.system }">
+            {{ label(`home.components.${c.name}`, c.name) }}
+          </h2>
+          <div class="ml-auto flex shrink-0 items-center gap-1">
+            <LinkButtons
+              v-if="c.links"
+              :name="c.name"
+              :ui="c.links.ui"
+              :ssh="c.links.ssh"
+              :rdp="c.links.rdp"
+            />
+            <StatusBadge
+              :status="c.status === 'ok' ? 'ok' : 'error'"
+              :label="c.status === 'ok' ? t('home.ok') : t('home.error')"
+            />
+          </div>
         </div>
         <p class="text-sm break-words" :class="c.status === 'ok' ? 'text-fg-muted' : 'text-danger'">
           {{ detailText(c) }}

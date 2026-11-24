@@ -1,28 +1,93 @@
 # Configuration reference
 
-dcdash reads one YAML file. The default path is `/etc/dcdash/config.yaml`. Use `--config`
-(`-c`) or the environment variable `DCDASH_CONFIG` to read another file.
+dcdash reads a directory of YAML files. The default is `/etc/dcdash/config.d`. Use `--config`
+(`-c`) or the environment variable `DCDASH_CONFIG` to read another directory, or a single
+file.
 
 This page lists every key. The module documents explain the concepts behind them. For a
-commented example of the whole file, see
-[configs/config.example.yaml](../configs/config.example.yaml).
+commented example of every section, see [configs/config.d](../configs/config.d); the
+packages install it to `/etc/dcdash/config.d`.
+
+## The configuration directory
+
+dcdash reads every `*.yaml` file of the directory in alphabetical order and merges them into
+one configuration. Hidden files, subdirectories and other extensions (`*.yaml.dpkg-old`,
+`*.bak`, `README`) are ignored. The example splits the configuration by section:
+
+| File | Sections |
+|---|---|
+| `00_server.yaml` | `server` |
+| `01_auth.yaml` | `auth` |
+| `02_audit.yaml` | `audit` |
+| `03_security.yaml` | `security` |
+| `04_roles.yaml` | `roles` |
+| `05_log.yaml` | `log` |
+| `06_metrics.yaml` | `metrics` |
+| `07_global.yaml` | `status`, `data_dir` |
+| `10_projects.yaml` | `projects` |
+| `20_directories.yaml` | `directories` |
+| `30_netbox.yaml` | `netbox` |
+| `40_proxmox.yaml` | `proxmox` |
+| `50_dns.yaml` | `dns` |
+| `60_dhcp.yaml` | `dhcp` |
+| `70_firewalls.yaml` | `firewalls` |
+| `80_switches.yaml` | `switches` |
+
+The names are only a convention: one file with everything works as well as one file per
+switch. Merging follows three rules:
+
+- **Sections are merged key by key**, at every level. A file may set `server.listen` while
+  another sets `server.tls`.
+- **Lists are joined** in file order. To add a switch, drop a file with a `switches:` list
+  holding just that switch; to remove it, delete the file. The same works for `roles`,
+  `directories`, `firewalls`, `proxmox.clusters`, `dns.providers` and `dhcp.servers`.
+- **A value set in two files must be equal.** Otherwise dcdash stops with an error naming both
+  files and lines, for example
+  `log.level: set in 05_log.yaml (line 5) and in 90_debug.yaml (line 2)`. An empty value
+  (`key:` with nothing after it) counts as not set.
+
+```yaml
+# /etc/dcdash/config.d/81_switch-sw42.yaml
+switches:
+  - name: sw42
+    url: https://10.0.0.42
+    username: dcdash
+    password: "file:/etc/dcdash/switch-dcdash.password"
+```
+
+Errors in a single file, such as an unknown key, name the file and the line. The start log
+and `dcdash config validate` list the files read.
+
+### Upgrading from dcdash 0.3
+
+dcdash 0.3 and earlier read the single file `/etc/dcdash/config.yaml`. As long as this file
+exists, dcdash reads it instead of `/etc/dcdash/config.d` and logs a warning, so an upgraded
+installation keeps working; the package also installs the example files into
+`/etc/dcdash/config.d`. To switch to the directory:
+
+1. Either move your settings into the example files, or move `config.yaml` into the
+   directory (for example as `/etc/dcdash/config.d/00_dcdash.yaml`) and delete the example
+   files for the sections it contains. Example files that only contain comments or empty
+   lists (`switches: []`) don't conflict and can stay.
+2. Run `dcdash --config /etc/dcdash/config.d config validate`.
+3. Delete `/etc/dcdash/config.yaml` (keep a copy) and restart dcdash.
 
 ## General rules
 
 **Unknown keys are rejected.** A typo such as `listn:` stops dcdash with an error instead of
 being ignored. Keys that are left out get their default.
 
-**Validation.** dcdash checks the whole file at startup and reports all problems at once.
-Check a file without starting the server:
+**Validation.** dcdash checks the whole configuration at startup and reports all problems at once.
+Check it without starting the server:
 
 ```sh
 dcdash config validate
-dcdash --config /tmp/new-config.yaml config validate
+dcdash --config /tmp/new-config.d config validate
 ```
 
 The command also prints warnings. Warnings don't stop dcdash:
 
-- The configuration file or a file referenced with `file:` is accessible by other users (any
+- A configuration file or a file referenced with `file:` is accessible by other users (any
   permission bit for "other" is set). Use `chmod 0640` or `0600`. This check is skipped on
   Windows.
 - No login method is configured: neither `auth.ldap.url` nor `auth.ldap.servers` is set, and `auth.local.enabled` is false.
@@ -240,6 +305,7 @@ Proxmox VE clusters. Default: no clusters. See [proxmox.md](proxmox.md).
 |---|---|---|---|
 | `proxmox.clusters[].name` | string | none | Unique name, used in the UI and in permissions (`proxmox:<name>:...`). Lower-case letters, digits, `.`, `-` and `_`, at most 64 characters, starting with a letter or digit. Required. |
 | `proxmox.clusters[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
+| `proxmox.clusters[].node_links.ui`, `.ssh` | string | from the endpoints | UI and SSH buttons on the node tiles of the Proxmox page; `{node}` is replaced by the node name, for example `https://{node}.example.com:8006` and `root@{node}.example.com`. Without it, a node gets the links of the endpoint whose host is the node name or starts with `<node>.` (`https://<host>:<port>`, `root@<host>`). |
 | `proxmox.clusters[].endpoints[].url` | string | none | API URL of a node, `https://host[:port]` without a path. At least one endpoint is required. Endpoints are tried in order; see [proxmox.md](proxmox.md#failover). |
 | `proxmox.clusters[].endpoints[].fingerprint` | string | empty | Pins this node's certificate (SHA-256). Overrides `tls.fingerprint` of the cluster. |
 | `proxmox.clusters[].tls.*` | | | TLS client settings for all endpoints, see [General rules](#general-rules). Typically `ca_file` with the cluster CA. See [proxmox.md](proxmox.md#certificates). |
@@ -445,7 +511,7 @@ them: dcdash never checks a login against `directories`. See
 | `directories[].bind_dn` | string | none | Service account dcdash manages the domain with, as DN or user principal name (`svc-dcdash@ad.example.com`). Required. It needs delegated rights on the managed containers, see [directories.md](directories.md). |
 | `directories[].bind_password` | secret | none | Password of the service account. Required. |
 | `directories[].base_dn` | string | from `domain` | DN of the domain, `DC=ad,DC=example,DC=com`. |
-| `directories[].managed_ous` | list of DNs | `base_dn` | Containers in which dcdash may create, change and delete users and groups. Each must be below `base_dn`. Users and groups elsewhere are shown read-only. |
+| `directories[].managed_ous` | list of DNs | `base_dn` | Containers in which dcdash may create, change and delete users and groups, including their sub-containers. Each must be a DN below `base_dn`; case and spaces after commas don't matter. Users and groups elsewhere are shown "read-only", whatever the permissions. Note that the default containers for users and groups are `CN=Users,...`, not `OU=Users,...`. |
 | `directories[].protected_users`, `.protected_groups` | list of strings | none | `sAMAccountName`s that can only be changed with the `admin` action, in addition to the built-in accounts and groups. |
 | `directories[].kerberos.realm` | string | `domain` in upper case | Kerberos realm, used for signed DNS updates. |
 | `directories[].kerberos.kdcs` | list of strings | the hosts of `servers`, port 88 | KDCs as `host[:port]`. |
@@ -536,5 +602,4 @@ security:
 Create the key with `dcdash gen-key > /etc/dcdash/encryption.key`, then check the file with
 `dcdash config validate`.
 
-For a commented example of the whole file, see
-[configs/config.example.yaml](../configs/config.example.yaml).
+For a commented example of every section, see [configs/config.d](../configs/config.d).

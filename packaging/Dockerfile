@@ -6,9 +6,10 @@ ARG TARGETPLATFORM
 COPY ${TARGETPLATFORM}/dcdash /usr/bin/dcdash
 # The data directory must belong to nonroot; distroless has no shell to create it.
 COPY --chown=nonroot:nonroot --chmod=0700 packaging/container-data/ /var/lib/dcdash/
-# data_dir; mount a volume here. The configuration goes to /etc/dcdash/config.yaml.
+# data_dir; mount a volume here. The configuration goes to /etc/dcdash/config.d (a directory
+# of *.yaml files); a single file mounted at /etc/dcdash/config.yaml is read instead.
 VOLUME ["/var/lib/dcdash"]
 EXPOSE 8443
 USER nonroot:nonroot
 ENTRYPOINT ["/usr/bin/dcdash"]
-CMD ["--config", "/etc/dcdash/config.yaml", "serve"]
+CMD ["--config", "/etc/dcdash/config.d", "serve"]

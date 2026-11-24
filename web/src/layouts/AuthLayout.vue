@@ -1,35 +1,63 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref, useSlots } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { api, unwrap } from '@/api/client'
 import PreferenceSwitchers from '@/components/PreferenceSwitchers.vue'
 
-/** Centered card for the login and enrollment pages. */
+/**
+ * Layout of the pages without a session (login, enrollment, password change): a bar with the
+ * name, version and display settings, below it the page's tile and an optional second tile
+ * (slot "aside").
+ */
 const props = defineProps<{ title: string }>()
+const slots = useSlots()
 const { t } = useI18n()
-const showPrefs = ref(false)
+
+const version = ref('')
+onMounted(async () => {
+  try {
+    version.value = (await unwrap(api.GET('/api/v1/version'))).version
+  } catch {
+    // Without the version the bar shows only the name.
+  }
+})
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col items-center justify-center bg-surface-sunken px-4 py-10">
-    <main class="w-full max-w-md rounded-lg border border-border bg-surface p-8 shadow-sm">
-      <p class="text-sm font-semibold tracking-wide text-primary">{{ t('app.title') }}</p>
-      <h1 class="mt-1 mb-6 text-2xl font-semibold">{{ props.title }}</h1>
-      <slot />
-    </main>
-    <div class="mt-4 w-full max-w-md">
-      <button
-        type="button"
-        class="text-sm text-fg-muted underline-offset-2 hover:underline"
-        :aria-expanded="showPrefs"
-        @click="showPrefs = !showPrefs"
+  <div class="flex min-h-screen flex-col bg-surface-sunken">
+    <header class="border-b border-border bg-surface-raised">
+      <div
+        class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2"
       >
-        {{ t('preferences.title') }}
-      </button>
-      <div v-if="showPrefs" class="mt-3 rounded-lg border border-border bg-surface p-4">
-        <PreferenceSwitchers />
+        <p class="text-lg font-semibold text-primary">
+          {{ t('app.title') }}
+          <span
+            v-if="version"
+            class="ml-1 text-sm font-normal text-fg-muted"
+            data-testid="version"
+            >{{ version }}</span
+          >
+        </p>
+        <div role="group" :aria-label="t('preferences.title')">
+          <PreferenceSwitchers compact />
+        </div>
       </div>
-    </div>
+    </header>
+    <main
+      :class="[
+        'mx-auto grid w-full items-start gap-6 px-4 py-10',
+        slots.aside ? 'max-w-md md:max-w-4xl md:grid-cols-2' : 'max-w-md',
+      ]"
+    >
+      <section class="rounded-lg border border-border bg-surface p-8 shadow-sm">
+        <h1 class="mb-6 text-2xl font-semibold">{{ props.title }}</h1>
+        <slot />
+      </section>
+      <section v-if="slots.aside" class="rounded-lg border border-border bg-surface p-8 shadow-sm">
+        <slot name="aside" />
+      </section>
+    </main>
   </div>
 </template>

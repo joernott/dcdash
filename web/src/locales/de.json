@@ -142,7 +142,9 @@
     "useRecovery": "Wiederherstellungscode verwenden",
     "useCode": "Authenticator-App verwenden",
     "restart": "Als anderer Benutzer anmelden",
-    "changePassword": "Domänenpasswort ändern"
+    "changePassword": "Domänenpasswort ändern",
+    "changePasswordHint": "Ist Ihr Passwort abgelaufen, oder möchten Sie ein neues? Wählen Sie Ihre Domäne. Dafür müssen Sie sich nicht anmelden.",
+    "changePasswordIn": "Passwort in {domain} ändern"
   },
   "password": {
     "title": "Passwort ändern",
@@ -369,6 +371,7 @@
     "console": "Konsole",
     "consoleOf": "Konsole von {name}",
     "shell": "Shell",
+    "shellLabel": "Shell auf {node} öffnen",
     "shellOf": "Shell auf {node}",
     "consoleStates": {
       "connecting": "Verbinde",
@@ -845,6 +848,9 @@
   },
   "switches": {
     "switch": "Switch",
+    "all": "Alle Switches",
+    "back": "Alle Switches",
+    "notFound": "Es gibt keinen Switch {name}, oder Sie dürfen ihn nicht sehen.",
     "none": "Es sind keine Switches eingerichtet, oder Sie dürfen keine sehen.",
     "views": "Ansichten des Switches",
     "unavailable": "Der Switch ist nicht verfügbar: {error}",
@@ -1011,6 +1017,9 @@
   },
   "dns": {
     "provider": "Anbieter",
+    "allProviders": "Alle Anbieter",
+    "zonesOf": "Zonen von {provider}",
+    "createZoneIn": "Zone bei {provider} anlegen",
     "kinds": {
       "cloudflare": "Cloudflare",
       "bind": "bind9",

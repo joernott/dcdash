@@ -18,10 +18,18 @@ fi
 if [ ! -e /var/lib/dcdash/dcdash.db ]; then
   cat <<'MSG'
 dcdash is installed. Next steps:
-  1. Edit /etc/dcdash/config.yaml (TLS, LDAP, roles, modules).
-  2. dcdash --config /etc/dcdash/config.yaml config validate
+  1. Edit the files in /etc/dcdash/config.d (TLS, LDAP, roles, modules).
+  2. dcdash config validate
   3. systemctl enable --now dcdash
 Back up /etc/dcdash/encryption.key separately from /var/lib/dcdash.
 See https://github.com/joernott/dcdash/blob/main/docs/installation.md
+MSG
+fi
+if [ -f /etc/dcdash/config.yaml ]; then
+  cat <<'MSG'
+dcdash reads /etc/dcdash/config.yaml as before. The configuration is now a directory,
+/etc/dcdash/config.d, with example files. To switch, move your settings into the files
+there (or move config.yaml into the directory and delete the examples it duplicates), then
+remove /etc/dcdash/config.yaml and run: dcdash config validate
 MSG
 fi

@@ -89,22 +89,13 @@ async function remove() {
 
 watch(() => props.switchName, load)
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
   <div class="flex flex-col gap-3">
-    <div class="flex flex-wrap gap-3">
-      <BaseButton v-if="canCreate" @click="dialog?.create()">{{
-        t('switches.vlan.create')
-      }}</BaseButton>
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
+    <div v-if="canCreate" class="flex flex-wrap gap-3">
+      <BaseButton @click="dialog?.create()">{{ t('switches.vlan.create') }}</BaseButton>
     </div>
     <p
       v-if="error"

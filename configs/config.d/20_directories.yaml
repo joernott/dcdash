@@ -1,0 +1,48 @@
+# Active Directory domains (Windows or Samba) whose users and groups dcdash manages, and
+# whose users can change their password on the self-service page /password (see
+# docs/directories.md). Independent of the login directory (auth.ldap in 01_auth.yaml), even
+# if it is one of these domains. Permissions use the name as instance:
+# "directory:lab:user/*:operate" disables, enables and unlocks users and resets passwords,
+# "directory:lab:group/*:write" changes groups and their members.
+# One file per domain works as well (20_directories-lab.yaml, 21_directories-corp.yaml).
+
+directories: []
+#  - name: lab                          # in the UI, permissions and project files
+#    type: samba                        # samba or windows
+#    domain: ad.example.com
+#    # Domain controllers, tried in order. LDAPS only: setting passwords needs encryption.
+#    servers:
+#      - url: ldaps://dc1.ad.example.com
+#        # Pins this DC's certificate (SHA-256), e.g. Samba's self-signed one:
+#        #   openssl s_client -connect dc1.ad.example.com:636 </dev/null 2>/dev/null |
+#        #     openssl x509 -noout -fingerprint -sha256
+#        fingerprint: "AB:CD:..."
+#      - url: ldaps://dc2.ad.example.com
+#        fingerprint: "12:34:..."
+#    # Or trust a CA instead of fingerprints.
+#    # tls: {ca_file: /etc/dcdash/ad-ca.pem}
+#    # Service account as user principal name (with the domain's real UPN suffix), DN or
+#    # DOMAIN\name. It needs delegated rights on managed_ous (docs/directories.md).
+#    bind_dn: svc-dcdash@ad.example.com
+#    bind_password: "file:/etc/dcdash/ad-lab.secret"
+#    # Default: derived from domain (DC=ad,DC=example,DC=com).
+#    # base_dn: DC=ad,DC=example,DC=com
+#    # Containers in which dcdash may create, change and delete users and groups, with
+#    # their sub-containers. Elsewhere users and groups are read-only. Default: base_dn.
+#    # The default containers are CN=Users and CN=Computers, not OU=...
+#    managed_ous:
+#      - OU=Lab,DC=ad,DC=example,DC=com
+#      - CN=Users,DC=ad,DC=example,DC=com
+#    # Changeable only with the admin action, besides the built-in accounts and groups.
+#    protected_users: [backup]
+#    protected_groups: [Lab-Admins]
+#    # Kerberos for AD DNS (50_dns.yaml). Defaults: the domain in upper case, the DCs.
+#    # kerberos:
+#    #   realm: AD.EXAMPLE.COM
+#    #   kdcs: [dc1.ad.example.com:88]
+#    # Offer this domain on the self-service password page (default true).
+#    self_service: true
+#    timeout: 10s
+#    # Buttons on the overview tile (optional).
+#    ui: https://dc1.ad.example.com
+#    rdp: dc1.ad.example.com

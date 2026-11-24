@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 import { api, ApiError, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
@@ -14,6 +15,7 @@ type Directory = Schemas['SelfServiceDirectoryList']['directories'][number]
 
 const i18n = useI18n()
 const { t } = i18n
+const route = useRoute()
 
 const directories = ref<Directory[]>([])
 const loaded = ref(false)
@@ -60,7 +62,10 @@ const localProblem = computed(() => {
 onMounted(async () => {
   try {
     directories.value = (await unwrap(api.GET('/api/v1/password/directories'))).directories
-    directory.value = directories.value[0]?.name ?? ''
+    // The domain chosen on the login page, otherwise the first.
+    const wanted = route.query.directory
+    directory.value =
+      directories.value.find((d) => d.name === wanted)?.name ?? directories.value[0]?.name ?? ''
   } catch (e) {
     if (!(e instanceof ApiError && e.status === 404)) error.value = errorMessage(i18n, e)
   } finally {

@@ -8,7 +8,8 @@ import BaseSelect from '@/components/ui/BaseSelect.vue'
 import { THEMES, usePreferencesStore, type Language, type Theme } from '@/stores/preferences'
 import { useToastStore } from '@/stores/toast'
 
-/** Theme and language selection, used in the user menu and on the login page. */
+/** Theme and language selection, used in the user menu and in the bar of the login page. */
+const props = defineProps<{ compact?: boolean }>()
 const prefs = usePreferencesStore()
 const toast = useToastStore()
 const i18n = useI18n()
@@ -43,12 +44,20 @@ const language = computed({
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
-    <BaseSelect v-model="theme" :label="t('preferences.theme.label')" :options="themeOptions" />
+  <div
+    :class="props.compact ? 'flex flex-wrap items-center gap-x-4 gap-y-2' : 'flex flex-col gap-3'"
+  >
+    <BaseSelect
+      v-model="theme"
+      :label="t('preferences.theme.label')"
+      :options="themeOptions"
+      :compact="props.compact"
+    />
     <BaseSelect
       v-model="language"
       :label="t('preferences.language.label')"
       :options="languageOptions"
+      :compact="props.compact"
     />
   </div>
 </template>

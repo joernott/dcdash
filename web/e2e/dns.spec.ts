@@ -17,10 +17,12 @@ test('zones and records of a Cloudflare provider', async ({ page }) => {
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('link', { name: 'DNS' })
     .click()
-  await expect(page).toHaveURL(/\/dns\/cf$/)
-  const zones = page.getByRole('table', { name: 'Zones' })
+  await expect(page).toHaveURL(/\/dns$/)
+  const zones = page.getByRole('table', { name: 'Zones of cf' })
   await expect(zones.getByRole('row')).toHaveCount(3) // header + 2 zones
-  await expect(page.getByRole('button', { name: 'Create zone' })).toHaveCount(0)
+  // All providers are listed; Cloudflare can't create zones for this user.
+  const cf = page.getByRole('region', { name: 'cf (Cloudflare)' })
+  await expect(cf.getByRole('button', { name: /Create zone/ })).toHaveCount(0)
   await expectAccessible(page, 'DNS zones')
   await expect(zones.getByRole('button')).toHaveCount(0)
 

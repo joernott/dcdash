@@ -38,6 +38,8 @@ type apiEnv struct {
 	fake  *pvefake.Server
 	srv   *httptest.Server
 	audit *audit.Log
+	// cluster is the client of the fake cluster.
+	cluster *Cluster
 }
 
 // newAPIEnv serves the API; the header X-Test-User selects the user. The
@@ -87,7 +89,7 @@ func newAPIEnvWith(t *testing.T, consoleUser bool) *apiEnv {
 	})
 	srv := httptest.NewServer(authz.Middleware(inject))
 	t.Cleanup(srv.Close)
-	return &apiEnv{fake: fake, srv: srv, audit: auditLog}
+	return &apiEnv{fake: fake, srv: srv, audit: auditLog, cluster: cluster}
 }
 
 func (e *apiEnv) do(t *testing.T, user, method, path string, out any) int {
@@ -141,6 +143,17 @@ func TestClusterListAndInventory(t *testing.T) {
 	}
 	if g := inv.Guests[0]; g.VMID != 101 || g.Node != "pve1" || len(g.Tags) != 2 || g.Tags[1] != "web" || g.Status != "running" {
 		t.Errorf("guest: %+v", g)
+	}
+	// The fake's endpoint (127.0.0.1) names no node, and node_links is not set: no links.
+	if inv.Nodes[0].Links != nil {
+		t.Errorf("node links: %+v", inv.Nodes[0].Links)
+	}
+	e.cluster.nodeLinks = func(node string) config.Links {
+		return config.Links{UI: "https://" + node + ".example.com:8006", SSH: "root@" + node}
+	}
+	if code := e.do(t, "viewer", "GET", base+"/lab/resources", &inv); code != 200 ||
+		*inv.Nodes[0].Links != (NodeLinks{UI: "https://pve1.example.com:8006", SSH: "ssh://root@pve1"}) {
+		t.Errorf("node links: %d %+v", code, inv.Nodes[0].Links)
 	}
 	// The operator sees only what its permissions cover.
 	if code := e.do(t, "operator", "GET", base+"/lab/resources", &inv); code != 200 ||

@@ -64,7 +64,14 @@ test('Active Directory: users, self-service password change and groups', async (
   const context = await browser.newContext()
   const anonymous = await context.newPage()
   await anonymous.goto('/login')
-  await anonymous.getByRole('link', { name: 'Change your domain password' }).click()
+  // The login page has a tile with a button per domain, which preselects it.
+  await expect(
+    anonymous.getByRole('heading', { name: 'Change your domain password' }),
+  ).toBeVisible()
+  await expectAccessible(anonymous, 'login page with password tile')
+  await anonymous.screenshot({ path: '../.e2e/screenshots/login-tiles.png', fullPage: true })
+  await anonymous.getByRole('link', { name: 'Change the password in ad.dcdash.test' }).click()
+  await expect(anonymous).toHaveURL(/\/password\?directory=/)
   await expect(anonymous.getByRole('heading', { name: 'Change password' })).toBeVisible()
   await expectAccessible(anonymous, 'self-service password change')
   await anonymous.getByLabel('User name').fill(user)
@@ -133,7 +140,7 @@ test('Active Directory: the groups of a project and the AD DNS', async ({ page }
   await expect(groups.getByRole('row', { name: /lab-admins/ })).toContainText('alice')
 
   await page.goto('/dns/it-dns')
-  const zones = page.getByRole('table', { name: 'Zones' })
+  const zones = page.getByRole('table', { name: 'Zones of it-dns' })
   await zones.getByRole('link', { name: 'lab.dcdash.test' }).click()
   const records = page.getByRole('table', { name: 'Records' })
   await expect(records.getByRole('row', { name: /SOA/ })).toBeVisible()

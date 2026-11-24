@@ -48,6 +48,7 @@ These apply to every task:
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 | 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | v0.3.0 | done |
+| 17 | `sprint/17-config-directory` | Configuration directory with merged files; directories in the example configuration | v0.4.0 | done |
 
 ---
 
@@ -584,3 +585,78 @@ network, and two current Samba AD domain controllers in the test labs.
   documented
 - [x] **16.12** Documentation (`directories.md`, configuration, security, permission
   reference, user guide), OpenAPI, `CHANGELOG.md`
+
+## Sprint 17 — Configuration Directory
+
+v0.3.0 added the `directories` section and the DNS provider type `ad` without changing
+`configs/config.example.yaml`, so the package installed no example and asked nothing on the
+upgrade. The configuration also grows long with many switches, firewalls or clusters: it is
+split into a directory of files that are merged.
+
+- [x] **17.1** A commented `directories` example (all keys of
+  `docs/configuration.md#directories`) and a DNS provider of type `ad`, in the example
+  directory of 17.3 (`20_directories.yaml`, `50_dns.yaml`) that replaces
+  `configs/config.example.yaml`
+- [x] **17.2** Configuration directory: `-c`/`--config` names a directory. dcdash reads every
+  `*.yaml` file in it (not in subdirectories, no hidden files) in alphabetical order and merges
+  them into one configuration before decoding:
+  - mappings are merged key by key, recursively;
+  - lists are concatenated in file order, so that a switch, firewall or cluster can be added
+    or removed by adding or deleting a file;
+  - a scalar value set in two files is an error naming both files and lines (no silent
+    override); equal values and empty values (`key:`) don't conflict;
+  - unknown keys and syntax errors are reported with file name and line; an empty directory
+    is an error.
+  The default becomes `/etc/dcdash/config.d`. A file given to `-c` is still read alone,
+  with a warning, so that existing installations keep working.
+- [x] **17.3** The example as a directory `configs/config.d/`: `00_server.yaml`,
+  `01_auth.yaml`, `02_audit.yaml`, `03_security.yaml`, `04_roles.yaml`, `05_log.yaml`,
+  `06_metrics.yaml`, `07_global.yaml` (`status`, `data_dir` and other global settings),
+  `10_projects.yaml`, `20_directories.yaml`, `30_netbox.yaml`, `40_proxmox.yaml`,
+  `50_dns.yaml`, `60_dhcp.yaml`, `70_firewalls.yaml`, `80_switches.yaml`. A test checks that
+  the files together contain every section of the configuration and that they validate, as
+  shipped and with the commented module examples switched on.
+- [x] **17.4** Packaging and migration: the `.deb` and `.rpm` packages install the files to
+  `/etc/dcdash/config.d` as configuration files (optional modules disabled), the systemd
+  unit, the container image and the postinstall notes use the directory; an existing
+  `/etc/dcdash/config.yaml` keeps working (it is read instead of the directory while it
+  exists; the rpm restores it from `.rpmsave` in `posttrans`), and the documentation
+  describes moving it into the directory
+- [x] **17.5** `config validate` and the start log list the files read; errors name the file
+  and line
+- [x] **17.6** Tests: merging (order, nested mappings, lists, conflicts, unknown keys, empty
+  directory, a single file), the CLI, and the e2e and integration setups with a directory
+- [x] **17.7** Documentation (configuration, admin guide, development, README),
+  `CHANGELOG.md` with upgrade notes
+- [x] **17.8** Overview: the heading, the UI/SSH/RDP links and the status of a tile are on one
+  line again (since 15.x the links and status were on a line of their own); they wrap
+  below a long name
+- [x] **17.9** DNS page: the AD zones seemed missing because `/dns` showed only the first
+  provider; the others were behind the provider selection. The page now lists every
+  provider with its zones and its "Create zone" button; the provider selection is an
+  optional filter (`/dns/<provider>`), the zone search covers all shown providers
+- [x] **17.10** AD DNS: don't show an empty zone list silently. If none of the zone
+  containers below `base_dn` exists or can be read, the tile and the page show an error
+  naming the containers
+- [x] **17.11** Switches: the https and ssh links of every switch on the switch overview become
+  the same UI and SSH buttons as on the overview page (a shared `LinkButtons` component)
+- [x] **17.12** Proxmox: the "Shell" link on the node tiles becomes a button like these, next
+  to UI and SSH buttons for the node (`node_links` with `{node}`, or the endpoint named after
+  the node)
+- [x] **17.13** Overview: every DNS tile has the color of bind9, whatever the provider; the
+  bottom line still names it (bind9, Cloudflare, AD DNS)
+- [x] **17.14** The UI buttons open the web interface in a new tab, everywhere (all use
+  `LinkButtons`)
+- [x] **17.15** Directories: users and groups outside `managed_ous` are read-only. Compare DNs
+  as DNs (spaces after commas, case), reject `managed_ous` entries that aren't DNs below
+  `base_dn`, and say on the page which containers are managed
+- [x] **17.16** Security: gorilla/websocket used a weak random generator for the mask keys
+  of client frames (GO-2026-6278, GHSA-w67g-5rqw-f597; the Proxmox console is a client).
+  Updated to the fixing commit `d67f41855da4`, as no release contains it yet
+- [x] **17.17** Login page: a top bar with the name, version and display settings (also on
+  the enrollment and password pages); below it the login tile and a tile with a button per
+  self-service domain, which preselects that domain on the password change page
+- [x] **17.18** Switches page like the DNS page: `/switches` shows all switches (no redirect,
+  no tabs), the dropdown only filters, the device search sits on the same line, refresh at the
+  top right next to the heading, larger switch names. A name opens `/switches/<name>` with
+  the info and the tabs Ports and VLANs

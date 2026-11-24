@@ -39,17 +39,27 @@ func hiddenZone(name string) bool {
 func (c *Client) DNSZones(ctx context.Context) ([]DNSZone, error) {
 	var out []DNSZone
 	err := c.with(ctx, func(conn *ldap.Conn) error {
+		found := 0
 		for _, base := range c.zoneContainers() {
 			entries, _, err := search(ctx, conn, base, ldap.ScopeSingleLevel, "(objectClass=dnsZone)", []string{"dc"}, 0)
-			if err != nil && !isNotFound(err) {
+			if isNotFound(err) {
+				continue
+			}
+			if err != nil {
 				return err
 			}
+			found++
 			for _, e := range entries {
 				n := strings.ToLower(e.GetAttributeValue("dc"))
 				if !hiddenZone(n) && !slices.ContainsFunc(out, func(z DNSZone) bool { return z.Name == n }) {
 					out = append(out, DNSZone{Name: n, DN: e.DN})
 				}
 			}
+		}
+		// No container at all means a wrong base_dn or no rights to read them, not "no zones".
+		if found == 0 {
+			return &Error{Kind: ErrInvalid, Op: "list DNS zones", Message: "none of the DNS containers " +
+				strings.Join(c.zoneContainers(), "; ") + " exists or is readable: check base_dn and the rights of the service account"}
 		}
 		return nil
 	})

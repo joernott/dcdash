@@ -7,7 +7,8 @@ log with your name.
 
 ## Logging in
 
-Log in with your directory user name and password. Depending on your roles, dcdash then asks
+The bar at the top of the login page shows the version of dcdash and the display settings
+(theme and language). Log in with your directory user name and password. Depending on your roles, dcdash then asks
 for a code from an authenticator app (TOTP), such as Aegis, FreeOTP, Google Authenticator or
 Microsoft Authenticator.
 
@@ -26,9 +27,10 @@ have set other times). An open console doesn't count as activity.
 page. If you have no recovery codes left, ask an administrator to reset your authenticator
 app; you set it up again at your next login.
 
-**Changing your domain password:** "Change your domain password" on the login page opens a
-page where you change the password of your account in an Active Directory domain, without
-logging in to dcdash. Choose the domain, enter your account name, your current password and
+**Changing your domain password:** if a domain offers it, the login page has a second tile,
+"Change your domain password", with a button for each domain. The button opens a page where
+you change the password of your account in that domain, without logging in to dcdash (you can
+still choose another domain there). Enter your account name, your current password and
 the new one twice. The page shows the domain's password rules; this also works when your
 password has expired or must be changed. Use the new password everywhere afterwards.
 
@@ -36,12 +38,14 @@ password has expired or must be changed. Use the new password everywhere afterwa
 
 The overview shows the state of dcdash and of every connected system, one tile each: first
 dcdash itself (database, user directory, certificate, projects), then each Proxmox cluster,
-DNS provider, DHCP server, NetBox, switch and firewall. The tiles of the systems have the
-system's color (Proxmox purple, bind9 blue, Cloudflare orange, Kea green, NetBox teal,
-switches cyan, OPNsense red), and the bottom line names the system and the response time of
-the check. A tile with a red border names the problem. If a system answers a check with a
-client error (HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once
-more after a second before showing the error. The page refreshes every 30 seconds.
+DNS provider, DHCP server, NetBox, switch, firewall and Active Directory domain. The tiles of
+the systems have the system's color (Proxmox purple, DNS blue, Kea green, NetBox teal,
+switches cyan, OPNsense red, Active Directory violet), and the bottom line names the system
+(for DNS: bind9, Cloudflare or AD DNS) and the response time of the check. The UI button opens
+the system's web interface in a new tab, SSH an ssh:// link, RDP a Remote Desktop file.
+A tile with a red border names the problem. If a system answers a check with a client error
+(HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once more after a
+second before showing the error. The page refreshes every 30 seconds.
 
 If the configuration names a system's own interfaces, its tile shows buttons left of the
 status: **UI** opens the web interface in a new tab, **SSH** the SSH client registered in
@@ -83,7 +87,9 @@ cluster, choose it at the top.
 - **Details:** click a guest's name for its configuration, current usage and recent tasks.
 - **Console:** VMs open a graphical console (VNC) in the browser. The toolbar sends
   Ctrl+Alt+Del and switches to full screen. Containers open a terminal.
-- **Node shell:** a root shell on a node. It requires administrator rights on the node.
+- **Node shell:** a root shell on a node, with the "Shell" button on the node's tile. It
+  requires administrator rights on the node. The tile also has UI and SSH buttons for the
+  node (`node_links` in the configuration, or the endpoint named after the node).
 - **Create:** if your administrator allows it for the cluster, "Create" opens a wizard for
   a virtual machine from a template, a virtual machine from an ISO image, or a container. You
   choose the name, the resources, one or more network devices and, for templates and containers, the login
@@ -102,9 +108,11 @@ cluster, choose it at the top.
 
 ## DNS
 
-The DNS page lists the zones of a provider (Cloudflare or bind9). Click a zone for its
-records. The rows of zones and records have the provider's color: orange for Cloudflare,
-blue for bind9.
+The DNS page lists every provider (Cloudflare, bind9, Active Directory) with its zones. The
+"Provider" field shows only one of them, the search finds zones of all shown providers. Click
+a zone for its records. The rows of zones and records have the provider's color: orange for
+Cloudflare, blue for bind9, violet for Active Directory. Providers that can create zones have
+a "Create zone" button next to their name.
 
 - **Records:** add, change and delete A, AAAA, CNAME, MX, TXT, SRV, PTR, NS and CAA records.
   Other types, such as SOA, are shown read-only. Names are relative to the zone ("www" for
@@ -166,10 +174,17 @@ See [projects.md](projects.md).
 
 ## Switches
 
-The Switches page starts with an **overview** of all switches, laid out like their front
-panels: ▲ for ports that are up, ▼ for the others, with the VLAN below; the switch name
-leads to its ports, "https" and "ssh" to the switch itself. The other tabs show one switch at
-a time with its model, firmware and uptime:
+The Switches page shows an **overview** of all switches, laid out like their front panels: ▲
+for ports that are up, ▼ for the others, with the VLAN below. The "Switch" selection above
+it only filters the overview; "Refresh" is at the top right. The UI and SSH buttons lead to
+the switch itself.
+
+**Find a device** is on the same line as the selection: enter (part of) a MAC address.
+"Connected here" marks the port the device is plugged into; "Behind another switch" marks
+uplinks.
+
+The switch name opens the **details page** of that switch, with its model, firmware and
+uptime and two tabs:
 
 - **Ports:** state, speed, VLANs, LLDP neighbor and projects of each port; the filter
   searches names, descriptions, VLANs and neighbors. "Change" opens a dialog to enable or
@@ -177,8 +192,6 @@ a time with its model, firmware and uptime:
   switches need an extra confirmation.
 - **VLANs:** the VLANs with the ports that use them. Create a VLAN on one or several switches,
   rename it, or delete it if no port uses it.
-- **Find a device:** enter (part of) a MAC address. "Connected here" marks the port the
-  device is plugged into; "Behind another switch" marks uplinks.
 
 Changes take effect immediately and are saved to the startup configuration, which takes a
 few seconds. See [switches.md](switches.md).

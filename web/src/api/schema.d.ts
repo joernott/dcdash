@@ -2464,6 +2464,11 @@ export interface components {
        * @description Seconds.
        */
       uptime: number
+      /** @description Web interface (`ui`, an http(s) URL) and SSH (`ssh`, an ssh:// URL) of the node, from `node_links` or the endpoint whose host is the node name. Absent if unknown. */
+      links?: {
+        ui?: string
+        ssh?: string
+      }
     }
     ProxmoxGuest: {
       /** @enum {string} */

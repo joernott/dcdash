@@ -31,7 +31,7 @@ and every change is recorded in an audit log.
 ## Getting started
 
 Download a package from the [releases](https://github.com/joernott/dcdash/releases), install
-it, edit `/etc/dcdash/config.yaml` and start the service:
+it, edit the files in `/etc/dcdash/config.d` and start the service:
 
 ```sh
 sudo apt install ./dcdash_0.1.0_amd64.deb        # or: sudo dnf install ./dcdash_0.1.0_amd64.rpm

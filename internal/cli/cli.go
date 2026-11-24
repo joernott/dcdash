@@ -55,7 +55,7 @@ func NewRootCommand(deps Deps) *cobra.Command {
 	root.SetOut(deps.Stdout)
 	root.SetErr(deps.Stderr)
 	root.PersistentFlags().StringVarP(&configPath, "config", "c", defaultConfigPath(),
-		"configuration file (env DCDASH_CONFIG)")
+		"configuration directory, or a single file (env DCDASH_CONFIG)")
 
 	root.AddCommand(
 		newServeCommand(&configPath, deps),
@@ -103,7 +103,7 @@ func newServeCommand(configPath *string, deps Deps) *cobra.Command {
 				log.Warn().Msg(w)
 			}
 			v := version.Get()
-			log.Info().Str("version", v.Version).Str("commit", v.Commit).Str("config", *configPath).Msg("starting dcdash")
+			log.Info().Str("version", v.Version).Str("commit", v.Commit).Str("config", *configPath).Strs("files", cfg.Sources).Msg("starting dcdash")
 
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
@@ -188,17 +188,21 @@ func newConfigCommand(configPath *string) *cobra.Command {
 	}
 	cmd.AddCommand(&cobra.Command{
 		Use:   "validate",
-		Short: "Validate the configuration file",
+		Short: "Validate the configuration and list the files read",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			_, warnings, err := config.Load(*configPath)
+			cfg, warnings, err := config.Load(*configPath)
 			for _, w := range warnings {
 				fmt.Fprintln(cmd.ErrOrStderr(), "Warning:", w)
 			}
 			if err != nil {
 				return err
 			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s: configuration is valid\n", *configPath)
+			out := cmd.OutOrStdout()
+			for _, f := range cfg.Sources {
+				fmt.Fprintln(out, "read", f)
+			}
+			_, err = fmt.Fprintf(out, "%s: configuration is valid\n", *configPath)
 			return err
 		},
 	})

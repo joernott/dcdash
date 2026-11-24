@@ -41,10 +41,10 @@ const policy = {
   lockoutDuration: 1800,
 }
 
-async function mountPage(directories: unknown[]) {
+async function mountPage(directories: unknown[], path = '/password') {
   api.on('GET /api/v1/password/directories', () => [200, { directories }])
   const r = router()
-  await r.push('/password')
+  await r.push(path)
   const w = mountWith(PasswordView, { attachTo: document.body, global: { plugins: [r] } })
   await flushPromises()
   return w
@@ -99,7 +99,7 @@ describe('PasswordView', () => {
       { name: 'lab', domain: 'ad.test', policy },
       { name: 'corp', domain: 'corp.test' },
     ])
-    expect(w.find('select').exists()).toBe(true)
+    expect(w.find('form select').exists()).toBe(true)
     for (const [code, text] of [
       ['invalid_credentials', 'The user name or the current password is wrong.'],
       ['password_policy_history', 'You used the new password before.'],
@@ -111,6 +111,19 @@ describe('PasswordView', () => {
       await flushPromises()
       expect(w.get('[role=alert]').text()).toContain(text)
     }
+  })
+
+  it('preselects the domain chosen on the login page', async () => {
+    const dirs = [
+      { name: 'lab', domain: 'ad.test', policy },
+      { name: 'corp', domain: 'corp.test' },
+    ]
+    let w = await mountPage(dirs, '/password?directory=corp')
+    expect((w.get('form select').element as HTMLSelectElement).value).toBe('corp')
+    w.unmount()
+    // An unknown name falls back to the first domain.
+    w = await mountPage(dirs, '/password?directory=nope')
+    expect((w.get('form select').element as HTMLSelectElement).value).toBe('lab')
   })
 
   it('tells when no domain offers the change', async () => {

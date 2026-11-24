@@ -21,9 +21,6 @@ import (
 	"github.com/joernott/dcdash/internal/vault"
 )
 
-// DefaultPath is used when neither --config nor DCDASH_CONFIG is given.
-const DefaultPath = "/etc/dcdash/config.yaml"
-
 // TLS modes.
 const (
 	TLSModeFiles = "files" // certificate and key from PEM files
@@ -49,6 +46,9 @@ type Config struct {
 	Security    Security    `yaml:"security"`
 	Log         Log         `yaml:"log"`
 	DataDir     string      `yaml:"data_dir"`
+
+	// Sources are the files the configuration was read from, in order.
+	Sources []string `yaml:"-"`
 }
 
 // Security configures the protection of data at rest.
@@ -114,34 +114,9 @@ func Default() Config {
 	}
 }
 
-// Load reads and validates the configuration file at path.
-// Warnings (e.g. insecure file permissions) are returned separately and do not fail loading.
-func Load(path string) (*Config, []string, error) {
-	f, err := os.Open(path) // #nosec G304 -- path is given by the administrator
-	if err != nil {
-		return nil, nil, fmt.Errorf("open config: %w", err)
-	}
-	defer f.Close()
-
-	var warnings []string
-	if w := checkPermissions(f); w != "" {
-		warnings = append(warnings, w)
-	}
-
-	takeSecretWarnings() // from earlier parses
-	cfg, err := Parse(f)
-	if err != nil {
-		return nil, warnings, fmt.Errorf("%s: %w", path, err)
-	}
-	warnings = append(warnings, takeSecretWarnings()...)
-	if !cfg.Auth.LDAP.Enabled() && !cfg.Auth.Local.Enabled {
-		warnings = append(warnings, "no login method configured (auth.ldap.url, auth.ldap.servers or auth.local): nobody can log in")
-	}
-	if cfg.Server.TLS.Mode == TLSModeNone {
-		warnings = append(warnings, "server.tls.mode is \"none\": serving plain HTTP, use only for development or behind a TLS-terminating proxy")
-	}
-	return cfg, warnings, nil
-}
+// errParse marks errors of decoding the YAML into the configuration (syntax, unknown keys,
+// wrong types), as opposed to validation errors.
+var errParse = errors.New("parse config")
 
 // Parse decodes a configuration from r, applies defaults and validates it.
 // Unknown keys are rejected to catch typos early.
@@ -154,7 +129,7 @@ func Parse(r io.Reader) (*Config, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(data))
 	dec.KnownFields(true)
 	if err := dec.Decode(&cfg); err != nil && !errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, fmt.Errorf("%w: %w", errParse, err)
 	}
 	cfg.Auth.LDAP.ApplyDefaults()
 	cfg.DNS.applyDefaults()

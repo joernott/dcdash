@@ -142,7 +142,9 @@
     "useRecovery": "Use a recovery code",
     "useCode": "Use the authenticator app",
     "restart": "Log in as another user",
-    "changePassword": "Change your domain password"
+    "changePassword": "Change your domain password",
+    "changePasswordHint": "Has your password expired, or do you want a new one? Choose your domain. You don't need to log in for this.",
+    "changePasswordIn": "Change the password in {domain}"
   },
   "password": {
     "title": "Change password",
@@ -369,6 +371,7 @@
     "console": "Console",
     "consoleOf": "Console of {name}",
     "shell": "Shell",
+    "shellLabel": "Open a shell on {node}",
     "shellOf": "Shell on {node}",
     "consoleStates": {
       "connecting": "Connecting",
@@ -845,6 +848,9 @@
   },
   "switches": {
     "switch": "Switch",
+    "all": "All switches",
+    "back": "All switches",
+    "notFound": "There is no switch {name}, or you may not see it.",
     "none": "No switches are configured, or you may not see any.",
     "views": "Switch views",
     "unavailable": "The switch is not available: {error}",
@@ -1011,6 +1017,9 @@
   },
   "dns": {
     "provider": "Provider",
+    "allProviders": "All providers",
+    "zonesOf": "Zones of {provider}",
+    "createZoneIn": "Create zone in {provider}",
     "kinds": {
       "cloudflare": "Cloudflare",
       "bind": "bind9",

@@ -1,0 +1,23 @@
+# Roles map directory groups to permissions (see docs/permissions.md).
+# Permission format: module:instance:resource:action
+#   module:   proxmox, dns, dhcp, netbox, project, switch, firewall, directory or system
+#   action:   read < operate < console < write < admin (a higher action includes the lower ones)
+#   "*" is a wildcard, also within a segment (e.g. "*.example.com").
+# Roles in further files (e.g. 04_roles-network.yaml) are added to this list.
+
+roles: []
+#  - name: dns-operator
+#    groups: ["dcdash-dns"]
+#    require_totp: true          # default; a user needs TOTP if any of their roles requires it
+#    permissions:
+#      - "dns:cloudflare-prod:*:write"
+#      - "dns:bind-internal:*:read"
+#  - name: directory-helpdesk
+#    groups: ["dcdash-helpdesk"]
+#    permissions:
+#      - "directory:lab:user/*:operate"      # disable, enable, unlock, reset passwords
+#      - "directory:lab:group/*:read"
+#  - name: auditor
+#    groups: ["CN=dcdash-audit,OU=Groups,DC=example,DC=com"]
+#    permissions:
+#      - "system:core:audit:read"

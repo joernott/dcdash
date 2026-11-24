@@ -6,6 +6,55 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-24
+
+### Upgrade notes
+
+- **The configuration is a directory now:** `/etc/dcdash/config.d`, whose `*.yaml` files are
+  merged in alphabetical order (sections key by key, lists joined, a value set differently in
+  two files is an error). An upgraded installation keeps reading `/etc/dcdash/config.yaml`
+  as long as it exists, with a warning; the package installs the example files into
+  `/etc/dcdash/config.d` (the rpm restores a changed `config.yaml` that rpm saved as
+  `.rpmsave`). Move your settings into the directory and delete `config.yaml`, see
+  [docs/configuration.md](docs/configuration.md#upgrading-from-dcdash-03). `--config` and
+  `DCDASH_CONFIG` accept a directory or, as before, a single file.
+
+### Added
+
+- **Configuration directory** with an example of one file per section, `00_server.yaml` to
+  `80_switches.yaml`, including the `directories` section and the AD DNS provider that the
+  0.3 example lacked. `dcdash config validate` and the start log list the files read; errors
+  name the file and line.
+
+### Changed
+
+- **DNS page:** lists every provider with its zones and its own "Create zone" button instead
+  of only the first one; the provider selection is an optional filter, and the zone search
+  covers all shown providers.
+- **Buttons:** the switch overview and the Proxmox node tiles have the same UI and SSH buttons
+  as the overview page; the node tiles also show "Shell" as such a button. Node links come
+  from the new `proxmox.clusters[].node_links` (with `{node}`) or from the endpoint named
+  after the node. UI buttons open a new tab.
+- **Overview:** every DNS tile has the color of bind9; the bottom line names the provider.
+- **Switches page:** shows all switches instead of redirecting to the first one; the overview
+  has no tabs, the selection only filters it, and the device search is on the same line.
+  The switch name (larger now) opens the details page with the ports and VLANs. One refresh
+  button at the top right replaces those of the panels.
+- **Login page:** a top bar with the name, the version and the display settings; below it the
+  login tile and, if a domain offers the self-service password change, a second tile with a
+  button per domain that opens the password change with this domain preselected.
+
+### Fixed
+
+- **Security:** gorilla/websocket updated to the commit that fixes GO-2026-6278 (weak random
+  mask keys of WebSocket client frames, used by the Proxmox console).
+- **AD DNS:** if none of the DNS containers below `base_dn` exists or can be read, the tile and
+  the DNS page show an error naming them instead of an empty zone list.
+- **Directories:** `managed_ous` are compared as DNs: spaces after commas and a different case
+  are allowed; entries that aren't DNs are rejected.
+- **Overview:** the heading, the UI/SSH/RDP buttons and the status of a tile are on one line
+  again.
+
 ## [0.3.0] - 2026-11-24
 
 Active Directory and Samba: users, groups, AD-integrated DNS, a self-service password change
@@ -221,7 +270,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/joernott/dcdash/releases/tag/v0.4.0
 [0.3.0]: https://github.com/joernott/dcdash/releases/tag/v0.3.0
 [0.2.1]: https://github.com/joernott/dcdash/releases/tag/v0.2.1
 [0.2.0]: https://github.com/joernott/dcdash/releases/tag/v0.2.0

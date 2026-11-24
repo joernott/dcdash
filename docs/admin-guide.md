@@ -76,8 +76,9 @@ apply them right away, terminate the user's sessions on the Sessions page.
 ## Command line
 
 Run the commands as the user dcdash runs as, so that file permissions fit, for example with
-`sudo -u dcdash`. They read `/etc/dcdash/config.yaml`, or the file given with `--config` or
-`DCDASH_CONFIG`.
+`sudo -u dcdash`. They read the directory `/etc/dcdash/config.d` (or
+`/etc/dcdash/config.yaml` of an installation upgraded from 0.3), or the directory or file
+given with `--config` or `DCDASH_CONFIG`.
 
 | Command | Purpose |
 |---|---|

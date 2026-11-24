@@ -1,0 +1,7 @@
+# Logging to stderr (the journal with systemd).
+
+log:
+  # trace, debug, info, warn, error
+  level: info
+  # json or console
+  format: json

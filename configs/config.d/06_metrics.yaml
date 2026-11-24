@@ -1,0 +1,10 @@
+# Prometheus metrics at /metrics (see docs/monitoring.md).
+
+metrics:
+  enabled: false
+  # Separate plain HTTP listener for /metrics. Without it, /metrics is served on the
+  # main listener and requires the token.
+  listen: "127.0.0.1:9100"
+  # Bearer token Prometheus sends (at least 16 characters); optional on a
+  # separate listener.
+  # token: "file:/etc/dcdash/metrics.token"

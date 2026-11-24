@@ -87,6 +87,9 @@ type Cluster struct {
 	// prov limits creating and deleting guests; provOn is false without it.
 	prov   config.ProxmoxProvisioning
 	provOn bool
+
+	// nodeLinks returns the web interface and SSH links of a node.
+	nodeLinks func(node string) config.Links
 }
 
 // New creates the client of a cluster. It does not connect.
@@ -101,6 +104,7 @@ func New(cfg config.ProxmoxCluster, log zerolog.Logger) (*Cluster, error) {
 		now:             time.Now,
 		prov:            cfg.Provisioning.WithDefaults(),
 		provOn:          cfg.Provisioning.Enabled(),
+		nodeLinks:       cfg.LinksForNode,
 	}
 	for _, e := range cfg.Endpoints {
 		u, err := url.Parse(e.URL)

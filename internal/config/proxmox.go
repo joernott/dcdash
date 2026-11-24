@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,10 @@ type ProxmoxCluster struct {
 	Provisioning ProxmoxProvisioning `yaml:"provisioning"`
 	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
 	Links `yaml:",inline"`
+	// NodeLinks are the web interface and SSH of each node, shown on the node tiles of the
+	// Proxmox page; "{node}" is replaced by the node name. Default: the endpoint whose host
+	// is the node name or starts with it ("pve1" matches pve1.example.com).
+	NodeLinks Links `yaml:"node_links"`
 }
 
 // ProxmoxEndpoint is the API URL of one node.
@@ -86,6 +91,7 @@ func (p Proxmox) validate(add func(string, ...any)) {
 	for i, c := range p.Clusters {
 		pre := "proxmox.clusters[" + strconv.Itoa(i) + "]"
 		validateLinks(c.Links, pre+".", add)
+		validateLinks(c.NodeLinks.ForNode("node"), pre+".node_links.", add)
 		switch {
 		case !instanceNamePattern.MatchString(c.Name):
 			add("%s.name %q: lower-case letters, digits, '.', '-' and '_' (max. 64)", pre, c.Name)
@@ -124,4 +130,30 @@ func (p Proxmox) validate(add func(string, ...any)) {
 		}
 		c.Provisioning.validate(pre+".provisioning", add)
 	}
+}
+
+// ForNode returns the links with "{node}" replaced by node.
+func (l Links) ForNode(node string) Links {
+	r := strings.NewReplacer("{node}", node)
+	return Links{UI: r.Replace(l.UI), SSH: r.Replace(l.SSH), RDP: r.Replace(l.RDP)}
+}
+
+// LinksForNode returns the web interface and SSH links of a node: node_links if set,
+// otherwise those of the endpoint whose host is the node name or starts with "<node>.".
+func (c ProxmoxCluster) LinksForNode(node string) Links {
+	if c.NodeLinks != (Links{}) {
+		return c.NodeLinks.ForNode(node)
+	}
+	for _, e := range c.Endpoints {
+		u, err := url.Parse(e.URL)
+		if err != nil {
+			continue
+		}
+		host := strings.ToLower(u.Hostname())
+		n := strings.ToLower(node)
+		if host == n || strings.HasPrefix(host, n+".") {
+			return Links{UI: u.Scheme + "://" + u.Host, SSH: "root@" + u.Hostname()}
+		}
+	}
+	return Links{}
 }

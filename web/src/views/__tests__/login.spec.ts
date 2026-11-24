@@ -193,15 +193,44 @@ describe('session expiry', () => {
   })
 })
 
-describe('self-service link', () => {
-  it('links to the password change if a directory offers it', async () => {
+describe('login page layout', () => {
+  it('shows name, version and display settings in the top bar', async () => {
+    api.on('GET /api/v1/auth/me', () => [401, apiError('not_authenticated')])
+    api.on('GET /api/v1/version', () => [
+      200,
+      { version: 'v0.4.0', commit: 'abc', date: 'unknown', goVersion: 'go1' },
+    ])
+    const w = await mountAt('/login')
+    const bar = w.get('header')
+    expect(bar.text()).toContain('dcdash')
+    expect(bar.get('[data-testid="version"]').text()).toBe('v0.4.0')
+    const settings = bar.get('[role="group"]')
+    expect(settings.attributes('aria-label')).toBe('Display settings')
+    expect(settings.findAll('select')).toHaveLength(2)
+    // Without self-service domains, only the login tile.
+    expect(w.findAll('main > section')).toHaveLength(1)
+  })
+
+  it('has a tile with a button per self-service domain', async () => {
     api.on('GET /api/v1/auth/me', () => [401, apiError('not_authenticated')])
     api.on('GET /api/v1/password/directories', () => [
       200,
-      { directories: [{ name: 'lab', domain: 'ad.test' }] },
+      {
+        directories: [
+          { name: 'lab', domain: 'ad.test' },
+          { name: 'corp', domain: 'corp.test' },
+        ],
+      },
     ])
-    const w = await mountAt('/login')
-    expect(w.findAll('form')).toHaveLength(1)
-    expect(w.get('a[href="/password"]').text()).toBe('Change your domain password')
+    const w = await mountAt('/login', 'de')
+    const tiles = w.findAll('main > section')
+    expect(tiles).toHaveLength(2)
+    expect(tiles[0]!.findAll('form')).toHaveLength(1)
+    expect(tiles[1]!.get('h2').text()).toBe('Domänenpasswort ändern')
+    const links = tiles[1]!.findAll('a')
+    expect(links.map((a) => [a.attributes('href'), a.text(), a.attributes('aria-label')])).toEqual([
+      ['/password?directory=lab', 'ad.test', 'Passwort in ad.test ändern'],
+      ['/password?directory=corp', 'corp.test', 'Passwort in corp.test ändern'],
+    ])
   })
 })

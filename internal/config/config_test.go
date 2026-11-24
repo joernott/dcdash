@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"slices"
@@ -279,16 +280,63 @@ func TestTrustedProxies(t *testing.T) {
 	}
 }
 
-// TestExampleConfigIsValid keeps configs/config.example.yaml in sync with the
-// code. Secret references are replaced, because their files do not exist here.
+// TestExampleConfigIsValid keeps the example directory configs/config.d in sync with the
+// code: as shipped, and with the commented examples of the modules switched on. Secret
+// references and pinned fingerprints are replaced, because their files don't exist here.
 func TestExampleConfigIsValid(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("..", "..", "configs", "config.example.yaml"))
+	dir := filepath.Join("..", "..", "configs", "config.d")
+	names, err := yamlFiles(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	src := regexp.MustCompile(`"(file|env):[^"]*"`).ReplaceAllString(string(b), `"placeholder"`)
-	src = strings.Replace(src, `encryption_key: "placeholder"`, `encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="`, 1)
-	if _, err := Parse(strings.NewReader(src)); err != nil {
-		t.Errorf("config.example.yaml: %v", err)
+	want := []string{"00_server.yaml", "01_auth.yaml", "02_audit.yaml", "03_security.yaml", "04_roles.yaml",
+		"05_log.yaml", "06_metrics.yaml", "07_global.yaml", "10_projects.yaml", "20_directories.yaml",
+		"30_netbox.yaml", "40_proxmox.yaml", "50_dns.yaml", "60_dhcp.yaml", "70_firewalls.yaml", "80_switches.yaml"}
+	var got []string
+	for _, n := range names {
+		got = append(got, filepath.Base(n))
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("files = %v", got)
+	}
+
+	secrets := regexp.MustCompile(`"(file|env):[^"]*"`)
+	fingerprints := regexp.MustCompile(`fingerprint: "[^"]+"`)
+	example := regexp.MustCompile(`(?m)^#(  .*)$`)       // "#  - name: ..." in the module files
+	emptyList := regexp.MustCompile(`(?m): \[\]\n(#  )`) // "switches: []" before its example
+	all := ""
+	var shipped, enabled []source
+	for _, n := range names {
+		b, err := os.ReadFile(n) // #nosec G304 -- test fixture
+		if err != nil {
+			t.Fatal(err)
+		}
+		src := secrets.ReplaceAllString(string(b), `"placeholder"`)
+		src = strings.Replace(src, `encryption_key: "placeholder"`, `encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="`, 1)
+		src = fingerprints.ReplaceAllString(src, `fingerprint: "`+strings.Repeat("ab", 32)+`"`)
+		shipped = append(shipped, source{name: n, data: []byte(src)})
+		on := src
+		switch base := filepath.Base(n); {
+		case base == "30_netbox.yaml":
+			on = regexp.MustCompile(`(?m)^# (netbox:.*|  .*)$`).ReplaceAllString(on, "$1")
+		case base >= "20_":
+			on = example.ReplaceAllString(emptyList.ReplaceAllString(on, ":\n$1"), "$1")
+		}
+		enabled = append(enabled, source{name: n, data: []byte(on)})
+		all += string(b)
+	}
+	if _, err := parseSources(shipped); err != nil {
+		t.Errorf("as shipped: %v", err)
+	}
+	if _, err := parseSources(enabled); err != nil {
+		t.Errorf("with the module examples: %v", err)
+	}
+	// Every section of the configuration appears in a file, at least as a comment.
+	ct := reflect.TypeFor[Config]()
+	for i := range ct.NumField() {
+		key, _, _ := strings.Cut(ct.Field(i).Tag.Get("yaml"), ",")
+		if key != "-" && !regexp.MustCompile(`(?m)^(# )?`+key+`:`).MatchString(all) {
+			t.Errorf("section %s is missing in configs/config.d", key)
+		}
 	}
 }
