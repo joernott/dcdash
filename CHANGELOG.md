@@ -37,6 +37,8 @@ All notable changes to dcdash are listed here. The format follows
 
 ### Fixed
 
+- **Security:** gorilla/websocket updated to the commit that fixes GO-2026-6278 (weak random
+  mask keys of WebSocket client frames, used by the Proxmox console).
 - **AD DNS:** if none of the DNS containers below `base_dn` exists or can be read, the tile and
   the DNS page show an error naming them instead of an empty zone list.
 - **Directories:** `managed_ous` are compared as DNs: spaces after commas and a different case
