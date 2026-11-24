@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Schließen",
+    "closeMessage": "Meldung schließen",
     "loading": "Wird geladen …",
     "empty": "Keine Einträge",
     "cancel": "Abbrechen",

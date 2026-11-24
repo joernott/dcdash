@@ -101,7 +101,11 @@ describe('toasts', () => {
     vi.advanceTimersByTime(6000)
     await nextTick()
     expect(w.findAll('[role="status"]')).toHaveLength(0)
-    await w.get('[role="alert"] button').trigger('click')
+    // A framed close button with a name.
+    const close = w.get('[role="alert"] button')
+    expect(close.attributes('aria-label')).toBe('Close the message')
+    expect(close.classes()).toContain('border')
+    await close.trigger('click')
     expect(store.toasts).toHaveLength(0)
   })
 })

@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Close",
+    "closeMessage": "Close the message",
     "loading": "Loading…",
     "empty": "No entries",
     "cancel": "Cancel",

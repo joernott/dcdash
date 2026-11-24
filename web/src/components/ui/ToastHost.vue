@@ -2,8 +2,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
+import IconButton from './IconButton.vue'
 import { useToastStore } from '@/stores/toast'
 
+/**
+ * The messages at the bottom right. Errors stay, also across pages, until closed; the others
+ * disappear on their own and can be closed earlier.
+ */
 const store = useToastStore()
 const { t } = useI18n()
 
@@ -26,15 +31,13 @@ const kinds = {
       class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-md border-l-4 bg-surface-raised px-4 py-3 text-fg shadow-lg ring-1 ring-border"
       :class="kinds[toast.kind]"
     >
-      <p class="flex-1 text-sm">{{ toast.message }}</p>
-      <button
-        type="button"
-        class="text-fg-muted hover:text-fg"
-        :aria-label="t('common.close')"
+      <p class="flex-1 self-center text-sm">{{ toast.message }}</p>
+      <IconButton
+        icon="close"
+        :label="t('common.closeMessage')"
+        class="shrink-0"
         @click="store.dismiss(toast.id)"
-      >
-        <span aria-hidden="true">✕</span>
-      </button>
+      />
     </div>
   </div>
 </template>
