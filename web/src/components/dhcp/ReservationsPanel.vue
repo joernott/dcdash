@@ -181,6 +181,7 @@ onMounted(load)
         {{ t('dhcp.shownOf', { shown: shown.length, total: reservations.length }) }}
       </p>
       <DataTable
+        system="kea"
         :columns="columns"
         :rows="shown"
         :row-key="(r: DhcpReservation) => r.id"

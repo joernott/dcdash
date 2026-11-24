@@ -136,6 +136,7 @@ onMounted(load)
         {{ t('firewalls.vpn.partError', { error: vpn.errors.wireguard }) }}
       </p>
       <DataTable
+        system="firewall"
         :columns="peerColumns"
         :rows="vpn.peers"
         :row-key="(p: Peer) => p.uuid"
@@ -181,6 +182,7 @@ onMounted(load)
         {{ t('firewalls.vpn.partError', { error: vpn.errors.ipsec }) }}
       </p>
       <DataTable
+        system="firewall"
         :columns="tunnelColumns"
         :rows="vpn.tunnels"
         :row-key="(tn: Tunnel) => tn.name"

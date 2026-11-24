@@ -38,6 +38,7 @@ function count(n: number): string {
   <section aria-labelledby="dhcp-subnets" class="flex flex-col gap-3">
     <h2 id="dhcp-subnets" class="sr-only">{{ t('dhcp.tabs.subnets') }}</h2>
     <DataTable
+      system="kea"
       :columns="columns"
       :rows="props.subnets"
       :row-key="(s: DhcpSubnet) => s.id"

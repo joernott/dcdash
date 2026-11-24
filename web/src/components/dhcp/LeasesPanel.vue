@@ -180,6 +180,7 @@ onMounted(() => {
         <template v-if="truncated"> · {{ t('dhcp.truncated') }}</template>
       </p>
       <DataTable
+        system="kea"
         :columns="columns"
         :rows="leases"
         :row-key="(l: DhcpLease) => `${l.ipAddress}-${l.type ?? ''}`"

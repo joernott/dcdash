@@ -222,6 +222,7 @@ onMounted(load)
       {{ error }}
     </p>
     <DataTable
+      system="firewall"
       :columns="columns"
       :rows="rows"
       :row-key="(r: Rule) => r.uuid || `legacy-${r.sequence}-${r.description}`"

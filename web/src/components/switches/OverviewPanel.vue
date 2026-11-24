@@ -14,6 +14,7 @@ import {
   type SwitchInfo,
   type SwitchPort,
 } from '@/switches/switches'
+import { systemStyle } from '@/systems'
 
 /**
  * All switches at a glance, laid out like their front panels: per switch one row for the odd
@@ -83,7 +84,11 @@ defineExpose({ load })
 <template>
   <div class="flex flex-col gap-3">
     <p class="text-sm text-fg-muted">{{ t('switches.overview.hint') }}</p>
-    <div class="overflow-x-auto rounded-md border border-border">
+    <!-- As wide as the front panels, in the switch colors. -->
+    <div
+      class="w-fit max-w-full overflow-x-auto rounded-md border border-border"
+      :style="systemStyle('switch')"
+    >
       <table class="text-center text-xs">
         <caption class="sr-only">
           {{
@@ -103,13 +108,13 @@ defineExpose({ load })
           </tr>
         </thead>
         <tbody v-for="b in blocks" :key="b.sw.name" class="border-t border-border first:border-t-0">
-          <tr v-if="b.rows.length === 0">
+          <tr v-if="b.rows.length === 0" class="sys-row">
             <th scope="row" class="px-3 py-2 text-left font-medium">{{ b.sw.name }}</th>
             <td :colspan="OVERVIEW_COLUMNS" class="px-3 py-2 text-left text-danger">
               {{ b.error || t('common.loading') }}
             </td>
           </tr>
-          <tr v-for="(row, i) in b.rows" :key="i">
+          <tr v-for="(row, i) in b.rows" :key="i" class="sys-row">
             <th
               v-if="i === 0"
               scope="rowgroup"

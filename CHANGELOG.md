@@ -16,6 +16,8 @@ All notable changes to dcdash are listed here. The format follows
   (`GET /api/v1/dns/providers` lists the `links`); one color for all DNS servers, the one of the
   overview tiles.
 - **Tables** have the color of their system, every other row in a lighter shade.
+- **Switches page:** the switch filter, the device search and refresh on the line of the
+  heading.
 
 ## [0.4.0] - 2026-11-24
 

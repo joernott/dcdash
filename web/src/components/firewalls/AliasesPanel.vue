@@ -185,6 +185,7 @@ onMounted(load)
       {{ error }}
     </p>
     <DataTable
+      system="firewall"
       :columns="columns"
       :rows="rows"
       :row-key="(a: Alias) => a.uuid"

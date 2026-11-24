@@ -109,6 +109,7 @@ onMounted(load)
     <template v-if="health">
       <h2 class="text-lg font-semibold">{{ t('firewalls.health.gateways') }}</h2>
       <DataTable
+        system="firewall"
         :columns="gwColumns"
         :rows="health.gateways"
         :row-key="(g: Gateway) => g.name"
@@ -129,6 +130,7 @@ onMounted(load)
       </DataTable>
       <h2 class="text-lg font-semibold">{{ t('firewalls.health.services') }}</h2>
       <DataTable
+        system="firewall"
         :columns="svcColumns"
         :rows="health.services"
         :row-key="(s: FirewallService) => s.id"

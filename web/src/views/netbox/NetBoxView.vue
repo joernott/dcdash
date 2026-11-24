@@ -233,6 +233,7 @@ watch([cluster, canRead], () => void load(), { immediate: true })
         </div>
       </div>
       <DataTable
+        system="netbox"
         :columns="columns"
         :rows="shown"
         :row-key="rowKey"
@@ -320,6 +321,7 @@ watch([cluster, canRead], () => void load(), { immediate: true })
         <li v-for="e in addressErrors" :key="e">{{ t('netbox.sourceError', { error: e }) }}</li>
       </ul>
       <DataTable
+        system="netbox"
         v-if="addresses !== null"
         :columns="addressColumns"
         :rows="addresses"
