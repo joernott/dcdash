@@ -446,7 +446,7 @@ them: dcdash never checks a login against `directories`. See
 | `directories[].bind_dn` | string | none | Service account dcdash manages the domain with, as DN or user principal name (`svc-dcdash@ad.example.com`). Required. It needs delegated rights on the managed containers, see [directories.md](directories.md). |
 | `directories[].bind_password` | secret | none | Password of the service account. Required. |
 | `directories[].base_dn` | string | from `domain` | DN of the domain, `DC=ad,DC=example,DC=com`. |
-| `directories[].managed_ous` | list of DNs | `base_dn` | Containers in which dcdash may create, change and delete users and groups. Each must be below `base_dn`. Users and groups elsewhere are shown read-only. |
+| `directories[].managed_ous` | list of DNs | `base_dn` | Containers in which dcdash may create, change and delete users and groups, including their sub-containers. Each must be a DN below `base_dn`; case and spaces after commas don't matter. Users and groups elsewhere are shown "read-only", whatever the permissions. Note that the default containers for users and groups are `CN=Users,...`, not `OU=Users,...`. |
 | `directories[].protected_users`, `.protected_groups` | list of strings | none | `sAMAccountName`s that can only be changed with the `admin` action, in addition to the built-in accounts and groups. |
 | `directories[].kerberos.realm` | string | `domain` in upper case | Kerberos realm, used for signed DNS updates. |
 | `directories[].kerberos.kdcs` | list of strings | the hosts of `servers`, port 88 | KDCs as `host[:port]`. |

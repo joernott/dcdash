@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 // Directory types. Both are Active Directory domains; the type selects defaults and the
@@ -93,14 +95,25 @@ func (d Directory) TLSFor(s LDAPServer) TLSClient {
 
 // Managed reports whether dn lies in one of the managed containers.
 func (d Directory) Managed(dn string) bool {
-	dn = strings.ToLower(dn)
 	for _, ou := range d.ManagedOUs {
-		ou = strings.ToLower(ou)
-		if dn == ou || strings.HasSuffix(dn, ","+ou) {
+		if DNWithin(dn, ou) {
 			return true
 		}
 	}
 	return false
+}
+
+// DNWithin reports whether dn is container or lies below it. DNs are compared as DNs:
+// case-insensitive, and spaces around "," and "=" don't matter. Strings that aren't DNs
+// are compared as text.
+func DNWithin(dn, container string) bool {
+	d, err1 := ldap.ParseDN(dn)
+	c, err2 := ldap.ParseDN(container)
+	if err1 != nil || err2 != nil {
+		dn, container = strings.ToLower(dn), strings.ToLower(container)
+		return dn == container || strings.HasSuffix(dn, ","+container)
+	}
+	return c.EqualFold(d) || c.AncestorOfFold(d)
 }
 
 // domainPattern matches a DNS domain name with at least two labels.
@@ -178,8 +191,9 @@ func (d Directories) validate(add func(string, ...any)) {
 			add("%s.base_dn %q: must be the domain's DN (DC=...)", pre, x.BaseDN)
 		}
 		for j, ou := range x.ManagedOUs {
-			o := strings.ToLower(ou)
-			if o != base && !strings.HasSuffix(o, ","+base) {
+			if _, err := ldap.ParseDN(ou); err != nil {
+				add("%s.managed_ous[%d] %q: not a DN: %v", pre, j, ou, err)
+			} else if !DNWithin(ou, x.BaseDN) {
 				add("%s.managed_ous[%d] %q: must be below base_dn %q", pre, j, ou, x.BaseDN)
 			}
 		}

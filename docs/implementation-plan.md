@@ -642,6 +642,6 @@ split into a directory of files that are merged.
   bottom line still names it (bind9, Cloudflare, AD DNS)
 - [x] **17.14** The UI buttons open the web interface in a new tab, everywhere (all use
   `LinkButtons`)
-- [ ] **17.15** Directories: users and groups outside `managed_ous` are read-only. Compare DNs
+- [x] **17.15** Directories: users and groups outside `managed_ous` are read-only. Compare DNs
   as DNs (spaces after commas, case), reject `managed_ous` entries that aren't DNs below
   `base_dn`, and say on the page which containers are managed

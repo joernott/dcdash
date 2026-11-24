@@ -86,7 +86,7 @@ directories:
     servers: [{url: "ldap://dc1.ad.example.com"}, {url: "ldaps://dc2", fingerprint: "zz"}]
     bind_dn: svc
     bind_password: s
-    managed_ous: ["OU=x,DC=other,DC=com"]
+    managed_ous: ["OU=x,DC=other,DC=com", "not a dn"]
     protected_groups: [""]
     kerberos: {kdcs: ["dc1:"]}
   - name: lab2
@@ -105,6 +105,7 @@ directories:
 		`directories[0].base_dn "ou=x"`, `directories[0].timeout`,
 		`directories[1].servers[0].url "ldap://dc1.ad.example.com": must be ldaps`,
 		`directories[1].servers[1].fingerprint`, `directories[1].managed_ous[0]`,
+		`directories[1].managed_ous[1] "not a dn": not a DN`,
 		`directories[1].protected_groups[0]: empty`, `directories[1].kerberos.kdcs[0] "dc1:"`,
 		`directories[2].name "lab2": duplicate`,
 	} {
@@ -150,6 +151,24 @@ dns:
 		`dns.providers[1].ad.directory: required`, `dns.providers[1].ad.server ""`, `dns.providers[0].ad.resolver "dc1"`} {
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("missing %q in\n%v", want, err)
+		}
+	}
+}
+
+func TestDNWithin(t *testing.T) {
+	for _, c := range []struct {
+		dn, container string
+		want          bool
+	}{
+		{"CN=alice,OU=Lab,DC=ad,DC=example,DC=com", "OU=Lab,DC=ad,DC=example,DC=com", true},
+		{"CN=alice,OU=Lab,DC=ad,DC=example,DC=com", "ou=lab, dc=AD, dc=example, dc=com", true},
+		{"OU=Lab,DC=ad,DC=example,DC=com", "OU=Lab, DC=ad,DC=example,DC=com", true},
+		{"CN=alice,CN=Users,DC=ad,DC=example,DC=com", "OU=Users,DC=ad,DC=example,DC=com", false},
+		{"CN=alice,OU=Lab2,DC=ad,DC=example,DC=com", "OU=Lab,DC=ad,DC=example,DC=com", false},
+		{"DC=ad,DC=example,DC=com", "OU=Lab,DC=ad,DC=example,DC=com", false},
+	} {
+		if got := DNWithin(c.dn, c.container); got != c.want {
+			t.Errorf("DNWithin(%q, %q) = %v", c.dn, c.container, got)
 		}
 	}
 }
