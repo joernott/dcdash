@@ -653,3 +653,6 @@ split into a directory of files that are merged.
 - [x] **17.16** Security: gorilla/websocket used a weak random generator for the mask keys
   of client frames (GO-2026-6278, GHSA-w67g-5rqw-f597; the Proxmox console is a client).
   Updated to the fixing commit `d67f41855da4`, as no release contains it yet
+- [x] **17.17** Login page: a top bar with the name, version and display settings (also on
+  the enrollment and password pages); below it the login tile and a tile with a button per
+  self-service domain, which preselects that domain on the password change page

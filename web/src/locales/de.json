@@ -142,7 +142,9 @@
     "useRecovery": "Wiederherstellungscode verwenden",
     "useCode": "Authenticator-App verwenden",
     "restart": "Als anderer Benutzer anmelden",
-    "changePassword": "Domänenpasswort ändern"
+    "changePassword": "Domänenpasswort ändern",
+    "changePasswordHint": "Ist Ihr Passwort abgelaufen, oder möchten Sie ein neues? Wählen Sie Ihre Domäne. Dafür müssen Sie sich nicht anmelden.",
+    "changePasswordIn": "Passwort in {domain} ändern"
   },
   "password": {
     "title": "Passwort ändern",

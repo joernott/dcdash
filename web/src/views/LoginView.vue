@@ -4,7 +4,7 @@ import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { api, unwrap } from '@/api/client'
+import { api, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -26,12 +26,11 @@ const error = ref('')
 const busy = ref(false)
 const codeInput = useTemplateRef<InstanceType<typeof BaseInput>>('codeInput')
 
-// A link to the self-service password change, if a directory offers it.
-const selfService = ref(false)
+// The domains offering the self-service password change: a tile with a button for each.
+const domains = ref<Schemas['SelfServiceDirectoryList']['directories']>([])
 onMounted(async () => {
   try {
-    selfService.value =
-      (await unwrap(api.GET('/api/v1/password/directories'))).directories.length > 0
+    domains.value = (await unwrap(api.GET('/api/v1/password/directories'))).directories
   } catch {
     // Off (404) or not reachable: no link.
   }
@@ -136,10 +135,19 @@ function restart() {
       </div>
     </form>
 
-    <p v-if="!totpStep && selfService" class="mt-6 text-sm">
-      <RouterLink :to="{ name: 'password' }" class="text-primary hover:underline">{{
-        t('login.changePassword')
-      }}</RouterLink>
-    </p>
+    <template v-if="!totpStep && domains.length > 0" #aside>
+      <h2 class="mb-2 text-xl font-semibold">{{ t('login.changePassword') }}</h2>
+      <p class="mb-6 text-sm text-fg-muted">{{ t('login.changePasswordHint') }}</p>
+      <ul class="flex flex-col gap-3">
+        <li v-for="d in domains" :key="d.name">
+          <RouterLink
+            :to="{ name: 'password', query: { directory: d.name } }"
+            class="flex w-full items-center justify-center rounded-md border border-border bg-surface-raised px-4 py-2 font-medium text-fg transition-colors hover:border-primary hover:text-primary"
+            :aria-label="t('login.changePasswordIn', { domain: d.domain })"
+            >{{ d.domain }}</RouterLink
+          >
+        </li>
+      </ul>
+    </template>
   </AuthLayout>
 </template>

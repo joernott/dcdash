@@ -7,7 +7,8 @@ log with your name.
 
 ## Logging in
 
-Log in with your directory user name and password. Depending on your roles, dcdash then asks
+The bar at the top of the login page shows the version of dcdash and the display settings
+(theme and language). Log in with your directory user name and password. Depending on your roles, dcdash then asks
 for a code from an authenticator app (TOTP), such as Aegis, FreeOTP, Google Authenticator or
 Microsoft Authenticator.
 
@@ -26,9 +27,10 @@ have set other times). An open console doesn't count as activity.
 page. If you have no recovery codes left, ask an administrator to reset your authenticator
 app; you set it up again at your next login.
 
-**Changing your domain password:** "Change your domain password" on the login page opens a
-page where you change the password of your account in an Active Directory domain, without
-logging in to dcdash. Choose the domain, enter your account name, your current password and
+**Changing your domain password:** if a domain offers it, the login page has a second tile,
+"Change your domain password", with a button for each domain. The button opens a page where
+you change the password of your account in that domain, without logging in to dcdash (you can
+still choose another domain there). Enter your account name, your current password and
 the new one twice. The page shows the domain's password rules; this also works when your
 password has expired or must be changed. Use the new password everywhere afterwards.
 

@@ -579,3 +579,12 @@ All users in the directory show "read-only"  Do I need to use a different user t
 And another task: The "UI" buttons should open in new tabs.
 
 Please implement as many tasks in sprint 17 as you can.
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+At the moment, the "change domain password" link is not very visible on the login page. Please redesign the login page:
+- the application name and version should appear in a top bar.
+- The display settings should also be in that top bar
+- Below that, there should be two tiles: One for the login and a second tile with a button for each registry. That should be the preselected registry in the dialog that is shown

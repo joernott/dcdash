@@ -142,7 +142,9 @@
     "useRecovery": "Use a recovery code",
     "useCode": "Use the authenticator app",
     "restart": "Log in as another user",
-    "changePassword": "Change your domain password"
+    "changePassword": "Change your domain password",
+    "changePasswordHint": "Has your password expired, or do you want a new one? Choose your domain. You don't need to log in for this.",
+    "changePasswordIn": "Change the password in {domain}"
   },
   "password": {
     "title": "Change password",
