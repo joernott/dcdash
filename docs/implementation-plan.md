@@ -626,3 +626,9 @@ split into a directory of files that are merged.
 - [x] **17.8** Overview: the heading, the UI/SSH/RDP links and the status of a tile are on one
   line again (since 15.x the links and status were on a line of their own); they wrap
   below a long name
+- [ ] **17.9** AD DNS: zones of a production Samba domain don't show on the DNS page,
+  although the overview tile is OK and `manage_zones` is set. Find the cause (permissions
+  `dns:<provider>:<zone>:read`, `base_dn`, rights of the service account on the DNS
+  partitions) and fix it. dcdash must not show an empty zone list silently: if none of
+  the zone containers exists or can be read, the tile and the page show an error naming
+  the container

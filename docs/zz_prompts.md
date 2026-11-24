@@ -533,3 +533,9 @@ The result was
 ## 2026-11-24 — Sprint 17 (Configuration directory)
 
 ok, that was the issue, the kunden domain exists withut the "sf"
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+Another task for sprint 17: The AD zones don't show on the DNS tab but I have the DNS tiles on the overview and manage_zones is set to true
