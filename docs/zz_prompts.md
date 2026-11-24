@@ -594,3 +594,9 @@ At the moment, the "change domain password" link is not very visible on the logi
 ## 2026-11-24 — Sprint 17 (Configuration directory)
 
 On the switch page, I also get redirected to the first switch. I would like a similar behaviour as for the Domains and see all configured switches on the overview page. Don't show the  tabbed view on that page. Use a larger font for the switch name there. Only when clicking on a switch,  the user should get the details page with the ports  and vlans. Only use the dropdown on the overview page for filtering and move the "Find a device" functionality onto the same line as that dropdown. Move the refresh button to the top right on the same level as the "Switches" Header
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+yes, merge sprint 17 and tag v0.4.0

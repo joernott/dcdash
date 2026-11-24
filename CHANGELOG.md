@@ -6,6 +6,8 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-24
+
 ### Upgrade notes
 
 - **The configuration is a directory now:** `/etc/dcdash/config.d`, whose `*.yaml` files are
@@ -268,7 +270,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/joernott/dcdash/releases/tag/v0.4.0
 [0.3.0]: https://github.com/joernott/dcdash/releases/tag/v0.3.0
 [0.2.1]: https://github.com/joernott/dcdash/releases/tag/v0.2.1
 [0.2.0]: https://github.com/joernott/dcdash/releases/tag/v0.2.0
