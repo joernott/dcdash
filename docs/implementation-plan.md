@@ -630,7 +630,7 @@ split into a directory of files that are merged.
   provider; the others were behind the provider selection. The page now lists every
   provider with its zones and its "Create zone" button; the provider selection is an
   optional filter (`/dns/<provider>`), the zone search covers all shown providers
-- [ ] **17.10** AD DNS: don't show an empty zone list silently. If none of the zone
+- [x] **17.10** AD DNS: don't show an empty zone list silently. If none of the zone
   containers below `base_dn` exists or can be read, the tile and the page show an error
   naming the containers
 - [x] **17.11** Switches: the https and ssh links of every switch on the switch overview become

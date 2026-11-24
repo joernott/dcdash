@@ -19,6 +19,8 @@ All notable changes to dcdash are listed here. The format follows
 
 ### Fixed
 
+- **AD DNS:** if none of the DNS containers below `base_dn` exists or can be read, the tile and
+  the DNS page show an error naming them instead of an empty zone list.
 - **Directories:** `managed_ous` are compared as DNs: spaces after commas and a different case
   are allowed; entries that aren't DNs are rejected.
 - **Overview:** the heading, the UI/SSH/RDP buttons and the status of a tile are on one line

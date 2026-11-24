@@ -43,6 +43,14 @@ func TestADDNSSamba(t *testing.T) {
 	target := sambaTarget(t)
 	p, zone, newZone := adDNS(t, target, "dc1."+target.cfg.Domain, strings.TrimPrefix(target.cfg.Servers[0].URL, "ldaps://"), "lab.dcdash.test")
 	testADDNS(t, p, target, zone, newZone)
+
+	// A wrong base_dn finds no DNS container: an error, not an empty zone list.
+	target.cfg.BaseDN = "DC=nowhere,DC=test"
+	target.cfg.ManagedOUs = []string{target.cfg.BaseDN}
+	wrong, _, _ := adDNS(t, target, "dc1."+target.cfg.Domain, strings.TrimPrefix(target.cfg.Servers[0].URL, "ldaps://"), "")
+	if zones, err := wrong.Zones(context.Background()); err == nil || !strings.Contains(err.Error(), "none of the DNS containers") {
+		t.Errorf("wrong base_dn: %v, %v", zones, err)
+	}
 }
 
 func TestADDNSLab(t *testing.T) {
