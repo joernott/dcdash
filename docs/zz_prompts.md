@@ -475,3 +475,9 @@ The VM is quite busy (>100% CPU, 93% RAM. Should I resize it before going ahead?
 ## 2026-11-23 — Sprint 16 (Active Directory and Samba)
 
 The VM is back with 8 GiB RAM and 4 cores. I don't want to overcommit on memory on the proxmox host, so I have to limit it. Please rerun the test and go ahead with the remaining tasks in this sprint
+
+---
+
+## 2026-11-24 — Sprint 16 (Active Directory and Samba)
+
+yes, merge sprint 16 and tag v0.3.0
