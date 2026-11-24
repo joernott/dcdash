@@ -1085,6 +1085,13 @@
   },
   "dhcp": {
     "server": "Server",
+    "allServers": "All servers",
+    "subnetsOf": "Subnets of {server}",
+    "showLeasesOf": "Show the leases of {subnet}",
+    "searchResults": "Leases matching “{q}”",
+    "leasesOf": "Leases of {subnet} on {server}",
+    "closeLeases": "Close the leases",
+    "reservationsOf": "Reservations of {server}",
     "families": {
       "v4": "DHCPv4",
       "v6": "DHCPv6"
@@ -1098,10 +1105,7 @@
       "subnets": "Pools are not shown: the subnet_cmds hook library is not loaded.",
       "statistics": "Utilization is not shown: the stat_cmds hook library is not loaded."
     },
-    "views": "Views",
     "tabs": {
-      "subnets": "Subnets",
-      "leases": "Leases",
       "reservations": "Reservations"
     },
     "subnet": "Subnet",
@@ -1115,8 +1119,6 @@
     "prefixes": "Prefixes",
     "usedOf": "{used} of {total}",
     "declined": "{n} declined",
-    "showLeases": "Show leases",
-    "chooseSubnet": "Choose a subnet",
     "searchKeys": {
       "ip": "IP address",
       "hw-address": "MAC address",
@@ -1135,7 +1137,6 @@
     "searchBy": "Search by",
     "searchValue": "Value",
     "search": "Search",
-    "subnetLeases": "Leases of a subnet",
     "leaseCount": "No leases | One lease | {n} leases",
     "truncated": "only the first ones are shown",
     "noLeases": "No leases found.",
@@ -1148,7 +1149,6 @@
     },
     "deleteLeaseFor": "Delete lease {address}",
     "delete": "Delete",
-    "leasesHint": "Search for a lease, or choose a subnet to see its leases.",
     "deleteLease": "Delete lease",
     "deleteLeaseQuestion": "Delete the lease of {address}?",
     "deleteLeaseHint": "The address becomes free. A client that still uses it gets a new lease when it renews.",

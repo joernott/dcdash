@@ -4272,6 +4272,7 @@ components:
         searchKeys:
           type: array
           items: { type: string, enum: [ip, hw-address, client-id, duid, hostname] }
+        links: { $ref: "#/components/schemas/SystemLinks" }
 
     DHCPServerList:
       type: object

@@ -125,6 +125,11 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		if dhcpSvc, err = dhcp.NewService(cfg.DHCP.Servers, auditLog, log); err != nil {
 			return nil, err
 		}
+		links := map[string]*status.Links{}
+		for _, s := range cfg.DHCP.Servers {
+			links[s.Name] = statusLinks(s.Links)
+		}
+		dhcpSvc.SetLinks(links)
 		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
 		a.routes = append(a.routes, dhcpSvc.Register)
 	}

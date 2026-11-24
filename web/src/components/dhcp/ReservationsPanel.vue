@@ -33,6 +33,7 @@ const i18n = useI18n()
 const { t } = i18n
 const session = useSessionStore()
 const toast = useToastStore()
+const headingId = `dhcp-reservations-${props.server.name}`
 const dialog = useTemplateRef<InstanceType<typeof ReservationDialog>>('dialog')
 
 const reservations = ref<DhcpReservation[] | null>(null)
@@ -141,8 +142,10 @@ onMounted(load)
 </script>
 
 <template>
-  <section aria-labelledby="dhcp-reservations" class="flex flex-col gap-3">
-    <h2 id="dhcp-reservations" class="sr-only">{{ t('dhcp.tabs.reservations') }}</h2>
+  <section :aria-labelledby="headingId" class="flex flex-col gap-3">
+    <h3 :id="headingId" class="font-semibold">
+      {{ t('dhcp.reservationsOf', { server: props.server.name }) }}
+    </h3>
     <div class="flex flex-wrap items-end justify-between gap-3">
       <form class="flex flex-wrap items-end gap-3" role="search" @submit.prevent>
         <BaseSelect v-model="subnet" :label="t('dhcp.subnet')" :options="subnetOptions" />
@@ -185,7 +188,7 @@ onMounted(load)
         :columns="columns"
         :rows="shown"
         :row-key="(r: DhcpReservation) => r.id"
-        :caption="t('dhcp.tabs.reservations')"
+        :caption="t('dhcp.reservationsOf', { server: props.server.name })"
         :empty="t('dhcp.noReservations')"
       >
         <template #cell-identifier="{ row }">

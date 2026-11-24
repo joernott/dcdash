@@ -3039,6 +3039,7 @@ export interface components {
         inTouch: boolean
       }[]
       searchKeys: ('ip' | 'hw-address' | 'client-id' | 'duid' | 'hostname')[]
+      links?: components['schemas']['SystemLinks']
     }
     DHCPServerList: {
       servers: components['schemas']['DHCPServer'][]

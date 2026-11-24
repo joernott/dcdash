@@ -16,6 +16,10 @@ All notable changes to dcdash are listed here. The format follows
   (`GET /api/v1/dns/providers` lists the `links`); one color for all DNS servers, the one of the
   overview tiles.
 - **Tables** have the color of their system, every other row in a lighter shade.
+- **DHCP page:** like the DNS page, all servers with their subnets and UI/SSH/RDP buttons
+  (`GET /api/v1/dhcp/servers` lists the `links`); the server field filters, the lease search
+  sits next to it at the top right. The leases button of a subnet replaces the "Leases of a
+  subnet" field; reservations open per server.
 - **Switches page:** the switch filter, the device search and refresh on the line of the
   heading.
 

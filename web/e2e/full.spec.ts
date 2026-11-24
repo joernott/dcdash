@@ -77,11 +77,13 @@ test('bind9: create a zone, change its records and delete it', async ({ page }) 
 test('Kea: reservations in the host database, leases of an HA pair', async ({ page, request }) => {
   await loginBob(page)
   await page.goto('/dhcp/kea4-db')
-  await expect(page.getByRole('table', { name: 'Subnets' })).toContainText('192.0.2.0/24')
+  await expect(page.getByRole('table', { name: 'Subnets of kea4-db' })).toContainText(
+    '192.0.2.0/24',
+  )
 
   // Reservations: the one from the configuration file is read-only, new ones go to PostgreSQL.
-  await page.getByRole('tab', { name: 'Reservations' }).click()
-  const reservations = page.getByRole('table', { name: 'Reservations' })
+  await page.getByRole('button', { name: 'Reservations', exact: true }).click()
+  const reservations = page.getByRole('table', { name: 'Reservations of kea4-db' })
   await expect(reservations.getByRole('row', { name: /printer/ })).toContainText('read-only')
   await page.getByRole('button', { name: 'Add reservation' }).click()
   const dialog = page.getByRole('dialog')
@@ -110,7 +112,7 @@ test('Kea: reservations in the host database, leases of an HA pair', async ({ pa
     })
     expect(r.result, r.text).toBe(0)
   }
-  await page.goto('/dhcp/kea-ha1?tab=leases')
+  await page.goto('/dhcp/kea-ha1')
   await page.getByLabel('Search by').selectOption('ip')
   await page.getByLabel('Value').fill(ip)
   await page.getByRole('button', { name: 'Search', exact: true }).click()

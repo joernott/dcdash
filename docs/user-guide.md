@@ -135,15 +135,18 @@ configured) and, if it can create zones, a "Create zone" button.
 
 ## DHCP
 
-The DHCP page shows one Kea server at a time; choose it at the top. The server card shows
-its version, whether it belongs to an HA pair, and the state of the pair.
+The DHCP page lists every Kea server with its subnets, their pools and how many addresses
+are in use. Next to the name of a server are its UI, SSH and RDP buttons (if configured). The
+"Server" field at the top right shows only one of them; refresh is next to it. The version and
+the HA state of a server are on its overview tile.
 
-- **Subnets:** each subnet with its pools and how many addresses are in use.
-- **Leases:** "Show leases" lists the leases of a subnet. To find a lease in any subnet,
-  search by IP address, MAC address, client ID (DHCPv4), DUID (DHCPv6) or host name.
+- **Leases:** the button next to a subnet lists its leases above the servers. To find a lease
+  in any subnet, search at the top right by IP address, MAC address, client ID (DHCPv4),
+  DUID (DHCPv6) or host name; the search covers all shown servers. × closes the leases.
   Deleting a lease frees the address; a client that still uses it gets a new lease when it
   renews. On an HA pair, dcdash deletes the lease on both servers.
-- **Reservations:** add, change and delete fixed addresses for a client, identified by MAC
+- **Reservations:** the "Reservations" button of a server shows them below its subnets. Add,
+  change and delete fixed addresses for a client, identified by MAC
   address, client ID or DUID. Reservations from Kea's configuration file are marked
   read-only and can only be changed there.
 

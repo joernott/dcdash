@@ -676,7 +676,7 @@ UI/SSH/RDP buttons next to its name. The tables take the colors of the overview 
 - [x] **18.2** DNS page: the UI/SSH/RDP buttons next to the heading of each server
 - [x] **18.3** DNS page: one color for all DNS servers, the one of the DNS tiles on the
   overview; remove the colors per DNS server type
-- [ ] **18.4** DHCP page like the DNS page: all DHCP servers with their subnets; the server
+- [x] **18.4** DHCP page like the DNS page: all DHCP servers with their subnets; the server
   dropdown becomes a filter at the top right, together with the lease search from the
   "Leases" tab. A button next to each subnet shows its leases, which replaces the "Leases of a
   subnet" dropdown
