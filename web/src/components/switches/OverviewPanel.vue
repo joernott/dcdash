@@ -6,7 +6,6 @@ import { RouterLink } from 'vue-router'
 
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
-import IconButton from '@/components/ui/IconButton.vue'
 import LinkButtons from '@/components/ui/LinkButtons.vue'
 import {
   OVERVIEW_COLUMNS,
@@ -83,17 +82,7 @@ defineExpose({ load })
 
 <template>
   <div class="flex flex-col gap-3">
-    <div class="flex flex-wrap items-center gap-3">
-      <p class="text-sm text-fg-muted">{{ t('switches.overview.hint') }}</p>
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="sm"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
-    </div>
+    <p class="text-sm text-fg-muted">{{ t('switches.overview.hint') }}</p>
     <div class="overflow-x-auto rounded-md border border-border">
       <table class="text-center text-xs">
         <caption class="sr-only">
@@ -128,8 +117,8 @@ defineExpose({ load })
               class="border-r border-border px-3 py-1 text-left align-top font-medium"
             >
               <RouterLink
-                :to="{ name: 'switches', params: { switch: b.sw.name }, query: { tab: 'ports' } }"
-                class="text-primary underline"
+                :to="{ name: 'switches', params: { switch: b.sw.name } }"
+                class="text-base font-semibold text-primary underline"
               >
                 {{ b.sw.name }}
               </RouterLink>

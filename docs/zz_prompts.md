@@ -588,3 +588,9 @@ At the moment, the "change domain password" link is not very visible on the logi
 - the application name and version should appear in a top bar.
 - The display settings should also be in that top bar
 - Below that, there should be two tiles: One for the login and a second tile with a button for each registry. That should be the preselected registry in the dialog that is shown
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+On the switch page, I also get redirected to the first switch. I would like a similar behaviour as for the Domains and see all configured switches on the overview page. Don't show the  tabbed view on that page. Use a larger font for the switch name there. Only when clicking on a switch,  the user should get the details page with the ports  and vlans. Only use the dropdown on the overview page for filtering and move the "Find a device" functionality onto the same line as that dropdown. Move the refresh button to the top right on the same level as the "Switches" Header

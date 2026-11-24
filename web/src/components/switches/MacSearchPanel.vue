@@ -11,7 +11,10 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import type { MacResult } from '@/switches/switches'
 
-/** Finds a MAC address on all switches; access ports first. */
+/**
+ * Finds a MAC address on all switches; access ports first. The slot "before" puts controls of
+ * the page on the line of the search field.
+ */
 const i18n = useI18n()
 const { t } = i18n
 
@@ -46,23 +49,30 @@ async function search() {
 
 <template>
   <div class="flex flex-col gap-3">
-    <form class="flex flex-wrap items-end gap-3" role="search" @submit.prevent="search">
-      <BaseInput
-        v-model="query"
-        :label="t('switches.mac.query')"
-        :hint="t('switches.mac.queryHint')"
-        placeholder="bc:24:11:12:34:56"
-        inputmode="search"
-      />
-      <IconButton
-        icon="search"
-        :label="t('switches.mac.search')"
-        size="md"
-        type="submit"
-        :loading="busy"
-        :disabled="!query.trim()"
-      />
-    </form>
+    <!-- Controls of the page (slot "before") on the same line as the search. -->
+    <div class="flex flex-wrap items-start gap-x-6 gap-y-3">
+      <slot name="before" />
+      <form class="flex items-start gap-3" role="search" @submit.prevent="search">
+        <BaseInput
+          v-model="query"
+          :label="t('switches.mac.query')"
+          :hint="t('switches.mac.queryHint')"
+          placeholder="bc:24:11:12:34:56"
+          inputmode="search"
+        />
+        <!-- Aligned with the input below the label. -->
+        <div class="pt-6">
+          <IconButton
+            icon="search"
+            :label="t('switches.mac.search')"
+            size="md"
+            type="submit"
+            :loading="busy"
+            :disabled="!query.trim()"
+          />
+        </div>
+      </form>
+    </div>
     <p
       v-if="error"
       role="alert"

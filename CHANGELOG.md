@@ -34,6 +34,10 @@ All notable changes to dcdash are listed here. The format follows
   from the new `proxmox.clusters[].node_links` (with `{node}`) or from the endpoint named
   after the node. UI buttons open a new tab.
 - **Overview:** every DNS tile has the color of bind9; the bottom line names the provider.
+- **Switches page:** shows all switches instead of redirecting to the first one; the overview
+  has no tabs, the selection only filters it, and the device search is on the same line.
+  The switch name (larger now) opens the details page with the ports and VLANs. One refresh
+  button at the top right replaces those of the panels.
 - **Login page:** a top bar with the name, the version and the display settings; below it the
   login tile and, if a domain offers the self-service password change, a second tile with a
   button per domain that opens the password change with this domain preselected.

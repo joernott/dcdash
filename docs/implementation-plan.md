@@ -656,3 +656,7 @@ split into a directory of files that are merged.
 - [x] **17.17** Login page: a top bar with the name, version and display settings (also on
   the enrollment and password pages); below it the login tile and a tile with a button per
   self-service domain, which preselects that domain on the password change page
+- [x] **17.18** Switches page like the DNS page: `/switches` shows all switches (no redirect,
+  no tabs), the dropdown only filters, the device search sits on the same line, refresh at the
+  top right next to the heading, larger switch names. A name opens `/switches/<name>` with
+  the info and the tabs Ports and VLANs

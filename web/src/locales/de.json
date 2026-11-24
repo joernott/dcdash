@@ -848,6 +848,9 @@
   },
   "switches": {
     "switch": "Switch",
+    "all": "Alle Switches",
+    "back": "Alle Switches",
+    "notFound": "Es gibt keinen Switch {name}, oder Sie dürfen ihn nicht sehen.",
     "none": "Es sind keine Switches eingerichtet, oder Sie dürfen keine sehen.",
     "views": "Ansichten des Switches",
     "unavailable": "Der Switch ist nicht verfügbar: {error}",

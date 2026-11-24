@@ -174,10 +174,17 @@ See [projects.md](projects.md).
 
 ## Switches
 
-The Switches page starts with an **overview** of all switches, laid out like their front
-panels: ▲ for ports that are up, ▼ for the others, with the VLAN below; the switch name
-leads to its ports, "https" and "ssh" to the switch itself. The other tabs show one switch at
-a time with its model, firmware and uptime:
+The Switches page shows an **overview** of all switches, laid out like their front panels: ▲
+for ports that are up, ▼ for the others, with the VLAN below. The "Switch" selection above
+it only filters the overview; "Refresh" is at the top right. The UI and SSH buttons lead to
+the switch itself.
+
+**Find a device** is on the same line as the selection: enter (part of) a MAC address.
+"Connected here" marks the port the device is plugged into; "Behind another switch" marks
+uplinks.
+
+The switch name opens the **details page** of that switch, with its model, firmware and
+uptime and two tabs:
 
 - **Ports:** state, speed, VLANs, LLDP neighbor and projects of each port; the filter
   searches names, descriptions, VLANs and neighbors. "Change" opens a dialog to enable or
@@ -185,8 +192,6 @@ a time with its model, firmware and uptime:
   switches need an extra confirmation.
 - **VLANs:** the VLANs with the ports that use them. Create a VLAN on one or several switches,
   rename it, or delete it if no port uses it.
-- **Find a device:** enter (part of) a MAC address. "Connected here" marks the port the
-  device is plugged into; "Behind another switch" marks uplinks.
 
 Changes take effect immediately and are saved to the startup configuration, which takes a
 few seconds. See [switches.md](switches.md).

@@ -91,14 +91,6 @@ defineExpose({ load })
         :placeholder="t('switches.filterHint')"
         inputmode="search"
       />
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
     </div>
     <p
       v-if="error"

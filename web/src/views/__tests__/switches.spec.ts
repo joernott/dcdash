@@ -133,8 +133,11 @@ async function setup(path = '/switches', list: unknown[] = switches) {
 
 describe('SwitchesView', () => {
   it('shows the inventory and the ports and changes a port', async () => {
-    const { w, router } = await setup('/switches?tab=ports')
-    expect(router.currentRoute.value.params.switch).toBe('sw1')
+    // The details page of a switch opens with the ports.
+    const { w } = await setup('/switches/sw1')
+    expect(w.get('h1').text()).toBe('sw1')
+    expect(w.findAll('[role="tab"]').map((x) => x.text())).toEqual(['Ports', 'VLANs'])
+    expect(w.get('a[href="/switches"]').text()).toContain('All switches')
     expect(w.text()).toContain('AOS-CX PL.10.08.1010 (v10.08)')
     expect(w.text()).toContain('serial number CN1')
     const rows = () => w.get('tbody').findAll('tr')
@@ -252,7 +255,7 @@ describe('SwitchesView', () => {
   })
 
   it('finds a MAC address', async () => {
-    const { w } = await setup('/switches/sw1?tab=macs')
+    const { w } = await setup('/switches')
     api.on('GET /api/v1/switches/macs', () => [
       200,
       {
@@ -291,6 +294,41 @@ describe('SwitchesView', () => {
 })
 
 describe('switch overview', () => {
+  it('shows all switches without tabs and filters them', async () => {
+    const { w, router } = await setup()
+    // No redirect to the first switch, no tabs; the refresh button is next to the heading.
+    expect(router.currentRoute.value.fullPath).toBe('/switches')
+    expect(w.find('[role="tablist"]').exists()).toBe(false)
+    expect(w.get('h1').text()).toBe('Switches')
+    expect(
+      w
+        .get('h1')
+        .element.parentElement!.parentElement!.querySelector('button[aria-label="Refresh"]'),
+    ).not.toBeNull()
+    // The filter and the device search on one line.
+    const toolbar = w.get('form[role="search"]').element.parentElement!
+    expect(toolbar.querySelector('select')).not.toBeNull()
+    expect(w.findAll('tbody')).toHaveLength(2)
+    // A larger name, which opens the details page.
+    const link = w.get('a[href="/switches/sw1"]')
+    expect(link.classes()).toContain('text-base')
+
+    await w.get('select').setValue('sw1')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/switches?switch=sw1')
+    expect(w.findAll('tbody')).toHaveLength(1)
+    await w.get('select').setValue('')
+    await flushPromises()
+    expect(w.findAll('tbody')).toHaveLength(2)
+    w.unmount()
+  })
+
+  it('reports an unknown switch', async () => {
+    const { w } = await setup('/switches/nope')
+    expect(w.get('[role="alert"]').text()).toBe('There is no switch nope, or you may not see it.')
+    w.unmount()
+  })
+
   it('shows all switches like their front panels', async () => {
     const { w } = await setup()
     const sw1 = w.findAll('tbody')[0]!
