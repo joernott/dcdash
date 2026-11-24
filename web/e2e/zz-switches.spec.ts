@@ -18,7 +18,11 @@ test('switch ports, VLANs, projects and MAC search', async ({ page }) => {
   await expect(page).toHaveURL(/\/switches\/sw1$/)
   // The overview: sw1 like its front panel.
   const overview = page.getByRole('table', { name: 'Overview' })
-  await expect(overview.getByRole('link', { name: 'sw1' })).toBeVisible()
+  await expect(overview.getByRole('link', { name: 'sw1', exact: true })).toBeVisible()
+  // The same UI and SSH buttons as on the overview page; the UI opens a new tab.
+  await expect(
+    overview.getByRole('link', { name: /Open the web interface of sw1/ }),
+  ).toHaveAttribute('target', '_blank')
   await expect(overview.getByText('1/1/2: Up, VLAN 10, app1')).toBeAttached()
   await expectAccessible(page, 'Switch overview')
   await page.screenshot({ path: '../.e2e/screenshots/switches-overview.png', fullPage: true })
