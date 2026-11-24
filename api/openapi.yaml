@@ -3698,6 +3698,14 @@ components:
         disk: { type: integer, format: int64 }
         maxDisk: { type: integer, format: int64 }
         uptime: { type: integer, format: int64, description: Seconds. }
+        links:
+          type: object
+          description: >-
+            Web interface (`ui`, an http(s) URL) and SSH (`ssh`, an ssh:// URL) of the node, from
+            `node_links` or the endpoint whose host is the node name. Absent if unknown.
+          properties:
+            ui: { type: string }
+            ssh: { type: string }
 
     ProxmoxGuest:
       type: object

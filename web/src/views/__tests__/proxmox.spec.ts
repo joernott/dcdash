@@ -64,6 +64,7 @@ const inventory = {
       disk: 10 * GIB,
       maxDisk: 100 * GIB,
       uptime: 90000,
+      links: { ui: 'https://pve1.example.com:8006', ssh: 'ssh://root@pve1.example.com' },
     },
   ],
   guests: [
@@ -171,7 +172,14 @@ describe('ProxmoxView', () => {
     // console includes operate (action hierarchy); shell needs admin on the node.
     expect(rows[2]!.findAll('button')).toHaveLength(4)
     expect(rows[2]!.find('a[aria-label="Console"]').exists()).toBe(true)
-    expect(w.text()).toContain('Shell')
+    // The node tile: shell, web interface and SSH as buttons like on the overview.
+    const tile = w.get('li')
+    expect(tile.findAll('.link-button').map((b) => b.text().split(':')[0])).toEqual([
+      'Shell',
+      'UI',
+      'SSH',
+    ])
+    expect(tile.get('a[href="https://pve1.example.com:8006"]').attributes('target')).toBe('_blank')
 
     await rows[1]!.get('button').trigger('click')
     expect(w.get('dialog').text()).toContain('Start db (102)?')

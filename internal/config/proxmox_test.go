@@ -87,3 +87,22 @@ proxmox:
 		}
 	}
 }
+
+func TestLinksForNode(t *testing.T) {
+	c := ProxmoxCluster{Endpoints: []ProxmoxEndpoint{
+		{URL: "https://pve1.example.com:8006"}, {URL: "https://10.0.0.2:8006"},
+	}}
+	if got := c.LinksForNode("pve1"); got != (Links{UI: "https://pve1.example.com:8006", SSH: "root@pve1.example.com"}) {
+		t.Errorf("from endpoint: %+v", got)
+	}
+	if got := c.LinksForNode("pve2"); got != (Links{}) {
+		t.Errorf("no matching endpoint: %+v", got)
+	}
+	if got := c.LinksForNode("pve"); got != (Links{}) {
+		t.Errorf("a prefix of the host is not the node: %+v", got)
+	}
+	c.NodeLinks = Links{UI: "https://{node}.mgmt.example.com:8006", SSH: "admin@{node}.mgmt.example.com"}
+	if got := c.LinksForNode("pve2"); got != (Links{UI: "https://pve2.mgmt.example.com:8006", SSH: "admin@pve2.mgmt.example.com"}) {
+		t.Errorf("template: %+v", got)
+	}
+}

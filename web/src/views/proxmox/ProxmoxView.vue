@@ -11,6 +11,7 @@ import PowerActionDialog from '@/components/proxmox/PowerActionDialog.vue'
 import TaskList from '@/components/proxmox/TaskList.vue'
 import UsageBar from '@/components/proxmox/UsageBar.vue'
 import IconButton from '@/components/ui/IconButton.vue'
+import LinkButtons from '@/components/ui/LinkButtons.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -224,16 +225,25 @@ onBeforeUnmount(() => clearInterval(timer))
           />
           <div class="flex items-center justify-between gap-2 text-sm text-fg-muted">
             <span v-if="node.uptime > 0">{{ t('proxmox.uptime') }}: {{ uptime(node.uptime) }}</span>
-            <RouterLink
-              v-if="
-                clusterStore.terminals(cluster) &&
-                session.can(nodeShellPermission(cluster, node.name))
-              "
-              :to="{ name: 'proxmox-shell', params: { cluster, node: node.name } }"
-              class="text-primary underline"
+            <LinkButtons
+              class="ml-auto"
+              :name="node.name"
+              :ui="node.links?.ui"
+              :ssh="node.links?.ssh"
             >
-              {{ t('proxmox.shell') }}
-            </RouterLink>
+              <RouterLink
+                v-if="
+                  clusterStore.terminals(cluster) &&
+                  session.can(nodeShellPermission(cluster, node.name))
+                "
+                :to="{ name: 'proxmox-shell', params: { cluster, node: node.name } }"
+                class="link-button"
+                :title="t('proxmox.shellLabel', { node: node.name })"
+              >
+                {{ t('proxmox.shell')
+                }}<span class="sr-only">: {{ t('proxmox.shellLabel', { node: node.name }) }}</span>
+              </RouterLink>
+            </LinkButtons>
           </div>
         </li>
       </ul>

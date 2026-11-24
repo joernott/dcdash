@@ -36,12 +36,14 @@ password has expired or must be changed. Use the new password everywhere afterwa
 
 The overview shows the state of dcdash and of every connected system, one tile each: first
 dcdash itself (database, user directory, certificate, projects), then each Proxmox cluster,
-DNS provider, DHCP server, NetBox, switch and firewall. The tiles of the systems have the
-system's color (Proxmox purple, bind9 blue, Cloudflare orange, Kea green, NetBox teal,
-switches cyan, OPNsense red), and the bottom line names the system and the response time of
-the check. A tile with a red border names the problem. If a system answers a check with a
-client error (HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once
-more after a second before showing the error. The page refreshes every 30 seconds.
+DNS provider, DHCP server, NetBox, switch, firewall and Active Directory domain. The tiles of
+the systems have the system's color (Proxmox purple, DNS blue, Kea green, NetBox teal,
+switches cyan, OPNsense red, Active Directory violet), and the bottom line names the system
+(for DNS: bind9, Cloudflare or AD DNS) and the response time of the check. The UI button opens
+the system's web interface in a new tab, SSH an ssh:// link, RDP a Remote Desktop file.
+A tile with a red border names the problem. If a system answers a check with a client error
+(HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once more after a
+second before showing the error. The page refreshes every 30 seconds.
 
 If the configuration names a system's own interfaces, its tile shows buttons left of the
 status: **UI** opens the web interface in a new tab, **SSH** the SSH client registered in
@@ -83,7 +85,9 @@ cluster, choose it at the top.
 - **Details:** click a guest's name for its configuration, current usage and recent tasks.
 - **Console:** VMs open a graphical console (VNC) in the browser. The toolbar sends
   Ctrl+Alt+Del and switches to full screen. Containers open a terminal.
-- **Node shell:** a root shell on a node. It requires administrator rights on the node.
+- **Node shell:** a root shell on a node, with the "Shell" button on the node's tile. It
+  requires administrator rights on the node. The tile also has UI and SSH buttons for the
+  node (`node_links` in the configuration, or the endpoint named after the node).
 - **Create:** if your administrator allows it for the cluster, "Create" opens a wizard for
   a virtual machine from a template, a virtual machine from an ISO image, or a container. You
   choose the name, the resources, one or more network devices and, for templates and containers, the login

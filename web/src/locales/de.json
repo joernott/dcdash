@@ -369,6 +369,7 @@
     "console": "Konsole",
     "consoleOf": "Konsole von {name}",
     "shell": "Shell",
+    "shellLabel": "Shell auf {node} öffnen",
     "shellOf": "Shell auf {node}",
     "consoleStates": {
       "connecting": "Verbinde",

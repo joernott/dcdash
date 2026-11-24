@@ -7,6 +7,7 @@ import { RouterLink } from 'vue-router'
 import { api, unwrap } from '@/api/client'
 import { errorMessage } from '@/api/errors'
 import IconButton from '@/components/ui/IconButton.vue'
+import LinkButtons from '@/components/ui/LinkButtons.vue'
 import {
   OVERVIEW_COLUMNS,
   overviewLayout,
@@ -71,6 +72,12 @@ function label(p: SwitchPort): string {
 
 watch(() => props.switches.map((s) => s.name).join(), load)
 onMounted(load)
+
+// sshUrl is the ssh:// link of a switch.
+function sshUrl(host: string) {
+  return `ssh://${host}`
+}
+
 defineExpose({ load })
 </script>
 
@@ -126,12 +133,12 @@ defineExpose({ load })
               >
                 {{ b.sw.name }}
               </RouterLink>
-              <div class="flex gap-2 font-normal">
-                <a :href="b.sw.url" target="_blank" rel="noopener" class="text-primary underline"
-                  >https</a
-                >
-                <a :href="`ssh://${b.sw.host}`" class="text-primary underline">ssh</a>
-              </div>
+              <LinkButtons
+                class="mt-1 font-normal"
+                :name="b.sw.name"
+                :ui="b.sw.url"
+                :ssh="sshUrl(b.sw.host)"
+              />
             </th>
             <td
               v-for="(p, c) in row"

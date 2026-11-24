@@ -559,3 +559,23 @@ ldbsearch does not exist on the samba dc
 ## 2026-11-24 — Sprint 17 (Configuration directory)
 
 a) I found it. I need to change the provider in the top right. on the dns page from the navigation. /dns always redirects auf /dns/cloudflare-thse which is the first DNS provider. Please change the page so that all providers are listed, each with a create zone button next to it with their zones below. The provider field acts as an optional filter
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+More tasks for sprint 17:
+- Convert the https and ssh links for every switch to the same UI/SSH buttons as on the overview
+- Convert the "Shell" button on the proxmox node tiles on the proxmox pages to a similar button and also add the UI and SSH buttons there
+- A change in coloring: Always use the same color for each DNS tile. Take the color from bind9 for them
+
+And another question:
+All users in the directory show "read-only"  Do I need to use a different user than the ldap-bind user I've used so far (e.g. the "Administrator" user to be able to edit them?"
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+And another task: The "UI" buttons should open in new tabs.
+
+Please implement as many tasks in sprint 17 as you can.

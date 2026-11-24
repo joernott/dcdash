@@ -298,8 +298,12 @@ describe('switch overview', () => {
     expect(rows).toHaveLength(2)
     const head = rows[0]!.get('th')
     expect(head.attributes('rowspan')).toBe('2')
-    expect(head.get('a[href="https://192.0.2.33"]').text()).toBe('https')
-    expect(head.get('a[href="ssh://192.0.2.33"]').text()).toBe('ssh')
+    // The same UI and SSH buttons as on the overview; the web interface opens in a new tab.
+    const ui = head.get('a[href="https://192.0.2.33"]')
+    expect(ui.classes()).toContain('link-button')
+    expect(ui.attributes('target')).toBe('_blank')
+    expect(ui.text()).toMatch(/^UI: Open the web interface of /)
+    expect(head.get('a[href="ssh://192.0.2.33"]').text()).toMatch(/^SSH: Connect to /)
     // Port 1 above port 2, port 3 (here 4) in the next column.
     const cells = (r: number) =>
       rows[r]!.findAll('td').map((c) =>

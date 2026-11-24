@@ -181,6 +181,26 @@ type Node struct {
 	Disk    int64   `json:"disk"`
 	MaxDisk int64   `json:"maxDisk"`
 	Uptime  int64   `json:"uptime"`
+	// Links are the web interface and SSH of the node, if known.
+	Links *NodeLinks `json:"links,omitempty"`
+}
+
+// NodeLinks are the links of a node: ui is an http(s) URL, ssh an ssh:// URL.
+type NodeLinks struct {
+	UI  string `json:"ui,omitempty"`
+	SSH string `json:"ssh,omitempty"`
+}
+
+// linksOf returns the links of a node, or nil.
+func (c *Cluster) linksOf(node string) *NodeLinks {
+	if c.nodeLinks == nil {
+		return nil
+	}
+	l := c.nodeLinks(node)
+	if l.UI == "" && l.SSH == "" {
+		return nil
+	}
+	return &NodeLinks{UI: l.UI, SSH: l.SSHURL()}
 }
 
 // Guest is a virtual machine or container in the inventory.
@@ -258,7 +278,7 @@ func (s *Service) handleResources(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case x.Type == "node" && can(nodeResource(x.Node)):
 			inv.Nodes = append(inv.Nodes, Node{Name: x.Node, Status: x.Status, CPU: x.CPU, MaxCPU: x.MaxCPU,
-				Mem: x.Mem, MaxMem: x.MaxMem, Disk: x.Disk, MaxDisk: x.MaxDisk, Uptime: x.Uptime})
+				Mem: x.Mem, MaxMem: x.MaxMem, Disk: x.Disk, MaxDisk: x.MaxDisk, Uptime: x.Uptime, Links: c.linksOf(x.Node)})
 		case IsGuestType(x.Type) && can(guestResource(x.Type, x.VMID)):
 			inv.Guests = append(inv.Guests, toGuest(x))
 		case x.Type == "storage" && can("storage/"+x.Node+"/"+x.Storage):

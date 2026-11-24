@@ -633,3 +633,15 @@ split into a directory of files that are merged.
 - [ ] **17.10** AD DNS: don't show an empty zone list silently. If none of the zone
   containers below `base_dn` exists or can be read, the tile and the page show an error
   naming the containers
+- [x] **17.11** Switches: the https and ssh links of every switch on the switch overview become
+  the same UI and SSH buttons as on the overview page (a shared `LinkButtons` component)
+- [x] **17.12** Proxmox: the "Shell" link on the node tiles becomes a button like these, next
+  to UI and SSH buttons for the node (`node_links` with `{node}`, or the endpoint named after
+  the node)
+- [x] **17.13** Overview: every DNS tile has the color of bind9, whatever the provider; the
+  bottom line still names it (bind9, Cloudflare, AD DNS)
+- [x] **17.14** The UI buttons open the web interface in a new tab, everywhere (all use
+  `LinkButtons`)
+- [ ] **17.15** Directories: users and groups outside `managed_ous` are read-only. Compare DNs
+  as DNs (spaces after commas, case), reject `managed_ous` entries that aren't DNs below
+  `base_dn`, and say on the page which containers are managed

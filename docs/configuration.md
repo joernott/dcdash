@@ -240,6 +240,7 @@ Proxmox VE clusters. Default: no clusters. See [proxmox.md](proxmox.md).
 |---|---|---|---|
 | `proxmox.clusters[].name` | string | none | Unique name, used in the UI and in permissions (`proxmox:<name>:...`). Lower-case letters, digits, `.`, `-` and `_`, at most 64 characters, starting with a letter or digit. Required. |
 | `proxmox.clusters[].ui`, `.ssh`, `.rdp` | string | empty | Buttons on the overview tile, see [Links on the overview page](#general-rules). |
+| `proxmox.clusters[].node_links.ui`, `.ssh` | string | from the endpoints | UI and SSH buttons on the node tiles of the Proxmox page; `{node}` is replaced by the node name, for example `https://{node}.example.com:8006` and `root@{node}.example.com`. Without it, a node gets the links of the endpoint whose host is the node name or starts with `<node>.` (`https://<host>:<port>`, `root@<host>`). |
 | `proxmox.clusters[].endpoints[].url` | string | none | API URL of a node, `https://host[:port]` without a path. At least one endpoint is required. Endpoints are tried in order; see [proxmox.md](proxmox.md#failover). |
 | `proxmox.clusters[].endpoints[].fingerprint` | string | empty | Pins this node's certificate (SHA-256). Overrides `tls.fingerprint` of the cluster. |
 | `proxmox.clusters[].tls.*` | | | TLS client settings for all endpoints, see [General rules](#general-rules). Typically `ca_file` with the cluster CA. See [proxmox.md](proxmox.md#certificates). |

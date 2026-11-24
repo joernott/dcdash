@@ -11,6 +11,11 @@ All notable changes to dcdash are listed here. The format follows
 - **DNS page:** lists every provider with its zones and its own "Create zone" button instead
   of only the first one; the provider selection is an optional filter, and the zone search
   covers all shown providers.
+- **Buttons:** the switch overview and the Proxmox node tiles have the same UI and SSH buttons
+  as the overview page; the node tiles also show "Shell" as such a button. Node links come
+  from the new `proxmox.clusters[].node_links` (with `{node}`) or from the endpoint named
+  after the node. UI buttons open a new tab.
+- **Overview:** every DNS tile has the color of bind9; the bottom line names the provider.
 
 ### Fixed
 
