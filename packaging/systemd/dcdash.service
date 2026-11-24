@@ -9,7 +9,7 @@ Wants=network-online.target
 Type=simple
 User=dcdash
 Group=dcdash
-ExecStart=/usr/bin/dcdash --config /etc/dcdash/config.yaml serve
+ExecStart=/usr/bin/dcdash --config /etc/dcdash/config.d serve
 Restart=on-failure
 RestartSec=5s
 # data_dir (/var/lib/dcdash) and an optional audit log file (/var/log/dcdash).

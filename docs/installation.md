@@ -48,8 +48,11 @@ The package:
 
 - creates the system user and group `dcdash`
 - installs `/usr/bin/dcdash` and the systemd unit `dcdash.service`
-- installs the example configuration as `/etc/dcdash/config.yaml` (owner `root:dcdash`, mode
-  0640). Upgrades keep your changes.
+- installs the example configuration as the directory `/etc/dcdash/config.d`, one file per
+  section (owner `root:dcdash`, mode 0640). Upgrades keep your changes and ask before
+  replacing a file you changed. An installation upgraded from 0.3 keeps reading
+  `/etc/dcdash/config.yaml` until you move it (see
+  [configuration.md](configuration.md#upgrading-from-dcdash-03)).
 - creates the encryption key `/etc/dcdash/encryption.key` at the first installation
 - doesn't enable or start the service: the configuration needs editing first
 
@@ -67,7 +70,8 @@ sudo install -m 0755 dcdash /usr/bin/dcdash
 sudo groupadd --system dcdash
 sudo useradd --system --gid dcdash --home-dir /var/lib/dcdash --shell /usr/sbin/nologin dcdash
 sudo install -d -m 0750 -o root -g dcdash /etc/dcdash
-sudo install -m 0640 -o root -g dcdash configs/config.example.yaml /etc/dcdash/config.yaml
+sudo install -d -m 0750 -o root -g dcdash /etc/dcdash/config.d
+sudo install -m 0640 -o root -g dcdash configs/config.d/*.yaml /etc/dcdash/config.d/
 sudo sh -c 'umask 027; dcdash gen-key > /etc/dcdash/encryption.key'
 sudo chgrp dcdash /etc/dcdash/encryption.key
 sudo install -m 0644 packaging/systemd/dcdash.service /etc/systemd/system/dcdash.service
@@ -79,17 +83,18 @@ The unit creates `/var/lib/dcdash` and `/var/log/dcdash` when the service starts
 ## Run the container
 
 The image is based on distroless and runs as the user `nonroot` (UID 65532). It expects the
-configuration at `/etc/dcdash/config.yaml` and keeps its data in the volume
+configuration in the directory `/etc/dcdash/config.d` and keeps its data in the volume
 `/var/lib/dcdash`.
 
 ```sh
-mkdir -p /srv/dcdash
+mkdir -p /srv/dcdash/config.d
+cp configs/config.d/*.yaml /srv/dcdash/config.d/   # from the release archive
 docker run --rm ghcr.io/joernott/dcdash:0.1 gen-key > /srv/dcdash/encryption.key
-# Edit /srv/dcdash/config.yaml, with
+# Edit the files in /srv/dcdash/config.d, with
 #   security.encryption_key: "file:/etc/dcdash/encryption.key"
 #   data_dir: /var/lib/dcdash
 sudo chown -R 65532:65532 /srv/dcdash
-sudo chmod 0600 /srv/dcdash/config.yaml /srv/dcdash/encryption.key
+sudo chmod 0600 /srv/dcdash/config.d/*.yaml /srv/dcdash/encryption.key
 
 docker run -d --name dcdash --restart unless-stopped \
   -p 443:8443 \
@@ -114,7 +119,8 @@ Differences to the packages:
 
 ## First configuration
 
-The example configuration explains every option in comments; the full reference is in
+The example configuration in `/etc/dcdash/config.d` explains every option in comments, one
+file per section; the full reference is in
 [configuration.md](configuration.md). The minimum is:
 
 1. **TLS:** the certificate and key files, or ACME (see [certificates.md](certificates.md)).
@@ -126,9 +132,11 @@ The example configuration explains every option in comments; the full reference 
    permissions. They must set up an authenticator app (TOTP) at their first login.
 4. **Roles:** map directory groups to permissions (see
    [security.md](security.md#roles-and-permissions)).
-5. **Modules:** the Proxmox clusters, DNS providers and Kea servers (see
-   [proxmox.md](proxmox.md), [dns.md](dns.md), [dhcp.md](dhcp.md)). Leave out what you don't
-   use.
+5. **Modules:** the Proxmox clusters, DNS providers, Kea servers, Active Directory domains,
+   NetBox, switches and firewalls (see [proxmox.md](proxmox.md), [dns.md](dns.md),
+   [dhcp.md](dhcp.md), [directories.md](directories.md), [netbox.md](netbox.md),
+   [switches.md](switches.md), [firewalls.md](firewalls.md)). Leave out what you don't use;
+   several entries of a list can each get their own file.
 
 Check the configuration, then start the service:
 

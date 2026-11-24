@@ -54,6 +54,21 @@ func TestConfigValidate(t *testing.T) {
 	if _, _, err = run(t, "-c", bad, "config", "validate"); err == nil || !strings.Contains(err.Error(), "log.level") {
 		t.Errorf("bad config: expected log.level error, got %v", err)
 	}
+
+	// A directory: the files are merged and listed.
+	confd := filepath.Join(dir, "config.d")
+	if err := os.Mkdir(confd, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	for name, content := range map[string]string{"00_server.yaml": goodConfig, "05_log.yaml": "log: {level: debug}\n"} {
+		if err := os.WriteFile(filepath.Join(confd, name), []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out, _, err = run(t, "-c", confd, "config", "validate")
+	if err != nil || !strings.Contains(out, "read "+filepath.Join(confd, "00_server.yaml")+"\nread "+filepath.Join(confd, "05_log.yaml")+"\n") {
+		t.Errorf("directory: %q, %v", out, err)
+	}
 }
 
 func TestConfigFromEnv(t *testing.T) {

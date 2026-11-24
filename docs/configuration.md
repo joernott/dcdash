@@ -1,28 +1,93 @@
 # Configuration reference
 
-dcdash reads one YAML file. The default path is `/etc/dcdash/config.yaml`. Use `--config`
-(`-c`) or the environment variable `DCDASH_CONFIG` to read another file.
+dcdash reads a directory of YAML files. The default is `/etc/dcdash/config.d`. Use `--config`
+(`-c`) or the environment variable `DCDASH_CONFIG` to read another directory, or a single
+file.
 
 This page lists every key. The module documents explain the concepts behind them. For a
-commented example of the whole file, see
-[configs/config.example.yaml](../configs/config.example.yaml).
+commented example of every section, see [configs/config.d](../configs/config.d); the
+packages install it to `/etc/dcdash/config.d`.
+
+## The configuration directory
+
+dcdash reads every `*.yaml` file of the directory in alphabetical order and merges them into
+one configuration. Hidden files, subdirectories and other extensions (`*.yaml.dpkg-old`,
+`*.bak`, `README`) are ignored. The example splits the configuration by section:
+
+| File | Sections |
+|---|---|
+| `00_server.yaml` | `server` |
+| `01_auth.yaml` | `auth` |
+| `02_audit.yaml` | `audit` |
+| `03_security.yaml` | `security` |
+| `04_roles.yaml` | `roles` |
+| `05_log.yaml` | `log` |
+| `06_metrics.yaml` | `metrics` |
+| `07_global.yaml` | `status`, `data_dir` |
+| `10_projects.yaml` | `projects` |
+| `20_directories.yaml` | `directories` |
+| `30_netbox.yaml` | `netbox` |
+| `40_proxmox.yaml` | `proxmox` |
+| `50_dns.yaml` | `dns` |
+| `60_dhcp.yaml` | `dhcp` |
+| `70_firewalls.yaml` | `firewalls` |
+| `80_switches.yaml` | `switches` |
+
+The names are only a convention: one file with everything works as well as one file per
+switch. Merging follows three rules:
+
+- **Sections are merged key by key**, at every level. A file may set `server.listen` while
+  another sets `server.tls`.
+- **Lists are joined** in file order. To add a switch, drop a file with a `switches:` list
+  holding just that switch; to remove it, delete the file. The same works for `roles`,
+  `directories`, `firewalls`, `proxmox.clusters`, `dns.providers` and `dhcp.servers`.
+- **A value set in two files must be equal.** Otherwise dcdash stops with an error naming both
+  files and lines, for example
+  `log.level: set in 05_log.yaml (line 5) and in 90_debug.yaml (line 2)`. An empty value
+  (`key:` with nothing after it) counts as not set.
+
+```yaml
+# /etc/dcdash/config.d/81_switch-sw42.yaml
+switches:
+  - name: sw42
+    url: https://10.0.0.42
+    username: dcdash
+    password: "file:/etc/dcdash/switch-dcdash.password"
+```
+
+Errors in a single file, such as an unknown key, name the file and the line. The start log
+and `dcdash config validate` list the files read.
+
+### Upgrading from dcdash 0.3
+
+dcdash 0.3 and earlier read the single file `/etc/dcdash/config.yaml`. As long as this file
+exists, dcdash reads it instead of `/etc/dcdash/config.d` and logs a warning, so an upgraded
+installation keeps working; the package also installs the example files into
+`/etc/dcdash/config.d`. To switch to the directory:
+
+1. Either move your settings into the example files, or move `config.yaml` into the
+   directory (for example as `/etc/dcdash/config.d/00_dcdash.yaml`) and delete the example
+   files for the sections it contains. Example files that only contain comments or empty
+   lists (`switches: []`) don't conflict and can stay.
+2. Run `dcdash --config /etc/dcdash/config.d config validate`.
+3. Delete `/etc/dcdash/config.yaml` (keep a copy) and restart dcdash.
 
 ## General rules
 
 **Unknown keys are rejected.** A typo such as `listn:` stops dcdash with an error instead of
 being ignored. Keys that are left out get their default.
 
-**Validation.** dcdash checks the whole file at startup and reports all problems at once.
-Check a file without starting the server:
+**Validation.** dcdash checks the whole configuration at startup and reports all problems at once.
+Check it without starting the server:
 
 ```sh
 dcdash config validate
-dcdash --config /tmp/new-config.yaml config validate
+dcdash --config /tmp/new-config.d config validate
 ```
 
 The command also prints warnings. Warnings don't stop dcdash:
 
-- The configuration file or a file referenced with `file:` is accessible by other users (any
+- A configuration file or a file referenced with `file:` is accessible by other users (any
   permission bit for "other" is set). Use `chmod 0640` or `0600`. This check is skipped on
   Windows.
 - No login method is configured: neither `auth.ldap.url` nor `auth.ldap.servers` is set, and `auth.local.enabled` is false.
@@ -537,5 +602,4 @@ security:
 Create the key with `dcdash gen-key > /etc/dcdash/encryption.key`, then check the file with
 `dcdash config validate`.
 
-For a commented example of the whole file, see
-[configs/config.example.yaml](../configs/config.example.yaml).
+For a commented example of every section, see [configs/config.d](../configs/config.d).

@@ -1,0 +1,11 @@
+# Projects (see docs/projects.md): one file <name>.yaml per project in dir, e.g.
+#   title: Webshop relaunch
+#   color: 2196f3
+#   description: The new web shop
+#   groups:                  # Active Directory groups per directory (20_directories.yaml)
+#     lab: [webshop-admins]
+# The tag project-<name> marks the project's objects in Proxmox and NetBox.
+
+projects:
+  dir: /etc/dcdash/projects
+  reload_interval: 1m

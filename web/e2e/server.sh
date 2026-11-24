@@ -115,7 +115,8 @@ if [[ "${DCDASH_E2E_FULL:-}" == 1 ]]; then
     - {name: kea-ha2, family: v4, url: \"$DCDASH_IT_KEA_HA2_URL\", insecure: true, username: dcdash, password: \"$DCDASH_IT_KEA_PASSWORD\", ha_group: ha}"
 fi
 
-cat > "$DIR/config.yaml" <<EOF
+mkdir -p "$DIR/config.d"
+cat > "$DIR/config.d/00_dcdash.yaml" <<EOF
 server:
   listen: "$LISTEN"
   tls: {mode: files, cert_file: $DIR/cert.pem, key_file: $DIR/key.pem}
@@ -215,11 +216,12 @@ switches:
     netbox_device: sw-e2e
 projects:
   dir: "$DIR/projects"
-metrics: {enabled: true, token: "metrics-e2e-test-only"}
 security:
   encryption_key: "file:$DIR/encryption.key"
 log: {level: warn, format: console}
 data_dir: $DIR/data
 EOF
-chmod 600 "$DIR/config.yaml"
-exec "$BIN" --config "$DIR/config.yaml" serve
+# A second file: the configuration directory is merged.
+echo 'metrics: {enabled: true, token: "metrics-e2e-test-only"}' > "$DIR/config.d/06_metrics.yaml"
+chmod 600 "$DIR"/config.d/*.yaml
+exec "$BIN" --config "$DIR/config.d" serve

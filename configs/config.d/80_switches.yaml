@@ -1,0 +1,17 @@
+# Aruba CX switches (see docs/switches.md). Permissions use the name as instance:
+# "switch:sw-core:*:read" shows the switch, "switch:sw-core:port/1/1/*:write" changes ports,
+# "switch:sw-core:vlan/4*:write" manages VLANs.
+# With many switches, give each its own file: 81_switch-sw-core.yaml, 82_switch-sw-42.yaml,
+# ... Each starts with "switches:" and lists one switch; the lists are joined.
+
+switches: []
+#  - name: sw-core
+#    url: https://10.0.0.2
+#    tls:
+#      # The factory certificate is self-signed: pin it.
+#      fingerprint: "11:37:4E:...:DA:F4"
+#    username: dcdash
+#    password: "file:/etc/dcdash/switch-dcdash.password"
+#    api_version: ""                   # empty: the newest the switch offers
+#    netbox_device: sw-core            # write ports and VLANs to this NetBox device
+#    timeout: 20s

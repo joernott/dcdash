@@ -1,0 +1,14 @@
+# Audit log: logins and every state-changing action, stored in the database
+# (see docs/security.md). File and syslog are optional additional outputs.
+
+audit:
+  # Delete database entries older than this; 0 keeps them forever. Units: h, m, s or d (days).
+  retention: 0
+  # Append every entry as a JSON line to this file.
+  # file: /var/log/dcdash/audit.jsonl
+  syslog:
+    enabled: false
+    # Empty network and address use the local syslog daemon; otherwise udp, tcp or unix.
+    # network: udp
+    # address: syslog.example.com:514
+    tag: dcdash

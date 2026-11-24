@@ -593,35 +593,40 @@ v0.3.0 added the `directories` section and the DNS provider type `ad` without ch
 upgrade. The configuration also grows long with many switches, firewalls or clusters: it is
 split into a directory of files that are merged.
 
-- [ ] **17.1** `configs/config.example.yaml`: a commented `directories` example (all keys of
-  `docs/configuration.md#directories`) and a DNS provider of type `ad`
-- [ ] **17.2** Configuration directory: `-c`/`--config` names a directory. dcdash reads every
+- [x] **17.1** A commented `directories` example (all keys of
+  `docs/configuration.md#directories`) and a DNS provider of type `ad`, in the example
+  directory of 17.3 (`20_directories.yaml`, `50_dns.yaml`) that replaces
+  `configs/config.example.yaml`
+- [x] **17.2** Configuration directory: `-c`/`--config` names a directory. dcdash reads every
   `*.yaml` file in it (not in subdirectories, no hidden files) in alphabetical order and merges
   them into one configuration before decoding:
   - mappings are merged key by key, recursively;
   - lists are concatenated in file order, so that a switch, firewall or cluster can be added
     or removed by adding or deleting a file;
-  - a scalar value set in two files is an error naming both files (no silent override);
+  - a scalar value set in two files is an error naming both files and lines (no silent
+    override); equal values and empty values (`key:`) don't conflict;
   - unknown keys and syntax errors are reported with file name and line; an empty directory
     is an error.
   The default becomes `/etc/dcdash/config.d`. A file given to `-c` is still read alone,
   with a warning, so that existing installations keep working.
-- [ ] **17.3** The example as a directory `configs/config.d/`: `00_server.yaml`,
+- [x] **17.3** The example as a directory `configs/config.d/`: `00_server.yaml`,
   `01_auth.yaml`, `02_audit.yaml`, `03_security.yaml`, `04_roles.yaml`, `05_log.yaml`,
   `06_metrics.yaml`, `07_global.yaml` (`status`, `data_dir` and other global settings),
   `10_projects.yaml`, `20_directories.yaml`, `30_netbox.yaml`, `40_proxmox.yaml`,
   `50_dns.yaml`, `60_dhcp.yaml`, `70_firewalls.yaml`, `80_switches.yaml`. A test checks that
-  the files together contain every section of the configuration and that they validate.
-- [ ] **17.4** Packaging and migration: the `.deb` and `.rpm` packages install the files to
+  the files together contain every section of the configuration and that they validate, as
+  shipped and with the commented module examples switched on.
+- [x] **17.4** Packaging and migration: the `.deb` and `.rpm` packages install the files to
   `/etc/dcdash/config.d` as configuration files (optional modules disabled), the systemd
   unit, the container image and the postinstall notes use the directory; an existing
-  `/etc/dcdash/config.yaml` keeps working, and the documentation describes moving it into
-  the directory
-- [ ] **17.5** `config validate` and the start log list the files read; errors name the file
+  `/etc/dcdash/config.yaml` keeps working (it is read instead of the directory while it
+  exists; the rpm restores it from `.rpmsave` in `posttrans`), and the documentation
+  describes moving it into the directory
+- [x] **17.5** `config validate` and the start log list the files read; errors name the file
   and line
-- [ ] **17.6** Tests: merging (order, nested mappings, lists, conflicts, unknown keys, empty
+- [x] **17.6** Tests: merging (order, nested mappings, lists, conflicts, unknown keys, empty
   directory, a single file), the CLI, and the e2e and integration setups with a directory
-- [ ] **17.7** Documentation (configuration, admin guide, development, README),
+- [x] **17.7** Documentation (configuration, admin guide, development, README),
   `CHANGELOG.md` with upgrade notes
 - [x] **17.8** Overview: the heading, the UI/SSH/RDP links and the status of a tile are on one
   line again (since 15.x the links and status were on a line of their own); they wrap

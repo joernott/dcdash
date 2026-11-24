@@ -1,0 +1,20 @@
+# OPNsense firewalls (see docs/firewalls.md). Permissions use the name as instance:
+# "firewall:fw-core:*:read" shows the firewall, "firewall:fw-core:rule/lan:write" changes the
+# rules of the LAN interface (always with a savepoint and automatic rollback).
+# One file per firewall works as well.
+
+firewalls: []
+#  - name: fw-core
+#    url: https://fw-core.example.com
+#    tls:
+#      # The default certificate is self-signed: pin it.
+#      fingerprint: "AB:CD:...:EF"
+#    api_key: "..."
+#    api_secret: "file:/etc/dcdash/fw-core.secret"
+#    timeout: 30s
+#    # Without savepoints (OPNsense 26.7 and later): interfaces whose rules dcdash doesn't
+#    # change, in addition to the one it reaches the firewall through.
+#    protected_interfaces: []
+#    # Buttons on the overview tile (optional).
+#    ui: https://fw-core.example.com
+#    ssh: root@fw-core.example.com

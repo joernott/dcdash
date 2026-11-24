@@ -6,6 +6,24 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- **The configuration is a directory now:** `/etc/dcdash/config.d`, whose `*.yaml` files are
+  merged in alphabetical order (sections key by key, lists joined, a value set differently in
+  two files is an error). An upgraded installation keeps reading `/etc/dcdash/config.yaml`
+  as long as it exists, with a warning; the package installs the example files into
+  `/etc/dcdash/config.d` (the rpm restores a changed `config.yaml` that rpm saved as
+  `.rpmsave`). Move your settings into the directory and delete `config.yaml`, see
+  [docs/configuration.md](docs/configuration.md#upgrading-from-dcdash-03). `--config` and
+  `DCDASH_CONFIG` accept a directory or, as before, a single file.
+
+### Added
+
+- **Configuration directory** with an example of one file per section, `00_server.yaml` to
+  `80_switches.yaml`, including the `directories` section and the AD DNS provider that the
+  0.3 example lacked. `dcdash config validate` and the start log list the files read; errors
+  name the file and line.
+
 ### Changed
 
 - **DNS page:** lists every provider with its zones and its own "Create zone" button instead

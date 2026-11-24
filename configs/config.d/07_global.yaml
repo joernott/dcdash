@@ -1,0 +1,9 @@
+# Global settings.
+
+# Overview checks: a check that fails with an HTTP 4xx response (e.g. 408 from Kea) is
+# repeated once after this delay.
+status:
+  retry_delay: 1s
+
+# Directory for persistent state (database, ACME account and certificates).
+data_dir: /var/lib/dcdash
