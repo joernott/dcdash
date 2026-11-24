@@ -687,8 +687,8 @@ UI/SSH/RDP buttons next to its name. The tables take the colors of the overview 
     cluster filter and "Compare DNS and DHCP" at the top right
 - [x] **18.6** Switches page: the switch filter and the device search in the top line, as on
   the DNS page
-- [ ] **18.7** Firewalls page in the same layout
-- [ ] **18.8** Directories page in the same layout
+- [x] **18.7** Firewalls page in the same layout
+- [x] **18.8** Directories page in the same layout
 - [x] **18.9** Tables on all pages in the colors of the overview tiles of their system, with a
   second, more transparent shade for alternating rows (light and dark mode)
 - [x] **18.10** Top bar: remove "Overview" (the name "dcdash" leads there); order Projects,

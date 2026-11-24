@@ -52,7 +52,7 @@ func newAPIEnv(t *testing.T) *apiEnv {
 		lab: adfake.New(config.Directory{Name: "lab", Type: config.DirectoryTypeSamba, Domain: "ad.test", BaseDN: "DC=ad,DC=test",
 			ManagedOUs: []string{labOU}}),
 		corp: adfake.New(config.Directory{Name: "corp", Type: config.DirectoryTypeWindows, Domain: "corp.test", BaseDN: "DC=corp,DC=test",
-			ManagedOUs: []string{"DC=corp,DC=test"}, SelfService: new(bool)}),
+			ManagedOUs: []string{"DC=corp,DC=test"}, SelfService: new(bool), Links: config.Links{RDP: "dc1.corp.test"}}),
 	}
 	e.lab.AddUser(usersCN, "Administrator", "Admin-1234", true)
 	e.lab.AddUser(usersCN, "outside", "Outside-1234", false)
@@ -136,6 +136,10 @@ func TestDirectoriesList(t *testing.T) {
 	e.do(t, "admin", "GET", "/api/v1/directories", nil, &out)
 	if len(out.Directories) != 2 || out.Directories[0].Name != "lab" || !out.Directories[0].CanCreateUsers {
 		t.Errorf("admin: %+v", out)
+	}
+	// The configured links, none for lab.
+	if out.Directories[0].Links != nil || out.Directories[1].Links == nil || out.Directories[1].Links.RDP != "dc1.corp.test" {
+		t.Errorf("links: %+v %+v", out.Directories[0].Links, out.Directories[1].Links)
 	}
 	e.do(t, "labops", "GET", "/api/v1/directories", nil, &out)
 	if len(out.Directories) != 1 || !out.Directories[0].CanCreateUsers || !out.Directories[0].CanCreateGroups {

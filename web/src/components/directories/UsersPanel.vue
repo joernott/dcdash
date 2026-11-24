@@ -252,6 +252,7 @@ watch(
   },
 )
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>

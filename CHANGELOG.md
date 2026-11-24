@@ -22,6 +22,9 @@ All notable changes to dcdash are listed here. The format follows
   subnet" field; reservations open per server.
 - **NetBox page:** all clusters (the cluster field filters), refresh as an icon and "Compare
   DNS and DHCP" at the top right.
+- **Firewalls and Directories pages:** like the Switches page, an overview of all firewalls or
+  domains (the field at the top right filters, refresh next to it); the name opens the
+  details with the tabs. `GET /api/v1/directories` lists the `links`.
 - **Switches page:** the switch filter, the device search and refresh on the line of the
   heading.
 

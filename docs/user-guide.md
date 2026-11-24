@@ -211,8 +211,9 @@ few seconds. See [switches.md](switches.md).
 
 ## Firewalls
 
-The Firewalls page shows one firewall at a time with its version, uptime and memory, and
-links to its web interface and SSH:
+The Firewalls page shows every firewall with its version, uptime, memory and the UI and SSH
+buttons; the "Firewall" field at the top right shows only one, refresh is next to it. The name
+of a firewall opens its details page with four tabs:
 
 - **Health:** the gateways and services; "Restart" restarts a service.
 - **VPN:** WireGuard peers with their last handshake and traffic ("Enable", "Disable"), and
@@ -226,8 +227,10 @@ See [firewalls.md](firewalls.md).
 
 ## Directories
 
-The Directories page shows the users and groups of an Active Directory domain. Choose the
-domain at the top, then **Users** or **Groups**; search by name, mail address or description.
+The Directories page shows every Active Directory domain with the containers dcdash manages
+and its UI, SSH and RDP buttons (if configured); the "Directory" field at the top right shows
+only one. The domain name opens its **Users** and **Groups**; search by name, mail address or
+description. Refresh at the top right reloads the open tab.
 
 - **Users:** create a user with an initial password (usually "must change the password at
   the next logon"), change names and mail address, disable and enable, unlock after failed

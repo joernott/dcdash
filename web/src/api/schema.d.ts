@@ -3528,6 +3528,7 @@ export interface components {
       managedOUs: string[]
       canCreateUsers: boolean
       canCreateGroups: boolean
+      links?: components['schemas']['SystemLinks']
     }
     DirectoryContainerList: {
       containers: {

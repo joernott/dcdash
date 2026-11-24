@@ -708,6 +708,9 @@
   },
   "firewalls": {
     "firewall": "Firewall",
+    "all": "All firewalls",
+    "back": "All firewalls",
+    "notFound": "There is no firewall {name}, or you may not see it.",
     "none": "No firewalls are configured, or you may not see any.",
     "views": "Firewall views",
     "unavailable": "The firewall is not available: {error}",
@@ -1315,6 +1318,9 @@
   },
   "directories": {
     "directory": "Directory",
+    "all": "All directories",
+    "back": "All directories",
+    "notFound": "There is no directory {name}, or you may not see it.",
     "none": "No directory is available to you.",
     "types": { "samba": "Samba Active Directory", "windows": "Windows Active Directory" },
     "managed": "dcdash changes objects in: {ous}",

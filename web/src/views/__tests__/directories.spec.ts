@@ -79,6 +79,33 @@ describe('directories helpers', () => {
 })
 
 describe('DirectoriesView', () => {
+  it('shows all directories without tabs; the domain opens users and groups', async () => {
+    const corp = { ...lab, name: 'corp', domain: 'corp.test', links: { rdp: 'dc1.corp.test' } }
+    api.on('GET /api/v1/directories', () => [200, { directories: [lab, corp] }])
+    const r = router()
+    await r.push('/directories')
+    const w = mountWith(DirectoriesView, { attachTo: document.body, global: { plugins: [r] } })
+    await flushPromises()
+    // No redirect to the first directory, no tabs; filter and refresh next to the heading.
+    expect(r.currentRoute.value.fullPath).toBe('/directories')
+    expect(w.find('[role="tablist"]').exists()).toBe(false)
+    const top = w.get('h1').element.parentElement!.parentElement!
+    expect(top.querySelector('select')).not.toBeNull()
+    expect(top.querySelector('button[aria-label="Refresh"]')).not.toBeNull()
+    expect(w.findAll('li h2 a').map((a) => [a.text(), a.attributes('href')])).toEqual([
+      ['ad.test', '/directories/lab'],
+      ['corp.test', '/directories/corp'],
+    ])
+    // The RDP button of a directory with links.
+    expect(w.findAll('li')[1]!.text()).toContain('RDP')
+    expect(w.text()).toContain('dcdash changes objects in: OU=Lab,DC=ad,DC=test')
+    await w.get('select').setValue('corp')
+    await flushPromises()
+    expect(r.currentRoute.value.fullPath).toBe('/directories?directory=corp')
+    expect(w.findAll('li h2')).toHaveLength(1)
+    w.unmount()
+  })
+
   it('lists users and disables, unlocks and creates them', async () => {
     let users = [
       user('alice'),

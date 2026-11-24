@@ -4818,6 +4818,7 @@ components:
         managedOUs: { type: array, items: { type: string }, description: Containers dcdash may change objects in. }
         canCreateUsers: { type: boolean }
         canCreateGroups: { type: boolean }
+        links: { $ref: "#/components/schemas/SystemLinks" }
 
     DirectoryContainerList:
       type: object

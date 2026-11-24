@@ -56,8 +56,5 @@ func withLinks(cfg *config.Config, checks []status.Check) []status.Check {
 
 // statusLinks returns the links as the API shows them, or nil if none is set.
 func statusLinks(l config.Links) *status.Links {
-	if l.UI == "" && l.SSH == "" && l.RDP == "" {
-		return nil
-	}
-	return &status.Links{UI: l.UI, SSH: l.SSHURL(), RDP: l.RDP}
+	return status.NewLinks(l.UI, l.SSHURL(), l.RDP)
 }
