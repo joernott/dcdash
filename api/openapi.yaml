@@ -3410,13 +3410,7 @@ components:
         type:
           type: string
           description: The kind of system within the module, for dns `bind` or `cloudflare`; missing for the other modules.
-        links:
-          type: object
-          description: The system's own interfaces from the configuration (`ui`, `ssh`, `rdp`); missing if none is set.
-          properties:
-            ui: { type: string, description: URL of the web interface. }
-            ssh: { type: string, description: "ssh:// URL, e.g. ssh://root@pve1.example.com." }
-            rdp: { type: string, description: "host[:port] for a Remote Desktop connection." }
+        links: { $ref: "#/components/schemas/SystemLinks" }
 
     NetBoxGuestComparison:
       type: object
@@ -4151,6 +4145,15 @@ components:
               name: { type: string }
               kind: { type: string, enum: [cloudflare, bind, ad] }
               capabilities: { $ref: "#/components/schemas/DNSCapabilities" }
+              links: { $ref: "#/components/schemas/SystemLinks" }
+
+    SystemLinks:
+      type: object
+      description: The system's own interfaces from the configuration (`ui`, `ssh`, `rdp`); missing if none is set.
+      properties:
+        ui: { type: string, description: URL of the web interface. }
+        ssh: { type: string, description: "ssh:// URL, e.g. ssh://root@pve1.example.com." }
+        rdp: { type: string, description: "host[:port] for a Remote Desktop connection." }
 
     DNSZone:
       type: object

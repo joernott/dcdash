@@ -153,10 +153,10 @@ describe('HomeView', () => {
     expect(text).toContain('English fallback')
     expect(text).toContain('Verbunden mit dc1:636; nicht erreichbar: dc2:636')
     expect(text).toContain('Verbunden mit dc1:636, alle 2 Server erreichbar')
-    // Every DNS tile has the bind9 color; the bottom line still names Cloudflare.
+    // Every DNS tile has the DNS color; the bottom line still names Cloudflare.
     const cf = w.findAll('li').find((li) => li.text().includes('Cloudflare, eine Zone'))!
-    expect(cf.attributes('data-system')).toBe('bind')
-    expect(cf.attributes('style')).toContain('--sys: var(--dc-sys-bind)')
+    expect(cf.attributes('data-system')).toBe('dns')
+    expect(cf.attributes('style')).toContain('--sys: var(--dc-sys-dns)')
     expect(cf.text()).toMatch(/Cloudflare · /)
   })
 

@@ -23,7 +23,6 @@ import {
   type RecordFilter,
 } from '@/dns/records'
 import { useSessionStore } from '@/stores/session'
-import { systemOf, systemStyle, type System } from '@/systems'
 import { netboxFailure } from '@/netbox/netbox'
 import { useToastStore } from '@/stores/toast'
 
@@ -37,8 +36,6 @@ const dialog = useTemplateRef<InstanceType<typeof RecordDialog>>('dialog')
 const provider = computed(() => String(route.params.provider))
 const zone = computed(() => String(route.params.zone))
 const recordSet = ref<Schemas['DNSRecordSet'] | null>(null)
-// The provider's system (bind or cloudflare): the record rows have its color.
-const system = ref<System | null>(null)
 const capabilities = ref<Capabilities>({
   proxied: false,
   comments: false,
@@ -85,7 +82,6 @@ async function load() {
     const p = pl.providers.find((x) => x.name === provider.value)
     if (p) {
       capabilities.value = p.capabilities
-      system.value = systemOf({ kind: 'dns', type: p.kind })
     }
     error.value = ''
   } catch (e) {
@@ -199,8 +195,7 @@ onMounted(load)
         :columns="columns"
         :rows="records"
         :row-key="(r: DnsRecord) => r.id"
-        :row-class="() => (system ? 'sys-tint' : 'even:bg-surface-raised')"
-        :row-style="() => systemStyle(system)"
+        system="dns"
         :caption="t('dns.records')"
         :empty="t('dns.noRecords')"
       >

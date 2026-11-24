@@ -616,3 +616,10 @@ No need for the domain mismatch check. For the next sprint, please add the follo
 - On all pages switch the backgrounds of table elements to the colors used for the tiles on the front page, introduce a second, more transparent version of those colors for alternating lines in the tables
 - Remove the unnecessary "Overview" button from the top bar, it has the same effect as clicking on dcdash
 - Change the order of the buttons in the top bar to Projects, Directories, Netbox, Proxmox, DNS, DHCP, Firewalls, Switches. Move  Audit log and Sessions towards Documentation to the right
+
+---
+
+## 2026-11-24 — Sprint 18 (Page layout)
+
+18.1 yes, that is correct
+18.9 yes

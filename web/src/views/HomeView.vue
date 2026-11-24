@@ -9,7 +9,7 @@ import IconButton from '@/components/ui/IconButton.vue'
 import LinkButtons from '@/components/ui/LinkButtons.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSessionStore } from '@/stores/session'
-import { systemOf, systemStyle, type System } from '@/systems'
+import { productOf, systemOf, systemStyle } from '@/systems'
 
 type Report = Schemas['StatusReport']
 type Component = Schemas['StatusComponent']
@@ -46,17 +46,13 @@ const tiles = computed(() => {
     all
       .map((c, i) => ({ c, i }))
       .sort((a, b) => rank(a.c.kind).localeCompare(rank(b.c.kind)) || a.i - b.i)
-      // All DNS tiles have the color of bind9, whatever the provider; the bottom line names it.
-      .map(({ c }) => ({
-        ...c,
-        system: c.kind === 'dns' ? ('bind' as const) : systemOf(c),
-        named: systemOf(c),
-      }))
+      // All DNS tiles have one color, whatever the provider; the bottom line names the product.
+      .map(({ c }) => ({ ...c, system: systemOf(c), named: productOf(c) }))
   )
 })
 
 /** Name of the kind of system on a tile, so that the color is not the only cue. */
-function systemLabel(c: { kind: string; named: System | null }) {
+function systemLabel(c: { kind: string; named: string | null }) {
   return c.named ? t(`home.systems.${c.named}`) : label(`home.kinds.${c.kind}`, c.kind)
 }
 

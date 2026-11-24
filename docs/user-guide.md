@@ -41,7 +41,8 @@ dcdash itself (database, user directory, certificate, projects), then each Proxm
 DNS provider, DHCP server, NetBox, switch, firewall and Active Directory domain. The tiles of
 the systems have the system's color (Proxmox purple, DNS blue, Kea green, NetBox teal,
 switches cyan, OPNsense red, Active Directory violet), and the bottom line names the system
-(for DNS: bind9, Cloudflare or AD DNS) and the response time of the check. The UI button opens
+(for DNS: bind9, Cloudflare or AD DNS) and the response time of the check. The tables on the
+pages of a system have its color too, every other row in a lighter shade. The UI button opens
 the system's web interface in a new tab, SSH an ssh:// link, RDP a Remote Desktop file.
 A tile with a red border names the problem. If a system answers a check with a client error
 (HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once more after a
@@ -57,6 +58,13 @@ Many buttons show an icon instead of a text: refresh (two arrows in a circle), s
 start (green power symbol), shut down (red power symbol), reboot (arrow), suspend (moon), stop
 (lightning) and console (screen). Hover over a button to see what it does; screen readers
 read the same text.
+
+The **top bar** lists the modules you may use: Projects, Directories, NetBox, Proxmox, DNS,
+DHCP, Firewalls and Switches. "dcdash" on the left leads to the overview. On the right are the
+Audit log and Sessions (for administrators), the documentation and your user menu.
+
+**Messages** appear at the bottom right. Success messages disappear after a few seconds;
+error messages stay, also when you change pages, until you close them with the × button.
 
 The **Documentation** link in the top bar opens this documentation inside dcdash, in the
 version that matches the running release. It is available in English only.
@@ -110,9 +118,9 @@ cluster, choose it at the top.
 
 The DNS page lists every provider (Cloudflare, bind9, Active Directory) with its zones. The
 "Provider" field shows only one of them, the search finds zones of all shown providers. Click
-a zone for its records. The rows of zones and records have the provider's color: orange for
-Cloudflare, blue for bind9, violet for Active Directory. Providers that can create zones have
-a "Create zone" button next to their name.
+a zone for its records. Zones and records have the DNS color of the overview tiles (blue), for
+every type of provider. Next to the name of a provider are its UI, SSH and RDP buttons (if
+configured) and, if it can create zones, a "Create zone" button.
 
 - **Records:** add, change and delete A, AAAA, CNAME, MX, TXT, SRV, PTR, NS and CAA records.
   Other types, such as SOA, are shown read-only. Names are relative to the zone ("www" for

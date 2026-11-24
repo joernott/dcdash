@@ -2211,15 +2211,7 @@ export interface components {
       latencyMs: number
       /** @description The kind of system within the module, for dns `bind` or `cloudflare`; missing for the other modules. */
       type?: string
-      /** @description The system's own interfaces from the configuration (`ui`, `ssh`, `rdp`); missing if none is set. */
-      links?: {
-        /** @description URL of the web interface. */
-        ui?: string
-        /** @description ssh:// URL, e.g. ssh://root@pve1.example.com. */
-        ssh?: string
-        /** @description host[:port] for a Remote Desktop connection. */
-        rdp?: string
-      }
+      links?: components['schemas']['SystemLinks']
     }
     NetBoxGuestComparison: {
       cluster: string
@@ -2932,7 +2924,17 @@ export interface components {
         /** @enum {string} */
         kind: 'cloudflare' | 'bind' | 'ad'
         capabilities: components['schemas']['DNSCapabilities']
+        links?: components['schemas']['SystemLinks']
       }[]
+    }
+    /** @description The system's own interfaces from the configuration (`ui`, `ssh`, `rdp`); missing if none is set. */
+    SystemLinks: {
+      /** @description URL of the web interface. */
+      ui?: string
+      /** @description ssh:// URL, e.g. ssh://root@pve1.example.com. */
+      ssh?: string
+      /** @description host[:port] for a Remote Desktop connection. */
+      rdp?: string
     }
     DNSZone: {
       /** @description Zone name without trailing dot. */

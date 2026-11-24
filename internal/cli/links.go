@@ -47,9 +47,17 @@ func withLinks(cfg *config.Config, checks []status.Check) []status.Check {
 		if c.Kind == "dns" {
 			out[i].Type = dnsTypes[c.Name]
 		}
-		if l, ok := byKind[c.Kind][c.Name]; ok && (l.UI != "" || l.SSH != "" || l.RDP != "") {
-			out[i].Links = &status.Links{UI: l.UI, SSH: l.SSHURL(), RDP: l.RDP}
+		if l, ok := byKind[c.Kind][c.Name]; ok {
+			out[i].Links = statusLinks(l)
 		}
 	}
 	return out
+}
+
+// statusLinks returns the links as the API shows them, or nil if none is set.
+func statusLinks(l config.Links) *status.Links {
+	if l.UI == "" && l.SSH == "" && l.RDP == "" {
+		return nil
+	}
+	return &status.Links{UI: l.UI, SSH: l.SSHURL(), RDP: l.RDP}
 }

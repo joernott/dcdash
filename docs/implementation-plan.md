@@ -49,7 +49,7 @@ These apply to every task:
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 | 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | v0.3.0 | done |
 | 17 | `sprint/17-config-directory` | Configuration directory with merged files; directories in the example configuration | v0.4.0 | done |
-| 18 | `sprint/18-page-layout` | Common page layout: filters and refresh in the top line, all servers on one page, closable messages, colored tables, navigation order | – | planned |
+| 18 | `sprint/18-page-layout` | Common page layout: filters and refresh in the top line, all servers on one page, closable messages, colored tables, navigation order | – | in progress |
 
 ---
 
@@ -671,10 +671,10 @@ module pages follow, with one layout: the heading on the left and the filter, se
 refresh (as an icon) in the same line on the right, every server as a section with its
 UI/SSH/RDP buttons next to its name. The tables take the colors of the overview tiles.
 
-- [ ] **18.1** Messages (toasts) can be closed: error messages stay until the user closes
+- [x] **18.1** Messages (toasts) can be closed: error messages stay until the user closes
   them, also across page changes; success messages still disappear on their own
-- [ ] **18.2** DNS page: the UI/SSH/RDP buttons next to the heading of each server
-- [ ] **18.3** DNS page: one color for all DNS servers, the one of the DNS tiles on the
+- [x] **18.2** DNS page: the UI/SSH/RDP buttons next to the heading of each server
+- [x] **18.3** DNS page: one color for all DNS servers, the one of the DNS tiles on the
   overview; remove the colors per DNS server type
 - [ ] **18.4** DHCP page like the DNS page: all DHCP servers with their subnets; the server
   dropdown becomes a filter at the top right, together with the lease search from the
@@ -689,6 +689,6 @@ UI/SSH/RDP buttons next to its name. The tables take the colors of the overview 
 - [ ] **18.8** Directories page in the same layout
 - [ ] **18.9** Tables on all pages in the colors of the overview tiles of their system, with a
   second, more transparent shade for alternating rows (light and dark mode)
-- [ ] **18.10** Top bar: remove "Overview" (the name "dcdash" leads there); order Projects,
+- [x] **18.10** Top bar: remove "Overview" (the name "dcdash" leads there); order Projects,
   Directories, NetBox, Proxmox, DNS, DHCP, Firewalls, Switches; Audit log and Sessions on the
   right next to Documentation

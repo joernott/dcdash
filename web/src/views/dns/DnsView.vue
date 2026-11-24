@@ -9,12 +9,12 @@ import { errorMessage } from '@/api/errors'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import IconButton from '@/components/ui/IconButton.vue'
+import LinkButtons from '@/components/ui/LinkButtons.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import { zonePermission, type DnsZone } from '@/dns/records'
-import { systemOf, systemStyle } from '@/systems'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 
@@ -58,11 +58,6 @@ const columns = computed(() => [
 
 function providerLabel(p: Provider) {
   return `${p.name} (${t(`dns.kinds.${p.kind}`)})`
-}
-
-// The provider's system (bind, Cloudflare, directory): its zone rows have its color.
-function zoneSystem(p: Provider) {
-  return systemOf({ kind: 'dns', type: p.kind })
 }
 
 function zonesOf(p: Provider) {
@@ -252,9 +247,18 @@ onMounted(async () => {
       class="flex flex-col gap-3"
     >
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 :id="`dns-provider-${p.name}`" class="text-lg font-semibold">
-          {{ providerLabel(p) }}
-        </h2>
+        <div class="flex flex-wrap items-center gap-3">
+          <h2 :id="`dns-provider-${p.name}`" class="text-lg font-semibold">
+            {{ providerLabel(p) }}
+          </h2>
+          <LinkButtons
+            v-if="p.links"
+            :name="p.name"
+            :ui="p.links.ui"
+            :ssh="p.links.ssh"
+            :rdp="p.links.rdp"
+          />
+        </div>
         <BaseButton
           v-if="canCreate(p)"
           variant="primary"
@@ -277,8 +281,7 @@ onMounted(async () => {
         :columns="columns"
         :rows="zonesOf(p)"
         :row-key="(z: DnsZone) => z.name"
-        :row-class="() => (zoneSystem(p) ? 'sys-tint' : 'even:bg-surface-raised')"
-        :row-style="() => systemStyle(zoneSystem(p))"
+        system="dns"
         :caption="t('dns.zonesOf', { provider: p.name })"
         :empty="t('dns.noZones')"
       >

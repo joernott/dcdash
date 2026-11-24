@@ -360,5 +360,11 @@ func newDNS(cfg config.DNS, dirs config.Directories, auditLog *audit.Log, log ze
 		}
 		log.Info().Str("provider", p.Name).Str("type", p.Type).Msg("dns: provider configured")
 	}
-	return dns.NewService(providers, auditLog, log), nil
+	svc := dns.NewService(providers, auditLog, log)
+	links := map[string]*status.Links{}
+	for _, p := range cfg.Providers {
+		links[p.Name] = statusLinks(p.Links)
+	}
+	svc.SetLinks(links)
+	return svc, nil
 }

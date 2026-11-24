@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { SYSTEMS, systemOf, systemStyle } from '../systems'
+import { SYSTEMS, productOf, systemOf, systemStyle } from '../systems'
 
 const css = readFileSync(resolve(__dirname, '../assets/main.css'), 'utf8')
 
@@ -39,7 +39,11 @@ describe('system colors', () => {
       const surface = rgb(t['dc-surface-raised']!)
       const page = rgb(t['dc-surface']!)
       const tint = parseFloat(t['dc-sys-tint']!) / 100
+      const alt = parseFloat(t['dc-sys-tint-alt']!) / 100
       expect(tint).toBeGreaterThan(0)
+      // The second shade of table rows is lighter, but still a tint.
+      expect(alt).toBeGreaterThan(0)
+      expect(alt).toBeLessThan(tint)
       for (const s of SYSTEMS) {
         const hex = t[`dc-sys-${s}`]
         expect(hex, `--dc-sys-${s} in ${mode} mode`).toMatch(/^#[0-9a-f]{6}$/i)
@@ -49,6 +53,11 @@ describe('system colors', () => {
         expect(ratio(color, page), `${s} border on the page`).toBeGreaterThanOrEqual(3)
         for (const fg of ['dc-fg', 'dc-fg-muted', 'dc-danger']) {
           expect(ratio(rgb(t[fg]!), bg), `${fg} on the ${s} tint`).toBeGreaterThanOrEqual(4.5)
+          const altBg = mix(rgb(t[`dc-sys-${s}-base`]!), surface, alt)
+          expect(
+            ratio(rgb(t[fg]!), altBg),
+            `${fg} on the lighter ${s} tint`,
+          ).toBeGreaterThanOrEqual(4.5)
         }
       }
     })
@@ -56,8 +65,14 @@ describe('system colors', () => {
 
   it('maps status components to systems', () => {
     expect(systemOf({ kind: 'system' })).toBeNull()
-    expect(systemOf({ kind: 'dns', type: 'cloudflare' })).toBe('cloudflare')
-    expect(systemOf({ kind: 'dns', type: 'bind' })).toBe('bind')
+    // One color for all DNS servers; the product names them.
+    for (const type of ['cloudflare', 'bind', 'ad']) {
+      expect(systemOf({ kind: 'dns', type })).toBe('dns')
+    }
+    expect(productOf({ kind: 'dns', type: 'cloudflare' })).toBe('cloudflare')
+    expect(productOf({ kind: 'dns', type: 'ad' })).toBe('directory')
+    expect(productOf({ kind: 'dns' })).toBe('bind')
+    expect(productOf({ kind: 'dhcp' })).toBe('kea')
     expect(systemOf({ kind: 'dhcp' })).toBe('kea')
     expect(systemOf({ kind: 'firewall' })).toBe('firewall')
     expect(systemStyle('kea')).toEqual({

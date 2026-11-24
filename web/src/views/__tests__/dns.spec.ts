@@ -36,6 +36,7 @@ const providers = {
       name: 'bind',
       kind: 'bind',
       capabilities: { proxied: false, comments: false, autoTtl: false, zoneCreate: false },
+      links: { ui: 'https://ns1.test', ssh: 'ssh://root@ns1.test' },
     },
   ],
 }
@@ -128,16 +129,24 @@ describe('DnsView', () => {
     ])
     expect(w.findAll('caption').map((c) => c.text())).toEqual(['Zones of cf', 'Zones of bind'])
     expect(w.findAll('tbody tr')).toHaveLength(4)
-    // The rows have the color of their provider.
+    // One DNS color for all providers; the rows alternate between two shades.
     const [cf, bind] = w.findAll('section')
-    expect(cf!.get('tbody tr').classes()).toContain('sys-tint')
-    expect(cf!.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
-    expect(bind!.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-bind)')
+    for (const s of [cf!, bind!]) {
+      expect(s.get('tbody tr').classes()).toContain('sys-row')
+      expect(s.get('table').element.parentElement!.getAttribute('style')).toContain(
+        '--sys: var(--dc-sys-dns)',
+      )
+    }
     expect(w.text()).toContain('Delegate the zone at the registrar to: ada.ns.cloudflare.com')
     // Only Cloudflare can create and delete zones here.
     expect(cf!.findAll('button').map((b) => buttonName(b))).toContain('Create zone in cf')
     expect(bind!.text()).not.toContain('Create zone')
     expect(bind!.findAll('tbody button')).toHaveLength(0)
+    // The UI and SSH buttons of a server next to its heading.
+    const head = bind!.get('h2').element.parentElement!
+    expect(head.querySelector('a[href="https://ns1.test"]')!.getAttribute('target')).toBe('_blank')
+    expect(head.querySelector('a[href="ssh://root@ns1.test"]')).not.toBeNull()
+    expect(cf!.findAll('a.link-button')).toHaveLength(0)
 
     // The search filters the zones of all providers.
     await w.get('input[type="search"]').setValue('new')
@@ -216,7 +225,11 @@ describe('ZoneView', () => {
     await flushPromises()
     const rows = w.findAll('tbody tr')
     expect(rows).toHaveLength(3)
-    expect(rows[1]!.attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
+    // The DNS color, also for Cloudflare.
+    expect(rows[1]!.classes()).toContain('sys-row')
+    expect(w.get('table').element.parentElement!.getAttribute('style')).toContain(
+      '--sys: var(--dc-sys-dns)',
+    )
     expect(rows[0]!.text()).toContain('read-only')
     expect(rows[1]!.text()).toContain('www')
     expect(rows[1]!.text()).toContain('proxied')

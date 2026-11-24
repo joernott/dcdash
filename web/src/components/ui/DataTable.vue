@@ -2,6 +2,8 @@
 <script setup lang="ts" generic="Row extends object">
 import { useI18n } from 'vue-i18n'
 
+import { systemStyle, type System } from '@/systems'
+
 export interface Column {
   key: string
   label: string
@@ -20,6 +22,8 @@ const props = withDefaults(
     rowClass?: (row: Row) => string
     /** Inline style of a row (e.g. the system color for sys-tint). */
     rowStyle?: (row: Row) => Record<string, string>
+    /** The system the rows belong to: its tile colors, alternating with a lighter shade. */
+    system?: System | null
   }>(),
   { caption: '', loading: false, empty: '' },
 )
@@ -33,7 +37,10 @@ function value(row: Row, key: string): string {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-md border border-border">
+  <div
+    class="overflow-x-auto rounded-md border border-border"
+    :style="systemStyle(props.system ?? null)"
+  >
     <table class="w-full text-left text-sm">
       <caption v-if="props.caption" class="sr-only">
         {{
@@ -68,7 +75,13 @@ function value(row: Row, key: string): string {
           v-for="row in props.loading ? [] : props.rows"
           :key="props.rowKey(row)"
           class="border-t border-border"
-          :class="props.rowClass ? props.rowClass(row) : 'even:bg-surface-raised'"
+          :class="
+            props.rowClass
+              ? props.rowClass(row)
+              : props.system
+                ? 'sys-row'
+                : 'even:bg-surface-raised'
+          "
           :style="props.rowStyle?.(row)"
         >
           <td v-for="c in props.columns" :key="c.key" class="px-3 py-2 align-top" :class="c.class">

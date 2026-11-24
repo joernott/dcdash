@@ -33,6 +33,8 @@ type Service struct {
 	log       zerolog.Logger
 	// netbox receives changed A and AAAA records; nil if not configured.
 	netbox *netbox.Service
+	// links are the configured UI, SSH and RDP links per provider.
+	links map[string]*status.Links
 }
 
 // NewService creates the API for the given providers.
@@ -43,6 +45,11 @@ func NewService(providers []Provider, auditLog *audit.Log, log zerolog.Logger) *
 		s.order = append(s.order, p.Name())
 	}
 	return s
+}
+
+// SetLinks sets the UI, SSH and RDP links per provider name, shown on the DNS page.
+func (s *Service) SetLinks(links map[string]*status.Links) {
+	s.links = links
 }
 
 // StatusChecks returns a dashboard check per provider.
@@ -72,6 +79,8 @@ type ProviderInfo struct {
 	Name         string       `json:"name"`
 	Kind         string       `json:"kind"`
 	Capabilities Capabilities `json:"capabilities"`
+	// Links are the web interface, SSH and RDP addresses of the server, if configured.
+	Links *status.Links `json:"links,omitempty"`
 }
 
 // ProviderList is the response of GET /api/v1/dns/providers.
@@ -89,7 +98,7 @@ func (s *Service) handleProviders(w http.ResponseWriter, r *http.Request) {
 	for _, n := range s.order {
 		if subj.Permissions.AllowsAny(Module, n, rbac.ActionRead) {
 			p := s.providers[n]
-			out.Providers = append(out.Providers, ProviderInfo{Name: n, Kind: p.Kind(), Capabilities: p.Capabilities()})
+			out.Providers = append(out.Providers, ProviderInfo{Name: n, Kind: p.Kind(), Capabilities: p.Capabilities(), Links: s.links[n]})
 		}
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)

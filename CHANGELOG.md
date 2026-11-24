@@ -6,6 +6,17 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Messages:** a framed close button; error messages stay until closed.
+- **Top bar:** no "Overview" entry ("dcdash" leads there); the modules in the order Projects,
+  Directories, NetBox, Proxmox, DNS, DHCP, Firewalls, Switches; Audit log and Sessions on the
+  right next to the documentation.
+- **DNS page:** UI, SSH and RDP buttons next to the name of each server
+  (`GET /api/v1/dns/providers` lists the `links`); one color for all DNS servers, the one of the
+  overview tiles.
+- **Tables** have the color of their system, every other row in a lighter shade.
+
 ## [0.4.0] - 2026-11-24
 
 ### Upgrade notes
