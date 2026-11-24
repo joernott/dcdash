@@ -553,3 +553,9 @@ I have 2 directories configured:
 My user is member of the "dashroot" group that is listed as root_group under auth
 
 ldbsearch does not exist on the samba dc
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+a) I found it. I need to change the provider in the top right. on the dns page from the navigation. /dns always redirects auf /dns/cloudflare-thse which is the first DNS provider. Please change the page so that all providers are listed, each with a create zone button next to it with their zones below. The provider field acts as an optional filter

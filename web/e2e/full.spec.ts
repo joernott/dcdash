@@ -33,7 +33,7 @@ test('bind9: create a zone, change its records and delete it', async ({ page }) 
   const zone = 'app.e2e.dcdash.test'
   await loginBob(page)
   await page.goto('/dns/bind')
-  const zones = page.getByRole('table', { name: 'Zones' })
+  const zones = page.getByRole('table', { name: 'Zones of bind' })
   await expect(zones.getByRole('link', { name: 'static.dcdash.test' })).toBeVisible()
 
   // bob may create zones only below e2e.dcdash.test.

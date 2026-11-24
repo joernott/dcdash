@@ -626,9 +626,10 @@ split into a directory of files that are merged.
 - [x] **17.8** Overview: the heading, the UI/SSH/RDP links and the status of a tile are on one
   line again (since 15.x the links and status were on a line of their own); they wrap
   below a long name
-- [ ] **17.9** AD DNS: zones of a production Samba domain don't show on the DNS page,
-  although the overview tile is OK and `manage_zones` is set. Find the cause (permissions
-  `dns:<provider>:<zone>:read`, `base_dn`, rights of the service account on the DNS
-  partitions) and fix it. dcdash must not show an empty zone list silently: if none of
-  the zone containers exists or can be read, the tile and the page show an error naming
-  the container
+- [x] **17.9** DNS page: the AD zones seemed missing because `/dns` showed only the first
+  provider; the others were behind the provider selection. The page now lists every
+  provider with its zones and its "Create zone" button; the provider selection is an
+  optional filter (`/dns/<provider>`), the zone search covers all shown providers
+- [ ] **17.10** AD DNS: don't show an empty zone list silently. If none of the zone
+  containers below `base_dn` exists or can be read, the tile and the page show an error
+  naming the containers

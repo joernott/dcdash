@@ -6,6 +6,17 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **DNS page:** lists every provider with its zones and its own "Create zone" button instead
+  of only the first one; the provider selection is an optional filter, and the zone search
+  covers all shown providers.
+
+### Fixed
+
+- **Overview:** the heading, the UI/SSH/RDP buttons and the status of a tile are on one line
+  again.
+
 ## [0.3.0] - 2026-11-24
 
 Active Directory and Samba: users, groups, AD-integrated DNS, a self-service password change

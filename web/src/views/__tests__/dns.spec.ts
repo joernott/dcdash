@@ -110,26 +110,41 @@ function mountView(
 }
 
 describe('DnsView', () => {
-  it('lists the zones and deletes a zone after typing its name', async () => {
+  it('lists the zones of all providers and deletes a zone after typing its name', async () => {
     const router = await setup()
     await router.push('/dns')
-    let deleted = false
-    api.on('DELETE /api/v1/dns/providers/{provider}/zones/{zone}', () => {
-      deleted = true
+    let deleted = ''
+    api.on('DELETE /api/v1/dns/providers/{provider}/zones/{zone}', (_, params) => {
+      deleted = `${params?.path?.provider}/${params?.path?.zone}`
       return [204, null]
     })
     const w = mountView(router, ['dns:*:*:admin'], DnsView)
     await flushPromises()
-    expect(router.currentRoute.value.params.provider).toBe('cf')
-    await flushPromises()
-    expect(w.findAll('tbody tr')).toHaveLength(2)
-    // The rows have the Cloudflare color.
-    expect(w.get('tbody tr').classes()).toContain('sys-tint')
-    expect(w.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
+    // No redirect to the first provider: both are shown, each with its zones.
+    expect(router.currentRoute.value.fullPath).toBe('/dns')
+    expect(w.findAll('section h2').map((h) => h.text())).toEqual([
+      'cf (Cloudflare)',
+      'bind (bind9)',
+    ])
+    expect(w.findAll('caption').map((c) => c.text())).toEqual(['Zones of cf', 'Zones of bind'])
+    expect(w.findAll('tbody tr')).toHaveLength(4)
+    // The rows have the color of their provider.
+    const [cf, bind] = w.findAll('section')
+    expect(cf!.get('tbody tr').classes()).toContain('sys-tint')
+    expect(cf!.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-cloudflare)')
+    expect(bind!.get('tbody tr').attributes('style')).toContain('--sys: var(--dc-sys-bind)')
     expect(w.text()).toContain('Delegate the zone at the registrar to: ada.ns.cloudflare.com')
-    expect(w.text()).toContain('Create zone')
+    // Only Cloudflare can create and delete zones here.
+    expect(cf!.findAll('button').map((b) => buttonName(b))).toContain('Create zone in cf')
+    expect(bind!.text()).not.toContain('Create zone')
+    expect(bind!.findAll('tbody button')).toHaveLength(0)
 
-    await w.findAll('tbody button')[0]!.trigger('click')
+    // The search filters the zones of all providers.
+    await w.get('input[type="search"]').setValue('new')
+    expect(w.findAll('tbody tr').map((r) => r.text().includes('new.example'))).toEqual([true, true])
+    await w.get('input[type="search"]').setValue('')
+
+    await cf!.findAll('tbody button')[0]!.trigger('click')
     const dialog = w.findAll('dialog')[1]!
     const submit = dialog.findAll('button').find((b) => buttonName(b) === 'Delete zone')!
     expect(submit.attributes('disabled')).toBeDefined()
@@ -137,8 +152,42 @@ describe('DnsView', () => {
     expect(submit.attributes('disabled')).toBeUndefined()
     await dialog.get('form').trigger('submit')
     await flushPromises()
-    expect(deleted).toBe(true)
+    expect(deleted).toBe('cf/example.org')
     expect(useToastStore().toasts.map((t) => t.message)).toContain('Zone example.org deleted.')
+    w.unmount()
+  })
+
+  it('filters by provider and creates a zone there', async () => {
+    const router = await setup()
+    await router.push('/dns/cf')
+    let created = ''
+    api.on('POST /api/v1/dns/providers/{provider}/zones', (body, params) => {
+      created = `${params?.path?.provider}/${(body as { name: string }).name}`
+      return [201, { name: 'added.example', status: 'active' }]
+    })
+    const w = mountView(router, ['dns:*:*:admin'], DnsView)
+    await flushPromises()
+    expect(w.findAll('section h2').map((h) => h.text())).toEqual(['cf (Cloudflare)'])
+    const zoneLoads = () =>
+      api.calls.filter((c) => c.route === 'GET /api/v1/dns/providers/{provider}/zones').length
+    expect(zoneLoads()).toBe(1)
+    await w
+      .findAll('button')
+      .find((b) => buttonName(b) === 'Create zone in cf')!
+      .trigger('click')
+    const dialog = w.findAll('dialog')[0]!
+    expect(dialog.text()).toContain('Create zone in cf')
+    await dialog.get('input').setValue('added.example')
+    await dialog.get('form').trigger('submit')
+    await flushPromises()
+    expect(created).toBe('cf/added.example')
+
+    // Removing the filter shows (and loads) the other provider as well.
+    await w.get('select').setValue('')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/dns')
+    expect(w.findAll('section h2')).toHaveLength(2)
+    expect(zoneLoads()).toBe(3) // cf after creating, bind after the filter change
     w.unmount()
   })
 

@@ -133,7 +133,7 @@ test('Active Directory: the groups of a project and the AD DNS', async ({ page }
   await expect(groups.getByRole('row', { name: /lab-admins/ })).toContainText('alice')
 
   await page.goto('/dns/it-dns')
-  const zones = page.getByRole('table', { name: 'Zones' })
+  const zones = page.getByRole('table', { name: 'Zones of it-dns' })
   await zones.getByRole('link', { name: 'lab.dcdash.test' }).click()
   const records = page.getByRole('table', { name: 'Records' })
   await expect(records.getByRole('row', { name: /SOA/ })).toBeVisible()

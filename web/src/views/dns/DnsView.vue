@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -20,6 +20,13 @@ import { useToastStore } from '@/stores/toast'
 
 type Provider = Schemas['DNSProviderList']['providers'][number]
 
+// The zones of a provider: null until loaded or if loading failed.
+interface ProviderZones {
+  zones: DnsZone[] | null
+  loading: boolean
+  error: string
+}
+
 const i18n = useI18n()
 const { t } = i18n
 const route = useRoute()
@@ -28,93 +35,114 @@ const session = useSessionStore()
 const toast = useToastStore()
 
 const providers = ref<Provider[]>([])
-const zones = ref<DnsZone[] | null>(null)
-const loading = ref(false)
+const state = reactive<Record<string, ProviderZones>>({})
 const error = ref('')
+const loadingProviders = ref(true)
 const search = ref('')
 
-const providerName = computed(() => String(route.params.provider ?? ''))
-const provider = computed(() => providers.value.find((p) => p.name === providerName.value))
-// The provider's system (bind or cloudflare): the zone rows have its color.
-const zoneSystem = computed(() =>
-  provider.value ? systemOf({ kind: 'dns', type: provider.value.kind }) : null,
+// The route's provider is an optional filter; without it, all providers are shown.
+const filter = computed(() => String(route.params.provider ?? ''))
+const shown = computed(() =>
+  filter.value ? providers.value.filter((p) => p.name === filter.value) : providers.value,
 )
-const providerOptions = computed(() =>
-  providers.value.map((p) => ({ value: p.name, label: `${p.name} (${t(`dns.kinds.${p.kind}`)})` })),
-)
-const shownZones = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  return (zones.value ?? []).filter((z) => !q || z.name.includes(q))
-})
-const canCreate = computed(
-  () =>
-    !!provider.value?.capabilities.zoneCreate && session.canAny('dns', 'admin', providerName.value),
-)
-const canDeleteAny = computed(() => session.canAny('dns', 'admin', providerName.value))
+const filterOptions = computed(() => [
+  { value: '', label: t('dns.allProviders') },
+  ...providers.value.map((p) => ({ value: p.name, label: providerLabel(p) })),
+])
+const loading = computed(() => shown.value.some((p) => state[p.name]?.loading))
 const columns = computed(() => [
   { key: 'name', label: t('dns.zone') },
   { key: 'status', label: t('dns.status') },
   { key: 'actions', label: t('dns.actionsColumn'), class: 'w-px whitespace-nowrap' },
 ])
 
-async function loadProviders() {
-  const res = await unwrap(api.GET('/api/v1/dns/providers'))
-  providers.value = res.providers
-  if (!providerName.value && res.providers.length > 0) {
-    await router.replace({ name: 'dns', params: { provider: res.providers[0]!.name } })
-  }
+function providerLabel(p: Provider) {
+  return `${p.name} (${t(`dns.kinds.${p.kind}`)})`
 }
 
-async function loadZones() {
-  if (!providerName.value) return
-  loading.value = true
+// The provider's system (bind, Cloudflare, directory): its zone rows have its color.
+function zoneSystem(p: Provider) {
+  return systemOf({ kind: 'dns', type: p.kind })
+}
+
+function zonesOf(p: Provider) {
+  const q = search.value.trim().toLowerCase()
+  return (state[p.name]?.zones ?? []).filter((z) => !q || z.name.includes(q))
+}
+
+function canCreate(p: Provider) {
+  return !!p.capabilities.zoneCreate && session.canAny('dns', 'admin', p.name)
+}
+
+function canDelete(p: Provider, z: DnsZone) {
+  return !!p.capabilities.zoneCreate && session.can(zonePermission(p.name, z.name, 'admin'))
+}
+
+async function loadZones(name: string) {
+  state[name] ??= { zones: null, loading: false, error: '' }
+  // The reactive proxy, not the plain object the assignment returns.
+  const s = state[name]!
+  s.loading = true
   try {
     const res = await unwrap(
-      api.GET('/api/v1/dns/providers/{provider}/zones', {
-        params: { path: { provider: providerName.value } },
-      }),
+      api.GET('/api/v1/dns/providers/{provider}/zones', { params: { path: { provider: name } } }),
     )
-    zones.value = res.zones
-    error.value = ''
+    s.zones = res.zones
+    s.error = ''
   } catch (e) {
-    zones.value = null
-    error.value = errorMessage(i18n, e)
+    s.zones = null
+    s.error = errorMessage(i18n, e)
   } finally {
-    loading.value = false
+    s.loading = false
   }
 }
 
-function selectProvider(p: string) {
-  if (p !== providerName.value) void router.push({ name: 'dns', params: { provider: p } })
+// Loads the zones of all shown providers in parallel.
+async function loadShown() {
+  await Promise.all(shown.value.map((p) => loadZones(p.name)))
+}
+
+function selectFilter(p: string) {
+  if (p !== filter.value) {
+    void router.push({ name: 'dns', params: p ? { provider: p } : {} })
+  }
 }
 
 // Create zone.
-const createOpen = ref(false)
+const createFor = ref<Provider | null>(null)
 const newZone = ref('')
 const createError = ref('')
 const busy = ref(false)
+const createOpen = computed({
+  get: () => createFor.value !== null,
+  set: (v: boolean) => {
+    if (!v) createFor.value = null
+  },
+})
 
-function openCreate() {
+function openCreate(p: Provider) {
   newZone.value = ''
   createError.value = ''
-  createOpen.value = true
+  createFor.value = p
 }
 
 async function createZone() {
+  const p = createFor.value
+  if (!p) return
   busy.value = true
   try {
     const z = await unwrap(
       api.POST('/api/v1/dns/providers/{provider}/zones', {
-        params: { path: { provider: providerName.value } },
+        params: { path: { provider: p.name } },
         body: { name: newZone.value.trim() },
       }),
     )
-    createOpen.value = false
+    createFor.value = null
     toast.success(t('dns.zoneCreated', { zone: z.name }))
     if (z.nameServers?.length) {
       toast.show('info', t('dns.delegateTo', { zone: z.name, ns: z.nameServers.join(', ') }), 0)
     }
-    await loadZones()
+    await loadZones(p.name)
   } catch (e) {
     createError.value = errorMessage(i18n, e)
   } finally {
@@ -123,38 +151,38 @@ async function createZone() {
 }
 
 // Delete zone: the user types the zone name to confirm.
-const deleteZone = ref<DnsZone | null>(null)
+const deleteTarget = ref<{ provider: string; zone: DnsZone } | null>(null)
 const confirmName = ref('')
 const deleteError = ref('')
 const deleteOpen = computed({
-  get: () => deleteZone.value !== null,
+  get: () => deleteTarget.value !== null,
   set: (v: boolean) => {
-    if (!v) deleteZone.value = null
+    if (!v) deleteTarget.value = null
   },
 })
 
-function askDelete(z: DnsZone) {
+function askDelete(p: Provider, z: DnsZone) {
   confirmName.value = ''
   deleteError.value = ''
-  deleteZone.value = z
+  deleteTarget.value = { provider: p.name, zone: z }
 }
 
 async function removeZone() {
-  const z = deleteZone.value
-  if (!z) return
+  const target = deleteTarget.value
+  if (!target) return
   busy.value = true
   try {
     await unwrap(
       api.DELETE('/api/v1/dns/providers/{provider}/zones/{zone}', {
         params: {
-          path: { provider: providerName.value, zone: z.name },
+          path: { provider: target.provider, zone: target.zone.name },
           query: { confirm: confirmName.value.trim() },
         },
       }),
     )
-    deleteZone.value = null
-    toast.success(t('dns.zoneDeleted', { zone: z.name }))
-    await loadZones()
+    deleteTarget.value = null
+    toast.success(t('dns.zoneDeleted', { zone: target.zone.name }))
+    await loadZones(target.provider)
   } catch (e) {
     deleteError.value = errorMessage(i18n, e)
   } finally {
@@ -162,19 +190,23 @@ async function removeZone() {
   }
 }
 
-watch(providerName, () => {
-  zones.value = null
-  void loadZones()
+// Changing the filter loads the providers whose zones were not loaded yet.
+watch(filter, () => {
+  for (const p of shown.value) {
+    if (!state[p.name]) void loadZones(p.name)
+  }
 })
 
 onMounted(async () => {
   try {
-    await loadProviders()
+    providers.value = (await unwrap(api.GET('/api/v1/dns/providers'))).providers
   } catch (e) {
     error.value = errorMessage(i18n, e)
     return
+  } finally {
+    loadingProviders.value = false
   }
-  await loadZones()
+  await loadShown()
 })
 </script>
 
@@ -182,26 +214,24 @@ onMounted(async () => {
   <div class="flex flex-col gap-6">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <h1 class="text-2xl font-semibold">{{ t('nav.dns') }}</h1>
-      <div class="flex flex-wrap items-end gap-3">
+      <form class="flex flex-wrap items-end gap-3" role="search" @submit.prevent>
         <BaseSelect
           v-if="providers.length > 1"
-          :model-value="providerName"
+          :model-value="filter"
           :label="t('dns.provider')"
-          :options="providerOptions"
-          @update:model-value="selectProvider"
+          :options="filterOptions"
+          @update:model-value="selectFilter"
         />
+        <BaseInput v-model="search" :label="t('dns.searchZones')" type="search" />
         <IconButton
           icon="refresh"
           :label="t('home.refresh')"
           size="md"
           variant="secondary"
           :loading="loading"
-          @click="loadZones"
+          @click="loadShown"
         />
-        <BaseButton v-if="canCreate" variant="primary" @click="openCreate">
-          {{ t('dns.createZone') }}
-        </BaseButton>
-      </div>
+      </form>
     </div>
 
     <p
@@ -211,30 +241,50 @@ onMounted(async () => {
     >
       {{ error }}
     </p>
-    <p v-else-if="providers.length === 0 && !loading" class="text-fg-muted">
+    <p v-else-if="providers.length === 0 && !loadingProviders" class="text-fg-muted">
       {{ t('dns.noProviders') }}
     </p>
 
-    <section v-if="zones" aria-labelledby="dns-zones" class="flex flex-col gap-3">
-      <h2 id="dns-zones" class="text-lg font-semibold">{{ t('dns.zones') }}</h2>
-      <form class="flex flex-wrap items-end gap-3" role="search" @submit.prevent>
-        <BaseInput v-model="search" :label="t('dns.searchZones')" type="search" />
-      </form>
+    <section
+      v-for="p in shown"
+      :key="p.name"
+      :aria-labelledby="`dns-provider-${p.name}`"
+      class="flex flex-col gap-3"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 :id="`dns-provider-${p.name}`" class="text-lg font-semibold">
+          {{ providerLabel(p) }}
+        </h2>
+        <BaseButton
+          v-if="canCreate(p)"
+          variant="primary"
+          size="sm"
+          :aria-label="t('dns.createZoneIn', { provider: p.name })"
+          @click="openCreate(p)"
+        >
+          <AppIcon name="add" />{{ t('dns.createZone') }}
+        </BaseButton>
+      </div>
+      <p
+        v-if="state[p.name]?.error"
+        role="alert"
+        class="rounded-md border border-danger px-3 py-2 text-sm text-danger"
+      >
+        {{ state[p.name]!.error }}
+      </p>
       <DataTable
+        v-else-if="state[p.name]?.zones"
         :columns="columns"
-        :rows="shownZones"
+        :rows="zonesOf(p)"
         :row-key="(z: DnsZone) => z.name"
-        :row-class="() => (zoneSystem ? 'sys-tint' : 'even:bg-surface-raised')"
-        :row-style="() => systemStyle(zoneSystem)"
-        :caption="t('dns.zones')"
+        :row-class="() => (zoneSystem(p) ? 'sys-tint' : 'even:bg-surface-raised')"
+        :row-style="() => systemStyle(zoneSystem(p))"
+        :caption="t('dns.zonesOf', { provider: p.name })"
         :empty="t('dns.noZones')"
       >
         <template #cell-name="{ row }">
           <RouterLink
-            :to="{
-              name: 'dns-zone',
-              params: { provider: providerName, zone: (row as DnsZone).name },
-            }"
+            :to="{ name: 'dns-zone', params: { provider: p.name, zone: (row as DnsZone).name } }"
             class="font-medium text-primary underline"
           >
             {{ (row as DnsZone).name }}
@@ -251,21 +301,23 @@ onMounted(async () => {
         </template>
         <template #cell-actions="{ row }">
           <IconButton
+            v-if="canDelete(p, row as DnsZone)"
             icon="delete"
             :label="t('dns.deleteZone')"
-            v-if="
-              provider?.capabilities.zoneCreate &&
-              session.can(zonePermission(providerName, (row as DnsZone).name, 'admin'))
-            "
             size="sm"
             variant="danger"
-            @click="askDelete(row as DnsZone)"
+            @click="askDelete(p, row as DnsZone)"
           />
         </template>
       </DataTable>
+      <p v-else class="text-sm text-fg-muted">{{ t('common.loading') }}</p>
     </section>
 
-    <BaseModal v-if="canCreate" v-model:open="createOpen" :title="t('dns.createZone')">
+    <BaseModal
+      v-if="shown.some(canCreate)"
+      v-model:open="createOpen"
+      :title="t('dns.createZoneIn', { provider: createFor?.name ?? '' })"
+    >
       <form id="dns-create-zone" class="flex flex-col gap-3" @submit.prevent="createZone">
         <BaseInput
           v-model="newZone"
@@ -291,12 +343,12 @@ onMounted(async () => {
       </template>
     </BaseModal>
 
-    <BaseModal v-if="canDeleteAny" v-model:open="deleteOpen" :title="t('dns.deleteZone')">
+    <BaseModal v-if="shown.some(canCreate)" v-model:open="deleteOpen" :title="t('dns.deleteZone')">
       <form id="dns-delete-zone" class="flex flex-col gap-3" @submit.prevent="removeZone">
-        <p>{{ t('dns.deleteZoneWarning', { zone: deleteZone?.name }) }}</p>
+        <p>{{ t('dns.deleteZoneWarning', { zone: deleteTarget?.zone.name }) }}</p>
         <BaseInput
           v-model="confirmName"
-          :label="t('dns.confirmZone', { zone: deleteZone?.name })"
+          :label="t('dns.confirmZone', { zone: deleteTarget?.zone.name })"
           :error="deleteError"
           autocomplete="off"
         />
@@ -310,7 +362,7 @@ onMounted(async () => {
           type="submit"
           form="dns-delete-zone"
           :loading="busy"
-          :disabled="confirmName.trim().toLowerCase() !== deleteZone?.name"
+          :disabled="confirmName.trim().toLowerCase() !== deleteTarget?.zone.name"
         >
           <AppIcon name="delete" />{{ t('dns.deleteZone') }}</BaseButton
         >

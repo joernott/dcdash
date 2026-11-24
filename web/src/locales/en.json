@@ -1011,6 +1011,9 @@
   },
   "dns": {
     "provider": "Provider",
+    "allProviders": "All providers",
+    "zonesOf": "Zones of {provider}",
+    "createZoneIn": "Create zone in {provider}",
     "kinds": {
       "cloudflare": "Cloudflare",
       "bind": "bind9",
