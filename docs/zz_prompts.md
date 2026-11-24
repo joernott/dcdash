@@ -492,3 +492,15 @@ Then start sprint 17 and add a task to add these settings to the config.example.
 - Instead of defining a config file, we define a config directory with -c
 - All *.yaml files are read in alphabetical order and merged together into the configuration hash. This would allow us to have either a central configuration file or a lot of small ones (e.g. when we already have 25 switches, you can just drop another file when adding the next one instead of searching through one long file, the same applies when deleting elements)
 - The example should reflect that changes, so we have a 00_server.yaml, a 01_auth.yaml, a 02_audit.yaml, a 03_security.yaml, a 04_roles.yaml, a 05_log.yaml, a 06_metrics.yaml a 07_global.yaml collecting things like status and data_dir, then a 10_projects.yaml, a 20_directories.yaml, a 30_netbox.yaml, a 40_proxmox.yaml, a 50_dns.yaml, a 60_dhcp.yaml, a 70_firewalls.yaml a 80_switches.yaml
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+Another issue: Omn the overview page: After adding the buttons for UI, ss and rdp, these buttons and the status are no longer in the same line as the heading of the tiles.
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+What firewall permissions are needed apart from allowing LDAPS on the firewall to show "OK" fro a directory?

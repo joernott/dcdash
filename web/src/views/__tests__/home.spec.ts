@@ -75,6 +75,10 @@ describe('HomeView', () => {
       'ssh://root@pve-a.example.com',
     )
     expect(pve.find('button[title^="Remotedesktop"]').exists()).toBe(false)
+    // Heading, links and status share one header row.
+    const header = pve.get('h2').element.parentElement!
+    expect(header.querySelector('a[href^="ssh://"]')).not.toBeNull()
+    expect(header.textContent).toContain('OK')
   })
 
   it('translates coded details', async () => {

@@ -623,3 +623,6 @@ split into a directory of files that are merged.
   directory, a single file), the CLI, and the e2e and integration setups with a directory
 - [ ] **17.7** Documentation (configuration, admin guide, development, README),
   `CHANGELOG.md` with upgrade notes
+- [x] **17.8** Overview: the heading, the UI/SSH/RDP links and the status of a tile are on one
+  line again (since 15.x the links and status were on a line of their own); they wrap
+  below a long name
