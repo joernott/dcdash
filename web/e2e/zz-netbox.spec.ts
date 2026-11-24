@@ -15,8 +15,9 @@ test('compare NetBox with Proxmox and update it', async ({ page }) => {
   await expect(page.getByText('NetBox 4.7.5')).toBeVisible()
 
   await page.getByRole('link', { name: 'NetBox', exact: true }).click()
-  await expect(page).toHaveURL(/\/netbox\/lab$/)
-  const table = page.getByRole('table', { name: 'Virtual machines and containers' })
+  // All clusters, no redirect.
+  await expect(page).toHaveURL(/\/netbox$/)
+  const table = page.getByRole('table', { name: 'Virtual machines and containers of lab' })
   const row = table.getByRole('row').filter({ hasText: 'web' }).first()
   await expect(row).toContainText('Missing in NetBox')
   await expectAccessible(page, 'NetBox')
@@ -29,6 +30,9 @@ test('compare NetBox with Proxmox and update it', async ({ page }) => {
   await page.getByLabel('Only differences').uncheck()
   await expect(table.getByRole('row').filter({ hasText: 'web' }).first()).toContainText('Matches')
 
-  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await page.getByRole('button', { name: 'Compare DNS and DHCP' }).click()
   await expect(page.getByRole('table', { name: 'Reserved addresses and DNS names' })).toBeVisible()
+  await expectAccessible(page, 'NetBox address comparison')
+  await page.getByRole('button', { name: 'Close the comparison' }).click()
+  await expect(page.getByRole('table', { name: 'Reserved addresses and DNS names' })).toHaveCount(0)
 })

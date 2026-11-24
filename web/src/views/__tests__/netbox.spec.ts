@@ -57,7 +57,7 @@ const comparison = {
   ],
 }
 
-async function setup(permissions: string[], configured = true) {
+async function setup(permissions: string[], configured = true, clusters = ['lab']) {
   const router: Router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -67,7 +67,7 @@ async function setup(permissions: string[], configured = true) {
   })
   api.on('GET /api/v1/netbox', () =>
     configured
-      ? [200, { name: 'netbox', writeBack: true, clusters: ['lab'] }]
+      ? [200, { name: 'netbox', writeBack: true, clusters }]
       : [404, apiError('not_found')],
   )
   api.on('GET /api/v1/netbox/compare/guests/{cluster}', () => [200, comparison])
@@ -81,7 +81,13 @@ async function setup(permissions: string[], configured = true) {
 describe('NetBoxView', () => {
   it('shows the differences and updates NetBox', async () => {
     const { w, router } = await setup(['netbox:netbox:sync:write'])
-    expect(router.currentRoute.value.params.cluster).toBe('lab')
+    // No redirect to the first cluster: all clusters, each with its section.
+    expect(router.currentRoute.value.fullPath).toBe('/netbox')
+    expect(w.get('section h2').text()).toBe('Virtual machines and containers of lab')
+    // Refresh and the address comparison on the line of the heading.
+    const top = w.get('h1').element.parentElement!
+    expect(top.querySelector('button[aria-label="Refresh"]')).not.toBeNull()
+    expect(top.textContent).toContain('Compare DNS and DHCP')
     expect(w.get('[data-testid="netbox-counts"]').text()).toBe(
       '1 match, 1 differ, 1 missing in NetBox, 2 only in NetBox',
     )
@@ -153,12 +159,27 @@ describe('NetBoxView', () => {
     ])
     await w
       .findAll('button')
-      .find((b) => buttonName(b) === 'Compare')!
+      .find((b) => buttonName(b) === 'Compare DNS and DHCP')!
       .trigger('click')
     await flushPromises()
     expect(w.text()).toContain('DHCP reservation (kea4)')
     expect(w.text()).toContain('DNS name in NetBox: old.example.org')
     expect(w.text()).toContain('Could not be read: DNS: bind: timeout')
+    w.unmount()
+  })
+
+  it('shows all clusters, the field filters them', async () => {
+    const { w, router } = await setup(['netbox:netbox:sync:read'], true, ['lab', 'prod'])
+    expect(w.findAll('section h2').map((h) => h.text())).toEqual([
+      'Virtual machines and containers of lab',
+      'Virtual machines and containers of prod',
+    ])
+    await w.get('select').setValue('prod')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/netbox/prod')
+    expect(w.findAll('section h2').map((h) => h.text())).toEqual([
+      'Virtual machines and containers of prod',
+    ])
     w.unmount()
   })
 

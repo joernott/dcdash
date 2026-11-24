@@ -160,11 +160,13 @@ In the creation wizard, the VLAN field shows the name of the VLAN in NetBox, and
 addresses a button offers a free address from the VLAN's prefixes ("Use the free address ...
 from NetBox"). The address is only taken when the guest is created.
 
-The NetBox page compares a Proxmox cluster with NetBox. By default it lists only guests that
+The NetBox page compares every mapped Proxmox cluster with NetBox, one section each; the
+"Proxmox cluster" field at the top right shows only one. By default it lists only guests that
 differ, are missing in NetBox or exist only there; "Only differences" switches to all guests.
 "Update NetBox" writes a guest's current state to NetBox, "Delete from NetBox" removes a
-virtual machine that exists only in NetBox (only those dcdash created). "Compare" checks the
-DHCP reservations and DNS records against the addresses in NetBox. See
+virtual machine that exists only in NetBox (only those dcdash created). Refresh and "Compare
+DNS and DHCP" are at the top right; the latter checks the DHCP reservations and DNS records
+against the addresses in NetBox and shows the result above the clusters. See
 [netbox.md](netbox.md).
 
 ## Projects

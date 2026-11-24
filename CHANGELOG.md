@@ -20,6 +20,8 @@ All notable changes to dcdash are listed here. The format follows
   (`GET /api/v1/dhcp/servers` lists the `links`); the server field filters, the lease search
   sits next to it at the top right. The leases button of a subnet replaces the "Leases of a
   subnet" field; reservations open per server.
+- **NetBox page:** all clusters (the cluster field filters), refresh as an icon and "Compare
+  DNS and DHCP" at the top right.
 - **Switches page:** the switch filter, the device search and refresh on the line of the
   heading.
 
