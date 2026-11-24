@@ -510,3 +510,9 @@ What firewall permissions are needed apart from allowing LDAPS on the firewall t
 ## 2026-11-24 — Sprint 17 (Configuration directory)
 
 Ich bekomme den Fehler LDAP Result Code 49 "Invalid Credentials": 80090308: LdapErr: DSID-0C0903A9, comment: AcceptSecurityContext error, data 52e, v1db1
+
+---
+
+## 2026-11-24 — Sprint 17 (Configuration directory)
+
+ldap_sasl_bind(SIMPLE): Can't contact LDAP server (-1)
