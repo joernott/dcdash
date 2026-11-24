@@ -19,8 +19,8 @@ All notable changes to dcdash are listed here. The format follows
 
 ### Fixed
 
-- **Directories:** `managed_ous` are compared as DNs, so that spaces after commas or a different
-  case no longer make every user read-only; entries that aren't DNs are rejected.
+- **Directories:** `managed_ous` are compared as DNs: spaces after commas and a different case
+  are allowed; entries that aren't DNs are rejected.
 - **Overview:** the heading, the UI/SSH/RDP buttons and the status of a tile are on one line
   again.
 
