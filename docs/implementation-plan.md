@@ -48,6 +48,7 @@ These apply to every task:
 | 14 | `sprint/14-opnsense` | OPNsense firewalls: health, VPN, aliases, rules, **v0.2.0** | v0.2.0 | done |
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 | 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | v0.3.0 | done |
+| 17 | `sprint/17-config-directory` | Configuration directory with merged files; directories in the example configuration | – | in progress |
 
 ---
 
@@ -584,3 +585,41 @@ network, and two current Samba AD domain controllers in the test labs.
   documented
 - [x] **16.12** Documentation (`directories.md`, configuration, security, permission
   reference, user guide), OpenAPI, `CHANGELOG.md`
+
+## Sprint 17 — Configuration Directory
+
+v0.3.0 added the `directories` section and the DNS provider type `ad` without changing
+`configs/config.example.yaml`, so the package installed no example and asked nothing on the
+upgrade. The configuration also grows long with many switches, firewalls or clusters: it is
+split into a directory of files that are merged.
+
+- [ ] **17.1** `configs/config.example.yaml`: a commented `directories` example (all keys of
+  `docs/configuration.md#directories`) and a DNS provider of type `ad`
+- [ ] **17.2** Configuration directory: `-c`/`--config` names a directory. dcdash reads every
+  `*.yaml` file in it (not in subdirectories, no hidden files) in alphabetical order and merges
+  them into one configuration before decoding:
+  - mappings are merged key by key, recursively;
+  - lists are concatenated in file order, so that a switch, firewall or cluster can be added
+    or removed by adding or deleting a file;
+  - a scalar value set in two files is an error naming both files (no silent override);
+  - unknown keys and syntax errors are reported with file name and line; an empty directory
+    is an error.
+  The default becomes `/etc/dcdash/config.d`. A file given to `-c` is still read alone,
+  with a warning, so that existing installations keep working.
+- [ ] **17.3** The example as a directory `configs/config.d/`: `00_server.yaml`,
+  `01_auth.yaml`, `02_audit.yaml`, `03_security.yaml`, `04_roles.yaml`, `05_log.yaml`,
+  `06_metrics.yaml`, `07_global.yaml` (`status`, `data_dir` and other global settings),
+  `10_projects.yaml`, `20_directories.yaml`, `30_netbox.yaml`, `40_proxmox.yaml`,
+  `50_dns.yaml`, `60_dhcp.yaml`, `70_firewalls.yaml`, `80_switches.yaml`. A test checks that
+  the files together contain every section of the configuration and that they validate.
+- [ ] **17.4** Packaging and migration: the `.deb` and `.rpm` packages install the files to
+  `/etc/dcdash/config.d` as configuration files (optional modules disabled), the systemd
+  unit, the container image and the postinstall notes use the directory; an existing
+  `/etc/dcdash/config.yaml` keeps working, and the documentation describes moving it into
+  the directory
+- [ ] **17.5** `config validate` and the start log list the files read; errors name the file
+  and line
+- [ ] **17.6** Tests: merging (order, nested mappings, lists, conflicts, unknown keys, empty
+  directory, a single file), the CLI, and the e2e and integration setups with a directory
+- [ ] **17.7** Documentation (configuration, admin guide, development, README),
+  `CHANGELOG.md` with upgrade notes
