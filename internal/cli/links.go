@@ -11,13 +11,14 @@ import (
 // providers) to the status checks of the systems they belong to, found by kind and name.
 func withLinks(cfg *config.Config, checks []status.Check) []status.Check {
 	byKind := map[string]map[string]config.Links{
-		"proxmox":  {},
-		"dns":      {},
-		"dhcp":     {},
-		"netbox":   {},
-		"switch":   {},
-		"firewall": {},
-		"system":   {"directory": cfg.Auth.LDAP.Links},
+		"proxmox":   {},
+		"dns":       {},
+		"dhcp":      {},
+		"netbox":    {},
+		"switch":    {},
+		"firewall":  {},
+		"directory": {},
+		"system":    {"directory": cfg.Auth.LDAP.Links},
 	}
 	for _, c := range cfg.Proxmox.Clusters {
 		byKind["proxmox"][c.Name] = c.Links
@@ -33,6 +34,9 @@ func withLinks(cfg *config.Config, checks []status.Check) []status.Check {
 	byKind["netbox"][cfg.NetBox.Name] = cfg.NetBox.Links
 	for _, s := range cfg.Switches {
 		byKind["switch"][s.Name] = s.Links
+	}
+	for _, d := range cfg.Directories {
+		byKind["directory"][d.Name] = d.Links
 	}
 	for _, f := range cfg.Firewalls {
 		byKind["firewall"][f.Name] = f.Links

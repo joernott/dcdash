@@ -85,6 +85,9 @@ describe('login', () => {
         : [401, apiError('invalid_code')],
     )
     const w = await mountAt('/login?redirect=/account', 'de')
+    // Only the password form, without self-service directories no link to it.
+    expect(w.findAll('form')).toHaveLength(1)
+    expect(w.text()).not.toContain('Domänenpasswort ändern')
 
     const [user, pass] = w.findAll('input')
     await user!.setValue('alice')
@@ -187,5 +190,18 @@ describe('session expiry', () => {
     await flushPromises()
     await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('login'))
     expect(useSessionStore().info).toBeNull()
+  })
+})
+
+describe('self-service link', () => {
+  it('links to the password change if a directory offers it', async () => {
+    api.on('GET /api/v1/auth/me', () => [401, apiError('not_authenticated')])
+    api.on('GET /api/v1/password/directories', () => [
+      200,
+      { directories: [{ name: 'lab', domain: 'ad.test' }] },
+    ])
+    const w = await mountAt('/login')
+    expect(w.findAll('form')).toHaveLength(1)
+    expect(w.get('a[href="/password"]').text()).toBe('Change your domain password')
   })
 })

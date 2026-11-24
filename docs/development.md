@@ -62,7 +62,7 @@ Run `make` to list all targets. The most important ones:
 | `make build` | Build the frontend, then `bin/dcdash` with the frontend embedded |
 | `make build-go` | Build only the binary, with the frontend currently in `internal/ui/dist` |
 | `make test` | Go tests (with race detector) and frontend unit tests |
-| `make test-integration` | Integration tests against containers (bind9 for ACME, a bind9 primary with SFTP and a secondary for the DNS module, Kea DHCPv4/DHCPv6 with a PostgreSQL host database and a Kea HA pair, OpenLDAP, Pebble, step-ca); needs Docker and `rndc` (`bind9-utils`; `DCDASH_IT_RNDC` may point to another binary). `KEEP=1` keeps the containers running |
+| `make test-integration` | Integration tests against containers (bind9 for ACME, a bind9 primary with SFTP and a secondary for the DNS module, Kea DHCPv4/DHCPv6 with a PostgreSQL host database and a Kea HA pair, OpenLDAP, a Samba AD DC, Pebble, step-ca); needs Docker and `rndc` (`bind9-utils`; `DCDASH_IT_RNDC` may point to another binary). `KEEP=1` keeps the containers running |
 | `make test-e2e` | End-to-end tests (Playwright) of the built binary against the OpenLDAP test container and the Proxmox fake; needs Docker and `npx playwright install --with-deps chromium` once. Results and screenshots (light/dark, English/German) go to `.e2e/` |
 | `make test-e2e-full` | The end-to-end tests against the full docker compose environment as well: dcdash then also uses the real bind9 primary (zone creation with rndc, SFTP and the catalog zone), Kea with the PostgreSQL host database and the Kea HA pair (`web/e2e/full.spec.ts`). Needs Docker and `rndc`; this is what the CI runs |
 | `make lint` | golangci-lint, oxlint, ESLint, Prettier check, translation check, type check |
@@ -239,7 +239,18 @@ are set: version, gateways, services, WireGuard, IPsec, aliases and rules. With
 **disabled** test rule on `DCDASH_IT_OPN_RULE_IF` (default `lan`), each rule change with a
 savepoint. With `DCDASH_IT_OPN_ROLLBACK=1` it also deletes the rule without canceling the
 rollback and checks after 70 seconds that OPNsense restored it. Disabled rules don't change
-the traffic. Not run yet against a real firewall.
+the traffic. Run against OPNsense 26.7 in Sprint 14.
+
+`TestDirectorySamba` and `TestADDNSSamba` in `test/integration/directories_test.go` and
+`dns_ad_test.go` run against the Samba AD DC of the container environment
+(`test/integration/samba`, domain `ad.dcdash.test`): users, groups, passwords (also the
+self-service change of a "must change" user and the lockout), DNS records and zones.
+`TestDirectoryLab` and `TestADDNSLab` run the same against a real domain controller when
+`DCDASH_IT_AD_URL`, `_FINGERPRINT`, `_BASE_DN`, `DCDASH_IT_AD_ADMIN`, `_ADMIN_PASSWORD` and
+`DCDASH_IT_AD_DNS_SERVER` are set. They only create objects with the prefix `dcdashdev-` in
+`OU=dcdashdev-test` (which must exist), a record `dcdashdev-a1` and a zone
+`dcdashdev-zone.test`, and remove them again. Wrong passwords are only sent for the test users
+they create.
 
 ## Configuration
 

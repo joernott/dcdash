@@ -29,7 +29,8 @@
     "netbox": "NetBox",
     "projects": "Projects",
     "switches": "Switches",
-    "firewalls": "Firewalls"
+    "firewalls": "Firewalls",
+    "directories": "Directories"
   },
   "home": {
     "welcome": "Welcome, {name}",
@@ -48,7 +49,8 @@
       "dhcp": "DHCP",
       "netbox": "NetBox",
       "switch": "Switches",
-      "firewall": "Firewalls"
+      "firewall": "Firewalls",
+      "directory": "Directories"
     },
     "components": {
       "database": "Database",
@@ -68,7 +70,13 @@
       "dns": {
         "bind": "bind9 at {server}, no zones | bind9 at {server}, one zone | bind9 at {server}, {count} zones",
         "bindChecked": "bind9 at {server}, no zones, {checked} OK | bind9 at {server}, one zone, {checked} OK | bind9 at {server}, {count} zones, {checked} OK",
-        "cloudflare": "Cloudflare, no zones | Cloudflare, one zone | Cloudflare, {count} zones"
+        "cloudflare": "Cloudflare, no zones | Cloudflare, one zone | Cloudflare, {count} zones",
+        "ad": "AD DNS at {server}, no zones | AD DNS at {server}, one zone | AD DNS at {server}, {count} zones"
+      },
+      "ad": {
+        "connected": "{domain}, one domain controller | {domain}, {count} domain controllers",
+        "degraded": "{domain}; not reachable: {down}",
+        "unavailable": "No domain controller is reachable"
       },
       "dhcp": {
         "kea": "Kea {version}",
@@ -108,7 +116,8 @@
       "kea": "Kea DHCP",
       "netbox": "NetBox",
       "switch": "Aruba CX",
-      "firewall": "OPNsense"
+      "firewall": "OPNsense",
+      "directory": "Active Directory"
     },
     "links": {
       "ui": "UI",
@@ -132,7 +141,42 @@
     "verify": "Verify",
     "useRecovery": "Use a recovery code",
     "useCode": "Use the authenticator app",
-    "restart": "Log in as another user"
+    "restart": "Log in as another user",
+    "changePassword": "Change your domain password"
+  },
+  "password": {
+    "title": "Change password",
+    "intro": "Change the password of your account in the domain. You don't need to log in to dcdash for this, and it also works if your password has expired or must be changed.",
+    "directory": "Domain",
+    "username": "User name",
+    "usernameHint": "Your account name or {'@'}{domain} address",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Repeat the new password",
+    "submit": "Change password",
+    "success": "Your password was changed. Use the new password from now on, also on your other devices.",
+    "mismatch": "The new passwords don't match.",
+    "none": "No domain offers the password change here.",
+    "toLogin": "To the dcdash login",
+    "policy": {
+      "title": "The domain's password rules",
+      "minLength": "At least one character | At least {n} characters",
+      "complexity": "Three of these four: upper case letters, lower case letters, digits, other characters; not your account or display name",
+      "history": "Not the same as your last password | Not the same as one of your last {n} passwords",
+      "minAge": "Can be changed again after an hour at the earliest | Can be changed again after {n} hours at the earliest"
+    },
+    "errors": {
+      "invalid_credentials": "The user name or the current password is wrong.",
+      "same_password": "The new password must differ from the current one.",
+      "too_many_attempts": "Too many failed attempts. Please wait a few minutes and try again.",
+      "directory_unavailable": "The domain is not reachable right now. Please try again later.",
+      "password_policy_tooShort": "The new password is too short.",
+      "password_policy_history": "You used the new password before. Please choose another one.",
+      "password_policy_tooYoung": "Your password was changed only recently and can't be changed again yet.",
+      "password_policy_complexity": "The new password is not complex enough. Use three of these four: upper case letters, lower case letters, digits, other characters, and not your name.",
+      "password_policy_policy": "The new password doesn't meet the domain's rules: it may be too short, too simple, or used before.",
+      "rejected": "The domain rejected the change. Please contact your administrator."
+    }
   },
   "enroll": {
     "title": "Set up an authenticator app",
@@ -957,13 +1001,20 @@
     "guest_running": "Stop the guest before deleting it.",
     "confirmation_mismatch": "The confirmation does not match the name.",
     "config_changed": "The configuration was changed in the meantime. Please reload it and try again.",
-    "no_free_slot": "There is no free slot on this bus."
+    "no_free_slot": "There is no free slot on this bus.",
+    "password_policy": "The domain's password policy rejected the password: {message}",
+    "directory_forbidden": "The domain refused the change; dcdash's service account lacks the right: {message}",
+    "invalid_user": "Invalid user: {message}",
+    "invalid_group": "Invalid group: {message}",
+    "invalid_members": "Invalid members: {message}",
+    "invalid_password": "Invalid password: {message}"
   },
   "dns": {
     "provider": "Provider",
     "kinds": {
       "cloudflare": "Cloudflare",
-      "bind": "bind9"
+      "bind": "bind9",
+      "ad": "Active Directory"
     },
     "noProviders": "No DNS provider is available to you.",
     "zones": "Zones",
@@ -1200,6 +1251,10 @@
     "sourceError": "Could not be read: {error}",
     "empty": "Nothing belongs to this project yet.",
     "guests": "Virtual machines and containers",
+    "groups": "Active Directory groups",
+    "groupHidden": "Members not visible to you",
+    "groupMissing": "The group doesn't exist in the directory",
+    "noMembers": "No members",
     "remove": "Remove",
     "add": "Add NetBox objects",
     "addHint": "Search for VLANs, prefixes, IP addresses, IP ranges, switch ports or virtual machines in NetBox and add them to the project. Guests in Proxmox are added on their pages.",
@@ -1222,6 +1277,9 @@
       "guest": "Guest",
       "cluster": "Cluster",
       "status": "Status",
+      "group": "Group",
+      "directory": "Directory",
+      "members": "Members",
       "object": "Object",
       "detail": "Details",
       "actions": "Actions"
@@ -1241,6 +1299,92 @@
       "prefix": "Prefix",
       "vlan": "VLAN",
       "interface": "Switch port"
+    }
+  },
+  "directories": {
+    "directory": "Directory",
+    "none": "No directory is available to you.",
+    "types": { "samba": "Samba Active Directory", "windows": "Windows Active Directory" },
+    "managed": "dcdash changes objects in: {ous}",
+    "views": "Views",
+    "tabs": { "users": "Users", "groups": "Groups" },
+    "actions": "Actions",
+    "search": "Search",
+    "searchButton": "Search",
+    "truncated": "Only the first entries are shown. Narrow the search to see the others.",
+    "container": "Container",
+    "description": "Description",
+    "delete": "Delete",
+    "users": {
+      "name": "Account name",
+      "nameHint": "At most 20 characters, no spaces at the start or end",
+      "upn": "User principal name",
+      "upnHint": "Default: <account name>{'@'}{domain}",
+      "givenName": "First name",
+      "surname": "Last name",
+      "displayName": "Display name",
+      "mail": "Email",
+      "state": "State",
+      "searchHint": "Name or email",
+      "password": "Initial password",
+      "newPassword": "New password",
+      "mustChange": "Must change the password at the next logon",
+      "createDisabled": "Create disabled",
+      "create": "Create a user",
+      "createTitle": "New user",
+      "editTitle": "Change {name}",
+      "editLabel": "Change {name}",
+      "deleteLabel": "Delete {name}",
+      "deleteTitle": "Delete {name}?",
+      "deleteText": "The account {dn} is deleted. This can't be undone.",
+      "enableLabel": "Enable {name}",
+      "disableLabel": "Disable {name}",
+      "unlockLabel": "Unlock {name}",
+      "resetLabel": "Reset the password of {name}",
+      "resetTitle": "Reset the password of {name}",
+      "reset": "Reset password",
+      "saved": "{name} was saved.",
+      "deleted": "{name} was deleted.",
+      "enabled": "{name} was enabled.",
+      "disabled": "{name} was disabled and can't log in any more.",
+      "unlocked": "{name} was unlocked.",
+      "resetDone": "The password of {name} was reset.",
+      "states": {
+        "disabled": "disabled",
+        "lockedOut": "locked out",
+        "expired": "password expired",
+        "mustChange": "must change password",
+        "protected": "protected",
+        "unmanaged": "read-only"
+      }
+    },
+    "groups": {
+      "name": "Group name",
+      "scope": "Scope",
+      "scopeHint": "Global and domain local groups can only be changed to universal and back.",
+      "scopes": { "global": "Global", "domainLocal": "Domain local", "universal": "Universal" },
+      "security": "Security group",
+      "distribution": "Distribution group",
+      "searchHint": "Name or description",
+      "create": "Create a group",
+      "createTitle": "New group",
+      "editTitle": "Change {name}",
+      "editLabel": "Change {name}",
+      "deleteLabel": "Delete {name}",
+      "deleteTitle": "Delete {name}?",
+      "deleteText": "The group {dn} is deleted. Its members stay. This can't be undone.",
+      "saved": "{name} was saved.",
+      "deleted": "{name} was deleted.",
+      "membersLabel": "Members of {name}",
+      "membersTitle": "Members of {name}",
+      "noMembers": "The group has no direct members.",
+      "member": "Member",
+      "kind": "Kind",
+      "kinds": { "user": "User", "group": "Group", "computer": "Computer", "other": "Other" },
+      "removeLabel": "Remove {name} from the group",
+      "addMember": "Add a member",
+      "addMemberHint": "Account name of a user, group or computer",
+      "addMemberButton": "Add"
     }
   }
 }

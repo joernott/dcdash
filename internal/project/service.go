@@ -22,10 +22,11 @@ import (
 
 // Service holds the projects and synchronizes their tags to NetBox.
 type Service struct {
-	cfg   config.Projects
-	nb    *netbox.Service
-	audit *audit.Log
-	log   zerolog.Logger
+	cfg    config.Projects
+	nb     *netbox.Service
+	groups GroupSource
+	audit  *audit.Log
+	log    zerolog.Logger
 
 	mu       sync.RWMutex
 	projects []Project

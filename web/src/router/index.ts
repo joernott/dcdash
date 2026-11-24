@@ -40,6 +40,12 @@ export const routes = [
     meta: { public: true, title: 'enroll.title' },
   },
   {
+    path: '/password',
+    name: 'password',
+    component: () => import('@/views/PasswordView.vue'),
+    meta: { public: true, title: 'password.title' },
+  },
+  {
     path: '/',
     component: () => import('@/layouts/AppLayout.vue'),
     children: [
@@ -84,6 +90,12 @@ export const routes = [
         name: 'project',
         component: () => import('@/views/projects/ProjectView.vue'),
         meta: { title: 'nav.projects', module: 'project' },
+      },
+      {
+        path: 'directories/:directory?',
+        name: 'directories',
+        component: () => import('@/views/directories/DirectoriesView.vue'),
+        meta: { title: 'nav.directories', module: 'directory' },
       },
       {
         path: 'firewalls/:firewall?',
@@ -194,6 +206,8 @@ export async function guard(to: RouteLocationNormalized): Promise<true | RouteLo
   if (to.name === 'enroll') {
     return stage === 'totp_enroll' || session.authenticated ? true : { name: 'login' }
   }
+  // The self-service password change works without a login.
+  if (to.name === 'password') return true
   if (!session.authenticated) {
     if (stage === 'totp_enroll') return { name: 'enroll' }
     return { name: 'login', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }

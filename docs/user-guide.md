@@ -26,6 +26,12 @@ have set other times). An open console doesn't count as activity.
 page. If you have no recovery codes left, ask an administrator to reset your authenticator
 app; you set it up again at your next login.
 
+**Changing your domain password:** "Change your domain password" on the login page opens a
+page where you change the password of your account in an Active Directory domain, without
+logging in to dcdash. Choose the domain, enter your account name, your current password and
+the new one twice. The page shows the domain's password rules; this also works when your
+password has expired or must be changed. Use the new password everywhere afterwards.
+
 ## Overview
 
 The overview shows the state of dcdash and of every connected system, one tile each: first
@@ -191,6 +197,22 @@ links to its web interface and SSH:
   restores the previous rules within a minute, and the page tells you.
 
 See [firewalls.md](firewalls.md).
+
+## Directories
+
+The Directories page shows the users and groups of an Active Directory domain. Choose the
+domain at the top, then **Users** or **Groups**; search by name, mail address or description.
+
+- **Users:** create a user with an initial password (usually "must change the password at
+  the next logon"), change names and mail address, disable and enable, unlock after failed
+  logins, reset the password, delete. The state column shows disabled, locked out and
+  protected accounts; "read-only" users are outside the containers dcdash manages.
+- **Groups:** create, change (also rename and change the scope), delete; the members button
+  lists the direct members, where you add and remove users, groups or computers by account
+  name.
+
+What you can do depends on your permissions. Built-in and privileged accounts and groups
+need a special permission. See [directories.md](directories.md).
 
 ## Administration
 

@@ -449,6 +449,19 @@ groups, whatever the permissions allow (see
 [firewalls.md](firewalls.md#lockout-guard)). The privileges of the API user in OPNsense limit what dcdash
 can do at all. See [firewalls.md](firewalls.md).
 
+### Directories and the self-service password change
+
+The permissions for Active Directory domains are listed in
+[permissions.md](permissions.md#directories): `operate` on a user for disabling, unlocking and
+resetting its password, `write` for creating, changing and deleting users and groups, `admin`
+for protected objects. Objects outside `managed_ous` are never changed. The service account
+of a domain limits what dcdash can do at all; give it only delegated rights on the managed
+OUs.
+
+The self-service password change at `/password` needs no login. It never tells whether a
+user exists, slows down failures and limits them per user and client address like logins;
+the domain's own lockout applies as well. See [directories.md](directories.md#self-service-password-change).
+
 ## Audit log
 
 dcdash records every login attempt and every state-changing action in the audit log, together

@@ -16,6 +16,7 @@ import (
 const (
 	DNSTypeCloudflare = "cloudflare"
 	DNSTypeBind       = "bind"
+	DNSTypeAD         = "ad"
 )
 
 // DNS configures the DNS providers managed by dcdash.
@@ -23,17 +24,19 @@ type DNS struct {
 	Providers []DNSProvider `yaml:"providers"`
 }
 
-// DNSProvider is one DNS backend: a Cloudflare account or a bind9 primary.
+// DNSProvider is one DNS backend: a Cloudflare account, a bind9 primary, or the
+// AD-integrated DNS of an Active Directory domain.
 type DNSProvider struct {
 	// Name identifies the provider in the UI and in permissions
 	// (dns:<name>:<zone>:<action>).
 	Name string `yaml:"name"`
-	// Type is "cloudflare" or "bind".
+	// Type is "cloudflare", "bind" or "ad".
 	Type string `yaml:"type"`
 	// Timeout of a single request to the backend.
 	Timeout    Duration      `yaml:"timeout"`
 	Cloudflare DNSCloudflare `yaml:"cloudflare"`
 	Bind       Bind          `yaml:"bind"`
+	AD         ADDNS         `yaml:"ad"`
 	// Links: web interface, SSH and RDP of the system, shown on its overview tile.
 	Links `yaml:",inline"`
 }
@@ -76,6 +79,22 @@ type Bind struct {
 	SFTP SFTP `yaml:"sftp"`
 	// NewZones is the template for zones created by dcdash.
 	NewZones NewZones `yaml:"new_zones"`
+}
+
+// ADDNS configures the AD-integrated DNS of a directory (see docs/adr/0010-active-directory.md):
+// zones and records are read via LDAP and changed with RFC 2136 updates signed with GSS-TSIG,
+// with the service account of the directory.
+type ADDNS struct {
+	// Directory is the name of the directory (directories[].name).
+	Directory string `yaml:"directory"`
+	// Server is the host name of a domain controller running DNS. dcdash sends updates to it
+	// on port 53, and Kerberos needs the name (DNS/<server>), not an address.
+	Server string `yaml:"server"`
+	// Resolver is a DNS server (IP[:port], usually the domain controller) used to look up Server
+	// if the system resolver can't, e.g. when dcdash's host doesn't use the AD DNS.
+	Resolver string `yaml:"resolver"`
+	// ManageZones allows creating and deleting zones (via LDAP; unverified on Windows).
+	ManageZones bool `yaml:"manage_zones"`
 }
 
 // RNDC configures the rndc binary used for server operations.
@@ -208,8 +227,20 @@ func (d DNS) validate(add func(string, ...any)) {
 			p.Cloudflare.validate(pre+".cloudflare", add)
 		case DNSTypeBind:
 			p.Bind.validate(pre+".bind", add)
+		case DNSTypeAD:
+			if p.AD.Directory == "" {
+				add("%s.ad.directory: required", pre)
+			}
+			if !domainPattern.MatchString(p.AD.Server) || net.ParseIP(p.AD.Server) != nil {
+				add("%s.ad.server %q: the host name of a domain controller", pre, p.AD.Server)
+			}
+			if r := p.AD.Resolver; r != "" && net.ParseIP(r) == nil {
+				if h, _, err := net.SplitHostPort(r); err != nil || net.ParseIP(strings.Trim(h, "[]")) == nil {
+					add("%s.ad.resolver %q: an IP address with an optional port", pre, r)
+				}
+			}
 		default:
-			add("%s.type %q: must be cloudflare or bind", pre, p.Type)
+			add("%s.type %q: must be cloudflare, bind or ad", pre, p.Type)
 		}
 	}
 }

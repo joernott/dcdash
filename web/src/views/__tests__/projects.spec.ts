@@ -99,6 +99,16 @@ describe('Projects', () => {
           visible: false,
         },
       ],
+      groups: [
+        {
+          directory: 'lab',
+          name: 'shop-admins',
+          visible: true,
+          description: 'Shop administrators',
+          members: [{ dn: 'CN=alice', name: 'alice', displayName: 'Alice Example', kind: 'user' }],
+        },
+        { directory: 'lab', name: 'secret', visible: false },
+      ],
       netbox: {
         vm: [] as NbObj[],
         ip: [{ type: 'ip', id: 5, display: '192.0.2.10/24', detail: 'web.example.org' }],
@@ -138,6 +148,9 @@ describe('Projects', () => {
     expect(w.get('h1').text()).toBe('Webshop')
     expect(w.findAll('a').some((a) => a.text() === 'web')).toBe(true)
     expect(w.findAll('a').some((a) => a.text() === 'db')).toBe(false)
+    expect(w.text()).toContain('Active Directory groups')
+    expect(w.text()).toContain('Alice Example (alice)')
+    expect(w.text()).toContain('Members not visible to you')
     expect(w.text()).toContain('web.example.org')
 
     await w.get('select').setValue('prefix')

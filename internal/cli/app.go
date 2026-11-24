@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/rs/zerolog"
 
@@ -14,7 +15,10 @@ import (
 	"github.com/joernott/dcdash/internal/auth"
 	"github.com/joernott/dcdash/internal/config"
 	"github.com/joernott/dcdash/internal/dhcp"
+	"github.com/joernott/dcdash/internal/directories"
+	"github.com/joernott/dcdash/internal/directories/ad"
 	"github.com/joernott/dcdash/internal/dns"
+	"github.com/joernott/dcdash/internal/dns/addns"
 	"github.com/joernott/dcdash/internal/dns/bind"
 	"github.com/joernott/dcdash/internal/dns/cloudflare"
 	"github.com/joernott/dcdash/internal/firewalls"
@@ -108,7 +112,7 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		a.statusChecks = append(a.statusChecks, pve.StatusChecks()...)
 		a.routes = append(a.routes, pve.Register)
 	}
-	dnsSvc, err := newDNS(cfg.DNS, auditLog, log)
+	dnsSvc, err := newDNS(cfg.DNS, cfg.Directories, auditLog, log)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +135,15 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		}
 		a.statusChecks = append(a.statusChecks, fwSvc.StatusChecks()...)
 		a.routes = append(a.routes, fwSvc.Register)
+	}
+	var dirSvc *directories.Service
+	if len(cfg.Directories) > 0 {
+		if dirSvc, err = directories.NewService(cfg.Directories, auditLog, log); err != nil {
+			return nil, err
+		}
+		dirSvc.EnableSelfService(lockoutPolicy(cfg.Auth.Lockout.User), lockoutPolicy(cfg.Auth.Lockout.IP))
+		a.statusChecks = append(a.statusChecks, dirSvc.StatusChecks()...)
+		a.routes = append(a.routes, dirSvc.Register)
 	}
 	var switchSvc *switches.Service
 	if len(cfg.Switches) > 0 {
@@ -194,8 +207,12 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		pve.SetProjects(projects)
 		projects.SetGuestSource(pve)
 	}
+	if dirSvc != nil {
+		// Active Directory groups of projects (task 16.9).
+		projects.SetGroupSource(dirSvc)
+	}
 	a.middleware = append(a.middleware,
-		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath))
+		httpx.ClientIPMiddleware(proxies), sessions.Middleware, authz.Middleware, session.CSRFExcept(auth.LoginPath, directories.ChangePasswordPath))
 	return a, nil
 }
 
@@ -307,7 +324,7 @@ func newProxmox(cfg config.Proxmox, auditLog *audit.Log, sessions *session.Manag
 }
 
 // newDNS creates the DNS module, or nil if no provider is configured.
-func newDNS(cfg config.DNS, auditLog *audit.Log, log zerolog.Logger) (*dns.Service, error) {
+func newDNS(cfg config.DNS, dirs config.Directories, auditLog *audit.Log, log zerolog.Logger) (*dns.Service, error) {
 	if len(cfg.Providers) == 0 {
 		return nil, nil
 	}
@@ -330,6 +347,16 @@ func newDNS(cfg config.DNS, auditLog *audit.Log, log zerolog.Logger) (*dns.Servi
 				return nil, err
 			}
 			providers = append(providers, bp)
+		case config.DNSTypeAD:
+			i := slices.IndexFunc(dirs, func(d config.Directory) bool { return d.Name == p.AD.Directory })
+			if i < 0 {
+				return nil, fmt.Errorf("dns provider %s: no directory %q", p.Name, p.AD.Directory)
+			}
+			dir, err := ad.New(dirs[i], log)
+			if err != nil {
+				return nil, err
+			}
+			providers = append(providers, addns.New(p, dir, log))
 		}
 		log.Info().Str("provider", p.Name).Str("type", p.Type).Msg("dns: provider configured")
 	}

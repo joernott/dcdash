@@ -38,6 +38,7 @@ import (
 var Pages = []string{
 	"user-guide", "admin-guide", "installation", "configuration", "security", "permissions",
 	"certificates", "proxmox", "dns", "dhcp", "netbox", "projects", "switches", "firewalls",
+	"directories",
 	"monitoring",
 }
 

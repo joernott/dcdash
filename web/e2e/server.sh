@@ -65,13 +65,13 @@ go build -o "$DIR/opnfake" ./test/opnfake
 # With DCDASH_E2E_FULL=1 (scripts/e2e-full.sh), dcdash also uses the real services of
 # the docker compose environment: the bind9 primary (records, rndc, SFTP, catalog zone),
 # Kea DHCPv4/DHCPv6 with the PostgreSQL host database, and the Kea HA pair.
-FULL_ROLES="" FULL_DNS="" FULL_DHCP=""
+FULL_ROLES="" FULL_DNS="" FULL_DHCP="" FULL_DIRS=""
 if [[ "${DCDASH_E2E_FULL:-}" == 1 ]]; then
   FULL_ROLES='
   - name: full-e2e
     groups: [dcdash-vm]
     require_totp: false
-    permissions: ["dns:bind:static.dcdash.test:write", "dns:bind:*.e2e.dcdash.test:admin", "dhcp:kea4-db:*:write", "dhcp:kea-ha*:*:operate"]'
+    permissions: ["dns:bind:static.dcdash.test:write", "dns:bind:*.e2e.dcdash.test:admin", "dhcp:kea4-db:*:write", "dhcp:kea-ha*:*:operate", "directory:it:user/e2e-*:write", "directory:it:group/e2e-*:write", "directory:it:*:read", "dns:it-dns:lab.dcdash.test:write"]'
   FULL_DNS="
     - name: bind
       type: bind
@@ -95,7 +95,20 @@ if [[ "${DCDASH_E2E_FULL:-}" == 1 ]]; then
           options: 'update-policy { grant dcdash. zonesub ANY; }; allow-transfer { key dcdash.; 10.77.0.55; }; also-notify { 10.77.0.55; };'
           ttl: 1h
           soa: {mname: ns1.dcdash.test, rname: hostmaster.dcdash.test}
-          nameservers: [ns1.dcdash.test]"
+          nameservers: [ns1.dcdash.test]
+    - name: it-dns
+      type: ad
+      ad: {directory: it, server: dc1.ad.dcdash.test, resolver: \"${DCDASH_IT_SAMBA_URL#ldaps://}\"}"
+  FULL_DIRS="
+  - name: it
+    type: samba
+    domain: $DCDASH_IT_SAMBA_DOMAIN
+    servers: [{url: \"$DCDASH_IT_SAMBA_URL\", fingerprint: \"$DCDASH_IT_SAMBA_FINGERPRINT\"}]
+    bind_dn: \"$DCDASH_IT_SAMBA_BIND_DN\"
+    bind_password: \"$DCDASH_IT_SAMBA_BIND_PASSWORD\"
+    managed_ous: [\"$DCDASH_IT_SAMBA_OU\"]"
+  # The Samba DC (directory it, test/integration/samba): its DNS, and a group of a project.
+  printf 'title: AD E2E\ngroups:\n  it: [lab-admins]\n' > "$DIR/projects/ad-e2e.yaml"
   FULL_DHCP="
     - {name: kea4-db, family: v4, url: \"$DCDASH_IT_KEA4_URL\", insecure: true, username: dcdash, password: \"$DCDASH_IT_KEA_PASSWORD\"}
     - {name: kea-ha1, family: v4, url: \"$DCDASH_IT_KEA_HA1_URL\", insecure: true, username: dcdash, password: \"$DCDASH_IT_KEA_PASSWORD\", ha_group: ha}
@@ -177,6 +190,8 @@ dhcp:
     - {name: kea4, family: v4, url: "http://$KEA4_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
     - {name: kea6, family: v6, url: "http://$KEA6_LISTEN", insecure: true, username: dcdash, password: "kea-e2e-test-only"}
 $FULL_DHCP
+directories:
+$FULL_DIRS
 netbox:
   url: "http://$NB_LISTEN"
   insecure: true

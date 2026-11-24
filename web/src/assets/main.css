@@ -52,6 +52,7 @@
   --dc-sys-netbox: #00766f;
   --dc-sys-switch: #1c7d7e;
   --dc-sys-firewall: #be3b18;
+  --dc-sys-directory: #6d28d9;
   /* The base colors the tints are made of (the same in both modes). */
   --dc-sys-proxmox-base: #d302d4;
   --dc-sys-bind-base: #0066cc;
@@ -60,6 +61,7 @@
   --dc-sys-netbox-base: #00857d;
   --dc-sys-switch-base: #90e5e6;
   --dc-sys-firewall-base: #e34a21;
+  --dc-sys-directory-base: #7c3aed;
 }
 
 :root.dark {
@@ -86,6 +88,7 @@
   --dc-sys-netbox: #009f95;
   --dc-sys-switch: #90e5e6;
   --dc-sys-firewall: #e6603c;
+  --dc-sys-directory: #a882f5;
   --dc-sys-proxmox-base: #d302d4;
   --dc-sys-bind-base: #0066cc;
   --dc-sys-cloudflare-base: #f48120;
@@ -93,6 +96,7 @@
   --dc-sys-netbox-base: #00857d;
   --dc-sys-switch-base: #90e5e6;
   --dc-sys-firewall-base: #e34a21;
+  --dc-sys-directory-base: #7c3aed;
 }
 
 /* A system's tile or row: set --sys to one of the --dc-sys-* colors. In the components layer,

@@ -18,6 +18,8 @@ import (
 	"strings"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/joernott/dcdash/internal/directories/ad"
 )
 
 // TagPrefix is the prefix of project tags.
@@ -33,6 +35,9 @@ type Project struct {
 	Title       string `yaml:"title" json:"title"`
 	Color       string `yaml:"color" json:"color"`
 	Description string `yaml:"description" json:"description"`
+	// Groups are Active Directory groups of the project by directory name
+	// (directories[].name): {lab: [lab-admins, lab-devs]}.
+	Groups map[string][]string `yaml:"groups" json:"-"`
 }
 
 // Tag returns the tag of the project, project-<name>.
@@ -133,6 +138,9 @@ func loadFile(path string) (Project, error) {
 	if len(p.Description) > 200 {
 		return Project{}, errors.New("description: at most 200 characters")
 	}
+	if err := validGroups(p.Groups); err != nil {
+		return Project{}, err
+	}
 	return p, nil
 }
 
@@ -150,4 +158,41 @@ type Guest struct {
 // module). Clusters that can't be read are returned as errors.
 type GuestSource interface {
 	ProjectGuests(ctx context.Context, tag string) ([]Guest, []error)
+}
+
+// GroupSource reads the Active Directory groups of projects; the directories module
+// implements it.
+type GroupSource interface {
+	// ProjectGroup returns a group with its direct members; directories.ErrUnknownDirectory
+	// if the directory isn't configured.
+	ProjectGroup(ctx context.Context, directory, name string) (ad.Group, error)
+}
+
+// Limits of the groups of a project.
+const (
+	maxGroupDirectories = 20
+	maxGroups           = 100
+)
+
+var directoryNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{0,63}$`)
+
+// validGroups checks the groups of a project file.
+func validGroups(groups map[string][]string) error {
+	if len(groups) > maxGroupDirectories {
+		return fmt.Errorf("groups: at most %d directories", maxGroupDirectories)
+	}
+	for dir, names := range groups {
+		if !directoryNamePattern.MatchString(dir) {
+			return fmt.Errorf("groups: %q is not a directory name", dir)
+		}
+		if len(names) > maxGroups {
+			return fmt.Errorf("groups.%s: at most %d groups", dir, maxGroups)
+		}
+		for _, n := range names {
+			if n = strings.TrimSpace(n); n == "" || len(n) > 64 || strings.ContainsAny(n, `"/\[]:;|=,+*?<>@`) {
+				return fmt.Errorf("groups.%s: %q is not a group name", dir, n)
+			}
+		}
+	}
+	return nil
 }

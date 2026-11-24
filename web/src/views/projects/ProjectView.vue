@@ -17,6 +17,7 @@ type Page = Schemas['ProjectPage']
 type Guest = Schemas['ProjectGuest']
 type NbObject = Schemas['ProjectObject']
 type ObjType = Schemas['ProjectObjectType']
+type Group = Schemas['ProjectGroup']
 
 const TYPES: ObjType[] = ['vm', 'ip', 'iprange', 'prefix', 'vlan', 'interface']
 
@@ -45,6 +46,20 @@ async function load() {
   }
 }
 
+const groupColumns = computed(() => [
+  { key: 'name', label: t('projects.columns.group') },
+  { key: 'directory', label: t('projects.columns.directory') },
+  { key: 'members', label: t('projects.columns.members') },
+])
+
+/** The members of a group as text: names, with display names. */
+function members(g: Group): string {
+  if (!g.visible) return t('projects.groupHidden')
+  if (g.missing) return t('projects.groupMissing')
+  if (!g.members?.length) return t('projects.noMembers')
+  return g.members.map((m) => (m.displayName ? `${m.displayName} (${m.name})` : m.name)).join(', ')
+}
+
 const guestColumns = computed(() => [
   { key: 'name', label: t('projects.columns.guest') },
   { key: 'cluster', label: t('projects.columns.cluster') },
@@ -61,7 +76,11 @@ const sections = computed(() =>
   ),
 )
 const empty = computed(
-  () => !!page.value && page.value.guests.length === 0 && sections.value.length === 0,
+  () =>
+    !!page.value &&
+    page.value.guests.length === 0 &&
+    page.value.groups.length === 0 &&
+    sections.value.length === 0,
 )
 
 // Adding NetBox objects.
@@ -200,6 +219,32 @@ watch(name, () => void load(), { immediate: true })
           </template>
           <template #cell-status="{ row }">
             {{ (row as Guest).visible ? (row as Guest).status : '–' }}
+          </template>
+        </DataTable>
+      </section>
+
+      <section
+        v-if="page.groups.length"
+        aria-labelledby="project-groups"
+        class="flex flex-col gap-3"
+      >
+        <h2 id="project-groups" class="text-lg font-semibold">{{ t('projects.groups') }}</h2>
+        <DataTable
+          :columns="groupColumns"
+          :rows="page.groups"
+          :row-key="(g: Group) => `${g.directory}/${g.name}`"
+          :caption="t('projects.groups')"
+        >
+          <template #cell-name="{ row }">
+            {{ (row as Group).name }}
+            <span v-if="(row as Group).description" class="block text-xs text-fg-muted">
+              {{ (row as Group).description }}
+            </span>
+          </template>
+          <template #cell-members="{ row }">
+            <span :class="{ 'text-fg-muted': !(row as Group).visible || (row as Group).missing }">
+              {{ members(row as Group) }}
+            </span>
           </template>
         </DataTable>
       </section>

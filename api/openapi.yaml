@@ -32,6 +32,8 @@ tags:
     description: "Projects: groups of objects with the tag project-<name>"
   - name: firewalls
     description: "OPNsense firewalls: health, VPN, aliases and filter rules"
+  - name: directories
+    description: "Active Directory domains (Windows and Samba): users, groups and passwords"
   - name: switches
     description: "Aruba CX switches: inventory, health, ports, VLANs and MAC addresses"
 
@@ -2501,6 +2503,503 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/directories:
+    get:
+      tags: [directories]
+      operationId: listDirectories
+      summary: List directories
+      description: |
+        Returns the Active Directory domains on which the user holds at least `read` on any
+        resource (`directory:<name>:*:read`).
+      responses:
+        "200":
+          description: Visible directories.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/containers:
+    get:
+      tags: [directories]
+      operationId: listDirectoryContainers
+      summary: Containers users and groups can be created in
+      description: The organizational units and containers below `managed_ous`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+      responses:
+        "200":
+          description: The containers, parents before their children.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryContainerList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/policy:
+    get:
+      tags: [directories]
+      operationId: getDirectoryPolicy
+      summary: Password policy of the domain
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+      responses:
+        "200":
+          description: The password policy.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryPasswordPolicy" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/users:
+    get:
+      tags: [directories]
+      operationId: listDirectoryUsers
+      summary: List users
+      description: Users the user may read (`directory:<directory>:user/<name>:read`), sorted by account name.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryQuery"
+        - $ref: "#/components/parameters/DirectoryLimit"
+      responses:
+        "200":
+          description: The users.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUserList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [directories]
+      operationId: createDirectoryUser
+      summary: Create a user
+      description: |
+        Creates the user with a password in a managed container. Needs
+        `directory:<directory>:user/<name>:write`. Audited as `directory.user.create` (without
+        the password).
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryNewUser" }
+      responses:
+        "201":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "400": { $ref: "#/components/responses/DirectoryInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DirectoryExists" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/users/{name}:
+    get:
+      tags: [directories]
+      operationId: getDirectoryUser
+      summary: A user
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [directories]
+      operationId: updateDirectoryUser
+      summary: Change a user
+      description: |
+        Changes the given attributes; an empty string removes one. Needs `write` on the user
+        (and `admin` if it is protected); the user must be in a managed container. Audited as
+        `directory.user.update`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryUserChange" }
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "400": { $ref: "#/components/responses/DirectoryInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [directories]
+      operationId: deleteDirectoryUser
+      summary: Delete a user
+      description: Needs `write` on the user. Audited as `directory.user.delete`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "204": { description: The user was deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/users/{name}/enable:
+    post:
+      tags: [directories]
+      operationId: enableDirectoryUser
+      summary: Enable a user
+      description: Needs `operate` on the user. Audited as `directory.user.enable`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/users/{name}/disable:
+    post:
+      tags: [directories]
+      operationId: disableDirectoryUser
+      summary: Disable a user
+      description: Disabled users can't log in. Needs `operate` on the user. Audited as `directory.user.disable`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/users/{name}/unlock:
+    post:
+      tags: [directories]
+      operationId: unlockDirectoryUser
+      summary: Unlock a user
+      description: Clears a lockout caused by failed logins. Needs `operate` on the user. Audited as `directory.user.unlock`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/users/{name}/password:
+    post:
+      tags: [directories]
+      operationId: resetDirectoryUserPassword
+      summary: Reset a user's password
+      description: |
+        Sets a new password (an administrative reset, without the old one). Needs `operate` on
+        the user. Audited as `directory.user.password` (without the password).
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryPasswordReset" }
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryUser" }
+        "400": { $ref: "#/components/responses/DirectoryInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/groups:
+    get:
+      tags: [directories]
+      operationId: listDirectoryGroups
+      summary: List groups
+      description: Groups the user may read (`directory:<directory>:group/<name>:read`), without members.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryQuery"
+        - $ref: "#/components/parameters/DirectoryLimit"
+      responses:
+        "200":
+          description: The groups.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryGroupList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [directories]
+      operationId: createDirectoryGroup
+      summary: Create a group
+      description: Needs `directory:<directory>:group/<name>:write`. Audited as `directory.group.create`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryNewGroup" }
+      responses:
+        "201":
+          description: The group.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryGroup" }
+        "400": { $ref: "#/components/responses/DirectoryInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DirectoryExists" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/groups/{name}:
+    get:
+      tags: [directories]
+      operationId: getDirectoryGroup
+      summary: A group with its direct members
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "200":
+          description: The group.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryGroup" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [directories]
+      operationId: updateDirectoryGroup
+      summary: Change or rename a group
+      description: |
+        A rename needs `write` on the old and the new name. AD allows changing a global or
+        domain local group only to universal and back (422 otherwise). Audited as
+        `directory.group.update`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryGroupChange" }
+      responses:
+        "200":
+          description: The group.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryGroup" }
+        "400": { $ref: "#/components/responses/DirectoryInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/DirectoryExists" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [directories]
+      operationId: deleteDirectoryGroup
+      summary: Delete a group
+      description: Needs `write` on the group. Audited as `directory.group.delete`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      responses:
+        "204": { description: The group was deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/directories/{directory}/groups/{name}/members:
+    post:
+      tags: [directories]
+      operationId: changeDirectoryGroupMembers
+      summary: Add and remove members
+      description: |
+        Adds and removes direct members by account name (users, groups, computers). Adding a
+        member twice or removing a non-member is no error. Needs `write` on the group. Audited
+        as `directory.group.members`.
+      parameters:
+        - $ref: "#/components/parameters/DirectoryName"
+        - $ref: "#/components/parameters/DirectoryAccount"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DirectoryMembersChange" }
+      responses:
+        "200":
+          description: The group.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DirectoryGroup" }
+        "400": { $ref: "#/components/responses/DirectoryInvalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/DirectoryRejected" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/password/directories:
+    get:
+      tags: [directories]
+      operationId: listSelfServiceDirectories
+      summary: Directories for the self-service password change
+      description: |
+        No login needed. The directories with `self_service` and their password policy (left
+        out if the directory can't be reached). 404 if the self-service is off.
+      security: []
+      responses:
+        "200":
+          description: The directories.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SelfServiceDirectoryList" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/password/change:
+    post:
+      tags: [directories]
+      operationId: changeOwnPassword
+      summary: Change one's password (self-service)
+      description: |
+        No login and no CSRF token needed (the origin and JSON checks apply). Changes the
+        password with the current one, also for users who must change it. Unknown users and
+        wrong passwords get the same answer (invalid_credentials), which takes at least a
+        second. Failures are limited per user and per client address like logins
+        (`auth.lockout`). Audited as `directory.password.change` with the user as actor
+        (source `self-service`), without the passwords.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SelfServicePasswordChange" }
+      responses:
+        "204": { description: The password was changed. }
+        "400":
+          description: "Invalid request (invalid_request) or the same password twice (same_password)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "401":
+          description: "The user name or the current password is wrong (invalid_credentials)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422":
+          description: |
+            The password policy rejected the new password: password_policy_tooShort,
+            password_policy_history, password_policy_tooYoung, password_policy_complexity or
+            password_policy_policy (Windows doesn't say why), with the domain controller's
+            message; or rejected.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "429":
+          description: "Too many failed attempts (too_many_attempts); see Retry-After."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        "503":
+          description: "The directory is not available (directory_unavailable)."
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+        default:
+          $ref: "#/components/responses/Error"
+
 components:
   securitySchemes:
     session:
@@ -2528,10 +3027,29 @@ components:
     DNSRecordID: { name: id, in: path, required: true, schema: { type: string } }
 
     FirewallName: { name: firewall, in: path, required: true, schema: { type: string }, description: Firewall name from the configuration. }
+    DirectoryName: { name: directory, in: path, required: true, schema: { type: string }, description: Directory name from the configuration. }
+    DirectoryAccount: { name: name, in: path, required: true, schema: { type: string }, description: Account name (sAMAccountName). }
+    DirectoryQuery: { name: q, in: query, schema: { type: string }, description: "Only objects whose account name, names, mail address or description contain this text." }
+    DirectoryLimit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 5000, default: 500 } }
     SwitchName: { name: switch, in: path, required: true, schema: { type: string }, description: Switch name from the configuration. }
     DHCPServer: { name: server, in: path, required: true, schema: { type: string }, description: Server name from the configuration. }
     DHCPReservationID: { name: id, in: path, required: true, schema: { type: string }, description: The id of the reservation as listed. }
   responses:
+    DirectoryInvalid:
+      description: "Invalid request: invalid_request, invalid_user, invalid_group, invalid_password or invalid_members, with the reason as message."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    DirectoryExists:
+      description: "A user or group with the account name exists (exists)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
+    DirectoryRejected:
+      description: "The domain controller rejected the change: password_policy (with the reason, e.g. too short, in the history, too young) or rejected (with its message)."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorBody" }
     FirewallInvalid:
       description: "Invalid request: invalid_request, invalid_alias or invalid_rule, with the reason as message."
       content:
@@ -3008,14 +3526,40 @@ components:
       allOf:
         - $ref: "#/components/schemas/Project"
         - type: object
-          required: [guests, errors]
+          required: [guests, groups, errors]
           properties:
             guests: { type: array, items: { $ref: "#/components/schemas/ProjectGuest" } }
+            groups: { type: array, items: { $ref: "#/components/schemas/ProjectGroup" } }
             netbox:
               type: object
               description: NetBox objects by type; missing without NetBox.
               additionalProperties: { type: array, items: { $ref: "#/components/schemas/ProjectObject" } }
             errors: { type: array, items: { type: string } }
+
+    ProjectGroup:
+      type: object
+      description: |
+        An Active Directory group of a project. Description and members only if the user may
+        read the group (`directory:<directory>:group/<name>:read`); missing tells that a
+        visible group doesn't exist.
+      required: [directory, name, visible]
+      properties:
+        directory: { type: string }
+        name: { type: string }
+        visible: { type: boolean }
+        missing: { type: boolean }
+        description: { type: string }
+        members:
+          type: array
+          items:
+            type: object
+            required: [dn, name, kind]
+            properties:
+              dn: { type: string }
+              name: { type: string }
+              displayName: { type: string }
+              kind: { type: string, enum: [user, group, computer, other] }
+              disabled: { type: boolean }
 
     NetBoxResult:
       type: object
@@ -3597,7 +4141,7 @@ components:
             required: [name, kind, capabilities]
             properties:
               name: { type: string }
-              kind: { type: string, enum: [cloudflare, bind] }
+              kind: { type: string, enum: [cloudflare, bind, ad] }
               capabilities: { $ref: "#/components/schemas/DNSCapabilities" }
 
     DNSZone:
@@ -4245,3 +4789,208 @@ components:
           description: Delegated prefixes (DHCPv6).
         hostname: { type: string }
         version: { type: string, description: Required for updates. }
+
+    DirectoryList:
+      type: object
+      required: [directories]
+      properties:
+        directories: { type: array, items: { $ref: "#/components/schemas/Directory" } }
+
+    Directory:
+      type: object
+      required: [name, type, domain, managedOUs, canCreateUsers, canCreateGroups]
+      properties:
+        name: { type: string }
+        type: { type: string, enum: [samba, windows] }
+        domain: { type: string }
+        managedOUs: { type: array, items: { type: string }, description: Containers dcdash may change objects in. }
+        canCreateUsers: { type: boolean }
+        canCreateGroups: { type: boolean }
+
+    DirectoryContainerList:
+      type: object
+      required: [containers]
+      properties:
+        containers:
+          type: array
+          items:
+            type: object
+            required: [dn, name]
+            properties:
+              dn: { type: string }
+              name: { type: string }
+
+    DirectoryPasswordPolicy:
+      type: object
+      required: [minLength, complexity, history, minAge, maxAge, lockoutThreshold, lockoutDuration]
+      properties:
+        minLength: { type: integer }
+        complexity: { type: boolean, description: "Three of: upper case, lower case, digits, other characters; not the account or display name." }
+        history: { type: integer, description: Number of previous passwords that can't be reused. }
+        minAge: { type: integer, description: Seconds before a password may be changed again; 0 for none. }
+        maxAge: { type: integer, description: Seconds until a password expires; 0 for never. }
+        lockoutThreshold: { type: integer, description: Failed logins that lock an account; 0 for none. }
+        lockoutDuration: { type: integer, description: Seconds an account stays locked. }
+
+    DirectoryUserList:
+      type: object
+      required: [users, truncated]
+      properties:
+        users: { type: array, items: { $ref: "#/components/schemas/DirectoryUser" } }
+        truncated: { type: boolean, description: There are more matches than limit. }
+
+    DirectoryUser:
+      type: object
+      required: [dn, name, disabled, lockedOut, mustChangePassword, passwordExpired, passwordNeverExpires, groups, managed, protected, canOperate, canWrite]
+      properties:
+        dn: { type: string }
+        name: { type: string, description: The account name (sAMAccountName). }
+        upn: { type: string }
+        givenName: { type: string }
+        surname: { type: string }
+        displayName: { type: string }
+        mail: { type: string }
+        description: { type: string }
+        disabled: { type: boolean }
+        lockedOut: { type: boolean, description: Locked out by failed logins. }
+        mustChangePassword: { type: boolean }
+        passwordExpired: { type: boolean }
+        passwordNeverExpires: { type: boolean }
+        passwordLastSet: { type: string, format: date-time }
+        lastLogon: { type: string, format: date-time, description: "lastLogonTimestamp: replicated, up to two weeks behind." }
+        created: { type: string, format: date-time }
+        changed: { type: string, format: date-time }
+        groups: { type: array, items: { type: string }, description: DNs of the groups the user is a direct member of (without the primary group). }
+        managed: { type: boolean, description: In a container dcdash manages. }
+        protected: { type: boolean, description: "Built-in or privileged, or configured as protected: changes need admin." }
+        canOperate: { type: boolean, description: The user may disable, enable, unlock and reset it. }
+        canWrite: { type: boolean, description: The user may change and delete it. }
+
+    DirectoryNewUser:
+      type: object
+      required: [ou, name, password]
+      additionalProperties: false
+      properties:
+        ou: { type: string, description: DN of a managed container. }
+        name: { type: string, maxLength: 20, description: The account name (sAMAccountName). }
+        upn: { type: string, description: "Default: name@domain." }
+        givenName: { type: string }
+        surname: { type: string }
+        displayName: { type: string }
+        mail: { type: string }
+        description: { type: string }
+        password: { type: string, maxLength: 256, format: password }
+        mustChangePassword: { type: boolean }
+        disabled: { type: boolean }
+
+    DirectoryUserChange:
+      type: object
+      additionalProperties: false
+      description: Missing attributes stay; an empty string removes one (not upn).
+      properties:
+        upn: { type: string }
+        givenName: { type: string }
+        surname: { type: string }
+        displayName: { type: string }
+        mail: { type: string }
+        description: { type: string }
+
+    DirectoryPasswordReset:
+      type: object
+      required: [password]
+      additionalProperties: false
+      properties:
+        password: { type: string, maxLength: 256, format: password }
+        mustChangePassword: { type: boolean }
+
+    DirectoryGroupList:
+      type: object
+      required: [groups, truncated]
+      properties:
+        groups: { type: array, items: { $ref: "#/components/schemas/DirectoryGroup" } }
+        truncated: { type: boolean }
+
+    DirectoryGroup:
+      type: object
+      required: [dn, name, scope, security, managed, protected, canWrite]
+      properties:
+        dn: { type: string }
+        name: { type: string, description: The account name (sAMAccountName). }
+        description: { type: string }
+        mail: { type: string }
+        scope: { $ref: "#/components/schemas/DirectoryGroupScope" }
+        security: { type: boolean, description: A security group (else a distribution group). }
+        created: { type: string, format: date-time }
+        changed: { type: string, format: date-time }
+        managed: { type: boolean }
+        protected: { type: boolean }
+        canWrite: { type: boolean }
+        members:
+          type: array
+          description: Direct members; only for a single group.
+          items:
+            type: object
+            required: [dn, name, kind]
+            properties:
+              dn: { type: string }
+              name: { type: string }
+              displayName: { type: string }
+              kind: { type: string, enum: [user, group, computer, other] }
+              disabled: { type: boolean }
+
+    DirectoryGroupScope:
+      type: string
+      enum: [global, domainLocal, universal]
+
+    DirectoryNewGroup:
+      type: object
+      required: [ou, name]
+      additionalProperties: false
+      properties:
+        ou: { type: string, description: DN of a managed container. }
+        name: { type: string, maxLength: 64 }
+        description: { type: string }
+        mail: { type: string }
+        scope: { $ref: "#/components/schemas/DirectoryGroupScope" }
+        security: { type: boolean }
+
+    DirectoryGroupChange:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, maxLength: 64, description: Renames the group (CN and sAMAccountName). }
+        description: { type: string }
+        mail: { type: string }
+        scope: { $ref: "#/components/schemas/DirectoryGroupScope" }
+        security: { type: boolean }
+
+    DirectoryMembersChange:
+      type: object
+      additionalProperties: false
+      properties:
+        add: { type: array, items: { type: string }, description: Account names. }
+        remove: { type: array, items: { type: string } }
+
+    SelfServiceDirectoryList:
+      type: object
+      required: [directories]
+      properties:
+        directories:
+          type: array
+          items:
+            type: object
+            required: [name, domain]
+            properties:
+              name: { type: string }
+              domain: { type: string }
+              policy: { $ref: "#/components/schemas/DirectoryPasswordPolicy" }
+
+    SelfServicePasswordChange:
+      type: object
+      required: [directory, username, currentPassword, newPassword]
+      additionalProperties: false
+      properties:
+        directory: { type: string }
+        username: { type: string, description: Account name or user principal name. }
+        currentPassword: { type: string, format: password, maxLength: 256 }
+        newPassword: { type: string, format: password, maxLength: 256 }

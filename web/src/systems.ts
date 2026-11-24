@@ -11,6 +11,7 @@ export const SYSTEMS = [
   'netbox',
   'switch',
   'firewall',
+  'directory',
 ] as const
 export type System = (typeof SYSTEMS)[number]
 
@@ -18,6 +19,7 @@ export type System = (typeof SYSTEMS)[number]
 export function systemOf(c: { kind: string; type?: string }): System | null {
   switch (c.kind) {
     case 'dns':
+      if (c.type === 'ad') return 'directory'
       return c.type === 'cloudflare' ? 'cloudflare' : 'bind'
     case 'dhcp':
       return 'kea'
@@ -25,6 +27,7 @@ export function systemOf(c: { kind: string; type?: string }): System | null {
     case 'netbox':
     case 'switch':
     case 'firewall':
+    case 'directory':
       return c.kind
   }
   return null
