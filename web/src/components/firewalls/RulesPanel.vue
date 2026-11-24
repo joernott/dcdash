@@ -178,6 +178,7 @@ async function remove() {
 
 watch(() => props.firewall, load)
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
@@ -204,14 +205,6 @@ onMounted(load)
         size="md"
         v-if="list?.canCreate"
         @click="create"
-      />
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
       />
     </div>
     <p

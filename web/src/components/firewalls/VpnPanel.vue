@@ -109,20 +109,11 @@ async function restart(tn: Tunnel) {
 
 watch(() => props.firewall, load)
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div>
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
-    </div>
     <p
       v-if="error"
       role="alert"
