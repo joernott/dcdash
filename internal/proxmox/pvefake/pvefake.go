@@ -181,6 +181,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeData(w, map[string]string{"version": "9.0.11", "release": "9.0", "repoid": "fake"})
 	case p == "/cluster/resources":
 		s.resources(w)
+	case p == "/cluster/status":
+		s.clusterStatus(w)
 	case p == "/cluster/nextid":
 		s.nextID(w, r)
 	case p == "/cluster/sdn/vnets":
@@ -212,6 +214,17 @@ func login(set Settings, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeData(w, map[string]string{"ticket": "PVE:" + set.User + ":fake", "CSRFPreventionToken": "csrf", "username": set.User})
+}
+
+// clusterStatus lists the nodes with the addresses 192.0.2.11, .12, ...
+func (s *Server) clusterStatus(w http.ResponseWriter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := []map[string]any{{"type": "cluster", "name": "fake", "nodes": len(s.nodes), "quorate": 1}}
+	for i, n := range s.nodes {
+		out = append(out, map[string]any{"type": "node", "name": n, "ip": "192.0.2." + strconv.Itoa(11+i), "online": 1, "nodeid": i + 1})
+	}
+	writeData(w, out)
 }
 
 func (s *Server) resources(w http.ResponseWriter) {

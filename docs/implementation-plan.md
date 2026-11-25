@@ -680,11 +680,15 @@ UI/SSH/RDP buttons next to its name. The tables take the colors of the overview 
   dropdown becomes a filter at the top right, together with the lease search from the
   "Leases" tab. A button next to each subnet shows its leases, which replaces the "Leases of a
   subnet" dropdown
-- [ ] **18.5** NetBox page: refresh as an icon at the top right, together with the Proxmox
+- [x] **18.5** NetBox page: refresh as an icon at the top right, together with the Proxmox
   cluster filter and the DNS/DHCP comparison button; the list also shows physical machines
   and switches
   - [x] **18.5.1** The layout: all clusters (the field filters), refresh as an icon, the
     cluster filter and "Compare DNS and DHCP" at the top right
+  - [x] **18.5.2** Physical machines and switches: Proxmox nodes (cluster, primary IP from
+    `/cluster/status`) and switches (model, serial number) compared with their NetBox devices;
+    "Update NetBox" sets the cluster, the primary IP (if assigned to the device) and the serial
+    number. Devices are not created
 - [x] **18.6** Switches page: the switch filter and the device search in the top line, as on
   the DNS page
 - [x] **18.7** Firewalls page in the same layout

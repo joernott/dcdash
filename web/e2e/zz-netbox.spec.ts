@@ -23,7 +23,28 @@ test('compare NetBox with Proxmox and update it', async ({ page }) => {
   await expectAccessible(page, 'NetBox')
   await page.screenshot({ path: '../.e2e/screenshots/netbox.png', fullPage: true })
 
-  await row.getByRole('button', { name: 'Update NetBox' }).click()
+  // Physical machines: pve1 gets its cluster and primary IP, pve2 has no device.
+  const nodes = page.getByRole('table', { name: 'Physical machines of lab' })
+  await expect(nodes.getByRole('row').filter({ hasText: 'pve2' })).toContainText(
+    'Missing in NetBox',
+  )
+  const pve1 = nodes.getByRole('row').filter({ hasText: 'pve1' })
+  await expect(pve1).toContainText('Primary IP')
+  await pve1.getByRole('button', { name: 'Update NetBox: pve1' }).click()
+  await expect(page.getByText('NetBox was updated for pve1.')).toBeVisible()
+  await expect(nodes.getByRole('row').filter({ hasText: 'pve1' })).toHaveCount(0)
+  // Switches: the serial number is updated, the model has to be changed in NetBox.
+  const sw1 = page
+    .getByRole('table', { name: 'Switches', exact: true })
+    .getByRole('row')
+    .filter({ hasText: 'sw1' })
+  await expect(sw1).toContainText('NetBox: sw-e2e')
+  await sw1.getByRole('button', { name: 'Update NetBox: sw1' }).click()
+  await expect(page.getByText('NetBox was updated for sw1.')).toBeVisible()
+  await expect(sw1).toContainText('Change this in NetBox')
+  await expectAccessible(page, 'NetBox devices')
+
+  await row.getByRole('button', { name: 'Update NetBox', exact: true }).click()
   await expect(page.getByText('NetBox was updated for web.')).toBeVisible()
   // Matching guests are hidden by default.
   await expect(table.getByRole('row').filter({ hasText: 'web' })).toHaveCount(0)

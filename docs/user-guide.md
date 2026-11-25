@@ -161,7 +161,9 @@ addresses a button offers a free address from the VLAN's prefixes ("Use the free
 from NetBox"). The address is only taken when the guest is created.
 
 The NetBox page compares every mapped Proxmox cluster with NetBox, one section each; the
-"Proxmox cluster" field at the top right shows only one. By default it lists only guests that
+"Proxmox cluster" field at the top right shows only one. Below the guests of a cluster are
+its physical machines (Proxmox nodes), and at the end the switches, each compared with its
+NetBox device; "Update NetBox" sets what dcdash can (cluster, primary IP, serial number). By default it lists only guests that
 differ, are missing in NetBox or exist only there; "Only differences" switches to all guests.
 "Update NetBox" writes a guest's current state to NetBox, "Delete from NetBox" removes a
 virtual machine that exists only in NetBox (only those dcdash created). Refresh and "Compare

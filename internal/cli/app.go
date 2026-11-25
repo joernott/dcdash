@@ -202,6 +202,18 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 			ds = dnsSvc
 		}
 		nb.SetSources(gs, rs, ds)
+		// The device comparison (task 18.5): Proxmox nodes and switches.
+		var (
+			ns  netbox.NodeSource
+			sws netbox.SwitchSource
+		)
+		if pve != nil {
+			ns = pve
+		}
+		if switchSvc != nil {
+			sws = switchSvc
+		}
+		nb.SetDeviceSources(ns, sws)
 	}
 	// Projects (task 12.8): groups of objects with the tag project-<name>.
 	projects := project.New(ctx, cfg.Projects, nb, auditLog, log)

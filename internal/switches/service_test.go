@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -184,5 +185,18 @@ func TestStatusChecksAndClose(t *testing.T) {
 	}
 	if err := e.svc.Close(); err != nil || e.sw1.Sessions() != 0 {
 		t.Errorf("close: %v, %d sessions", err, e.sw1.Sessions())
+	}
+}
+
+func TestNetBoxSwitches(t *testing.T) {
+	e := newAPIEnv(t)
+	got := e.svc.NetBoxSwitches(t.Context())
+	want := []netbox.Switch{
+		{Name: "sw1", Device: "sw1-nb", Model: "6000 24G 4SFP Swch", PartNumber: "R8N88A", Serial: "CN00000001"},
+		// Without netbox_device, the switch name; the wrong password is reported.
+		{Name: "sw2", Device: "sw2", Error: "the switch rejected dcdash's credentials"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v", got)
 	}
 }

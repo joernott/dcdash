@@ -73,6 +73,24 @@ func (c *Cluster) Resources(ctx context.Context) ([]Resource, error) {
 	return rs, nil
 }
 
+// ClusterMember is an entry of GET /cluster/status; Type is "node" for the nodes (one also
+// without a cluster) and "cluster" for the cluster itself.
+type ClusterMember struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	// IP is the address the cluster knows the node by.
+	IP string `json:"ip"`
+}
+
+// Members returns the entries of GET /cluster/status.
+func (c *Cluster) Members(ctx context.Context) ([]ClusterMember, error) {
+	var ms []ClusterMember
+	if err := c.do(ctx, http.MethodGet, "/cluster/status", nil, &ms); err != nil {
+		return nil, err
+	}
+	return ms, nil
+}
+
 // ErrNotFound means that a guest or node does not exist (or is not visible to the token).
 var ErrNotFound = errors.New("proxmox: not found")
 

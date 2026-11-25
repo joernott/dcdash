@@ -1196,6 +1196,97 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/netbox/compare/nodes/{cluster}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Compare the nodes of a Proxmox cluster with their NetBox devices
+     * @description Compares each node with the NetBox device of the same name: the NetBox cluster (the
+     *     mapped one) and the primary IP (the address the Proxmox cluster knows the node by).
+     *     Needs `netbox:<name>:sync:read`; nodes are listed if the user may read them
+     *     (`proxmox:<cluster>:node/<node>:read`).
+     */
+    get: operations['compareNetBoxNodes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/compare/nodes/{cluster}/{node}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Update the NetBox device of a node
+     * @description Sets the cluster of the node's NetBox device and, if the node's address is assigned to
+     *     an interface of the device, its primary IP. Devices are not created (`device_missing`).
+     *     Needs `netbox:<name>:sync:write` and read access to the node. Audited as
+     *     `netbox.apply` with the target `node:<cluster>/<node>`.
+     */
+    post: operations['applyNetBoxNode']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/compare/switches': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Compare the switches with their NetBox devices
+     * @description Compares each switch with its NetBox device (`netbox_device`, or the switch name): the
+     *     model (by part number if both have one) and the serial number. Needs
+     *     `netbox:<name>:sync:read`; switches are listed if the user may read them
+     *     (`switch:<name>:*:read`). A switch that can't be read has the state `unavailable`.
+     */
+    get: operations['compareNetBoxSwitches']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/netbox/compare/switches/{switch}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Update the NetBox device of a switch
+     * @description Sets the serial number of the switch's NetBox device; the device type is not changed.
+     *     Devices are not created (`device_missing`). Needs `netbox:<name>:sync:write` and read
+     *     access to the switch. Audited as `netbox.apply` with the target `switch:<name>`.
+     */
+    post: operations['applyNetBoxSwitch']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/projects': {
     parameters: {
       query?: never
@@ -2244,6 +2335,36 @@ export interface components {
       actual: string
       /** @description The value in NetBox. */
       netbox: string
+    }
+    NetBoxDeviceComparison: {
+      devices: components['schemas']['NetBoxDeviceDiff'][]
+    }
+    NetBoxDeviceDiff: {
+      /** @enum {string} */
+      kind: 'node' | 'switch'
+      /** @description Name of the node or switch in dcdash. */
+      name: string
+      /** @description Name of the NetBox device. */
+      device: string
+      /** @enum {string} */
+      state: 'ok' | 'missing' | 'differs' | 'unavailable'
+      differences: {
+        /** @enum {string} */
+        field: 'cluster' | 'primaryIp' | 'model' | 'serial'
+        /** @description The value in Proxmox or on the switch. */
+        actual: string
+        /** @description The value in NetBox. */
+        netbox: string
+      }[]
+      /**
+       * Format: int64
+       * @description ID of the NetBox device; missing if there is none.
+       */
+      netboxId?: number
+      /** @description An update changes at least one of the differences. */
+      updatable: boolean
+      /** @description Why the switch couldn't be read (state unavailable). */
+      error?: string
     }
     NetBoxAddressComparison: {
       addresses: components['schemas']['NetBoxAddressDiff'][]
@@ -6051,6 +6172,114 @@ export interface operations {
       }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  compareNetBoxNodes: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        cluster: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The comparison. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxDeviceComparison']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  applyNetBoxNode: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        cluster: string
+        node: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The result; a failed write-back has the status `failed`. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxWriteBack']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Error']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  compareNetBoxSwitches: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The comparison. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxDeviceComparison']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      502: components['responses']['Upstream']
+      default: components['responses']['Error']
+    }
+  }
+  applyNetBoxSwitch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        switch: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The result; a failed write-back has the status `failed`. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NetBoxWriteBack']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      409: components['responses']['Error']
       502: components['responses']['Upstream']
       default: components['responses']['Error']
     }

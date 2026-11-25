@@ -623,3 +623,9 @@ No need for the domain mismatch check. For the next sprint, please add the follo
 
 18.1 yes, that is correct
 18.9 yes
+
+---
+
+## 2026-11-25 — Sprint 18 (Page layout)
+
+Answer to the question how the NetBox page compares physical machines and switches: "Presence + basic fields" (as the presence check, plus compare a few fields — for switches: model and serial number; for nodes: the primary IP — and offer "Update NetBox" for those).

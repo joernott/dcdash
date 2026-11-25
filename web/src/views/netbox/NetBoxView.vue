@@ -6,6 +6,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import DeviceTable from '@/components/netbox/DeviceTable.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
@@ -19,6 +20,7 @@ import { useToastStore } from '@/stores/toast'
 
 type GuestDiff = Schemas['NetBoxGuestDiff']
 type AddressDiff = Schemas['NetBoxAddressDiff']
+type DeviceDiff = Schemas['NetBoxDeviceDiff']
 
 /**
  * NetBox compared with the connected systems: the guests of every mapped Proxmox cluster (the
@@ -38,9 +40,18 @@ interface ClusterGuests {
   error: string
 }
 
+// Compared devices (nodes of a cluster, or the switches): null until loaded or if that failed.
+interface Devices {
+  devices: DeviceDiff[] | null
+  loading: boolean
+  error: string
+}
+
 const info = ref<NetBoxInfo | null>(null)
 const notConfigured = ref(false)
 const state = reactive<Record<string, ClusterGuests>>({})
+const nodeState = reactive<Record<string, Devices>>({})
+const switchState = reactive<Devices>({ devices: null, loading: false, error: '' })
 const error = ref('')
 const onlyDifferences = ref(true)
 const busy = ref('')
@@ -56,11 +67,19 @@ const filterOptions = computed(() => [
 ])
 const canRead = computed(() => !!info.value && session.can(`netbox:${info.value.name}:sync:read`))
 const canWrite = computed(() => !!info.value && session.can(`netbox:${info.value.name}:sync:write`))
-const loading = computed(() => shown.value.some((c) => state[c]?.loading))
+const loading = computed(
+  () => switchState.loading || shown.value.some((c) => state[c]?.loading || nodeState[c]?.loading),
+)
 
 function rows(cluster: string) {
   const all = state[cluster]?.guests ?? []
   return onlyDifferences.value ? all.filter((g) => g.state !== 'ok') : all
+}
+
+/** The devices to show: all, or only those that differ. */
+function deviceRows(d: Devices) {
+  const all = d.devices ?? []
+  return onlyDifferences.value ? all.filter((x) => x.state !== 'ok') : all
 }
 
 function counts(cluster: string) {
@@ -112,8 +131,65 @@ async function load(cluster: string) {
   }
 }
 
+async function loadNodes(cluster: string) {
+  if (!canRead.value) return
+  nodeState[cluster] ??= { devices: null, loading: false, error: '' }
+  const s = nodeState[cluster]!
+  s.loading = true
+  try {
+    const res = await unwrap(
+      api.GET('/api/v1/netbox/compare/nodes/{cluster}', { params: { path: { cluster } } }),
+    )
+    s.devices = res.devices
+    s.error = ''
+  } catch (e) {
+    s.devices = null
+    s.error = errorMessage(i18n, e)
+  } finally {
+    s.loading = false
+  }
+}
+
+async function loadSwitches() {
+  if (!canRead.value) return
+  switchState.loading = true
+  try {
+    switchState.devices = (await unwrap(api.GET('/api/v1/netbox/compare/switches'))).devices
+    switchState.error = ''
+  } catch (e) {
+    switchState.devices = null
+    switchState.error = errorMessage(i18n, e)
+  } finally {
+    switchState.loading = false
+  }
+}
+
+// The device being updated.
+const busyDevice = ref('')
+
+async function applyDevice(d: DeviceDiff, cluster = '') {
+  busyDevice.value = d.name
+  try {
+    const res = await unwrap(
+      d.kind === 'node'
+        ? api.POST('/api/v1/netbox/compare/nodes/{cluster}/{node}', {
+            params: { path: { cluster, node: d.name } },
+          })
+        : api.POST('/api/v1/netbox/compare/switches/{switch}', {
+            params: { path: { switch: d.name } },
+          }),
+    )
+    report(res.netbox, t('netbox.applied', { name: d.name }))
+    await (d.kind === 'node' ? loadNodes(cluster) : loadSwitches())
+  } catch (e) {
+    toast.error(errorMessage(i18n, e))
+  } finally {
+    busyDevice.value = ''
+  }
+}
+
 async function refresh() {
-  await Promise.all(shown.value.map(load))
+  await Promise.all([...shown.value.map(load), ...shown.value.map(loadNodes), loadSwitches()])
 }
 
 function selectFilter(c: string) {
@@ -215,11 +291,16 @@ function sourceLabel(a: AddressDiff): string {
 }
 
 onMounted(loadInfo)
-// Loads the clusters shown (again after a permission change) whose guests weren't loaded yet.
+// Loads the clusters shown (again after a permission change) whose guests and nodes weren't
+// loaded yet, and the switches once.
 watch(
   [shown, canRead],
   () => {
-    for (const c of shown.value) if (!state[c]) void load(c)
+    for (const c of shown.value) {
+      if (!state[c]) void load(c)
+      if (!nodeState[c]) void loadNodes(c)
+    }
+    if (canRead.value && !switchState.devices && !switchState.loading) void loadSwitches()
   },
   { immediate: true },
 )
@@ -406,7 +487,41 @@ watch(
             </div>
           </template>
         </DataTable>
+
+        <!-- The physical machines of the cluster. -->
+        <h3 class="mt-2 font-semibold">{{ t('netbox.nodesOf', { cluster: c }) }}</h3>
+        <p v-if="nodeState[c]?.error" role="alert" class="text-danger">
+          {{ nodeState[c]!.error }}
+        </p>
+        <DeviceTable
+          v-else
+          :devices="nodeState[c] ? deviceRows(nodeState[c]!) : []"
+          :caption="t('netbox.nodesOf', { cluster: c })"
+          :loading="!nodeState[c]?.devices"
+          :can-write="canWrite"
+          :busy="busyDevice"
+          @apply="(d: DeviceDiff) => applyDevice(d, c)"
+        />
       </section>
+
+      <section
+        v-if="switchState.devices?.length || switchState.error"
+        aria-labelledby="netbox-switches"
+        class="flex flex-col gap-3"
+      >
+        <h2 id="netbox-switches" class="text-lg font-semibold">{{ t('netbox.switches') }}</h2>
+        <p v-if="switchState.error" role="alert" class="text-danger">{{ switchState.error }}</p>
+        <DeviceTable
+          v-else
+          :devices="deviceRows(switchState)"
+          :caption="t('netbox.switches')"
+          :loading="false"
+          :can-write="canWrite"
+          :busy="busyDevice"
+          @apply="(d: DeviceDiff) => applyDevice(d)"
+        />
+      </section>
+      <p class="text-sm text-fg-muted">{{ t('netbox.devicesHint') }}</p>
     </template>
 
     <BaseModal v-model:open="deleteOpen" :title="t('netbox.deleteTitle')">

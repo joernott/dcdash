@@ -1206,6 +1206,11 @@
     "allClusters": "All clusters",
     "guestsOf": "Virtual machines and containers of {cluster}",
     "closeAddresses": "Close the comparison",
+    "nodesOf": "Physical machines of {cluster}",
+    "switches": "Switches",
+    "devicesHint": "dcdash compares the NetBox device of the same name: the cluster and primary IP of a node, the model and serial number of a switch. It updates the cluster, the primary IP (if the address is assigned to the device) and the serial number, but doesn't create devices or change their type.",
+    "inNetBoxAs": "NetBox: {device}",
+    "notUpdatable": "Change this in NetBox",
     "guests": "Virtual machines and containers",
     "counts": "{ok} match, {differs} differ, {missing} missing in NetBox, {extra} only in NetBox",
     "onlyDifferences": "Only differences",
@@ -1231,6 +1236,7 @@
     },
     "columns": {
       "guest": "Guest",
+      "device": "Device",
       "state": "State",
       "differences": "Differences",
       "actions": "Actions",
@@ -1241,7 +1247,8 @@
       "ok": "Matches",
       "differs": "Differs",
       "missing": "Missing in NetBox",
-      "extra": "Only in NetBox"
+      "extra": "Only in NetBox",
+      "unavailable": "Not reachable"
     },
     "fields": {
       "name": "Name",
@@ -1249,7 +1256,11 @@
       "memory": "Memory (MiB)",
       "disks": "Disks (MiB)",
       "interfaces": "Interfaces",
-      "addresses": "Addresses"
+      "addresses": "Addresses",
+      "cluster": "Cluster",
+      "primaryIp": "Primary IP",
+      "model": "Model",
+      "serial": "Serial number"
     }
   },
   "projects": {

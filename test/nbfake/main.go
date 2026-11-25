@@ -45,4 +45,10 @@ func seed(f *nbfake.Server) {
 	for _, p := range []string{"1/1/2", "1/1/5"} {
 		f.Seed(nbfake.DevIfaces, nbfake.Object{"name": p, "device": sw})
 	}
+	// The node pve1 of the Proxmox fake, without cluster and primary IP, but with its address
+	// (192.0.2.11, see pvefake's /cluster/status) on an interface; pve2 has no device.
+	pve1 := f.Seed(nbfake.Devices, nbfake.Object{"name": "pve1"})
+	vmbr0 := f.Seed(nbfake.DevIfaces, nbfake.Object{"name": "vmbr0", "device": pve1})
+	f.Seed(nbfake.IPs, nbfake.Object{"address": "192.0.2.11/24", "status": "active",
+		"assigned_object_type": "dcim.interface", "assigned_object_id": vmbr0})
 }

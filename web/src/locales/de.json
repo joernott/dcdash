@@ -1206,6 +1206,11 @@
     "allClusters": "Alle Cluster",
     "guestsOf": "Virtuelle Maschinen und Container von {cluster}",
     "closeAddresses": "Vergleich schließen",
+    "nodesOf": "Physische Maschinen von {cluster}",
+    "switches": "Switches",
+    "devicesHint": "dcdash vergleicht das gleichnamige Gerät in NetBox: Cluster und primäre IP eines Knotens, Modell und Seriennummer eines Switches. Es aktualisiert den Cluster, die primäre IP (wenn die Adresse dem Gerät zugeordnet ist) und die Seriennummer, legt aber keine Geräte an und ändert nicht ihren Typ.",
+    "inNetBoxAs": "NetBox: {device}",
+    "notUpdatable": "Ändern Sie das in NetBox",
     "guests": "Virtuelle Maschinen und Container",
     "counts": "{ok} stimmen überein, {differs} weichen ab, {missing} fehlen in NetBox, {extra} nur in NetBox",
     "onlyDifferences": "Nur Abweichungen",
@@ -1231,6 +1236,7 @@
     },
     "columns": {
       "guest": "Gast",
+      "device": "Gerät",
       "state": "Zustand",
       "differences": "Abweichungen",
       "actions": "Aktionen",
@@ -1241,7 +1247,8 @@
       "ok": "Stimmt überein",
       "differs": "Weicht ab",
       "missing": "Fehlt in NetBox",
-      "extra": "Nur in NetBox"
+      "extra": "Nur in NetBox",
+      "unavailable": "Nicht erreichbar"
     },
     "fields": {
       "name": "Name",
@@ -1249,7 +1256,11 @@
       "memory": "Arbeitsspeicher (MiB)",
       "disks": "Festplatten (MiB)",
       "interfaces": "Schnittstellen",
-      "addresses": "Adressen"
+      "addresses": "Adressen",
+      "cluster": "Cluster",
+      "primaryIp": "Primäre IP",
+      "model": "Modell",
+      "serial": "Seriennummer"
     }
   },
   "projects": {

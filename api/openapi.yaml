@@ -1765,6 +1765,105 @@ paths:
         default:
           $ref: "#/components/responses/Error"
 
+  /api/v1/netbox/compare/nodes/{cluster}:
+    get:
+      tags: [netbox]
+      operationId: compareNetBoxNodes
+      summary: Compare the nodes of a Proxmox cluster with their NetBox devices
+      description: |
+        Compares each node with the NetBox device of the same name: the NetBox cluster (the
+        mapped one) and the primary IP (the address the Proxmox cluster knows the node by).
+        Needs `netbox:<name>:sync:read`; nodes are listed if the user may read them
+        (`proxmox:<cluster>:node/<node>:read`).
+      parameters:
+        - { name: cluster, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The comparison.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxDeviceComparison" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/compare/nodes/{cluster}/{node}:
+    post:
+      tags: [netbox]
+      operationId: applyNetBoxNode
+      summary: Update the NetBox device of a node
+      description: |
+        Sets the cluster of the node's NetBox device and, if the node's address is assigned to
+        an interface of the device, its primary IP. Devices are not created (`device_missing`).
+        Needs `netbox:<name>:sync:write` and read access to the node. Audited as
+        `netbox.apply` with the target `node:<cluster>/<node>`.
+      parameters:
+        - { name: cluster, in: path, required: true, schema: { type: string } }
+        - { name: node, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The result; a failed write-back has the status `failed`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxWriteBack" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/compare/switches:
+    get:
+      tags: [netbox]
+      operationId: compareNetBoxSwitches
+      summary: Compare the switches with their NetBox devices
+      description: |
+        Compares each switch with its NetBox device (`netbox_device`, or the switch name): the
+        model (by part number if both have one) and the serial number. Needs
+        `netbox:<name>:sync:read`; switches are listed if the user may read them
+        (`switch:<name>:*:read`). A switch that can't be read has the state `unavailable`.
+      responses:
+        "200":
+          description: The comparison.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxDeviceComparison" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
+  /api/v1/netbox/compare/switches/{switch}:
+    post:
+      tags: [netbox]
+      operationId: applyNetBoxSwitch
+      summary: Update the NetBox device of a switch
+      description: |
+        Sets the serial number of the switch's NetBox device; the device type is not changed.
+        Devices are not created (`device_missing`). Needs `netbox:<name>:sync:write` and read
+        access to the switch. Audited as `netbox.apply` with the target `switch:<name>`.
+      parameters:
+        - { name: switch, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The result; a failed write-back has the status `failed`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NetBoxWriteBack" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Upstream" }
+        default:
+          $ref: "#/components/responses/Error"
+
   /api/v1/proxmox/clusters/{cluster}/guests/{type}/{vmid}/projects:
     put:
       tags: [proxmox]
@@ -3443,6 +3542,35 @@ components:
         field: { type: string, enum: [name, vcpus, memory, disks, interfaces, addresses] }
         actual: { type: string, description: The value in Proxmox. }
         netbox: { type: string, description: The value in NetBox. }
+
+    NetBoxDeviceComparison:
+      type: object
+      required: [devices]
+      properties:
+        devices:
+          type: array
+          items: { $ref: "#/components/schemas/NetBoxDeviceDiff" }
+
+    NetBoxDeviceDiff:
+      type: object
+      required: [kind, name, device, state, differences, updatable]
+      properties:
+        kind: { type: string, enum: [node, switch] }
+        name: { type: string, description: Name of the node or switch in dcdash. }
+        device: { type: string, description: Name of the NetBox device. }
+        state: { type: string, enum: [ok, missing, differs, unavailable] }
+        differences:
+          type: array
+          items:
+            type: object
+            required: [field, actual, netbox]
+            properties:
+              field: { type: string, enum: [cluster, primaryIp, model, serial] }
+              actual: { type: string, description: The value in Proxmox or on the switch. }
+              netbox: { type: string, description: The value in NetBox. }
+        netboxId: { type: integer, format: int64, description: ID of the NetBox device; missing if there is none. }
+        updatable: { type: boolean, description: An update changes at least one of the differences. }
+        error: { type: string, description: Why the switch couldn't be read (state unavailable). }
 
     NetBoxAddressComparison:
       type: object

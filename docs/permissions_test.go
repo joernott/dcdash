@@ -34,11 +34,12 @@ var (
 	// Lines that build a permission resource, and in them: prefixes ("port/" + ...), resource
 	// constants (ResourceSync = "sync"), and literal resources of rbac.P, whose module is
 	// the package's or a literal one (rbac.P("project", name, "objects", ...)).
-	resourceLine = regexp.MustCompile(`rbac\.P\(|perm\(|can\(|Resource`)
-	prefixUse    = regexp.MustCompile(`"([a-z]+/)"`)
-	constUse     = regexp.MustCompile(`Resource[A-Za-z]*\s*=\s*"([a-z]+)"`)
-	literalUse   = regexp.MustCompile(`rbac\.P\((?:Module|"([a-z]+)"),[^,]+,\s*"([a-z]+)"`)
-	systemPerm   = regexp.MustCompile(`P\("system", "core", "([a-z]+)", Action([A-Z][a-z]+)\)`)
+	resourceLine  = regexp.MustCompile(`rbac\.P\(|perm\(|can\(|Resource`)
+	prefixUse     = regexp.MustCompile(`"([a-z]+/)"`)
+	constUse      = regexp.MustCompile(`Resource[A-Za-z]*\s*=\s*"([a-z]+)"`)
+	literalUse    = regexp.MustCompile(`rbac\.P\((?:Module|"([a-z]+)"),[^,]+,\s*"([a-z]+)"`)
+	literalModule = regexp.MustCompile(`rbac\.P\("([a-z]+)",`)
+	systemPerm    = regexp.MustCompile(`P\("system", "core", "([a-z]+)", Action([A-Z][a-z]+)\)`)
 )
 
 func source(t *testing.T, dir string) string {
@@ -110,9 +111,14 @@ func TestPermissionReference(t *testing.T) {
 			if !resourceLine.MatchString(line) {
 				continue
 			}
+			// The module of the line: a literal one (rbac.P("proxmox", ...)) or the package's.
+			lineModule := module
+			if m := literalModule.FindStringSubmatch(line); m != nil {
+				lineModule = m[1]
+			}
 			for _, p := range prefixUse.FindAllStringSubmatch(line, -1) {
-				if !slices.ContainsFunc(resources[module], func(r string) bool { return strings.HasPrefix(r, p[1]) }) {
-					t.Errorf("%s: the code builds resources %q..., the reference has none", module, p[1])
+				if !slices.ContainsFunc(resources[lineModule], func(r string) bool { return strings.HasPrefix(r, p[1]) }) {
+					t.Errorf("%s: the code builds resources %q..., the reference has none", lineModule, p[1])
 				}
 			}
 			for _, f := range constUse.FindAllStringSubmatch(line, -1) {
