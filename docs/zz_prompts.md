@@ -629,3 +629,7 @@ No need for the domain mismatch check. For the next sprint, please add the follo
 ## 2026-11-25 — Sprint 18 (Page layout)
 
 Answer to the question how the NetBox page compares physical machines and switches: "Presence + basic fields" (as the presence check, plus compare a few fields — for switches: model and serial number; for nodes: the primary IP — and offer "Update NetBox" for those).
+
+Is the linux binary available somewhere? I'd like to run a few tests before finalizing v0.5.0
+
+tests passed, merge sprint 18 and tag v0.5.0

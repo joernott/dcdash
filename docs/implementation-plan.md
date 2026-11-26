@@ -49,7 +49,7 @@ These apply to every task:
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 | 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | v0.3.0 | done |
 | 17 | `sprint/17-config-directory` | Configuration directory with merged files; directories in the example configuration | v0.4.0 | done |
-| 18 | `sprint/18-page-layout` | Common page layout: filters and refresh in the top line, all servers on one page, closable messages, colored tables, navigation order | – | in progress |
+| 18 | `sprint/18-page-layout` | Common page layout: filters and refresh in the top line, all servers on one page, closable messages, colored tables, navigation order | v0.5.0 | done |
 
 ---
 
