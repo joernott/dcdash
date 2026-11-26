@@ -142,3 +142,16 @@ func TestNetBoxFailureDoesNotFailJob(t *testing.T) {
 		t.Errorf("steps: %+v", j.Steps)
 	}
 }
+
+func TestNetBoxNodes(t *testing.T) {
+	_, pve := fakeServer(t)
+	svc := NewService([]*Cluster{newCluster(t, endpointFor(pve))}, nil, nil, zerolog.Nop())
+	nodes, err := svc.NetBoxNodes(t.Context(), "lab")
+	want := []netbox.Node{{Name: "pve1", IP: "192.0.2.11"}, {Name: "pve2", IP: "192.0.2.12"}}
+	if err != nil || !reflect.DeepEqual(nodes, want) {
+		t.Errorf("got %+v, %v", nodes, err)
+	}
+	if _, err := svc.NetBoxNodes(t.Context(), "prod"); err == nil {
+		t.Error("unknown cluster accepted")
+	}
+}

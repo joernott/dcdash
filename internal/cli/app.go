@@ -125,6 +125,11 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 		if dhcpSvc, err = dhcp.NewService(cfg.DHCP.Servers, auditLog, log); err != nil {
 			return nil, err
 		}
+		links := map[string]*status.Links{}
+		for _, s := range cfg.DHCP.Servers {
+			links[s.Name] = statusLinks(s.Links)
+		}
+		dhcpSvc.SetLinks(links)
 		a.statusChecks = append(a.statusChecks, dhcpSvc.StatusChecks()...)
 		a.routes = append(a.routes, dhcpSvc.Register)
 	}
@@ -197,6 +202,18 @@ func newApp(ctx context.Context, cfg *config.Config, st *store.Store, log zerolo
 			ds = dnsSvc
 		}
 		nb.SetSources(gs, rs, ds)
+		// The device comparison (task 18.5): Proxmox nodes and switches.
+		var (
+			ns  netbox.NodeSource
+			sws netbox.SwitchSource
+		)
+		if pve != nil {
+			ns = pve
+		}
+		if switchSvc != nil {
+			sws = switchSvc
+		}
+		nb.SetDeviceSources(ns, sws)
 	}
 	// Projects (task 12.8): groups of objects with the tag project-<name>.
 	projects := project.New(ctx, cfg.Projects, nb, auditLog, log)
@@ -360,5 +377,11 @@ func newDNS(cfg config.DNS, dirs config.Directories, auditLog *audit.Log, log ze
 		}
 		log.Info().Str("provider", p.Name).Str("type", p.Type).Msg("dns: provider configured")
 	}
-	return dns.NewService(providers, auditLog, log), nil
+	svc := dns.NewService(providers, auditLog, log)
+	links := map[string]*status.Links{}
+	for _, p := range cfg.Providers {
+		links[p.Name] = statusLinks(p.Links)
+	}
+	svc.SetLinks(links)
+	return svc, nil
 }

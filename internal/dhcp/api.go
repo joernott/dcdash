@@ -18,6 +18,7 @@ import (
 	"github.com/joernott/dcdash/internal/dhcp/kea"
 	"github.com/joernott/dcdash/internal/httpx"
 	"github.com/joernott/dcdash/internal/rbac"
+	"github.com/joernott/dcdash/internal/status"
 )
 
 // MaxSubnetLeases limits the leases returned for one subnet.
@@ -61,6 +62,8 @@ type ServerView struct {
 	HostDatabase bool             `json:"hostDatabase"`
 	HA           []HAView         `json:"ha"`
 	SearchKeys   []string         `json:"searchKeys"`
+	// Links are the web interface, SSH and RDP addresses of the server, if configured.
+	Links *status.Links `json:"links,omitempty"`
 }
 
 // ServerList is the response of GET /api/v1/dhcp/servers.
@@ -70,7 +73,7 @@ type ServerList struct {
 
 func (s *Service) view(ctx context.Context, name string) ServerView {
 	srv := s.servers[name]
-	v := ServerView{Name: name, Family: srv.backend.Family(), HAGroup: srv.group, HA: []HAView{}, SearchKeys: srv.backend.SearchKeys()}
+	v := ServerView{Name: name, Family: srv.backend.Family(), HAGroup: srv.group, HA: []HAView{}, SearchKeys: srv.backend.SearchKeys(), Links: s.links[name]}
 	for _, p := range s.partners(name) {
 		v.Partners = append(v.Partners, p.backend.Name())
 	}

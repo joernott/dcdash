@@ -178,6 +178,7 @@ async function remove() {
 
 watch(() => props.firewall, load)
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
@@ -205,14 +206,6 @@ onMounted(load)
         v-if="list?.canCreate"
         @click="create"
       />
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
     </div>
     <p
       v-if="error"
@@ -222,6 +215,7 @@ onMounted(load)
       {{ error }}
     </p>
     <DataTable
+      system="firewall"
       :columns="columns"
       :rows="rows"
       :row-key="(r: Rule) => r.uuid || `legacy-${r.sequence}-${r.description}`"

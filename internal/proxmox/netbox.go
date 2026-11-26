@@ -195,3 +195,24 @@ func (s *Service) NetBoxGuest(ctx context.Context, cluster string, container boo
 	}
 	return netboxGuest(cluster, typ, vmid, cfg), nil
 }
+
+// NetBoxNodes returns the nodes of a cluster with their addresses, for the device comparison
+// of the NetBox module.
+func (s *Service) NetBoxNodes(ctx context.Context, cluster string) ([]netbox.Node, error) {
+	c, ok := s.clusters[cluster]
+	if !ok {
+		return nil, fmt.Errorf("unknown cluster %q", cluster)
+	}
+	ms, err := c.Members(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := []netbox.Node{}
+	for _, m := range ms {
+		if m.Type == "node" {
+			out = append(out, netbox.Node{Name: m.Name, IP: m.IP})
+		}
+	}
+	slices.SortFunc(out, func(a, b netbox.Node) int { return strings.Compare(a.Name, b.Name) })
+	return out, nil
+}

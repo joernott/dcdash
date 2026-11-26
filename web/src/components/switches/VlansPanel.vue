@@ -105,6 +105,7 @@ defineExpose({ load })
       {{ error }}
     </p>
     <DataTable
+      system="switch"
       :columns="columns"
       :rows="list?.vlans ?? []"
       :row-key="(v: SwitchVlan) => v.id"

@@ -22,6 +22,7 @@ import (
 	"github.com/joernott/dcdash/internal/dns/cloudflare/cffake"
 	"github.com/joernott/dcdash/internal/rbac"
 	"github.com/joernott/dcdash/internal/session"
+	"github.com/joernott/dcdash/internal/status"
 	"github.com/joernott/dcdash/internal/store"
 )
 
@@ -131,6 +132,12 @@ func TestProvidersAndZones(t *testing.T) {
 	}
 	if code, _ := e.do(t, "other", "GET", base, nil, &pl); code != 200 || len(pl.Providers) != 0 {
 		t.Errorf("other: %d %+v", code, pl)
+	}
+	// The configured links of a provider are listed.
+	e.svc.SetLinks(map[string]*status.Links{"cf": {UI: "https://dash.cloudflare.com"}})
+	if code, _ := e.do(t, "viewer", "GET", base, nil, &pl); code != 200 || pl.Providers[0].Links == nil ||
+		pl.Providers[0].Links.UI != "https://dash.cloudflare.com" {
+		t.Errorf("links: %d %+v", code, pl)
 	}
 	var zl dns.ZoneList
 	if code, _ := e.do(t, "viewer", "GET", base+"/cf/zones", nil, &zl); code != 200 || len(zl.Zones) != 2 {

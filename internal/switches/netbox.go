@@ -55,3 +55,28 @@ func (s *Service) netboxVLAN(ctx context.Context, r *http.Request, x *sw, id int
 	}
 	return s.nb.SyncSwitchVLAN(ctx, netbox.Base(r), id, name, deleted)
 }
+
+// NetBoxSwitches returns the switches with their NetBox device, model and serial number, for
+// the device comparison of the NetBox module. The inventory comes from the cache of the
+// status checks if it is recent.
+func (s *Service) NetBoxSwitches(ctx context.Context) []netbox.Switch {
+	out := make([]netbox.Switch, 0, len(s.order))
+	for _, n := range s.order {
+		x := s.switches[n]
+		sw := netbox.Switch{Name: n, Device: x.device}
+		if sw.Device == "" {
+			sw.Device = n
+		}
+		inv, err := s.inventory(ctx, x, false)
+		if err != nil {
+			sw.Error = errorText(err)
+		} else {
+			sw.Model = model(inv)
+			if len(inv.Members) > 0 {
+				sw.PartNumber, sw.Serial = inv.Members[0].PartNumber, inv.Members[0].Serial
+			}
+		}
+		out = append(out, sw)
+	}
+	return out
+}

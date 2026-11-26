@@ -16,7 +16,15 @@ test('firewall health, VPN, aliases and rules', async ({ page }) => {
   await expect(page.getByText('OPNsense 26.1.6')).toBeVisible()
 
   await page.getByRole('link', { name: 'Firewalls', exact: true }).click()
+  // The overview of all firewalls, without tabs; the name opens the details.
+  await expect(page).toHaveURL(/\/firewalls$/)
+  await expect(page.getByRole('tablist')).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'fw1' })).toContainText('OPNsense 26.1.6')
+  await expectAccessible(page, 'Firewall overview')
+  await page.screenshot({ path: '../.e2e/screenshots/firewalls-overview.png', fullPage: true })
+  await page.getByRole('link', { name: 'fw1', exact: true }).click()
   await expect(page).toHaveURL(/\/firewalls\/fw1$/)
+  await expect(page.getByRole('heading', { name: 'fw1', level: 1 })).toBeVisible()
   await expect(page.getByRole('table', { name: 'Gateways' })).toContainText('WAN_DHCP')
   // bob may not restart services.
   await expect(page.getByRole('button', { name: /^Restart / })).toHaveCount(0)

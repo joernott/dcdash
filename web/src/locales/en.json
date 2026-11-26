@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Close",
+    "closeMessage": "Close the message",
     "loading": "Loading…",
     "empty": "No entries",
     "cancel": "Cancel",
@@ -707,6 +708,9 @@
   },
   "firewalls": {
     "firewall": "Firewall",
+    "all": "All firewalls",
+    "back": "All firewalls",
+    "notFound": "There is no firewall {name}, or you may not see it.",
     "none": "No firewalls are configured, or you may not see any.",
     "views": "Firewall views",
     "unavailable": "The firewall is not available: {error}",
@@ -1084,6 +1088,13 @@
   },
   "dhcp": {
     "server": "Server",
+    "allServers": "All servers",
+    "subnetsOf": "Subnets of {server}",
+    "showLeasesOf": "Show the leases of {subnet}",
+    "searchResults": "Leases matching “{q}”",
+    "leasesOf": "Leases of {subnet} on {server}",
+    "closeLeases": "Close the leases",
+    "reservationsOf": "Reservations of {server}",
     "families": {
       "v4": "DHCPv4",
       "v6": "DHCPv6"
@@ -1097,10 +1108,7 @@
       "subnets": "Pools are not shown: the subnet_cmds hook library is not loaded.",
       "statistics": "Utilization is not shown: the stat_cmds hook library is not loaded."
     },
-    "views": "Views",
     "tabs": {
-      "subnets": "Subnets",
-      "leases": "Leases",
       "reservations": "Reservations"
     },
     "subnet": "Subnet",
@@ -1114,8 +1122,6 @@
     "prefixes": "Prefixes",
     "usedOf": "{used} of {total}",
     "declined": "{n} declined",
-    "showLeases": "Show leases",
-    "chooseSubnet": "Choose a subnet",
     "searchKeys": {
       "ip": "IP address",
       "hw-address": "MAC address",
@@ -1134,7 +1140,6 @@
     "searchBy": "Search by",
     "searchValue": "Value",
     "search": "Search",
-    "subnetLeases": "Leases of a subnet",
     "leaseCount": "No leases | One lease | {n} leases",
     "truncated": "only the first ones are shown",
     "noLeases": "No leases found.",
@@ -1147,7 +1152,6 @@
     },
     "deleteLeaseFor": "Delete lease {address}",
     "delete": "Delete",
-    "leasesHint": "Search for a lease, or choose a subnet to see its leases.",
     "deleteLease": "Delete lease",
     "deleteLeaseQuestion": "Delete the lease of {address}?",
     "deleteLeaseHint": "The address becomes free. A client that still uses it gets a new lease when it renews.",
@@ -1199,10 +1203,17 @@
     "noCompare": "You do not have permission to compare NetBox with the connected systems.",
     "noClusters": "No Proxmox cluster is mapped to a NetBox cluster (netbox.clusters).",
     "cluster": "Proxmox cluster",
+    "allClusters": "All clusters",
+    "guestsOf": "Virtual machines and containers of {cluster}",
+    "closeAddresses": "Close the comparison",
+    "nodesOf": "Physical machines of {cluster}",
+    "switches": "Switches",
+    "devicesHint": "dcdash compares the NetBox device of the same name: the cluster and primary IP of a node, the model and serial number of a switch. It updates the cluster, the primary IP (if the address is assigned to the device) and the serial number, but doesn't create devices or change their type.",
+    "inNetBoxAs": "NetBox: {device}",
+    "notUpdatable": "Change this in NetBox",
     "guests": "Virtual machines and containers",
     "counts": "{ok} match, {differs} differ, {missing} missing in NetBox, {extra} only in NetBox",
     "onlyDifferences": "Only differences",
-    "refresh": "Refresh",
     "noDifferences": "No differences.",
     "onlyInNetBox": "only in NetBox",
     "actual": "Actual",
@@ -1215,7 +1226,7 @@
     "deleteText": "{name} exists only in NetBox. Delete the virtual machine with its interfaces, disks and addresses from NetBox?",
     "addresses": "Reserved addresses and DNS names",
     "addressesHint": "Compares the DHCP reservations and the A and AAAA records with the IP addresses in NetBox. This reads all reservations and records and can take a while.",
-    "compareAddresses": "Compare",
+    "compareAddresses": "Compare DNS and DHCP",
     "addressMissing": "Missing in NetBox",
     "dnsNameDiffers": "DNS name in NetBox: {name}",
     "sourceError": "Could not be read: {error}",
@@ -1225,6 +1236,7 @@
     },
     "columns": {
       "guest": "Guest",
+      "device": "Device",
       "state": "State",
       "differences": "Differences",
       "actions": "Actions",
@@ -1235,7 +1247,8 @@
       "ok": "Matches",
       "differs": "Differs",
       "missing": "Missing in NetBox",
-      "extra": "Only in NetBox"
+      "extra": "Only in NetBox",
+      "unavailable": "Not reachable"
     },
     "fields": {
       "name": "Name",
@@ -1243,7 +1256,11 @@
       "memory": "Memory (MiB)",
       "disks": "Disks (MiB)",
       "interfaces": "Interfaces",
-      "addresses": "Addresses"
+      "addresses": "Addresses",
+      "cluster": "Cluster",
+      "primaryIp": "Primary IP",
+      "model": "Model",
+      "serial": "Serial number"
     }
   },
   "projects": {
@@ -1312,6 +1329,9 @@
   },
   "directories": {
     "directory": "Directory",
+    "all": "All directories",
+    "back": "All directories",
+    "notFound": "There is no directory {name}, or you may not see it.",
     "none": "No directory is available to you.",
     "types": { "samba": "Samba Active Directory", "windows": "Windows Active Directory" },
     "managed": "dcdash changes objects in: {ous}",

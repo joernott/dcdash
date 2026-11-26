@@ -24,6 +24,8 @@ dcdash works with NetBox 4.2 and later (MAC addresses as objects); it is tested 
      addresses. Not needed with `write_back: false`.
    - **For switches** (`switches[].netbox_device`): view devices; change interfaces (`dcim`);
      add, change and delete VLANs (`ipam`).
+   - **For the comparison of nodes and switches:** view devices and device interfaces; change
+     devices (`dcim`), to set the cluster, primary IP and serial number from the NetBox page.
 2. **A tag** for the objects dcdash creates, `dcdash` by default (`netbox.tag`). dcdash
    doesn't create it.
 3. **A cluster for each Proxmox cluster** whose guests are written to NetBox, mapped in
@@ -102,7 +104,21 @@ match no network device are not compared. Each guest is:
 virtual machine that exists only in NetBox; this is offered only for virtual machines with the
 dcdash tag. Both are audited as `netbox.apply`.
 
-"Compare" under "Reserved addresses and DNS names" lists DHCP reservations whose address is
+**Physical machines and switches.** Below the guests of a cluster, its Proxmox nodes are
+compared with the NetBox device of the same name; the switches have a table of their own and
+are compared with their device (`switches[].netbox_device`, or the switch name):
+
+| | Compared | "Update NetBox" sets |
+|---|---|---|
+| Node | Cluster (the mapped NetBox cluster), primary IP (the address in `pvecm status`) | The cluster; the primary IP if the address is assigned to an interface of the device in NetBox |
+| Switch | Model (by part number if both have one, otherwise the name), serial number of the first member | The serial number |
+
+dcdash doesn't create devices (it doesn't know their type, role and site) and doesn't change
+the device type: a different model shows "Change this in NetBox". Updates are audited as
+`netbox.apply` with the target `node:<cluster>/<node>` or `switch:<name>`. A switch that
+can't be reached is shown as "Not reachable".
+
+"Compare DNS and DHCP" at the top right lists DHCP reservations whose address is
 missing in NetBox, and `A`/`AAAA` records whose address is missing in NetBox or has another
 DNS name there. It reads all reservations and all records, which can take a while.
 
@@ -114,8 +130,8 @@ DNS name there. It reads all reservations and all records, which can take a whil
 | `netbox:<name>:sync:read` | The comparison view |
 | `netbox:<name>:sync:write` | Updating NetBox from the comparison view |
 
-`<name>` is `netbox.name`, `netbox` by default. The comparison lists only guests the user may
-read in Proxmox. Writing changes back needs no NetBox permission; see
+`<name>` is `netbox.name`, `netbox` by default. The comparison lists only guests and nodes the user may
+read in Proxmox, and only switches the user may read. Writing changes back needs no NetBox permission; see
 [security.md](security.md#netbox-permissions).
 
 ## Testing against a real NetBox

@@ -63,6 +63,18 @@ describe('route guards', () => {
     expect(w.find('nav').text()).not.toContain('Sessions')
   })
 
+  it('orders the navigation: modules left, administration and documentation right', async () => {
+    api.on('GET /api/v1/auth/me', () => [200, sessionInfo()])
+    const w = await mountAt('/admin/audit')
+    const lists = w.get('nav').findAll('ul')
+    expect(lists.map((l) => l.findAll('a').map((a) => a.text()))).toEqual([
+      ['Projects', 'Directories', 'NetBox', 'Proxmox', 'DNS', 'DHCP', 'Firewalls', 'Switches'],
+      ['Audit log', 'Sessions', 'Documentation'],
+    ])
+    // No "Overview" entry: the name leads there.
+    expect(w.get('header a[href="/"]').text()).toBe('dcdash')
+  })
+
   it('sends users who must enroll to the enrollment page', async () => {
     api.on('GET /api/v1/auth/me', () => [200, sessionInfo({ stage: 'totp_enroll' })])
     api.on('POST /api/v1/auth/totp/enroll', () => [200, { secret: 'ABC', uri: 'otpauth://totp/x' }])

@@ -38,6 +38,10 @@ func (s *Service) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/netbox/compare/guests/{cluster}/{type}/{vmid}", s.handleApplyGuest)
 	mux.HandleFunc("DELETE /api/v1/netbox/compare/guests/{cluster}/vms/{id}", s.handleDeleteVM)
 	mux.HandleFunc("GET /api/v1/netbox/compare/addresses", s.handleCompareAddresses)
+	mux.HandleFunc("GET /api/v1/netbox/compare/nodes/{cluster}", s.handleCompareNodes)
+	mux.HandleFunc("POST /api/v1/netbox/compare/nodes/{cluster}/{node}", s.handleApplyNode)
+	mux.HandleFunc("GET /api/v1/netbox/compare/switches", s.handleCompareSwitches)
+	mux.HandleFunc("POST /api/v1/netbox/compare/switches/{switch}", s.handleApplySwitch)
 	mux.HandleFunc("GET /api/v1/netbox/addresses/{address}/projects", s.handleAddressProjects)
 }
 
@@ -288,4 +292,88 @@ func (s *Service) handleAddressProjects(w http.ResponseWriter, r *http.Request) 
 		ps = []string{}
 	}
 	httpx.WriteJSON(w, http.StatusOK, AddressProjects{Projects: ps})
+}
+
+// The device comparison (task 18.5): Proxmox nodes are shown if the user may read them in
+// the Proxmox module (proxmox:<cluster>:node/<node>:read), switches if the user may read
+// anything of them (switch:<name>:*:read).
+
+func canReadNode(subj *rbac.Subject, cluster, node string) bool {
+	return subj.Can(rbac.P("proxmox", cluster, "node/"+node, rbac.ActionRead))
+}
+
+func canReadSwitch(subj *rbac.Subject, name string) bool {
+	return subj.Permissions.AllowsAny("switch", name, rbac.ActionRead)
+}
+
+func (s *Service) handleCompareNodes(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionRead)) {
+		return
+	}
+	subj := auth.SubjectFromContext(r.Context())
+	cluster := r.PathValue("cluster")
+	if _, ok := s.cfg.Clusters[cluster]; !ok {
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "the cluster isn't mapped to NetBox")
+		return
+	}
+	out, err := s.CompareNodes(r.Context(), cluster, func(node string) bool { return canReadNode(subj, cluster, node) })
+	if err != nil {
+		s.writeError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+func (s *Service) handleApplyNode(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionWrite)) {
+		return
+	}
+	subj := auth.SubjectFromContext(r.Context())
+	cluster, node := r.PathValue("cluster"), r.PathValue("node")
+	if _, ok := s.cfg.Clusters[cluster]; !ok || !canReadNode(subj, cluster, node) {
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "unknown node")
+		return
+	}
+	res, err := s.ApplyNode(r.Context(), Base(r), cluster, node)
+	s.writeDeviceResult(w, r, res, err)
+}
+
+func (s *Service) handleCompareSwitches(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionRead)) {
+		return
+	}
+	subj := auth.SubjectFromContext(r.Context())
+	out, err := s.CompareSwitches(r.Context(), func(name string) bool { return canReadSwitch(subj, name) })
+	if err != nil {
+		s.writeError(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+func (s *Service) handleApplySwitch(w http.ResponseWriter, r *http.Request) {
+	if !auth.Check(w, r, s.syncPermission(rbac.ActionWrite)) {
+		return
+	}
+	subj := auth.SubjectFromContext(r.Context())
+	name := r.PathValue("switch")
+	if !canReadSwitch(subj, name) {
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "unknown switch")
+		return
+	}
+	res, err := s.ApplySwitch(r.Context(), Base(r), name)
+	s.writeDeviceResult(w, r, res, err)
+}
+
+func (s *Service) writeDeviceResult(w http.ResponseWriter, r *http.Request, res *Result, err error) {
+	switch {
+	case errors.Is(err, ErrNotFound):
+		httpx.WriteError(w, http.StatusNotFound, "not_found", "unknown node or switch")
+	case errors.Is(err, ErrNoDevice):
+		httpx.WriteError(w, http.StatusConflict, "device_missing", err.Error())
+	case err != nil:
+		s.writeError(w, r, err)
+	default:
+		httpx.WriteJSON(w, http.StatusOK, WriteBack{NetBox: res})
+	}
 }

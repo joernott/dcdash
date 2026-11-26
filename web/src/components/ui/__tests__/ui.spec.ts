@@ -66,6 +66,17 @@ describe('DataTable', () => {
     })
     expect(empty.get('tbody').text()).toBe('Keine Einträge')
   })
+
+  it('colors the rows of a system, without one alternating gray', () => {
+    const rows = [{ name: 'a' }, { name: 'b' }]
+    const rowKey = (r: object) => (r as { name: string }).name
+    const kea = mountWith(DataTable, { props: { columns, rows, rowKey, system: 'kea' } })
+    expect(kea.get('div').attributes('style')).toContain('--sys: var(--dc-sys-kea)')
+    expect(kea.findAll('tbody tr').map((r) => r.classes('sys-row'))).toEqual([true, true])
+    const plain = mountWith(DataTable, { props: { columns, rows, rowKey } })
+    expect(plain.get('div').attributes('style')).toBeUndefined()
+    expect(plain.get('tbody tr').classes()).toContain('even:bg-surface-raised')
+  })
 })
 
 describe('BaseModal', () => {
@@ -101,7 +112,11 @@ describe('toasts', () => {
     vi.advanceTimersByTime(6000)
     await nextTick()
     expect(w.findAll('[role="status"]')).toHaveLength(0)
-    await w.get('[role="alert"] button').trigger('click')
+    // A framed close button with a name.
+    const close = w.get('[role="alert"] button')
+    expect(close.attributes('aria-label')).toBe('Close the message')
+    expect(close.classes()).toContain('border')
+    await close.trigger('click')
     expect(store.toasts).toHaveLength(0)
   })
 })

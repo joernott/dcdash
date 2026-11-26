@@ -322,6 +322,11 @@ func (s *Server) field(typ string, o Object, filter string) (string, bool) {
 		return strings.SplitN(str(o["address"]), "/", 2)[0], true
 	case IPs + " vrf_id", Prefixes + " vrf_id":
 		return fk("vrf"), true
+	case IPs + " device_id":
+		if str(o["assigned_object_type"]) != "dcim.interface" {
+			return "null", true
+		}
+		return fk2(s.objects[DevIfaces][toInt(o["assigned_object_id"])], "device"), true
 	case IPs + " virtual_machine_id":
 		if str(o["assigned_object_type"]) != "virtualization.vminterface" {
 			return "null", true
@@ -389,6 +394,7 @@ var foreignKeys = map[string]map[string]string{
 	Prefixes:   {"vrf": VRFs, "vlan": VLANs},
 	VLANs:      {"group": VLANGroups, "site": Sites},
 	DevIfaces:  {"device": Devices, "untagged_vlan": VLANs},
+	Devices:    {"cluster": Clusters, "primary_ip4": IPs, "primary_ip6": IPs},
 }
 
 var required = map[string][]string{
@@ -836,6 +842,13 @@ func (s *Server) render(typ string, o Object) Object {
 	case VLANs:
 		out["group"] = ref(VLANGroups, o["group"], "name", "slug")
 		out["site"] = ref(Sites, o["site"], "name", "slug")
+	case Devices:
+		out["cluster"] = ref(Clusters, o["cluster"], "name")
+		out["primary_ip4"] = ref(IPs, o["primary_ip4"], "address")
+		out["primary_ip6"] = ref(IPs, o["primary_ip6"], "address")
+		if _, ok := out["serial"]; !ok {
+			out["serial"] = ""
+		}
 	case DevIfaces:
 		out["device"] = ref(Devices, o["device"], "name")
 		out["untagged_vlan"] = ref(VLANs, o["untagged_vlan"], "vid", "name")

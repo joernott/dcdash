@@ -109,20 +109,11 @@ async function restart(tn: Tunnel) {
 
 watch(() => props.firewall, load)
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div>
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
-    </div>
     <p
       v-if="error"
       role="alert"
@@ -136,6 +127,7 @@ onMounted(load)
         {{ t('firewalls.vpn.partError', { error: vpn.errors.wireguard }) }}
       </p>
       <DataTable
+        system="firewall"
         :columns="peerColumns"
         :rows="vpn.peers"
         :row-key="(p: Peer) => p.uuid"
@@ -181,6 +173,7 @@ onMounted(load)
         {{ t('firewalls.vpn.partError', { error: vpn.errors.ipsec }) }}
       </p>
       <DataTable
+        system="firewall"
         :columns="tunnelColumns"
         :rows="vpn.tunnels"
         :row-key="(tn: Tunnel) => tn.name"

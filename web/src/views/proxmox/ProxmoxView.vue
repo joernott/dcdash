@@ -261,6 +261,7 @@ onBeforeUnmount(() => clearInterval(timer))
         {{ t('proxmox.shown', { n: guests.length, total: inventory.guests.length }) }}
       </p>
       <DataTable
+        system="proxmox"
         :columns="columns"
         :rows="guests"
         :row-key="(g: Guest) => `${g.type}/${g.vmid}`"

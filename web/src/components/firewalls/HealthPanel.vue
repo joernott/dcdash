@@ -85,20 +85,11 @@ async function restart() {
 
 watch(() => props.firewall, load)
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div>
-      <IconButton
-        icon="refresh"
-        :label="t('home.refresh')"
-        size="md"
-        variant="secondary"
-        :loading="loading"
-        @click="load"
-      />
-    </div>
     <p
       v-if="error"
       role="alert"
@@ -109,6 +100,7 @@ onMounted(load)
     <template v-if="health">
       <h2 class="text-lg font-semibold">{{ t('firewalls.health.gateways') }}</h2>
       <DataTable
+        system="firewall"
         :columns="gwColumns"
         :rows="health.gateways"
         :row-key="(g: Gateway) => g.name"
@@ -129,6 +121,7 @@ onMounted(load)
       </DataTable>
       <h2 class="text-lg font-semibold">{{ t('firewalls.health.services') }}</h2>
       <DataTable
+        system="firewall"
         :columns="svcColumns"
         :rows="health.services"
         :row-key="(s: FirewallService) => s.id"

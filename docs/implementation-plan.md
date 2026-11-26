@@ -49,6 +49,7 @@ These apply to every task:
 | 15 | `sprint/15-overview-links` | Overview: compact colored tiles with UI, SSH and RDP links; icons on buttons; permission reference | v0.2.1 | done |
 | 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | v0.3.0 | done |
 | 17 | `sprint/17-config-directory` | Configuration directory with merged files; directories in the example configuration | v0.4.0 | done |
+| 18 | `sprint/18-page-layout` | Common page layout: filters and refresh in the top line, all servers on one page, closable messages, colored tables, navigation order | v0.5.0 | done |
 
 ---
 
@@ -660,3 +661,40 @@ split into a directory of files that are merged.
   no tabs), the dropdown only filters, the device search sits on the same line, refresh at the
   top right next to the heading, larger switch names. A name opens `/switches/<name>` with
   the info and the tabs Ports and VLANs
+
+---
+
+## Sprint 18 — Page Layout
+
+The DNS and Switches pages now show all their servers on one page with a filter. The other
+module pages follow, with one layout: the heading on the left and the filter, search and
+refresh (as an icon) in the same line on the right, every server as a section with its
+UI/SSH/RDP buttons next to its name. The tables take the colors of the overview tiles.
+
+- [x] **18.1** Messages (toasts) can be closed: error messages stay until the user closes
+  them, also across page changes; success messages still disappear on their own
+- [x] **18.2** DNS page: the UI/SSH/RDP buttons next to the heading of each server
+- [x] **18.3** DNS page: one color for all DNS servers, the one of the DNS tiles on the
+  overview; remove the colors per DNS server type
+- [x] **18.4** DHCP page like the DNS page: all DHCP servers with their subnets; the server
+  dropdown becomes a filter at the top right, together with the lease search from the
+  "Leases" tab. A button next to each subnet shows its leases, which replaces the "Leases of a
+  subnet" dropdown
+- [x] **18.5** NetBox page: refresh as an icon at the top right, together with the Proxmox
+  cluster filter and the DNS/DHCP comparison button; the list also shows physical machines
+  and switches
+  - [x] **18.5.1** The layout: all clusters (the field filters), refresh as an icon, the
+    cluster filter and "Compare DNS and DHCP" at the top right
+  - [x] **18.5.2** Physical machines and switches: Proxmox nodes (cluster, primary IP from
+    `/cluster/status`) and switches (model, serial number) compared with their NetBox devices;
+    "Update NetBox" sets the cluster, the primary IP (if assigned to the device) and the serial
+    number. Devices are not created
+- [x] **18.6** Switches page: the switch filter and the device search in the top line, as on
+  the DNS page
+- [x] **18.7** Firewalls page in the same layout
+- [x] **18.8** Directories page in the same layout
+- [x] **18.9** Tables on all pages in the colors of the overview tiles of their system, with a
+  second, more transparent shade for alternating rows (light and dark mode)
+- [x] **18.10** Top bar: remove "Overview" (the name "dcdash" leads there); order Projects,
+  Directories, NetBox, Proxmox, DNS, DHCP, Firewalls, Switches; Audit log and Sessions on the
+  right next to Documentation

@@ -57,7 +57,38 @@ const comparison = {
   ],
 }
 
-async function setup(permissions: string[], configured = true) {
+const nodes = [
+  {
+    kind: 'node',
+    name: 'pve1',
+    device: 'pve1',
+    state: 'differs',
+    differences: [{ field: 'cluster', actual: 'Lab', netbox: 'Other' }],
+    netboxId: 4,
+    updatable: true,
+  },
+  {
+    kind: 'node',
+    name: 'pve2',
+    device: 'pve2',
+    state: 'missing',
+    differences: [],
+    updatable: false,
+  },
+  { kind: 'node', name: 'pve3', device: 'pve3', state: 'ok', differences: [], updatable: false },
+]
+const switchDevices = [
+  {
+    kind: 'switch',
+    name: 'sw1',
+    device: 'core-1',
+    state: 'differs',
+    differences: [{ field: 'model', actual: '6000 24G (R8N88A)', netbox: '6100' }],
+    updatable: false,
+  },
+]
+
+async function setup(permissions: string[], configured = true, clusters = ['lab']) {
   const router: Router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -67,10 +98,12 @@ async function setup(permissions: string[], configured = true) {
   })
   api.on('GET /api/v1/netbox', () =>
     configured
-      ? [200, { name: 'netbox', writeBack: true, clusters: ['lab'] }]
+      ? [200, { name: 'netbox', writeBack: true, clusters }]
       : [404, apiError('not_found')],
   )
   api.on('GET /api/v1/netbox/compare/guests/{cluster}', () => [200, comparison])
+  api.on('GET /api/v1/netbox/compare/nodes/{cluster}', () => [200, { devices: nodes }])
+  api.on('GET /api/v1/netbox/compare/switches', () => [200, { devices: switchDevices }])
   await router.push('/netbox')
   const w = mountWith(NetBoxView, { attachTo: document.body, global: { plugins: [router] } })
   useSessionStore().info = sessionInfo({ permissions, roles: ['test'] })
@@ -81,11 +114,17 @@ async function setup(permissions: string[], configured = true) {
 describe('NetBoxView', () => {
   it('shows the differences and updates NetBox', async () => {
     const { w, router } = await setup(['netbox:netbox:sync:write'])
-    expect(router.currentRoute.value.params.cluster).toBe('lab')
+    // No redirect to the first cluster: all clusters, each with its section.
+    expect(router.currentRoute.value.fullPath).toBe('/netbox')
+    expect(w.get('section h2').text()).toBe('Virtual machines and containers of lab')
+    // Refresh and the address comparison on the line of the heading.
+    const top = w.get('h1').element.parentElement!
+    expect(top.querySelector('button[aria-label="Refresh"]')).not.toBeNull()
+    expect(top.textContent).toContain('Compare DNS and DHCP')
     expect(w.get('[data-testid="netbox-counts"]').text()).toBe(
       '1 match, 1 differ, 1 missing in NetBox, 2 only in NetBox',
     )
-    const rows = () => w.findAll('tbody tr')
+    const rows = () => w.findAll('table')[0]!.findAll('tbody tr')
     // Only differences: ct1 matches and is hidden.
     expect(rows()).toHaveLength(4)
     expect(w.text()).not.toContain('ct1')
@@ -153,12 +192,66 @@ describe('NetBoxView', () => {
     ])
     await w
       .findAll('button')
-      .find((b) => buttonName(b) === 'Compare')!
+      .find((b) => buttonName(b) === 'Compare DNS and DHCP')!
       .trigger('click')
     await flushPromises()
     expect(w.text()).toContain('DHCP reservation (kea4)')
     expect(w.text()).toContain('DNS name in NetBox: old.example.org')
     expect(w.text()).toContain('Could not be read: DNS: bind: timeout')
+    w.unmount()
+  })
+
+  it('shows all clusters, the field filters them', async () => {
+    const { w, router } = await setup(['netbox:netbox:sync:read'], true, ['lab', 'prod'])
+    expect(w.findAll('section h2').map((h) => h.text())).toEqual([
+      'Virtual machines and containers of lab',
+      'Virtual machines and containers of prod',
+      'Switches',
+    ])
+    await w.get('select').setValue('prod')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/netbox/prod')
+    expect(w.findAll('section h2').map((h) => h.text())).toEqual([
+      'Virtual machines and containers of prod',
+      'Switches',
+    ])
+    w.unmount()
+  })
+
+  it('compares the nodes and switches with their NetBox devices', async () => {
+    const { w } = await setup(['netbox:netbox:sync:write'])
+    const tables = w.findAll('table')
+    const captions = tables.map((t) => t.get('caption').text())
+    expect(captions).toEqual([
+      'Virtual machines and containers of lab',
+      'Physical machines of lab',
+      'Switches',
+    ])
+    // Only differences: pve3 matches and is hidden.
+    const nodeRows = tables[1]!.findAll('tbody tr')
+    expect(nodeRows.map((r) => r.text())).toEqual([
+      expect.stringContaining('pve1'),
+      expect.stringContaining('Missing in NetBox'),
+    ])
+    expect(nodeRows[0]!.text()).toContain('ClusterActual: Lab')
+    // The model can't be updated by dcdash; the NetBox device name is shown.
+    const sw = tables[2]!.get('tbody tr')
+    expect(sw.text()).toContain('NetBox: core-1')
+    expect(sw.text()).toContain('Change this in NetBox')
+    expect(sw.findAll('button')).toHaveLength(0)
+
+    let applied = ''
+    api.on('POST /api/v1/netbox/compare/nodes/{cluster}/{node}', (_, p) => {
+      applied = `${String(p?.path?.cluster)}/${String(p?.path?.node)}`
+      return [200, { netbox: { status: 'ok' } }]
+    })
+    await nodeRows[0]!
+      .findAll('button')
+      .find((b) => buttonName(b) === 'Update NetBox: pve1')!
+      .trigger('click')
+    await flushPromises()
+    expect(applied).toBe('lab/pve1')
+    expect(lastToast()).toBe('NetBox was updated for pve1.')
     w.unmount()
   })
 

@@ -170,6 +170,12 @@ func TestServersAndSubnets(t *testing.T) {
 	if code, _ := e.do(t, "other", "GET", base, nil, &sl); code != 200 || len(sl.Servers) != 0 {
 		t.Errorf("other servers: %d %+v", code, sl)
 	}
+	// The configured links of a server are listed.
+	e.svc.SetLinks(map[string]*status.Links{"kea4-a": {SSH: "ssh://root@kea4-a"}})
+	if code, _ := e.do(t, "viewer", "GET", base, nil, &sl); code != 200 || sl.Servers[0].Links == nil ||
+		sl.Servers[0].Links.SSH != "ssh://root@kea4-a" {
+		t.Errorf("links: %d %+v", code, sl)
+	}
 
 	var subs dhcp.SubnetList
 	if code, _ := e.do(t, "viewer", "GET", base+"/kea4-a/subnets", nil, &subs); code != 200 || len(subs.Subnets) != 2 ||

@@ -103,6 +103,7 @@ defineExpose({ load })
       {{ t('switches.netboxError', { error: list.netboxError }) }}
     </p>
     <DataTable
+      system="switch"
       :columns="columns"
       :rows="rows"
       :row-key="(p: SwitchPort) => p.name"

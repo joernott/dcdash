@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Schließen",
+    "closeMessage": "Meldung schließen",
     "loading": "Wird geladen …",
     "empty": "Keine Einträge",
     "cancel": "Abbrechen",
@@ -707,6 +708,9 @@
   },
   "firewalls": {
     "firewall": "Firewall",
+    "all": "Alle Firewalls",
+    "back": "Alle Firewalls",
+    "notFound": "Es gibt keine Firewall {name}, oder Sie dürfen sie nicht sehen.",
     "none": "Es sind keine Firewalls eingerichtet, oder Sie dürfen keine sehen.",
     "views": "Ansichten der Firewall",
     "unavailable": "Die Firewall ist nicht verfügbar: {error}",
@@ -1084,6 +1088,13 @@
   },
   "dhcp": {
     "server": "Server",
+    "allServers": "Alle Server",
+    "subnetsOf": "Subnetze von {server}",
+    "showLeasesOf": "Leases von {subnet} anzeigen",
+    "searchResults": "Leases zu „{q}“",
+    "leasesOf": "Leases von {subnet} auf {server}",
+    "closeLeases": "Leases schließen",
+    "reservationsOf": "Reservierungen von {server}",
     "families": {
       "v4": "DHCPv4",
       "v6": "DHCPv6"
@@ -1097,10 +1108,7 @@
       "subnets": "Pools werden nicht angezeigt: Die Hook-Bibliothek subnet_cmds ist nicht geladen.",
       "statistics": "Die Auslastung wird nicht angezeigt: Die Hook-Bibliothek stat_cmds ist nicht geladen."
     },
-    "views": "Ansichten",
     "tabs": {
-      "subnets": "Subnetze",
-      "leases": "Leases",
       "reservations": "Reservierungen"
     },
     "subnet": "Subnetz",
@@ -1114,8 +1122,6 @@
     "prefixes": "Präfixe",
     "usedOf": "{used} von {total}",
     "declined": "{n} abgelehnt",
-    "showLeases": "Leases anzeigen",
-    "chooseSubnet": "Subnetz wählen",
     "searchKeys": {
       "ip": "IP-Adresse",
       "hw-address": "MAC-Adresse",
@@ -1134,7 +1140,6 @@
     "searchBy": "Suchen nach",
     "searchValue": "Wert",
     "search": "Suchen",
-    "subnetLeases": "Leases eines Subnetzes",
     "leaseCount": "Keine Leases | Eine Lease | {n} Leases",
     "truncated": "nur die ersten werden angezeigt",
     "noLeases": "Keine Leases gefunden.",
@@ -1147,7 +1152,6 @@
     },
     "deleteLeaseFor": "Lease {address} löschen",
     "delete": "Löschen",
-    "leasesHint": "Suchen Sie nach einer Lease oder wählen Sie ein Subnetz, um seine Leases zu sehen.",
     "deleteLease": "Lease löschen",
     "deleteLeaseQuestion": "Die Lease von {address} löschen?",
     "deleteLeaseHint": "Die Adresse wird frei. Ein Client, der sie noch verwendet, erhält beim Verlängern eine neue Lease.",
@@ -1199,10 +1203,17 @@
     "noCompare": "Sie haben keine Berechtigung, NetBox mit den angebundenen Systemen zu vergleichen.",
     "noClusters": "Kein Proxmox-Cluster ist einem NetBox-Cluster zugeordnet (netbox.clusters).",
     "cluster": "Proxmox-Cluster",
+    "allClusters": "Alle Cluster",
+    "guestsOf": "Virtuelle Maschinen und Container von {cluster}",
+    "closeAddresses": "Vergleich schließen",
+    "nodesOf": "Physische Maschinen von {cluster}",
+    "switches": "Switches",
+    "devicesHint": "dcdash vergleicht das gleichnamige Gerät in NetBox: Cluster und primäre IP eines Knotens, Modell und Seriennummer eines Switches. Es aktualisiert den Cluster, die primäre IP (wenn die Adresse dem Gerät zugeordnet ist) und die Seriennummer, legt aber keine Geräte an und ändert nicht ihren Typ.",
+    "inNetBoxAs": "NetBox: {device}",
+    "notUpdatable": "Ändern Sie das in NetBox",
     "guests": "Virtuelle Maschinen und Container",
     "counts": "{ok} stimmen überein, {differs} weichen ab, {missing} fehlen in NetBox, {extra} nur in NetBox",
     "onlyDifferences": "Nur Abweichungen",
-    "refresh": "Aktualisieren",
     "noDifferences": "Keine Abweichungen.",
     "onlyInNetBox": "nur in NetBox",
     "actual": "Ist",
@@ -1215,7 +1226,7 @@
     "deleteText": "{name} gibt es nur in NetBox. Möchten Sie die virtuelle Maschine mit ihren Schnittstellen, Festplatten und Adressen aus NetBox löschen?",
     "addresses": "Reservierte Adressen und DNS-Namen",
     "addressesHint": "Vergleicht die DHCP-Reservierungen und die A- und AAAA-Einträge mit den IP-Adressen in NetBox. Dabei werden alle Reservierungen und Einträge gelesen; das kann etwas dauern.",
-    "compareAddresses": "Vergleichen",
+    "compareAddresses": "DNS und DHCP vergleichen",
     "addressMissing": "Fehlt in NetBox",
     "dnsNameDiffers": "DNS-Name in NetBox: {name}",
     "sourceError": "Konnte nicht gelesen werden: {error}",
@@ -1225,6 +1236,7 @@
     },
     "columns": {
       "guest": "Gast",
+      "device": "Gerät",
       "state": "Zustand",
       "differences": "Abweichungen",
       "actions": "Aktionen",
@@ -1235,7 +1247,8 @@
       "ok": "Stimmt überein",
       "differs": "Weicht ab",
       "missing": "Fehlt in NetBox",
-      "extra": "Nur in NetBox"
+      "extra": "Nur in NetBox",
+      "unavailable": "Nicht erreichbar"
     },
     "fields": {
       "name": "Name",
@@ -1243,7 +1256,11 @@
       "memory": "Arbeitsspeicher (MiB)",
       "disks": "Festplatten (MiB)",
       "interfaces": "Schnittstellen",
-      "addresses": "Adressen"
+      "addresses": "Adressen",
+      "cluster": "Cluster",
+      "primaryIp": "Primäre IP",
+      "model": "Modell",
+      "serial": "Seriennummer"
     }
   },
   "projects": {
@@ -1312,6 +1329,9 @@
   },
   "directories": {
     "directory": "Verzeichnis",
+    "all": "Alle Verzeichnisse",
+    "back": "Alle Verzeichnisse",
+    "notFound": "Es gibt kein Verzeichnis {name}, oder Sie dürfen es nicht sehen.",
     "none": "Ihnen steht kein Verzeichnis zur Verfügung.",
     "types": { "samba": "Samba Active Directory", "windows": "Windows Active Directory" },
     "managed": "dcdash ändert Objekte in: {ous}",

@@ -24,7 +24,12 @@ test('Active Directory: users, self-service password change and groups', async (
   const user = 'e2e-carol'
   await loginBob(page)
   await page.getByRole('link', { name: 'Directories' }).click()
-  await expect(page.getByRole('heading', { name: 'ad.dcdash.test' })).toBeVisible()
+  // The overview of all directories, without tabs; the domain opens users and groups.
+  await expect(page).toHaveURL(/\/directories$/)
+  await expect(page.getByRole('tablist')).toHaveCount(0)
+  await expectAccessible(page, 'Directory overview')
+  await page.getByRole('link', { name: 'ad.dcdash.test', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'ad.dcdash.test', level: 1 })).toBeVisible()
   const users = page.getByRole('table', { name: 'Users' })
   // Provisioned users: alice can't be changed by bob, Administrator is protected.
   await expect(users.getByRole('row', { name: /alice/ })).toBeVisible()

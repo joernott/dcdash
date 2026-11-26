@@ -41,7 +41,8 @@ dcdash itself (database, user directory, certificate, projects), then each Proxm
 DNS provider, DHCP server, NetBox, switch, firewall and Active Directory domain. The tiles of
 the systems have the system's color (Proxmox purple, DNS blue, Kea green, NetBox teal,
 switches cyan, OPNsense red, Active Directory violet), and the bottom line names the system
-(for DNS: bind9, Cloudflare or AD DNS) and the response time of the check. The UI button opens
+(for DNS: bind9, Cloudflare or AD DNS) and the response time of the check. The tables on the
+pages of a system have its color too, every other row in a lighter shade. The UI button opens
 the system's web interface in a new tab, SSH an ssh:// link, RDP a Remote Desktop file.
 A tile with a red border names the problem. If a system answers a check with a client error
 (HTTP 4xx, for example a timeout of the Kea control agent), dcdash checks it once more after a
@@ -57,6 +58,13 @@ Many buttons show an icon instead of a text: refresh (two arrows in a circle), s
 start (green power symbol), shut down (red power symbol), reboot (arrow), suspend (moon), stop
 (lightning) and console (screen). Hover over a button to see what it does; screen readers
 read the same text.
+
+The **top bar** lists the modules you may use: Projects, Directories, NetBox, Proxmox, DNS,
+DHCP, Firewalls and Switches. "dcdash" on the left leads to the overview. On the right are the
+Audit log and Sessions (for administrators), the documentation and your user menu.
+
+**Messages** appear at the bottom right. Success messages disappear after a few seconds;
+error messages stay, also when you change pages, until you close them with the × button.
 
 The **Documentation** link in the top bar opens this documentation inside dcdash, in the
 version that matches the running release. It is available in English only.
@@ -110,9 +118,9 @@ cluster, choose it at the top.
 
 The DNS page lists every provider (Cloudflare, bind9, Active Directory) with its zones. The
 "Provider" field shows only one of them, the search finds zones of all shown providers. Click
-a zone for its records. The rows of zones and records have the provider's color: orange for
-Cloudflare, blue for bind9, violet for Active Directory. Providers that can create zones have
-a "Create zone" button next to their name.
+a zone for its records. Zones and records have the DNS color of the overview tiles (blue), for
+every type of provider. Next to the name of a provider are its UI, SSH and RDP buttons (if
+configured) and, if it can create zones, a "Create zone" button.
 
 - **Records:** add, change and delete A, AAAA, CNAME, MX, TXT, SRV, PTR, NS and CAA records.
   Other types, such as SOA, are shown read-only. Names are relative to the zone ("www" for
@@ -127,15 +135,18 @@ a "Create zone" button next to their name.
 
 ## DHCP
 
-The DHCP page shows one Kea server at a time; choose it at the top. The server card shows
-its version, whether it belongs to an HA pair, and the state of the pair.
+The DHCP page lists every Kea server with its subnets, their pools and how many addresses
+are in use. Next to the name of a server are its UI, SSH and RDP buttons (if configured). The
+"Server" field at the top right shows only one of them; refresh is next to it. The version and
+the HA state of a server are on its overview tile.
 
-- **Subnets:** each subnet with its pools and how many addresses are in use.
-- **Leases:** "Show leases" lists the leases of a subnet. To find a lease in any subnet,
-  search by IP address, MAC address, client ID (DHCPv4), DUID (DHCPv6) or host name.
+- **Leases:** the button next to a subnet lists its leases above the servers. To find a lease
+  in any subnet, search at the top right by IP address, MAC address, client ID (DHCPv4),
+  DUID (DHCPv6) or host name; the search covers all shown servers. × closes the leases.
   Deleting a lease frees the address; a client that still uses it gets a new lease when it
   renews. On an HA pair, dcdash deletes the lease on both servers.
-- **Reservations:** add, change and delete fixed addresses for a client, identified by MAC
+- **Reservations:** the "Reservations" button of a server shows them below its subnets. Add,
+  change and delete fixed addresses for a client, identified by MAC
   address, client ID or DUID. Reservations from Kea's configuration file are marked
   read-only and can only be changed there.
 
@@ -149,11 +160,15 @@ In the creation wizard, the VLAN field shows the name of the VLAN in NetBox, and
 addresses a button offers a free address from the VLAN's prefixes ("Use the free address ...
 from NetBox"). The address is only taken when the guest is created.
 
-The NetBox page compares a Proxmox cluster with NetBox. By default it lists only guests that
+The NetBox page compares every mapped Proxmox cluster with NetBox, one section each; the
+"Proxmox cluster" field at the top right shows only one. Below the guests of a cluster are
+its physical machines (Proxmox nodes), and at the end the switches, each compared with its
+NetBox device; "Update NetBox" sets what dcdash can (cluster, primary IP, serial number). By default it lists only guests that
 differ, are missing in NetBox or exist only there; "Only differences" switches to all guests.
 "Update NetBox" writes a guest's current state to NetBox, "Delete from NetBox" removes a
-virtual machine that exists only in NetBox (only those dcdash created). "Compare" checks the
-DHCP reservations and DNS records against the addresses in NetBox. See
+virtual machine that exists only in NetBox (only those dcdash created). Refresh and "Compare
+DNS and DHCP" are at the top right; the latter checks the DHCP reservations and DNS records
+against the addresses in NetBox and shows the result above the clusters. See
 [netbox.md](netbox.md).
 
 ## Projects
@@ -179,7 +194,7 @@ for ports that are up, ▼ for the others, with the VLAN below. The "Switch" sel
 it only filters the overview; "Refresh" is at the top right. The UI and SSH buttons lead to
 the switch itself.
 
-**Find a device** is on the same line as the selection: enter (part of) a MAC address.
+**Find a device** is on the same line as the selection and the heading: enter (part of) a MAC address.
 "Connected here" marks the port the device is plugged into; "Behind another switch" marks
 uplinks.
 
@@ -198,8 +213,9 @@ few seconds. See [switches.md](switches.md).
 
 ## Firewalls
 
-The Firewalls page shows one firewall at a time with its version, uptime and memory, and
-links to its web interface and SSH:
+The Firewalls page shows every firewall with its version, uptime, memory and the UI and SSH
+buttons; the "Firewall" field at the top right shows only one, refresh is next to it. The name
+of a firewall opens its details page with four tabs:
 
 - **Health:** the gateways and services; "Restart" restarts a service.
 - **VPN:** WireGuard peers with their last handshake and traffic ("Enable", "Disable"), and
@@ -213,8 +229,10 @@ See [firewalls.md](firewalls.md).
 
 ## Directories
 
-The Directories page shows the users and groups of an Active Directory domain. Choose the
-domain at the top, then **Users** or **Groups**; search by name, mail address or description.
+The Directories page shows every Active Directory domain with the containers dcdash manages
+and its UI, SSH and RDP buttons (if configured); the "Directory" field at the top right shows
+only one. The domain name opens its **Users** and **Groups**; search by name, mail address or
+description. Refresh at the top right reloads the open tab.
 
 - **Users:** create a user with an initial password (usually "must change the password at
   the next logon"), change names and mail address, disable and enable, unlock after failed

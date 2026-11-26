@@ -81,6 +81,13 @@ type Service struct {
 	now     func() time.Time
 	// netbox receives changed reservations; nil if not configured.
 	netbox *netbox.Service
+	// links are the configured UI, SSH and RDP links per server.
+	links map[string]*status.Links
+}
+
+// SetLinks sets the UI, SSH and RDP links per server name, shown on the DHCP page.
+func (s *Service) SetLinks(links map[string]*status.Links) {
+	s.links = links
 }
 
 // NewService creates the service for the configured servers.

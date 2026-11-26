@@ -238,6 +238,7 @@ watch(
   },
 )
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
@@ -267,6 +268,7 @@ onMounted(load)
     </p>
     <p v-if="truncated" class="text-sm text-fg-muted">{{ t('directories.truncated') }}</p>
     <DataTable
+      system="directory"
       :columns="columns"
       :rows="groups"
       :row-key="(g: Group) => g.dn"
@@ -391,6 +393,7 @@ onMounted(load)
           {{ t('directories.groups.noMembers') }}
         </p>
         <DataTable
+          system="directory"
           v-else
           :columns="memberColumns"
           :rows="current.members ?? []"

@@ -1,17 +1,18 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError, unwrap, type Schemas } from '@/api/client'
 import { errorMessage } from '@/api/errors'
+import DeviceTable from '@/components/netbox/DeviceTable.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import IconButton from '@/components/ui/IconButton.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { netboxFailure, type NetBoxInfo } from '@/netbox/netbox'
 import { useSessionStore } from '@/stores/session'
@@ -19,7 +20,12 @@ import { useToastStore } from '@/stores/toast'
 
 type GuestDiff = Schemas['NetBoxGuestDiff']
 type AddressDiff = Schemas['NetBoxAddressDiff']
+type DeviceDiff = Schemas['NetBoxDeviceDiff']
 
+/**
+ * NetBox compared with the connected systems: the guests of every mapped Proxmox cluster (the
+ * cluster in the route is an optional filter) and, on request, the addresses of DNS and DHCP.
+ */
 const i18n = useI18n()
 const { t } = i18n
 const route = useRoute()
@@ -27,28 +33,60 @@ const router = useRouter()
 const session = useSessionStore()
 const toast = useToastStore()
 
+// The comparison of a cluster: null until loaded or if loading failed.
+interface ClusterGuests {
+  guests: GuestDiff[] | null
+  loading: boolean
+  error: string
+}
+
+// Compared devices (nodes of a cluster, or the switches): null until loaded or if that failed.
+interface Devices {
+  devices: DeviceDiff[] | null
+  loading: boolean
+  error: string
+}
+
 const info = ref<NetBoxInfo | null>(null)
 const notConfigured = ref(false)
-const guests = ref<GuestDiff[]>([])
-const loading = ref(false)
+const state = reactive<Record<string, ClusterGuests>>({})
+const nodeState = reactive<Record<string, Devices>>({})
+const switchState = reactive<Devices>({ devices: null, loading: false, error: '' })
 const error = ref('')
 const onlyDifferences = ref(true)
 const busy = ref('')
 
-const cluster = computed(() => String(route.params.cluster ?? ''))
-const clusterOptions = computed(() =>
-  (info.value?.clusters ?? []).map((c) => ({ value: c, label: c })),
+const filter = computed(() => String(route.params.cluster ?? ''))
+const clusters = computed(() => info.value?.clusters ?? [])
+const shown = computed(() =>
+  filter.value ? clusters.value.filter((c) => c === filter.value) : clusters.value,
 )
+const filterOptions = computed(() => [
+  { value: '', label: t('netbox.allClusters') },
+  ...clusters.value.map((c) => ({ value: c, label: c })),
+])
 const canRead = computed(() => !!info.value && session.can(`netbox:${info.value.name}:sync:read`))
 const canWrite = computed(() => !!info.value && session.can(`netbox:${info.value.name}:sync:write`))
-const shown = computed(() =>
-  onlyDifferences.value ? guests.value.filter((g) => g.state !== 'ok') : guests.value,
+const loading = computed(
+  () => switchState.loading || shown.value.some((c) => state[c]?.loading || nodeState[c]?.loading),
 )
-const counts = computed(() => {
+
+function rows(cluster: string) {
+  const all = state[cluster]?.guests ?? []
+  return onlyDifferences.value ? all.filter((g) => g.state !== 'ok') : all
+}
+
+/** The devices to show: all, or only those that differ. */
+function deviceRows(d: Devices) {
+  const all = d.devices ?? []
+  return onlyDifferences.value ? all.filter((x) => x.state !== 'ok') : all
+}
+
+function counts(cluster: string) {
   const c: Record<string, number> = { ok: 0, missing: 0, extra: 0, differs: 0 }
-  for (const g of guests.value) c[g.state] = (c[g.state] ?? 0) + 1
+  for (const g of state[cluster]?.guests ?? []) c[g.state] = (c[g.state] ?? 0) + 1
   return c
-})
+}
 
 const columns = computed(() => [
   { key: 'name', label: t('netbox.columns.guest') },
@@ -67,32 +105,95 @@ const badge: Record<GuestDiff['state'], 'ok' | 'warning' | 'error' | 'unknown'> 
 async function loadInfo() {
   try {
     info.value = await unwrap(api.GET('/api/v1/netbox'))
-    if (!cluster.value && info.value.clusters.length > 0) {
-      await router.replace({ name: 'netbox', params: { cluster: info.value.clusters[0] } })
-    }
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notConfigured.value = true
     else error.value = errorMessage(i18n, e)
   }
 }
 
-async function load() {
-  if (!cluster.value || !canRead.value) return
-  loading.value = true
+async function load(cluster: string) {
+  if (!canRead.value) return
+  state[cluster] ??= { guests: null, loading: false, error: '' }
+  // The reactive proxy, not the plain object the assignment returns.
+  const s = state[cluster]!
+  s.loading = true
   try {
     const res = await unwrap(
-      api.GET('/api/v1/netbox/compare/guests/{cluster}', {
-        params: { path: { cluster: cluster.value } },
-      }),
+      api.GET('/api/v1/netbox/compare/guests/{cluster}', { params: { path: { cluster } } }),
     )
-    guests.value = res.guests
-    error.value = ''
+    s.guests = res.guests
+    s.error = ''
   } catch (e) {
-    guests.value = []
-    error.value = errorMessage(i18n, e)
+    s.guests = null
+    s.error = errorMessage(i18n, e)
   } finally {
-    loading.value = false
+    s.loading = false
   }
+}
+
+async function loadNodes(cluster: string) {
+  if (!canRead.value) return
+  nodeState[cluster] ??= { devices: null, loading: false, error: '' }
+  const s = nodeState[cluster]!
+  s.loading = true
+  try {
+    const res = await unwrap(
+      api.GET('/api/v1/netbox/compare/nodes/{cluster}', { params: { path: { cluster } } }),
+    )
+    s.devices = res.devices
+    s.error = ''
+  } catch (e) {
+    s.devices = null
+    s.error = errorMessage(i18n, e)
+  } finally {
+    s.loading = false
+  }
+}
+
+async function loadSwitches() {
+  if (!canRead.value) return
+  switchState.loading = true
+  try {
+    switchState.devices = (await unwrap(api.GET('/api/v1/netbox/compare/switches'))).devices
+    switchState.error = ''
+  } catch (e) {
+    switchState.devices = null
+    switchState.error = errorMessage(i18n, e)
+  } finally {
+    switchState.loading = false
+  }
+}
+
+// The device being updated.
+const busyDevice = ref('')
+
+async function applyDevice(d: DeviceDiff, cluster = '') {
+  busyDevice.value = d.name
+  try {
+    const res = await unwrap(
+      d.kind === 'node'
+        ? api.POST('/api/v1/netbox/compare/nodes/{cluster}/{node}', {
+            params: { path: { cluster, node: d.name } },
+          })
+        : api.POST('/api/v1/netbox/compare/switches/{switch}', {
+            params: { path: { switch: d.name } },
+          }),
+    )
+    report(res.netbox, t('netbox.applied', { name: d.name }))
+    await (d.kind === 'node' ? loadNodes(cluster) : loadSwitches())
+  } catch (e) {
+    toast.error(errorMessage(i18n, e))
+  } finally {
+    busyDevice.value = ''
+  }
+}
+
+async function refresh() {
+  await Promise.all([...shown.value.map(load), ...shown.value.map(loadNodes), loadSwitches()])
+}
+
+function selectFilter(c: string) {
+  if (c !== filter.value) void router.push({ name: 'netbox', params: c ? { cluster: c } : {} })
 }
 
 function rowKey(g: GuestDiff): string {
@@ -105,17 +206,17 @@ function report(result: Schemas['NetBoxResult'], success: string) {
   else toast.success(success)
 }
 
-async function apply(g: GuestDiff) {
+async function apply(cluster: string, g: GuestDiff) {
   if (!g.type || !g.vmid) return
-  busy.value = rowKey(g)
+  busy.value = `${cluster}/${rowKey(g)}`
   try {
     const res = await unwrap(
       api.POST('/api/v1/netbox/compare/guests/{cluster}/{type}/{vmid}', {
-        params: { path: { cluster: cluster.value, type: g.type, vmid: g.vmid } },
+        params: { path: { cluster, type: g.type, vmid: g.vmid } },
       }),
     )
     report(res.netbox, t('netbox.applied', { name: g.name }))
-    await load()
+    await load(cluster)
   } catch (e) {
     toast.error(errorMessage(i18n, e))
   } finally {
@@ -124,7 +225,7 @@ async function apply(g: GuestDiff) {
 }
 
 // Deleting a VM that exists only in NetBox, after confirmation.
-const deleting = ref<GuestDiff | null>(null)
+const deleting = ref<{ cluster: string; guest: GuestDiff } | null>(null)
 const deleteOpen = computed({
   get: () => deleting.value !== null,
   set: (v: boolean) => {
@@ -133,18 +234,19 @@ const deleteOpen = computed({
 })
 
 async function removeVM() {
-  const g = deleting.value
-  if (!g?.netboxId) return
-  busy.value = rowKey(g)
+  const target = deleting.value
+  if (!target?.guest.netboxId) return
+  const { cluster, guest: g } = target
+  busy.value = `${cluster}/${rowKey(g)}`
   try {
     const res = await unwrap(
       api.DELETE('/api/v1/netbox/compare/guests/{cluster}/vms/{id}', {
-        params: { path: { cluster: cluster.value, id: g.netboxId } },
+        params: { path: { cluster, id: g.netboxId! } },
       }),
     )
     deleting.value = null
     report(res.netbox, t('netbox.deleted', { name: g.name }))
-    await load()
+    await load(cluster)
   } catch (e) {
     toast.error(errorMessage(i18n, e))
   } finally {
@@ -155,8 +257,10 @@ async function removeVM() {
 // Addresses are compared on request: it reads all reservations and records.
 const addresses = ref<AddressDiff[] | null>(null)
 const addressErrors = ref<string[]>([])
+const addressesOpen = ref(false)
 const addressesLoading = ref(false)
 const addressError = ref('')
+const addressHeading = ref<HTMLElement | null>(null)
 const addressColumns = computed(() => [
   { key: 'address', label: t('netbox.columns.address') },
   { key: 'source', label: t('netbox.columns.source') },
@@ -164,7 +268,10 @@ const addressColumns = computed(() => [
 ])
 
 async function compareAddresses() {
+  addressesOpen.value = true
   addressesLoading.value = true
+  await nextTick()
+  addressHeading.value?.scrollIntoView?.({ block: 'nearest' })
   try {
     const res = await unwrap(api.GET('/api/v1/netbox/compare/addresses'))
     addresses.value = res.addresses
@@ -184,135 +291,74 @@ function sourceLabel(a: AddressDiff): string {
 }
 
 onMounted(loadInfo)
-watch([cluster, canRead], () => void load(), { immediate: true })
+// Loads the clusters shown (again after a permission change) whose guests and nodes weren't
+// loaded yet, and the switches once.
+watch(
+  [shown, canRead],
+  () => {
+    for (const c of shown.value) {
+      if (!state[c]) void load(c)
+      if (!nodeState[c]) void loadNodes(c)
+    }
+    if (canRead.value && !switchState.devices && !switchState.loading) void loadSwitches()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-3">
+    <!-- The heading and, on the right, the cluster filter, refresh and the address comparison. -->
+    <div class="flex flex-wrap items-end justify-between gap-4">
       <h1 class="text-2xl font-semibold">{{ t('nav.netbox') }}</h1>
-      <p v-if="notConfigured" class="text-fg-muted">{{ t('netbox.notConfigured') }}</p>
-      <p v-else-if="info && !canRead" class="text-fg-muted">{{ t('netbox.noCompare') }}</p>
-      <div v-if="info && canRead && clusterOptions.length > 0" class="max-w-xs">
+      <div v-if="info && canRead" class="flex flex-wrap items-end gap-3">
         <BaseSelect
-          :model-value="cluster"
+          v-if="clusters.length > 1"
+          :model-value="filter"
           :label="t('netbox.cluster')"
-          :options="clusterOptions"
-          @update:model-value="
-            (v: string) => router.push({ name: 'netbox', params: { cluster: v } })
-          "
+          :options="filterOptions"
+          @update:model-value="selectFilter"
         />
-      </div>
-      <p v-if="info && canRead && clusterOptions.length === 0" class="text-fg-muted">
-        {{ t('netbox.noClusters') }}
-      </p>
-      <p v-if="error" role="alert" class="text-danger">{{ error }}</p>
-    </div>
-
-    <section v-if="canRead && cluster" aria-labelledby="netbox-guests" class="flex flex-col gap-3">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="netbox-guests" class="text-lg font-semibold">{{ t('netbox.guests') }}</h2>
-        <div class="flex flex-wrap items-center gap-4">
-          <p class="text-sm text-fg-muted" data-testid="netbox-counts">
-            {{
-              t('netbox.counts', {
-                ok: counts.ok,
-                differs: counts.differs,
-                missing: counts.missing,
-                extra: counts.extra,
-              })
-            }}
-          </p>
-          <label class="flex items-center gap-2 text-sm">
-            <input v-model="onlyDifferences" type="checkbox" class="size-4" />
-            {{ t('netbox.onlyDifferences') }}
-          </label>
-          <BaseButton variant="secondary" size="sm" :loading="loading" @click="load">
-            {{ t('netbox.refresh') }}
-          </BaseButton>
-        </div>
-      </div>
-      <DataTable
-        :columns="columns"
-        :rows="shown"
-        :row-key="rowKey"
-        :caption="t('netbox.guests')"
-        :loading="loading"
-        :empty="t('netbox.noDifferences')"
-      >
-        <template #cell-name="{ row }">
-          <RouterLink
-            v-if="(row as GuestDiff).type"
-            class="text-primary underline"
-            :to="{
-              name: 'proxmox-guest',
-              params: { cluster, type: (row as GuestDiff).type, vmid: (row as GuestDiff).vmid },
-            }"
-          >
-            {{ (row as GuestDiff).name }}
-          </RouterLink>
-          <span v-else>{{ (row as GuestDiff).name }}</span>
-          <span class="block text-xs text-fg-muted">
-            {{
-              (row as GuestDiff).type
-                ? `${(row as GuestDiff).type} ${(row as GuestDiff).vmid}`
-                : t('netbox.onlyInNetBox')
-            }}
-          </span>
-        </template>
-        <template #cell-state="{ row }">
-          <StatusBadge
-            :status="badge[(row as GuestDiff).state]"
-            :label="t(`netbox.states.${(row as GuestDiff).state}`)"
-          />
-        </template>
-        <template #cell-differences="{ row }">
-          <dl v-if="(row as GuestDiff).differences.length" class="grid gap-1 text-sm">
-            <div v-for="d in (row as GuestDiff).differences" :key="d.field">
-              <dt class="font-medium">{{ t(`netbox.fields.${d.field}`) }}</dt>
-              <dd class="font-mono text-xs">
-                {{ t('netbox.actual') }}: {{ d.actual || '–' }}<br />
-                {{ t('netbox.inNetBox') }}: {{ d.netbox || '–' }}
-              </dd>
-            </div>
-          </dl>
-          <span v-else class="text-fg-muted">–</span>
-        </template>
-        <template #cell-actions="{ row }">
-          <div v-if="canWrite" class="flex gap-2">
-            <BaseButton
-              v-if="(row as GuestDiff).type && (row as GuestDiff).state !== 'ok'"
-              size="sm"
-              variant="secondary"
-              :loading="busy === rowKey(row as GuestDiff)"
-              @click="apply(row as GuestDiff)"
-            >
-              {{ t('netbox.apply') }}
-            </BaseButton>
-            <IconButton
-              icon="delete"
-              :label="t('netbox.delete')"
-              v-if="(row as GuestDiff).state === 'extra' && (row as GuestDiff).tagged"
-              size="sm"
-              variant="danger"
-              @click="deleting = row as GuestDiff"
-            />
-          </div>
-        </template>
-      </DataTable>
-    </section>
-
-    <section v-if="canRead" aria-labelledby="netbox-addresses" class="flex flex-col gap-3">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="netbox-addresses" class="text-lg font-semibold">{{ t('netbox.addresses') }}</h2>
-        <BaseButton
+        <label class="flex items-center gap-2 pb-2 text-sm">
+          <input v-model="onlyDifferences" type="checkbox" class="size-4" />
+          {{ t('netbox.onlyDifferences') }}
+        </label>
+        <IconButton
+          icon="refresh"
+          :label="t('home.refresh')"
+          size="md"
           variant="secondary"
-          size="sm"
-          :loading="addressesLoading"
-          @click="compareAddresses"
-        >
+          :loading="loading"
+          @click="refresh"
+        />
+        <BaseButton variant="secondary" :loading="addressesLoading" @click="compareAddresses">
           {{ t('netbox.compareAddresses') }}
         </BaseButton>
+      </div>
+    </div>
+
+    <p v-if="notConfigured" class="text-fg-muted">{{ t('netbox.notConfigured') }}</p>
+    <p v-else-if="info && !canRead" class="text-fg-muted">{{ t('netbox.noCompare') }}</p>
+    <p v-else-if="info && clusters.length === 0" class="text-fg-muted">
+      {{ t('netbox.noClusters') }}
+    </p>
+    <p v-if="error" role="alert" class="text-danger">{{ error }}</p>
+
+    <!-- The address comparison, on request. -->
+    <section
+      v-if="canRead && addressesOpen"
+      aria-labelledby="netbox-addresses"
+      class="flex flex-col gap-3 rounded-md border border-border p-4"
+    >
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="netbox-addresses" ref="addressHeading" class="text-lg font-semibold">
+          {{ t('netbox.addresses') }}
+        </h2>
+        <IconButton
+          icon="close"
+          :label="t('netbox.closeAddresses')"
+          @click="addressesOpen = false"
+        />
       </div>
       <p class="text-sm text-fg-muted">{{ t('netbox.addressesHint') }}</p>
       <p v-if="addressError" role="alert" class="text-danger">{{ addressError }}</p>
@@ -320,11 +366,13 @@ watch([cluster, canRead], () => void load(), { immediate: true })
         <li v-for="e in addressErrors" :key="e">{{ t('netbox.sourceError', { error: e }) }}</li>
       </ul>
       <DataTable
-        v-if="addresses !== null"
+        v-if="addresses !== null || addressesLoading"
+        system="netbox"
         :columns="addressColumns"
-        :rows="addresses"
+        :rows="addresses ?? []"
         :row-key="(a: AddressDiff) => `${a.source}/${a.address}/${a.name ?? ''}`"
         :caption="t('netbox.addresses')"
+        :loading="addressesLoading"
         :empty="t('netbox.noDifferences')"
       >
         <template #cell-address="{ row }">
@@ -342,8 +390,142 @@ watch([cluster, canRead], () => void load(), { immediate: true })
       </DataTable>
     </section>
 
+    <template v-if="canRead">
+      <section
+        v-for="c in shown"
+        :key="c"
+        :aria-labelledby="`netbox-guests-${c}`"
+        class="flex flex-col gap-3"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 :id="`netbox-guests-${c}`" class="text-lg font-semibold">
+            {{ t('netbox.guestsOf', { cluster: c }) }}
+          </h2>
+          <p v-if="state[c]?.guests" class="text-sm text-fg-muted" data-testid="netbox-counts">
+            {{
+              t('netbox.counts', {
+                ok: counts(c).ok,
+                differs: counts(c).differs,
+                missing: counts(c).missing,
+                extra: counts(c).extra,
+              })
+            }}
+          </p>
+        </div>
+        <p v-if="state[c]?.error" role="alert" class="text-danger">{{ state[c]!.error }}</p>
+        <DataTable
+          v-else
+          system="netbox"
+          :columns="columns"
+          :rows="rows(c)"
+          :row-key="rowKey"
+          :caption="t('netbox.guestsOf', { cluster: c })"
+          :loading="!state[c]?.guests"
+          :empty="t('netbox.noDifferences')"
+        >
+          <template #cell-name="{ row }">
+            <RouterLink
+              v-if="(row as GuestDiff).type"
+              class="text-primary underline"
+              :to="{
+                name: 'proxmox-guest',
+                params: {
+                  cluster: c,
+                  type: (row as GuestDiff).type,
+                  vmid: (row as GuestDiff).vmid,
+                },
+              }"
+            >
+              {{ (row as GuestDiff).name }}
+            </RouterLink>
+            <span v-else>{{ (row as GuestDiff).name }}</span>
+            <span class="block text-xs text-fg-muted">
+              {{
+                (row as GuestDiff).type
+                  ? `${(row as GuestDiff).type} ${(row as GuestDiff).vmid}`
+                  : t('netbox.onlyInNetBox')
+              }}
+            </span>
+          </template>
+          <template #cell-state="{ row }">
+            <StatusBadge
+              :status="badge[(row as GuestDiff).state]"
+              :label="t(`netbox.states.${(row as GuestDiff).state}`)"
+            />
+          </template>
+          <template #cell-differences="{ row }">
+            <dl v-if="(row as GuestDiff).differences.length" class="grid gap-1 text-sm">
+              <div v-for="d in (row as GuestDiff).differences" :key="d.field">
+                <dt class="font-medium">{{ t(`netbox.fields.${d.field}`) }}</dt>
+                <dd class="font-mono text-xs">
+                  {{ t('netbox.actual') }}: {{ d.actual || '–' }}<br />
+                  {{ t('netbox.inNetBox') }}: {{ d.netbox || '–' }}
+                </dd>
+              </div>
+            </dl>
+            <span v-else class="text-fg-muted">–</span>
+          </template>
+          <template #cell-actions="{ row }">
+            <div v-if="canWrite" class="flex gap-2">
+              <BaseButton
+                v-if="(row as GuestDiff).type && (row as GuestDiff).state !== 'ok'"
+                size="sm"
+                variant="secondary"
+                :loading="busy === `${c}/${rowKey(row as GuestDiff)}`"
+                @click="apply(c, row as GuestDiff)"
+              >
+                {{ t('netbox.apply') }}
+              </BaseButton>
+              <IconButton
+                v-if="(row as GuestDiff).state === 'extra' && (row as GuestDiff).tagged"
+                icon="delete"
+                :label="t('netbox.delete')"
+                size="sm"
+                variant="danger"
+                @click="deleting = { cluster: c, guest: row as GuestDiff }"
+              />
+            </div>
+          </template>
+        </DataTable>
+
+        <!-- The physical machines of the cluster. -->
+        <h3 class="mt-2 font-semibold">{{ t('netbox.nodesOf', { cluster: c }) }}</h3>
+        <p v-if="nodeState[c]?.error" role="alert" class="text-danger">
+          {{ nodeState[c]!.error }}
+        </p>
+        <DeviceTable
+          v-else
+          :devices="nodeState[c] ? deviceRows(nodeState[c]!) : []"
+          :caption="t('netbox.nodesOf', { cluster: c })"
+          :loading="!nodeState[c]?.devices"
+          :can-write="canWrite"
+          :busy="busyDevice"
+          @apply="(d: DeviceDiff) => applyDevice(d, c)"
+        />
+      </section>
+
+      <section
+        v-if="switchState.devices?.length || switchState.error"
+        aria-labelledby="netbox-switches"
+        class="flex flex-col gap-3"
+      >
+        <h2 id="netbox-switches" class="text-lg font-semibold">{{ t('netbox.switches') }}</h2>
+        <p v-if="switchState.error" role="alert" class="text-danger">{{ switchState.error }}</p>
+        <DeviceTable
+          v-else
+          :devices="deviceRows(switchState)"
+          :caption="t('netbox.switches')"
+          :loading="false"
+          :can-write="canWrite"
+          :busy="busyDevice"
+          @apply="(d: DeviceDiff) => applyDevice(d)"
+        />
+      </section>
+      <p class="text-sm text-fg-muted">{{ t('netbox.devicesHint') }}</p>
+    </template>
+
     <BaseModal v-model:open="deleteOpen" :title="t('netbox.deleteTitle')">
-      <p>{{ t('netbox.deleteText', { name: deleting?.name ?? '' }) }}</p>
+      <p>{{ t('netbox.deleteText', { name: deleting?.guest.name ?? '' }) }}</p>
       <template #footer>
         <BaseButton variant="secondary" @click="deleting = null">{{
           t('common.cancel')

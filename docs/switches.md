@@ -68,12 +68,12 @@ repeats the request. dcdash logs out when it stops.
 
 ## Overview
 
-The "Overview" tab shows all switches at a glance, laid out like their front panels: per
+The Switches page shows all switches at a glance, laid out like their front panels: per
 switch two rows (four for a 48-port switch, two more per stack member), ports 1 and 2 in the
 first column, 3 and 4 in the second and so on, the SFP ports in the last two columns. Each
 port shows ▲ (up) or ▼ (no link or disabled) and its VLAN; the native VLAN of a trunk is
-underlined and italic. The first column has the switch name (to its ports) and links to its
-web interface (https) and to SSH. Columns a smaller switch doesn't have stay empty.
+underlined and italic. The first column has the switch name (to its details page with the ports and VLANs) and the UI
+and SSH buttons. Columns a smaller switch doesn't have stay empty.
 
 ## Ports
 

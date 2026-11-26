@@ -15,6 +15,7 @@ import {
   faPlus,
   faPowerOff,
   faUsers,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { faMoon, faTrashCan } from '@fortawesome/free-regular-svg-icons'
 
@@ -69,6 +70,7 @@ export const icons = {
   unlock: fa(faLockOpen),
   password: fa(faKey),
   members: fa(faUsers),
+  close: fa(faXmark),
 } satisfies Record<string, Icon>
 
 export type IconName = keyof typeof icons

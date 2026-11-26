@@ -6,6 +6,33 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-26
+
+### Changed
+
+- **Messages:** a framed close button; error messages stay until closed.
+- **Top bar:** no "Overview" entry ("dcdash" leads there); the modules in the order Projects,
+  Directories, NetBox, Proxmox, DNS, DHCP, Firewalls, Switches; Audit log and Sessions on the
+  right next to the documentation.
+- **DNS page:** UI, SSH and RDP buttons next to the name of each server
+  (`GET /api/v1/dns/providers` lists the `links`); one color for all DNS servers, the one of the
+  overview tiles.
+- **Tables** have the color of their system, every other row in a lighter shade.
+- **DHCP page:** like the DNS page, all servers with their subnets and UI/SSH/RDP buttons
+  (`GET /api/v1/dhcp/servers` lists the `links`); the server field filters, the lease search
+  sits next to it at the top right. The leases button of a subnet replaces the "Leases of a
+  subnet" field; reservations open per server.
+- **NetBox page:** all clusters (the cluster field filters), refresh as an icon and "Compare
+  DNS and DHCP" at the top right. The Proxmox nodes of each cluster and the switches are compared
+  with their NetBox devices (`GET /api/v1/netbox/compare/nodes/{cluster}`, `/compare/switches`);
+  "Update NetBox" sets the cluster, primary IP and serial number. The NetBox token needs to
+  change devices for that.
+- **Firewalls and Directories pages:** like the Switches page, an overview of all firewalls or
+  domains (the field at the top right filters, refresh next to it); the name opens the
+  details with the tabs. `GET /api/v1/directories` lists the `links`.
+- **Switches page:** the switch filter, the device search and refresh on the line of the
+  heading.
+
 ## [0.4.0] - 2026-11-24
 
 ### Upgrade notes
@@ -270,7 +297,8 @@ TOTP, roles and an audit log.
   [docs/security.md](https://github.com/joernott/dcdash/blob/v0.1.0/docs/security.md#security-review) for the results and the known
   limitations.
 
-[Unreleased]: https://github.com/joernott/dcdash/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/joernott/dcdash/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/joernott/dcdash/releases/tag/v0.5.0
 [0.4.0]: https://github.com/joernott/dcdash/releases/tag/v0.4.0
 [0.3.0]: https://github.com/joernott/dcdash/releases/tag/v0.3.0
 [0.2.1]: https://github.com/joernott/dcdash/releases/tag/v0.2.1

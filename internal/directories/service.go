@@ -151,6 +151,8 @@ type DirectoryView struct {
 	// CanCreateUsers, CanCreateGroups: the user may create some users or groups.
 	CanCreateUsers  bool `json:"canCreateUsers"`
 	CanCreateGroups bool `json:"canCreateGroups"`
+	// Links are the web interface, SSH and RDP addresses of the domain, if configured.
+	Links *status.Links `json:"links,omitempty"`
 }
 
 func (s *Service) handleDirectories(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +169,8 @@ func (s *Service) handleDirectories(w http.ResponseWriter, r *http.Request) {
 		cfg := s.dirs[n].Config()
 		out = append(out, DirectoryView{Name: n, Type: cfg.Type, Domain: cfg.Domain, ManagedOUs: cfg.ManagedOUs,
 			CanCreateUsers:  subj.Permissions.AllowsPrefix(Module, n, "user/", rbac.ActionWrite),
-			CanCreateGroups: subj.Permissions.AllowsPrefix(Module, n, "group/", rbac.ActionWrite)})
+			CanCreateGroups: subj.Permissions.AllowsPrefix(Module, n, "group/", rbac.ActionWrite),
+			Links:           status.NewLinks(cfg.UI, cfg.SSHURL(), cfg.RDP)})
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"directories": out})
 }

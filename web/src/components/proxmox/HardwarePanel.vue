@@ -385,6 +385,7 @@ defineExpose({ load })
           </BaseButton>
         </div>
         <DataTable
+          system="proxmox"
           :columns="optionColumns"
           :rows="hw.options"
           :row-key="(o: OptionSetting) => o.key"
@@ -426,6 +427,7 @@ defineExpose({ load })
           </BaseButton>
         </div>
         <DataTable
+          system="proxmox"
           :columns="diskColumns"
           :rows="hw.disks"
           :row-key="(d: HardwareDisk) => d.key"
@@ -510,6 +512,7 @@ defineExpose({ load })
           </BaseButton>
         </div>
         <DataTable
+          system="proxmox"
           :columns="netColumns"
           :rows="hw.networks"
           :row-key="(n: NetworkDevice) => n.key"

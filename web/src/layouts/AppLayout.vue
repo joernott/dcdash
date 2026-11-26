@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api/errors'
 import PreferenceSwitchers from '@/components/PreferenceSwitchers.vue'
-import { navigation, visibleNavigation } from '@/navigation'
+import { adminNavigation, navigation, visibleNavigation } from '@/navigation'
 import { useSessionStore } from '@/stores/session'
 import { useToastStore } from '@/stores/toast'
 
@@ -18,6 +18,7 @@ const i18n = useI18n()
 const { t } = i18n
 
 const items = computed(() => visibleNavigation(navigation, session.can, session.canAny))
+const adminItems = computed(() => visibleNavigation(adminNavigation, session.can, session.canAny))
 const menuOpen = ref(false)
 const navOpen = ref(false)
 const user = computed(() => session.info?.user)
@@ -66,7 +67,11 @@ function onKeydown(e: KeyboardEvent) {
     </a>
     <header class="border-b border-border bg-surface-raised">
       <div class="mx-auto flex max-w-[112rem] items-center gap-4 px-4 py-2">
-        <RouterLink :to="{ name: 'home' }" class="text-lg font-semibold text-primary">
+        <RouterLink
+          :to="{ name: 'home' }"
+          class="text-lg font-semibold text-primary"
+          :title="t('nav.home')"
+        >
           {{ t('app.title') }}
         </RouterLink>
 
@@ -84,32 +89,46 @@ function onKeydown(e: KeyboardEvent) {
         <nav
           id="main-nav"
           :aria-label="t('nav.label')"
-          class="absolute top-12 right-0 left-0 z-30 border-b border-border bg-surface-raised px-4 py-2 md:static md:block md:border-0 md:bg-transparent md:p-0"
-          :class="navOpen ? 'block' : 'hidden'"
+          class="absolute top-12 right-0 left-0 z-30 flex-col border-b border-border bg-surface-raised px-4 py-2 md:static md:flex md:flex-1 md:flex-row md:items-center md:justify-between md:border-0 md:bg-transparent md:p-0"
+          :class="navOpen ? 'flex' : 'hidden'"
         >
+          <!-- The modules on the left, administration and documentation on the right. -->
           <ul class="flex flex-col gap-1 md:flex-row">
             <li v-for="item in items" :key="item.name">
               <RouterLink
                 :to="{ name: item.name }"
                 class="block rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
                 active-class="bg-surface-sunken font-medium"
-                exact-active-class="bg-surface-sunken font-medium"
               >
                 {{ t(item.label) }}
               </RouterLink>
             </li>
           </ul>
+          <ul
+            class="mt-1 flex flex-col gap-1 border-t border-border pt-1 md:mt-0 md:flex-row md:border-0 md:pt-0"
+          >
+            <li v-for="item in adminItems" :key="item.name">
+              <RouterLink
+                :to="{ name: item.name }"
+                class="block rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
+                active-class="bg-surface-sunken font-medium"
+              >
+                {{ t(item.label) }}
+              </RouterLink>
+            </li>
+            <li>
+              <RouterLink
+                :to="{ name: 'docs' }"
+                class="block rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
+                active-class="bg-surface-sunken font-medium"
+              >
+                {{ t('nav.docs') }}
+              </RouterLink>
+            </li>
+          </ul>
         </nav>
 
-        <RouterLink
-          :to="{ name: 'docs' }"
-          class="ms-auto rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"
-          active-class="bg-surface-sunken font-medium"
-        >
-          {{ t('nav.docs') }}
-        </RouterLink>
-
-        <div class="relative">
+        <div class="relative ms-auto md:ms-0">
           <button
             type="button"
             class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-surface-sunken"

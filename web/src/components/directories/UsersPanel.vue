@@ -252,6 +252,7 @@ watch(
   },
 )
 onMounted(load)
+defineExpose({ load })
 </script>
 
 <template>
@@ -281,6 +282,7 @@ onMounted(load)
     </p>
     <p v-if="truncated" class="text-sm text-fg-muted">{{ t('directories.truncated') }}</p>
     <DataTable
+      system="directory"
       :columns="columns"
       :rows="users"
       :row-key="(u: User) => u.dn"

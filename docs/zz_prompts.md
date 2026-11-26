@@ -600,3 +600,36 @@ On the switch page, I also get redirected to the first switch. I would like a si
 ## 2026-11-24 — Sprint 17 (Configuration directory)
 
 yes, merge sprint 17 and tag v0.4.0
+
+---
+
+## 2026-11-24 — Sprint 18 (Page layout)
+
+No need for the domain mismatch check. For the next sprint, please add the following tasks:
+- I tried to deactivate an AD user but forgot to put the right user into the configs. That failed as expected and I got an error message. However, that error message box is still in the lower right corner of my screen, even though I clicked through to other pages. These message boxes should have a way to close/acknowledge them
+- On the DNS page, the ui/ssh/rdp buttons should show up next to the header for every server
+- On the DNS page,always use the same background color as for the tiles on the overview page, remove references for different colors for different types of DNS servers
+- Redesign the DHCP page in a similar way to the DNS page, showing all DHCP servers with their subnets, convert the server  dropdown to a filter and move it to the top right. Take the search part of the "Leases" tab and move it there as well. We don't need the "Leases of a subnet" dropdown any more as we have a button next to each subnet
+- Change the refresh button on the netbox page to an icon as well and place it in the top right corner, move the filter for the proxmox cluster there as well and also show physical machines and switches in the list. Also move the DNS/DHCP compare button up to the top right
+- On the switches page: Move the switch filter and search box into the top line, similar to what we have with DNS.
+- On the firewall page and directories, also adapt the design in a similar way.
+- On all pages switch the backgrounds of table elements to the colors used for the tiles on the front page, introduce a second, more transparent version of those colors for alternating lines in the tables
+- Remove the unnecessary "Overview" button from the top bar, it has the same effect as clicking on dcdash
+- Change the order of the buttons in the top bar to Projects, Directories, Netbox, Proxmox, DNS, DHCP, Firewalls, Switches. Move  Audit log and Sessions towards Documentation to the right
+
+---
+
+## 2026-11-24 — Sprint 18 (Page layout)
+
+18.1 yes, that is correct
+18.9 yes
+
+---
+
+## 2026-11-25 — Sprint 18 (Page layout)
+
+Answer to the question how the NetBox page compares physical machines and switches: "Presence + basic fields" (as the presence check, plus compare a few fields — for switches: model and serial number; for nodes: the primary IP — and offer "Update NetBox" for those).
+
+Is the linux binary available somewhere? I'd like to run a few tests before finalizing v0.5.0
+
+tests passed, merge sprint 18 and tag v0.5.0

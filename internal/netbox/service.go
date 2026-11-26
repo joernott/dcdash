@@ -31,6 +31,8 @@ type Service struct {
 	guests       GuestSource
 	reservations ReservationSource
 	records      RecordSource
+	nodes        NodeSource
+	switches     SwitchSource
 }
 
 // NewService creates the module.

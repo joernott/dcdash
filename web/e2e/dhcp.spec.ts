@@ -17,20 +17,27 @@ test('subnets, leases and reservations of a Kea server', async ({ page }) => {
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('link', { name: 'DHCP' })
     .click()
-  await expect(page).toHaveURL(/\/dhcp\/kea4$/)
-  await expect(page.getByRole('combobox', { name: 'Server' })).toHaveValue('kea4')
-  const subnets = page.getByRole('table', { name: 'Subnets' })
+  // All servers with their subnets, no redirect; the server field only filters.
+  await expect(page).toHaveURL(/\/dhcp$/)
+  await expect(page.getByRole('combobox', { name: 'Server' })).toHaveValue('')
+  await expect(page.getByRole('table', { name: 'Subnets of kea6', exact: true })).toContainText(
+    '2001:db8:1::/64',
+  )
+  const subnets = page.getByRole('table', { name: 'Subnets of kea4', exact: true })
   await expect(subnets.getByRole('row')).toHaveCount(3) // header + 2 subnets
   await expect(subnets.getByRole('row', { name: /192\.0\.2\.0\/24/ })).toContainText('2 of 100')
   await expectAccessible(page, 'DHCP subnets')
   await page.screenshot({ path: '../.e2e/screenshots/dhcp-light-en.png', fullPage: true })
+  await page.getByLabel('Server').selectOption('kea4')
+  await expect(page).toHaveURL(/\/dhcp\/kea4$/)
+  await expect(page.getByRole('table', { name: 'Subnets of kea6', exact: true })).toHaveCount(0)
 
   // Leases of a subnet; bob may delete leases in 192.0.2.0/24.
   await subnets
     .getByRole('row', { name: /192\.0\.2\.0\/24/ })
-    .getByRole('button', { name: 'Show leases' })
+    .getByRole('button', { name: 'Show the leases of 192.0.2.0/24' })
     .click()
-  const leases = page.getByRole('table', { name: 'Leases' })
+  let leases = page.getByRole('table', { name: 'Leases of 192.0.2.0/24 on kea4' })
   await expect(leases.getByRole('row')).toHaveCount(3)
   await expectAccessible(page, 'DHCP leases')
   await leases.getByRole('button', { name: 'Delete lease 192.0.2.101' }).click()
@@ -42,12 +49,15 @@ test('subnets, leases and reservations of a Kea server', async ({ page }) => {
   await page.getByLabel('Search by').selectOption('hostname')
   await page.getByLabel('Value').fill('camera')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
+  leases = page.getByRole('table', { name: 'Leases matching “camera”' })
   await expect(leases.getByRole('row')).toHaveCount(2)
   await expect(leases.getByRole('button')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Close the leases' }).click()
+  await expect(leases).toHaveCount(0)
 
   // Reservations: the configuration file one is read-only.
-  await page.getByRole('tab', { name: 'Reservations' }).click()
-  const reservations = page.getByRole('table', { name: 'Reservations' })
+  await page.getByRole('button', { name: 'Reservations', exact: true }).click()
+  const reservations = page.getByRole('table', { name: 'Reservations of kea4', exact: true })
   await expect(reservations.getByRole('row', { name: /printer/ })).toContainText('read-only')
   await expectAccessible(page, 'DHCP reservations')
   await page.getByRole('button', { name: 'Add reservation' }).click()
@@ -78,5 +88,7 @@ test('subnets, leases and reservations of a Kea server', async ({ page }) => {
   // The DHCPv6 server: bob may only read.
   await page.getByLabel('Server').selectOption('kea6')
   await expect(page).toHaveURL(/\/dhcp\/kea6/)
-  await expect(page.getByRole('table', { name: 'Subnets' })).toContainText('2001:db8:1::/64')
+  await expect(page.getByRole('table', { name: 'Subnets of kea6', exact: true })).toContainText(
+    '2001:db8:1::/64',
+  )
 })

@@ -76,8 +76,8 @@ Instance: `netbox.name` (`netbox` by default).
 | Permission | Allows |
 |---|---|
 | `netbox:<netbox>:ipam:read` | VLAN names and free addresses in the creation wizard |
-| `netbox:<netbox>:sync:read` | The comparison of NetBox with Proxmox, Kea and DNS |
-| `netbox:<netbox>:sync:write` | Updating NetBox from the comparison, deleting VMs that exist only in NetBox (with the dcdash tag) |
+| `netbox:<netbox>:sync:read` | The comparison of NetBox with Proxmox (guests and nodes), the switches, Kea and DNS; nodes, guests and switches are listed if the user may read them in their module |
+| `netbox:<netbox>:sync:write` | Updating NetBox from the comparison (guests; cluster and primary IP of nodes; serial number of switches), deleting VMs that exist only in NetBox (with the dcdash tag) |
 
 Writing changes back to NetBox after a change in another module needs no NetBox permission.
 

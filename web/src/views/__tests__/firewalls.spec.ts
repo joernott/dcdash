@@ -144,12 +144,43 @@ async function setup(path: string) {
 }
 
 describe('FirewallsView', () => {
-  it('shows the health and restarts a service', async () => {
+  it('shows all firewalls without tabs; the name opens the details', async () => {
     const { w, router } = await setup('/firewalls')
-    expect(router.currentRoute.value.params.firewall).toBe('fw1')
+    // No redirect to the first firewall, no tabs; refresh next to the heading.
+    expect(router.currentRoute.value.fullPath).toBe('/firewalls')
+    expect(w.find('[role="tablist"]').exists()).toBe(false)
+    expect(w.get('h1').text()).toBe('Firewalls')
+    expect(
+      w
+        .get('h1')
+        .element.parentElement!.parentElement!.querySelector('button[aria-label="Refresh"]'),
+    ).not.toBeNull()
+    const tile = w.get('li')
+    expect(tile.get('h2 a').attributes('href')).toBe('/firewalls/fw1')
+    expect(tile.text()).toContain('OPNsense 26.1.6')
+    expect(tile.text()).toContain('2.0 GiB of 8.0 GiB')
+    expect(tile.get('a[href="ssh://fw1.example.org"]').text()).toMatch(/^SSH/)
+    expect(tile.get('a[href="https://fw1.example.org"]').attributes('target')).toBe('_blank')
+    w.unmount()
+  })
+
+  it('reports an unknown firewall', async () => {
+    const { w } = await setup('/firewalls/nope')
+    expect(w.get('[role="alert"]').text()).toBe('There is no firewall nope, or you may not see it.')
+    w.unmount()
+  })
+
+  it('shows the health and restarts a service', async () => {
+    const { w } = await setup('/firewalls/fw1')
+    expect(w.get('h1').text()).toBe('fw1')
+    expect(w.findAll('[role="tab"]').map((x) => x.text())).toEqual([
+      'Health',
+      'VPN',
+      'Aliases',
+      'Rules',
+    ])
     expect(w.text()).toContain('OPNsense 26.1.6')
-    expect(w.text()).toContain('2.0 GiB of 8.0 GiB')
-    expect(w.get('a[href="ssh://fw1.example.org"]').text()).toBe('ssh')
+    expect(w.get('a[href="ssh://fw1.example.org"]').text()).toMatch(/^SSH/)
     const gws = w.findAll('table')[0]!.findAll('tbody tr')
     expect(gws[0]!.text()).toContain('Down')
     expect(gws[1]!.text()).toContain('1.2 ms · 0.0 %')

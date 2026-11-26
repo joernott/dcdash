@@ -84,6 +84,14 @@ type Links struct {
 	RDP string `json:"rdp,omitempty"`
 }
 
+// NewLinks returns the links, or nil if none is set. ssh is an ssh:// URL.
+func NewLinks(ui, ssh, rdp string) *Links {
+	if ui == "" && ssh == "" && rdp == "" {
+		return nil
+	}
+	return &Links{UI: ui, SSH: ssh, RDP: rdp}
+}
+
 // Report is the response of GET /api/v1/status.
 type Report struct {
 	Components []Component `json:"components"`

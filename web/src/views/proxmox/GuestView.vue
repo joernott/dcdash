@@ -20,6 +20,7 @@ import { guestWritePermission } from '@/proxmox/hardware'
 import { guestAdminPermission } from '@/proxmox/provisioning'
 import { useProxmoxClustersStore } from '@/stores/proxmoxClusters'
 import { useSessionStore } from '@/stores/session'
+import { systemStyle } from '@/systems'
 
 type Detail = Schemas['ProxmoxGuestDetail']
 
@@ -229,7 +230,10 @@ onBeforeUnmount(() => clearInterval(timer))
 
       <section aria-labelledby="guest-config" class="flex flex-col gap-3">
         <h2 id="guest-config" class="text-lg font-semibold">{{ t('proxmox.configuration') }}</h2>
-        <div class="overflow-x-auto rounded-md border border-border">
+        <div
+          class="overflow-x-auto rounded-md border border-border"
+          :style="systemStyle('proxmox')"
+        >
           <table class="w-full text-left text-sm">
             <caption class="sr-only">
               {{
@@ -237,7 +241,11 @@ onBeforeUnmount(() => clearInterval(timer))
               }}
             </caption>
             <tbody>
-              <tr v-for="c in config" :key="c.key" class="border-t border-border first:border-t-0">
+              <tr
+                v-for="c in config"
+                :key="c.key"
+                class="sys-row border-t border-border first:border-t-0"
+              >
                 <th scope="row" class="w-48 px-3 py-1.5 font-mono font-normal text-fg-muted">
                   {{ c.key }}
                 </th>

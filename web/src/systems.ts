@@ -5,8 +5,7 @@
 /** Systems with an own color. dcdash's own components ("system") have none. */
 export const SYSTEMS = [
   'proxmox',
-  'bind',
-  'cloudflare',
+  'dns',
   'kea',
   'netbox',
   'switch',
@@ -19,8 +18,8 @@ export type System = (typeof SYSTEMS)[number]
 export function systemOf(c: { kind: string; type?: string }): System | null {
   switch (c.kind) {
     case 'dns':
-      if (c.type === 'ad') return 'directory'
-      return c.type === 'cloudflare' ? 'cloudflare' : 'bind'
+      // One color for all DNS servers, whatever their type.
+      return 'dns'
     case 'dhcp':
       return 'kea'
     case 'proxmox':
@@ -31,6 +30,16 @@ export function systemOf(c: { kind: string; type?: string }): System | null {
       return c.kind
   }
   return null
+}
+
+/**
+ * The product of a status component, for its label: the system, for DNS the server type
+ * (bind9, Cloudflare, Active Directory). A key of home.systems.
+ */
+export function productOf(c: { kind: string; type?: string }): string | null {
+  if (c.kind !== 'dns') return systemOf(c)
+  if (c.type === 'ad') return 'directory'
+  return c.type === 'cloudflare' ? 'cloudflare' : 'bind'
 }
 
 /** Inline style that sets the system colors for the sys-tint and sys-text classes. */
