@@ -50,6 +50,7 @@ These apply to every task:
 | 16 | `sprint/16-active-directory` | Active Directory and Samba: users, groups, AD DNS, self-service password change, project groups | v0.3.0 | done |
 | 17 | `sprint/17-config-directory` | Configuration directory with merged files; directories in the example configuration | v0.4.0 | done |
 | 18 | `sprint/18-page-layout` | Common page layout: filters and refresh in the top line, all servers on one page, closable messages, colored tables, navigation order | v0.5.0 | done |
+| 19 | `sprint/19-netbox-token` | Documentation: the NetBox token permissions | – | in progress |
 
 ---
 
@@ -698,3 +699,11 @@ UI/SSH/RDP buttons next to its name. The tables take the colors of the overview 
 - [x] **18.10** Top bar: remove "Overview" (the name "dcdash" leads there); order Projects,
   Directories, NetBox, Proxmox, DNS, DHCP, Firewalls, Switches; Audit log and Sessions on the
   right next to Documentation
+
+---
+
+## Sprint 19 — NetBox Token
+
+- [x] **19.1** docs/netbox.md: list all object permissions the NetBox token needs, per object
+  type and action, including the project tags (tags, prefixes, IP ranges, VLANs, interfaces)
+  and the device comparison

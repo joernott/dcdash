@@ -32,7 +32,7 @@ and keep its secrets in files readable only for dcdash (`file:` in the configura
 | Cloudflare | An API token with Zone:Read and DNS:Edit (Zone:Edit to create zones) | [dns.md](dns.md#cloudflare) |
 | bind9 | A TSIG key allowed to transfer and update the zones; for zone creation also rndc, an SFTP account for zone files and a catalog zone | [dns.md](dns.md#bind9) |
 | Kea 3.0 | An HTTPS control socket with basic authentication on each daemon, the hook libraries, and a host database for changing reservations | [dhcp.md](dhcp.md#prerequisites-on-the-kea-servers) |
-| NetBox 4.2 or later | An API token with object permissions for virtual machines, interfaces, disks, MAC and IP addresses; a tag; a cluster per Proxmox cluster | [netbox.md](netbox.md#prerequisites-in-netbox) |
+| NetBox 4.2 or later | An API token with object permissions for virtual machines, interfaces, disks, MAC and IP addresses, devices, VLANs, prefixes, IP ranges and tags; a tag; a cluster per Proxmox cluster | [netbox.md](netbox.md#token-permissions) |
 | Aruba CX (AOS-CX 10.x) | The REST API enabled (`https-server rest access-mode read-write`) and an account with the role `administrators` | [switches.md](switches.md#prerequisites-on-the-switch) |
 | OPNsense 26.1 or Business Edition 26.4 | A user with an API key and the privileges for the parts dcdash should manage | [firewalls.md](firewalls.md#prerequisites-on-the-firewall) |
 | Active Directory (Windows or Samba) | LDAPS on the domain controllers and a service account with delegated rights on the managed OUs; for AD DNS also rights on the zones | [directories.md](directories.md#the-service-account) |

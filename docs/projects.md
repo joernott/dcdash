@@ -44,7 +44,7 @@ not changed by dcdash; manage their members on the Directories page.
 
 For every project, dcdash creates the NetBox tag `project-<name>` with the title, color and
 description of the file and keeps it up to date. This needs NetBox with `write_back: true`
-and the permission to add and change tags (see [netbox.md](netbox.md)). The audit log records
+and the permission to add and change tags (see [netbox.md](netbox.md#token-permissions)). The audit log records
 the changes as `project.tags`.
 
 ## Assigning objects

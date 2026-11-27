@@ -6,6 +6,12 @@ All notable changes to dcdash are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- **Documentation:** `docs/netbox.md` lists all object
+  permissions of the NetBox token, including those for project tags (prefixes, IP ranges,
+  VLANs, interfaces, tags) and the device comparison.
+
 ## [0.5.0] - 2026-11-26
 
 ### Changed

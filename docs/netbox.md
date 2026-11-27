@@ -16,16 +16,8 @@ dcdash works with NetBox 4.2 and later (MAC addresses as objects); it is tested 
 ## Prerequisites in NetBox
 
 1. **A user and an API token for dcdash.** Prefer a v2 token (`nbt_<key>.<token>`, NetBox
-   4.6 and later). The user needs object permissions:
-   - **View:** clusters, virtual machines, VM interfaces, virtual disks (`virtualization`); IP
-     addresses, prefixes, VLANs, VLAN groups, VRFs (`ipam`); MAC addresses, sites (`dcim`);
-     tags (`extras`).
-   - **Add, change, delete:** virtual machines, VM interfaces, virtual disks; IP addresses; MAC
-     addresses. Not needed with `write_back: false`.
-   - **For switches** (`switches[].netbox_device`): view devices; change interfaces (`dcim`);
-     add, change and delete VLANs (`ipam`).
-   - **For the comparison of nodes and switches:** view devices and device interfaces; change
-     devices (`dcim`), to set the cluster, primary IP and serial number from the NetBox page.
+   4.6 and later). Give the user object permissions (Admin → Permissions), see
+   [Token permissions](#token-permissions) below.
 2. **A tag** for the objects dcdash creates, `dcdash` by default (`netbox.tag`). dcdash
    doesn't create it.
 3. **A cluster for each Proxmox cluster** whose guests are written to NetBox, mapped in
@@ -36,6 +28,31 @@ dcdash works with NetBox 4.2 and later (MAC addresses as objects); it is tested 
 5. **VLANs with prefixes:** for the wizard, assign the prefixes of a VLAN to it in NetBox. If
    VLAN IDs are used more than once, restrict the lookup to a VLAN group or site
    (`netbox.vlan_group`, `netbox.site`).
+
+### Token permissions
+
+The object permissions of the dcdash user in NetBox. With `write_back: false`, only the view
+action is needed for every row.
+
+| Object types | Actions | Used for |
+|---|---|---|
+| Virtualization: Cluster | view | The mapped clusters, the comparison |
+| DCIM: Site; IPAM: VLAN group, VRF | view | `netbox.site`, `netbox.vlan_group` and `netbox.vrf`, if set |
+| IPAM: Prefix | view, change | Free addresses in the wizard and prefix lengths; change: project tags on prefixes |
+| IPAM: IP range | view, change | The project page; change: project tags on IP ranges |
+| Virtualization: Virtual machine, VM interface, Virtual disk; DCIM: MAC address; IPAM: IP address | view, add, change, delete | Writing guests, DHCP reservations and DNS names back; project tags on virtual machines and addresses |
+| IPAM: VLAN | view, add, change, delete | VLAN names in the wizard; VLANs created and deleted on switches; project tags on VLANs |
+| DCIM: Device | view, change | Switches (`switches[].netbox_device`) and the comparison of nodes and switches; change: "Update NetBox" sets the cluster, primary IP and serial number |
+| DCIM: Interface | view, change | Switch ports and the primary IP of nodes; change: switch port changes, project tags on ports |
+| Extras: Tag | view, add, change | The `dcdash` tag (create it beforehand); add and change: the project tags `project-<name>` |
+
+dcdash deletes virtual machines and VLANs only if they have the `dcdash` tag. To enforce that
+in NetBox, give the delete action for these two types in a separate permission with the
+constraint `{"tags__slug": "dcdash"}`. Don't constrain the other types or the change action: dcdash also updates objects maintained by
+hand, such as devices, existing virtual machines and interfaces.
+
+Without switches, the add and delete actions on VLANs and change on interfaces aren't needed;
+without projects, change on prefixes and IP ranges and add/change on tags aren't needed.
 
 ## Configuration
 

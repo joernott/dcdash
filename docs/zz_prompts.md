@@ -633,3 +633,12 @@ Answer to the question how the NetBox page compares physical machines and switch
 Is the linux binary available somewhere? I'd like to run a few tests before finalizing v0.5.0
 
 tests passed, merge sprint 18 and tag v0.5.0
+
+## 2026-11-26 — Sprint 19 (NetBox token)
+
+don't add error 52e troubleshooting to the next sprint.
+What permissions do I need to give the token?
+
+## 2026-11-27 — Sprint 19 (NetBox token)
+
+yes, add the docs fix to sprint 19
